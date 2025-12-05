@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Nowak's Distributing - Complete Management System v4</title>
+    <title>Nowak's Distributing - Complete Management System</title>
     <style>
         * {
             margin: 0;
@@ -783,46 +780,11 @@
         let SPREADSHEET_ID = localStorage.getItem('spreadsheetId') || '';
         let WEB_APP_URL = localStorage.getItem('webAppUrl') || '';
 
-        // Tab switching - DEFINED FIRST to be available immediately
-        function switchTab(tabName) {
-            console.log('switchTab called:', tabName);
-            // Update tab buttons
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.getAttribute('onclick') && tab.getAttribute('onclick').includes(`'${tabName}'`)) {
-                    tab.classList.add('active');
-                }
-            });
-            
-            // Update cards
-            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
-
-            // Load data when switching to certain tabs
-            if (tabName === 'invoices') loadInvoices();
-            if (tabName === 'inventory') loadInventory();
-            if (tabName === 'sales') {
-                loadSales();
-                loadCustomersList();
-            }
-            if (tabName === 'customers') loadCustomers();
-            if (tabName === 'reports') generateReports();
-        }
-
-        console.log('switchTab defined:', typeof switchTab);
-
         // Update config status on load
         window.addEventListener('DOMContentLoaded', () => {
-            try {
-                updateConfigStatus();
-                const today = new Date().toISOString().split('T')[0];
-                const saleDateEl = document.getElementById('saleDate');
-                if (saleDateEl) {
-                    saleDateEl.value = today;
-                }
-            } catch (error) {
-                console.error('DOMContentLoaded error:', error);
-            }
+            updateConfigStatus();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('saleDate').value = today;
         });
 
         function updateConfigStatus() {
@@ -885,6 +847,25 @@
             setTimeout(() => {
                 configStatus.style.display = 'none';
             }, 5000);
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+
+            // Load data when switching to certain tabs
+            if (tabName === 'invoices') loadInvoices();
+            if (tabName === 'inventory') loadInventory();
+            if (tabName === 'sales') {
+                loadSales();
+                loadCustomersList();
+            }
+            if (tabName === 'customers') loadCustomers();
+            if (tabName === 'reports') generateReports();
         }
 
         // Modal functions
@@ -1385,276 +1366,71 @@ Extract ALL line items thoroughly. Format:
         }
 
         // Placeholder edit/delete functions (would need Apps Script endpoints)
-        async function editInvoice(rowNumber) {
-            try {
-                const data = await fetchSheetData('Supplier Invoices');
-                const invoice = data[rowNumber - 1];
-                
-                document.getElementById('editInvoiceRow').value = rowNumber;
-                document.getElementById('editSupplier').value = invoice[1];
-                document.getElementById('editInvoiceNumber').value = invoice[2];
-                document.getElementById('editInvoiceDate').value = invoice[3];
-                document.getElementById('editInvoiceAmount').value = invoice[4];
-                document.getElementById('editInvoiceItems').value = invoice[5] || '';
-                
-                document.getElementById('editInvoiceModal').style.display = 'block';
-            } catch (error) {
-                alert('Error loading invoice: ' + error.message);
+        function editInvoice(row) {
+            alert('Edit invoice functionality - would open modal with invoice data');
+            // TODO: Implement edit modal
+        }
+
+        function deleteInvoice(row) {
+            if (confirm('Delete this invoice? This will NOT reverse inventory changes.')) {
+                alert('Delete functionality requires Apps Script update');
+                // TODO: Implement delete
             }
         }
 
-        async function deleteInvoice(rowNumber) {
-            if (!confirm('Delete this invoice? This will NOT reverse inventory changes.')) {
-                return;
-            }
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'deleteInvoice',
-                        rowNumber: rowNumber
-                    })
-                });
-                
-                alert('Invoice deleted successfully!');
-                loadInvoices();
-            } catch (error) {
-                alert('Error deleting invoice: ' + error.message);
+        function editProduct(row) {
+            alert('Edit product functionality - would open modal');
+            // TODO: Implement edit modal
+        }
+
+        function deleteProduct(row) {
+            if (confirm('Delete this product from inventory?')) {
+                alert('Delete functionality requires Apps Script update');
+                // TODO: Implement delete
             }
         }
 
-        async function editProduct(rowNumber) {
-            try {
-                const data = await fetchSheetData('Inventory');
-                const product = data[rowNumber - 1];
-                
-                document.getElementById('editProductRow').value = rowNumber;
-                document.getElementById('editProductName').value = product[0];
-                document.getElementById('editProductQty').value = product[1];
-                document.getElementById('editProductCost').value = product[2];
-                document.getElementById('editProductSupplier').value = product[3];
-                
-                document.getElementById('editInventoryModal').style.display = 'block';
-            } catch (error) {
-                alert('Error loading product: ' + error.message);
-            }
-        }
-
-        async function deleteProduct(rowNumber) {
-            if (!confirm('Delete this product from inventory?')) {
-                return;
-            }
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'deleteProduct',
-                        rowNumber: rowNumber
-                    })
-                });
-                
-                alert('Product deleted successfully!');
-                loadInventory();
-            } catch (error) {
-                alert('Error deleting product: ' + error.message);
-            }
-        }
-
-        async function deleteSale(rowNumber) {
-            if (!confirm('Delete this sale? This will NOT reverse inventory changes.')) {
-                return;
-            }
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'deleteSale',
-                        rowNumber: rowNumber
-                    })
-                });
-                
-                alert('Sale deleted successfully!');
-                loadSales();
-            } catch (error) {
-                alert('Error deleting sale: ' + error.message);
+        function deleteSale(row) {
+            if (confirm('Delete this sale? This will NOT reverse inventory changes.')) {
+                alert('Delete functionality requires Apps Script update');
+                // TODO: Implement delete
             }
         }
 
         function editCustomer(row) {
-            alert('Customer edit modal - coming soon! For now, delete and re-add the customer.');
+            alert('Edit customer functionality');
+            // TODO: Implement
         }
 
-        async function deleteCustomer(rowNumber) {
-            if (!confirm('Delete this customer?')) {
-                return;
-            }
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'deleteCustomer',
-                        rowNumber: rowNumber
-                    })
-                });
-                
-                alert('Customer deleted successfully!');
-                loadCustomers();
-            } catch (error) {
-                alert('Error deleting customer: ' + error.message);
+        function deleteCustomer(row) {
+            if (confirm('Delete this customer?')) {
+                alert('Delete functionality requires Apps Script update');
+                // TODO: Implement delete
             }
         }
-
-        // Edit invoice form submission
-        document.getElementById('editInvoiceForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'updateInvoice',
-                        rowNumber: document.getElementById('editInvoiceRow').value,
-                        supplier: document.getElementById('editSupplier').value,
-                        invoiceNumber: document.getElementById('editInvoiceNumber').value,
-                        invoiceDate: document.getElementById('editInvoiceDate').value,
-                        totalAmount: document.getElementById('editInvoiceAmount').value,
-                        lineItems: document.getElementById('editInvoiceItems').value
-                    })
-                });
-                
-                alert('Invoice updated successfully!');
-                closeModal('editInvoiceModal');
-                loadInvoices();
-            } catch (error) {
-                alert('Error updating invoice: ' + error.message);
-            }
-        });
-
-        // Edit inventory form submission
-        document.getElementById('editInventoryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'updateProduct',
-                        rowNumber: document.getElementById('editProductRow').value,
-                        productName: document.getElementById('editProductName').value,
-                        quantity: document.getElementById('editProductQty').value,
-                        unitCost: document.getElementById('editProductCost').value,
-                        supplier: document.getElementById('editProductSupplier').value
-                    })
-                });
-                
-                alert('Product updated successfully!');
-                closeModal('editInventoryModal');
-                loadInventory();
-            } catch (error) {
-                alert('Error updating product: ' + error.message);
-            }
-        });
 
         // Add product form
         document.getElementById('addProductForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'addProduct',
-                        productName: document.getElementById('newProductName').value,
-                        quantity: document.getElementById('newProductQty').value,
-                        unitCost: document.getElementById('newProductCost').value,
-                        supplier: document.getElementById('newProductSupplier').value
-                    })
-                });
-                
-                alert('Product added successfully!');
-                closeModal('addProductModal');
-                document.getElementById('addProductForm').reset();
-                loadInventory();
-            } catch (error) {
-                alert('Error adding product: ' + error.message);
-            }
+            alert('Add product functionality - requires Apps Script update');
+            closeModal('addProductModal');
         });
 
         // Add customer form
         document.getElementById('addCustomerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'addCustomer',
-                        name: document.getElementById('newCustomerName').value,
-                        business: document.getElementById('newCustomerBusiness').value,
-                        phone: document.getElementById('newCustomerPhone').value,
-                        email: document.getElementById('newCustomerEmail').value,
-                        address: document.getElementById('newCustomerAddress').value,
-                        creditLimit: document.getElementById('newCustomerCredit').value
-                    })
-                });
-                
-                alert('Customer added successfully!');
-                closeModal('addCustomerModal');
-                document.getElementById('addCustomerForm').reset();
-                loadCustomers();
-                loadCustomersList(); // Also update the sales dropdown
-            } catch (error) {
-                alert('Error adding customer: ' + error.message);
-            }
+            alert('Add customer functionality - requires Apps Script update');
+            closeModal('addCustomerModal');
         });
 
-        // Sales form  
+        // Sales form
         document.getElementById('salesForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'recordSale',
-                        saleDate: document.getElementById('saleDate').value,
-                        customer: document.getElementById('saleCustomer').value,
-                        saleItems: document.getElementById('saleItems').value,
-                        paymentMethod: document.getElementById('paymentMethod').value
-                    })
-                });
-                
-                alert('Sale recorded and inventory updated!');
-                document.getElementById('salesForm').reset();
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('saleDate').value = today;
-                loadSales();
-            } catch (error) {
-                alert('Error recording sale: ' + error.message);
-            }
+            alert('Record sale functionality - requires Apps Script update to reduce inventory');
         });
+
+        // Reports
+        async function generateReports() {
             try {
                 const inventory = await fetchSheetData('Inventory');
                 const sales = await fetchSheetData('Sales');
