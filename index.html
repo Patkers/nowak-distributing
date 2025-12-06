@@ -1526,6 +1526,7 @@
             <!-- Report Selection Buttons -->
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;">
                 <button class="btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
+                <button class="btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                 <button class="btn" onclick="showReport('sales-by-product')">📦 Sales by Product</button>
                 <button class="btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
                 <button class="btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
@@ -2630,6 +2631,14 @@
             currentEditingOrder = po;
             currentEditingType = 'purchase';
             
+            // Load items if not cached
+            if (cachedItems.length === 0) {
+                const itemsResult = await apiCall('getItems');
+                if (itemsResult && itemsResult.status === 'success') {
+                    cachedItems = itemsResult.data;
+                }
+            }
+            
             // Get line items
             const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
             const lines = linesResult?.data || [];
@@ -2735,6 +2744,20 @@
         async function enablePurchaseOrderEdit() {
             const po = currentEditingOrder;
             
+            // Load items and suppliers if not cached
+            if (cachedItems.length === 0) {
+                const itemsResult = await apiCall('getItems');
+                if (itemsResult && itemsResult.status === 'success') {
+                    cachedItems = itemsResult.data;
+                }
+            }
+            if (cachedSuppliers.length === 0) {
+                const suppResult = await apiCall('getSuppliers');
+                if (suppResult && suppResult.status === 'success') {
+                    cachedSuppliers = suppResult.data;
+                }
+            }
+            
             // Get line items
             const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
             const lines = linesResult?.data || [];
@@ -2828,10 +2851,17 @@
         }
         
         function createEditableLineItem(type, line, index, item) {
+            // Make sure items are loaded
+            if (cachedItems.length === 0) {
+                console.error('cachedItems is empty!');
+            }
+            
             const itemOptions = cachedItems
                 .filter(i => type === 'PO' ? i.Supplier_ID === currentEditingOrder.Supplier_ID : true)
                 .map(i => `<option value="${i.Item_ID}" ${i.Item_ID === line.Item_ID ? 'selected' : ''}>${i.Item_Description}</option>`)
                 .join('');
+            
+            console.log('Items for dropdown:', cachedItems.length, 'Filtered:', itemOptions.length);
             
             const qtyField = type === 'PO' ? 'Quantity' : 'Quantity';
             const priceField = type === 'PO' ? 'Unit_Cost' : 'Unit_Price';
@@ -2957,6 +2987,20 @@
         
         async function enableSalesOrderEdit() {
             const so = currentEditingOrder;
+            
+            // Load items and customers if not cached
+            if (cachedItems.length === 0) {
+                const itemsResult = await apiCall('getItems');
+                if (itemsResult && itemsResult.status === 'success') {
+                    cachedItems = itemsResult.data;
+                }
+            }
+            if (cachedCustomers.length === 0) {
+                const custResult = await apiCall('getCustomers');
+                if (custResult && custResult.status === 'success') {
+                    cachedCustomers = custResult.data;
+                }
+            }
             
             // Get line items
             const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
@@ -3421,6 +3465,14 @@
             currentEditingOrder = so;
             currentEditingType = 'sales';
             
+            // Load items if not cached
+            if (cachedItems.length === 0) {
+                const itemsResult = await apiCall('getItems');
+                if (itemsResult && itemsResult.status === 'success') {
+                    cachedItems = itemsResult.data;
+                }
+            }
+            
             // Get line items
             const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
             const lines = linesResult?.data || [];
@@ -3648,6 +3700,12 @@
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
                 const value = parseFloat(item.Total_Value) || 0;
                 
+                // Calculate unit cost from package cost
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                const unitCost = packageCost / unitsPerPackage;
+                const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                
                 totalQty += qty;
                 totalValue += value;
                 
@@ -3656,8 +3714,8 @@
                     <td><strong>${item.Item_Description}</strong></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td>${qty}</td>
-                    <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
-                    <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
+                    <td>$${unitCost.toFixed(2)}</td>
+                    <td>$${unitSellPrice.toFixed(2)}</td>
                     <td>$${value.toFixed(2)}</td>
                     <td>${status}</td>
                 </tr>`;
@@ -3915,11 +3973,10 @@
                     </div>`;
             }
             
-            html += '</div>';
             html += `
                 <button class="btn" onclick="applyReportFilters('${reportType}')">🔍 Apply Filters</button>
                 <button class="btn btn-secondary" onclick="clearReportFilters('${reportType}')">🧹 Clear Filters</button>
-            `;
+            </div>`;
             html += '</div>';
             
             return html;
@@ -4045,6 +4102,9 @@
                     case 'sales-by-customer':
                         await generateSalesByCustomer();
                         break;
+                    case 'sales-order-detail':
+                        await generateSalesOrderDetail();
+                        break;
                     case 'sales-by-product':
                         await generateSalesByProduct();
                         break;
@@ -4076,62 +4136,70 @@
         async function generateSalesByCustomer() {
             const salesResult = await apiCall('getSalesOrders');
             const customersResult = await apiCall('getCustomers');
+            const itemsResult = await apiCall('getItems');
             
-            if (!salesResult?.data || !customersResult?.data) {
+            if (!salesResult?.data || !customersResult?.data || !itemsResult?.data) {
                 throw new Error('Failed to load data');
             }
             
             const customers = customersResult.data;
+            const items = itemsResult.data;
             let sales = salesResult.data;
             
+            // Fetch ALL sales order lines with their SO info
+            const allDetails = [];
+            for (const so of sales) {
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        allDetails.push({
+                            soId: so.SO_ID,
+                            soDate: so.Sale_Date || so.SO_Date,
+                            customerId: so.Customer_ID,
+                            customerName: getCustomerName(so.Customer_ID),
+                            itemId: line.Item_ID,
+                            itemDescription: item?.Item_Description || line.Item_ID,
+                            quantity: parseInt(line.Quantity || 0),
+                            unitPrice: parseFloat(line.Unit_Price || 0),
+                            lineTotal: parseFloat(line.Line_Total || 0),
+                            paymentStatus: so.Payment_Status || 'Unknown'
+                        });
+                    });
+                }
+            }
+            
             // Store raw data
-            rawReportData['sales-by-customer'] = { sales, customers };
+            rawReportData['sales-by-customer'] = { sales, customers, items, allDetails };
             
             // APPLY FILTERS
+            let filtered = allDetails;
             if (reportFilters.fromDate) {
                 const fromDate = new Date(reportFilters.fromDate);
-                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) >= fromDate);
+                filtered = filtered.filter(d => new Date(d.soDate) >= fromDate);
             }
             if (reportFilters.toDate) {
                 const toDate = new Date(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
-                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) <= toDate);
+                filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
             }
             if (reportFilters.customer) {
-                sales = sales.filter(so => so.Customer_ID === reportFilters.customer);
+                filtered = filtered.filter(d => d.customerId === reportFilters.customer);
             }
             if (reportFilters.minAmount) {
-                sales = sales.filter(so => parseFloat(so.Total_Amount || so.Order_Total || 0) >= reportFilters.minAmount);
+                filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
             }
             
-            // Build customer sales summary
-            const customerSales = {};
-            
-            sales.forEach(so => {
-                const custId = so.Customer_ID;
-                if (!customerSales[custId]) {
-                    const customer = customers.find(c => c.Customer_ID === custId);
-                    customerSales[custId] = {
-                        id: custId,
-                        name: customer?.Customer_Name || custId,
-                        totalSales: 0,
-                        orderCount: 0,
-                        lastOrderDate: null
-                    };
-                }
-                
-                const total = parseFloat(so.Total_Amount || so.Order_Total || 0);
-                customerSales[custId].totalSales += total;
-                customerSales[custId].orderCount++;
-                
-                const orderDate = new Date(so.Sale_Date || so.SO_Date);
-                if (!customerSales[custId].lastOrderDate || orderDate > customerSales[custId].lastOrderDate) {
-                    customerSales[custId].lastOrderDate = orderDate;
-                }
+            // Sort by date (newest first), then by SO ID
+            filtered.sort((a, b) => {
+                const dateCompare = new Date(b.soDate) - new Date(a.soDate);
+                if (dateCompare !== 0) return dateCompare;
+                return b.soId.localeCompare(a.soId);
             });
             
-            // Sort by total sales
-            const sorted = Object.values(customerSales).sort((a, b) => b.totalSales - a.totalSales);
+            // Calculate totals
+            const totalSales = filtered.reduce((sum, d) => sum + d.lineTotal, 0);
+            const totalOrders = new Set(filtered.map(d => d.soId)).size;
             
             // Build customer list for filter
             const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
@@ -4148,42 +4216,190 @@
             html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📊 Sales by Customer Report</h3>
-                    <p style="color: #666;">Total Customers: ${sorted.length} | Total Sales: $${sorted.reduce((sum, c) => sum + c.totalSales, 0).toFixed(2)}</p>
+                    <p style="color: #666;">Total Customers: ${new Set(filtered.map(d => d.customerId)).size} | Total Sales: $${totalSales.toFixed(2)}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
                 </div>`;
             
-            if (sorted.length === 0) {
+            if (filtered.length === 0) {
                 html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
             } else {
-                html += `<table class="data-table">
+                html += `<table class="data-table" id="salesByCustomerTable">
                     <thead>
                         <tr>
+                            <th>SO #</th>
+                            <th>Date</th>
                             <th>Customer</th>
-                            <th>Orders</th>
-                            <th>Total Sales</th>
-                            <th>Avg Order</th>
-                            <th>Last Order</th>
+                            <th>Item Description</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Line Total</th>
+                            <th>Payment Status</th>
                         </tr>
                     </thead>
                     <tbody>`;
             
-                sorted.forEach(cust => {
-                    const avgOrder = cust.totalSales / cust.orderCount;
-                    
+                filtered.forEach(detail => {
                     html += `<tr>
-                        <td><strong>${cust.name}</strong></td>
-                        <td>${cust.orderCount}</td>
-                        <td>$${cust.totalSales.toFixed(2)}</td>
-                        <td>$${avgOrder.toFixed(2)}</td>
-                        <td>${cust.lastOrderDate ? cust.lastOrderDate.toLocaleDateString() : '-'}</td>
+                        <td><strong><a href="javascript:void(0)" onclick="openSalesOrder('${detail.soId}')" style="color: #667eea; text-decoration: none;">${detail.soId}</a></strong></td>
+                        <td>${new Date(detail.soDate).toLocaleDateString()}</td>
+                        <td><a href="javascript:void(0)" onclick="openCustomer('${detail.customerId}')" style="color: #667eea; text-decoration: none;">${detail.customerName}</a></td>
+                        <td>${detail.itemDescription}</td>
+                        <td>${detail.quantity}</td>
+                        <td>$${detail.unitPrice.toFixed(2)}</td>
+                        <td>$${detail.lineTotal.toFixed(2)}</td>
+                        <td><span style="color: ${detail.paymentStatus === 'Paid' ? 'green' : detail.paymentStatus === 'Partial' ? 'orange' : 'red'};">${detail.paymentStatus}</span></td>
                     </tr>`;
                 });
             
                 html += '</tbody></table>';
             }
             
-            reportData['sales-by-customer'] = sorted;
+            reportData['sales-by-customer'] = filtered;
             document.getElementById('reportContainer').innerHTML = html;
+            setTimeout(() => makeSortable('salesByCustomerTable'), 0);
+        }
+        
+        // SALES ORDER DETAIL REPORT (NEW!)
+        async function generateSalesOrderDetail() {
+            const salesResult = await apiCall('getSalesOrders');
+            const customersResult = await apiCall('getCustomers');
+            const itemsResult = await apiCall('getItems');
+            
+            if (!salesResult?.data || !customersResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const customers = customersResult.data;
+            const items = itemsResult.data;
+            let sales = salesResult.data;
+            
+            // Fetch ALL sales order lines with their SO info
+            const allDetails = [];
+            for (const so of sales) {
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        allDetails.push({
+                            soId: so.SO_ID,
+                            soDate: so.Sale_Date || so.SO_Date,
+                            customerId: so.Customer_ID,
+                            customerName: getCustomerName(so.Customer_ID),
+                            itemId: line.Item_ID,
+                            itemDescription: item?.Item_Description || line.Item_ID,
+                            sku: item?.SKU || '',
+                            quantity: parseInt(line.Quantity || 0),
+                            unitPrice: parseFloat(line.Unit_Price || 0),
+                            lineTotal: parseFloat(line.Line_Total || 0),
+                            paymentStatus: so.Payment_Status || 'Unknown',
+                            status: so.Status || 'Completed'
+                        });
+                    });
+                }
+            }
+            
+            // Store raw data
+            rawReportData['sales-order-detail'] = { sales, customers, items, allDetails };
+            
+            // APPLY FILTERS
+            let filtered = allDetails;
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                filtered = filtered.filter(d => new Date(d.soDate) >= fromDate);
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
+            }
+            if (reportFilters.customer) {
+                filtered = filtered.filter(d => d.customerId === reportFilters.customer);
+            }
+            if (reportFilters.item) {
+                filtered = filtered.filter(d => d.itemId === reportFilters.item);
+            }
+            if (reportFilters.paymentStatus) {
+                filtered = filtered.filter(d => d.paymentStatus === reportFilters.paymentStatus);
+            }
+            if (reportFilters.minAmount) {
+                filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
+            }
+            
+            // Sort by date (newest first), then by SO ID
+            filtered.sort((a, b) => {
+                const dateCompare = new Date(b.soDate) - new Date(a.soDate);
+                if (dateCompare !== 0) return dateCompare;
+                return b.soId.localeCompare(a.soId);
+            });
+            
+            // Calculate totals
+            const totalSales = filtered.reduce((sum, d) => sum + d.lineTotal, 0);
+            const totalOrders = new Set(filtered.map(d => d.soId)).size;
+            
+            // Build lists for filters
+            const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
+            const itemList = items.map(i => ({ id: i.Item_ID, name: `${i.Item_Description} (${i.SKU})` }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('sales-order-detail', {
+                dateRange: true,
+                dateLabel: 'Sale Date',
+                customer: true,
+                customerList: customerList,
+                item: true,
+                itemList: itemList,
+                paymentStatus: true,
+                minAmount: true
+            });
+            
+            html += `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>📋 Sales Order Detail Report</h3>
+                    <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Sales: $${totalSales.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('sales-order-detail')">📥 Export to CSV</button>
+                </div>`;
+            
+            if (filtered.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table" id="salesOrderDetailTable">
+                    <thead>
+                        <tr>
+                            <th>SO #</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Item</th>
+                            <th>SKU</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+                filtered.forEach(detail => {
+                    html += `<tr>
+                        <td><a href="javascript:void(0)" onclick="openSalesOrder('${detail.soId}')" style="color: #667eea; text-decoration: none;"><strong>${detail.soId}</strong></a></td>
+                        <td>${new Date(detail.soDate).toLocaleDateString()}</td>
+                        <td><a href="javascript:void(0)" onclick="openCustomer('${detail.customerId}')" style="color: #667eea; text-decoration: none;">${detail.customerName}</a></td>
+                        <td>${detail.itemDescription}</td>
+                        <td>${detail.sku}</td>
+                        <td>${detail.quantity}</td>
+                        <td>$${detail.unitPrice.toFixed(2)}</td>
+                        <td>$${detail.lineTotal.toFixed(2)}</td>
+                        <td>${detail.status}</td>
+                        <td><span style="color: ${detail.paymentStatus === 'Paid' ? 'green' : detail.paymentStatus === 'Partial' ? 'orange' : 'red'};">${detail.paymentStatus}</span></td>
+                    </tr>`;
+                });
+            
+                html += '</tbody></table>';
+            }
+            
+            reportData['sales-order-detail'] = filtered;
+            document.getElementById('reportContainer').innerHTML = html;
+            setTimeout(() => makeSortable('salesOrderDetailTable'), 0);
         }
         
         // 2. SALES BY PRODUCT REPORT
@@ -4200,57 +4416,56 @@
             const suppliers = suppliersResult.data;
             let sales = salesResult.data;
             
-            // Store raw data
-            rawReportData['sales-by-product'] = { sales, items, suppliers };
+            // Fetch ALL sales order lines
+            const allLines = [];
+            for (const so of sales) {
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        line.SO_Date = so.Sale_Date || so.SO_Date;
+                        allLines.push(line);
+                    });
+                }
+            }
             
-            // APPLY DATE FILTERS
+            // Store raw data
+            rawReportData['sales-by-product'] = { sales, items, suppliers, allLines };
+            
+            // APPLY DATE FILTERS to lines
+            let filteredLines = allLines;
             if (reportFilters.fromDate) {
                 const fromDate = new Date(reportFilters.fromDate);
-                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) >= fromDate);
+                filteredLines = filteredLines.filter(line => new Date(line.SO_Date) >= fromDate);
             }
             if (reportFilters.toDate) {
                 const toDate = new Date(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
-                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) <= toDate);
+                filteredLines = filteredLines.filter(line => new Date(line.SO_Date) <= toDate);
             }
             
             // Build product sales summary
             const productSales = {};
             
-            sales.forEach(so => {
-                // Parse lines if they're stored as JSON string
-                let lines = so.lines;
-                if (typeof lines === 'string') {
-                    try {
-                        lines = JSON.parse(lines);
-                    } catch (e) {
-                        lines = [];
-                    }
+            filteredLines.forEach(line => {
+                const itemId = line.Item_ID;
+                if (!productSales[itemId]) {
+                    const item = items.find(i => i.Item_ID === itemId);
+                    productSales[itemId] = {
+                        id: itemId,
+                        description: item?.Item_Description || itemId,
+                        sku: item?.SKU || '',
+                        supplierId: item?.Supplier_ID || '',
+                        unitsSold: 0,
+                        revenue: 0,
+                        avgPrice: 0
+                    };
                 }
                 
-                if (lines && Array.isArray(lines)) {
-                    lines.forEach(line => {
-                        const itemId = line.itemId || line.Item_ID;
-                        if (!productSales[itemId]) {
-                            const item = items.find(i => i.Item_ID === itemId);
-                            productSales[itemId] = {
-                                id: itemId,
-                                description: item?.Item_Description || itemId,
-                                sku: item?.SKU || '',
-                                supplierId: item?.Supplier_ID || '',
-                                unitsSold: 0,
-                                revenue: 0,
-                                avgPrice: 0
-                            };
-                        }
-                        
-                        const qty = parseInt(line.quantity || line.Quantity || 0);
-                        const price = parseFloat(line.unitPrice || line.Unit_Price || 0);
-                        
-                        productSales[itemId].unitsSold += qty;
-                        productSales[itemId].revenue += qty * price;
-                    });
-                }
+                const qty = parseInt(line.Quantity || 0);
+                const price = parseFloat(line.Unit_Price || 0);
+                
+                productSales[itemId].unitsSold += qty;
+                productSales[itemId].revenue += qty * price;
             });
             
             // Calculate average prices
@@ -4458,28 +4673,23 @@
             const sales = salesResult.data;
             const suppliers = suppliersResult.data;
             
+            // Fetch ALL sales order lines
+            const allLines = [];
+            for (const so of sales) {
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    allLines.push(...linesResult.data);
+                }
+            }
+            
             // Store raw data
-            rawReportData['inventory-turnover'] = { inventory, sales, suppliers };
+            rawReportData['inventory-turnover'] = { inventory, sales, suppliers, allLines };
             
             // Calculate units sold per item
             const unitsSold = {};
-            sales.forEach(so => {
-                // Parse lines if they're stored as JSON string
-                let lines = so.lines;
-                if (typeof lines === 'string') {
-                    try {
-                        lines = JSON.parse(lines);
-                    } catch (e) {
-                        lines = [];
-                    }
-                }
-                
-                if (lines && Array.isArray(lines)) {
-                    lines.forEach(line => {
-                        const itemId = line.itemId || line.Item_ID;
-                        unitsSold[itemId] = (unitsSold[itemId] || 0) + parseInt(line.quantity || line.Quantity || 0);
-                    });
-                }
+            allLines.forEach(line => {
+                const itemId = line.Item_ID;
+                unitsSold[itemId] = (unitsSold[itemId] || 0) + parseInt(line.Quantity || 0);
             });
             
             // Build turnover report
@@ -4488,7 +4698,12 @@
                 const onHand = parseInt(item.Qty_On_Hand) || 0;
                 const avgInventory = onHand + (sold / 2);
                 const turnover = avgInventory > 0 ? sold / avgInventory : 0;
-                const value = onHand * parseFloat(item.Cost_Price || 0);
+                
+                // Calculate cost from package cost
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                const unitCost = packageCost / unitsPerPackage;
+                const value = onHand * unitCost;
                 
                 return {
                     id: item.Item_ID,
@@ -5135,6 +5350,100 @@
             
             reportData['simple-inventory'] = inventory;
             document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // ==================== HOT LINK FUNCTIONS ====================
+        
+        async function openSalesOrder(soId) {
+            // Load the sales order and open edit modal
+            const result = await apiCall('getSalesOrders');
+            const so = result.data.find(s => s.SO_ID === soId);
+            if (so) {
+                // Switch to Sales tab and show the order
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="sales"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('sales').classList.add('active');
+                
+                // Open the order details modal
+                await showSalesOrderDetails(so);
+                document.getElementById('orderModal').style.display = 'block';
+            } else {
+                alert('Sales order not found: ' + soId);
+            }
+        }
+        
+        async function openPurchaseOrder(poId) {
+            // Load the purchase order and open edit modal
+            const result = await apiCall('getPurchaseOrders');
+            const po = result.data.find(p => p.PO_ID === poId);
+            if (po) {
+                // Switch to Purchases tab and show the order
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="purchases"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('purchases').classList.add('active');
+                
+                // Open the order details modal
+                await showPurchaseOrderDetails(po);
+                document.getElementById('orderModal').style.display = 'block';
+            } else {
+                alert('Purchase order not found: ' + poId);
+            }
+        }
+        
+        async function openCustomer(customerId) {
+            // Load customer and open edit modal
+            const result = await apiCall('getCustomers');
+            const customer = result.data.find(c => c.Customer_ID === customerId);
+            if (customer) {
+                // Switch to Customers tab
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="customers"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('customers').classList.add('active');
+                
+                // Show edit form
+                showEditCustomerForm(customer);
+            } else {
+                alert('Customer not found: ' + customerId);
+            }
+        }
+        
+        async function openSupplier(supplierId) {
+            // Load supplier and open edit modal
+            const result = await apiCall('getSuppliers');
+            const supplier = result.data.find(s => s.Supplier_ID === supplierId);
+            if (supplier) {
+                // Switch to Suppliers tab
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="suppliers"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('suppliers').classList.add('active');
+                
+                // Show edit form
+                showEditSupplierForm(supplier);
+            } else {
+                alert('Supplier not found: ' + supplierId);
+            }
+        }
+        
+        async function openItem(itemId) {
+            // Load item and open edit modal
+            const result = await apiCall('getItems');
+            const item = result.data.find(i => i.Item_ID === itemId);
+            if (item) {
+                // Switch to Items tab
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="items"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('items').classList.add('active');
+                
+                // Show edit form
+                showEditItemForm(item);
+            } else {
+                alert('Item not found: ' + itemId);
+            }
         }
         
         // Export to CSV function
