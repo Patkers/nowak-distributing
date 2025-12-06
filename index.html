@@ -246,6 +246,121 @@
             padding: 40px;
             color: #666;
         }
+        
+        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
+        
+        /* Tablets and smaller (768px and below) */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs {
+                gap: 5px;
+            }
+            
+            .tab {
+                padding: 10px 16px;
+                font-size: 14px;
+                flex: 1 1 auto;
+            }
+            
+            .card {
+                padding: 15px;
+                border-radius: 12px;
+            }
+            
+            /* Stack form fields vertically on mobile */
+            .form-grid {
+                grid-template-columns: 1fr !important;
+                gap: 15px;
+            }
+            
+            /* Make line items stack vertically */
+            .line-item-row {
+                grid-template-columns: 1fr !important;
+                gap: 10px;
+            }
+            
+            .line-item-row select,
+            .line-item-row input {
+                width: 100%;
+            }
+            
+            .remove-btn {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            /* Make tables scrollable horizontally */
+            .data-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+            
+            /* Stack buttons vertically */
+            .btn {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .btn-small {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Phones (480px and below) */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .tab {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .card {
+                padding: 10px;
+            }
+            
+            .form-group label {
+                font-size: 14px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 10px;
+            }
+            
+            /* Make table text smaller on very small screens */
+            .data-table th,
+            .data-table td {
+                padding: 6px;
+                font-size: 12px;
+            }
+            
+            /* Smaller buttons on very small screens */
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2289,18 +2404,28 @@
         // ==================== MANUAL INVENTORY ADJUSTMENT ====================
         
         async function showAdjustInventoryForm() {
-            // Load items for dropdown
-            if (cachedItems.length === 0) {
-                await loadInventory();
+            // ALWAYS load fresh inventory data from database
+            showStatus('inventoryStatus', 'Loading current inventory...', 'info');
+            const result = await apiCall('getInventoryReport');
+            
+            if (result && result.status === 'success') {
+                cachedItems = result.data;
+                
+                const select = document.getElementById('adjustItem');
+                select.innerHTML = '<option value="">Select Item</option>';
+                cachedItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.Item_ID}">${item.Item_Description} (SKU: ${item.SKU}) - Current: ${item.Qty_On_Hand}</option>`;
+                });
+                
+                // Attach event listeners for live calculation
+                select.onchange = updateAdjustmentCalc;
+                document.getElementById('adjustQuantity').oninput = updateAdjustmentCalc;
+                
+                document.getElementById('adjustInventoryForm').style.display = 'block';
+                showStatus('inventoryStatus', '', '');
+            } else {
+                showStatus('inventoryStatus', '❌ Error loading inventory', 'error');
             }
-            
-            const select = document.getElementById('adjustItem');
-            select.innerHTML = '<option value="">Select Item</option>';
-            cachedItems.forEach(item => {
-                select.innerHTML += `<option value="${item.Item_ID}" data-qty="${item.Qty_On_Hand}">${item.Item_Description} (${item.SKU})</option>`;
-            });
-            
-            document.getElementById('adjustInventoryForm').style.display = 'block';
         }
         
         function hideAdjustInventoryForm() {
@@ -2309,19 +2434,6 @@
             document.getElementById('adjustCurrentQty').value = '';
             document.getElementById('adjustNewQty').value = '';
         }
-        
-        // Update current and new quantities when item or adjustment changes
-        document.addEventListener('DOMContentLoaded', () => {
-            const itemSelect = document.getElementById('adjustItem');
-            const qtyInput = document.getElementById('adjustQuantity');
-            
-            if (itemSelect) {
-                itemSelect.addEventListener('change', updateAdjustmentCalc);
-            }
-            if (qtyInput) {
-                qtyInput.addEventListener('input', updateAdjustmentCalc);
-            }
-        });
         
         function updateAdjustmentCalc() {
             const itemSelect = document.getElementById('adjustItem');
