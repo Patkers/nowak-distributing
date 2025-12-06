@@ -1334,8 +1334,8 @@
                     <td>${item.Qty_On_Hand}</td>
                     <td>${item.Reorder_Point}</td>
                     <td>
-                        <button class="btn-small" onclick='editItem(${JSON.stringify(item)})'>✏️ Edit</button>
-                        <button class="btn-small btn-danger" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description}')">🗑️ Delete</button>
+                        <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
+                        <button class="btn-small btn-danger" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️ Delete</button>
                     </td>
                 </tr>`;
             });
@@ -1385,6 +1385,14 @@
             cachedSuppliers.forEach(s => {
                 select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
             });
+        }
+        
+        // Helper function to edit by ID
+        function editItemById(itemId) {
+            const item = cachedItems.find(i => i.Item_ID === itemId);
+            if (item) {
+                editItem(item);
+            }
         }
         
         // Edit item
@@ -1812,21 +1820,75 @@
             }
 
             let html = '<table class="data-table"><thead><tr>';
-            html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Total</th>';
+            html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
+                const dueDate = po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-';
+                const paymentStatus = po.Payment_Status || 'Unpaid';
+                const amountPaid = po.Amount_Paid || 0;
+                const total = po.Total_Amount || po.Invoice_Total || 0;
+                
+                // Color code payment status
+                let statusColor = '';
+                if (paymentStatus === 'Paid') statusColor = 'style="color: green; font-weight: bold;"';
+                else if (paymentStatus === 'Partial') statusColor = 'style="color: orange; font-weight: bold;"';
+                else if (paymentStatus === 'Overdue') statusColor = 'style="color: red; font-weight: bold;"';
+                
                 html += `<tr>
                     <td>${po.PO_ID}</td>
                     <td>${po.Supplier_ID}</td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
-                    <td>${po.Invoice_Number}</td>
-                    <td>$${parseFloat(po.Invoice_Total).toFixed(2)}</td>
+                    <td>${po.Invoice_Number || '-'}</td>
+                    <td>${po.Status || 'Received'}</td>
+                    <td>$${parseFloat(total).toFixed(2)}</td>
+                    <td>$${parseFloat(amountPaid).toFixed(2)}</td>
+                    <td>${dueDate}</td>
+                    <td ${statusColor}>${paymentStatus}</td>
+                    <td>
+                        ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordPurchasePayment('${po.PO_ID}', ${total}, ${amountPaid})">💰 Pay</button>` : '<span style="color: green;">✓ Paid</span>'}
+                    </td>
                 </tr>`;
             });
 
             html += '</tbody></table>';
             document.getElementById('purchasesTable').innerHTML = html;
+        }
+        
+        function recordPurchasePayment(poId, total, amountPaid) {
+            const remaining = total - amountPaid;
+            const payment = prompt(`Record payment for ${poId}
+            
+Total: $${total.toFixed(2)}
+Already Paid: $${amountPaid.toFixed(2)}
+Remaining: $${remaining.toFixed(2)}
+
+Enter payment amount:`);
+            
+            if (payment === null) return; // Cancelled
+            
+            const paymentAmount = parseFloat(payment);
+            if (isNaN(paymentAmount) || paymentAmount <= 0) {
+                alert('Please enter a valid payment amount');
+                return;
+            }
+            
+            if (paymentAmount > remaining) {
+                if (!confirm(`Payment ($${paymentAmount.toFixed(2)}) is more than remaining balance ($${remaining.toFixed(2)}). Continue?`)) {
+                    return;
+                }
+            }
+            
+            // Call backend
+            apiCall('recordPurchasePayment', { poId: poId, paymentAmount: paymentAmount })
+                .then(result => {
+                    if (result && result.status === 'success') {
+                        showStatus('purchasesStatus', `✅ Payment recorded! Status: ${result.paymentStatus}`, 'success');
+                        loadPurchases();
+                    } else {
+                        showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                    }
+                });
         }
 
         // ==================== SALES ====================
@@ -1988,20 +2050,74 @@
             }
 
             let html = '<table class="data-table"><thead><tr>';
-            html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Total</th>';
+            html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Payment Method</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
+                const dueDate = so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-';
+                const paymentStatus = so.Payment_Status || 'Unpaid';
+                const amountPaid = so.Amount_Paid || 0;
+                const total = so.Total_Amount || so.Order_Total || 0;
+                
+                // Color code payment status
+                let statusColor = '';
+                if (paymentStatus === 'Paid') statusColor = 'style="color: green; font-weight: bold;"';
+                else if (paymentStatus === 'Partial') statusColor = 'style="color: orange; font-weight: bold;"';
+                else if (paymentStatus === 'Overdue') statusColor = 'style="color: red; font-weight: bold;"';
+                
                 html += `<tr>
                     <td>${so.SO_ID}</td>
                     <td>${so.Customer_ID}</td>
-                    <td>${new Date(so.SO_Date).toLocaleDateString()}</td>
-                    <td>$${parseFloat(so.Order_Total).toFixed(2)}</td>
+                    <td>${new Date(so.Sale_Date || so.SO_Date).toLocaleDateString()}</td>
+                    <td>${so.Payment_Method || '-'}</td>
+                    <td>$${parseFloat(total).toFixed(2)}</td>
+                    <td>$${parseFloat(amountPaid).toFixed(2)}</td>
+                    <td>${dueDate}</td>
+                    <td ${statusColor}>${paymentStatus}</td>
+                    <td>
+                        ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordSalesPayment('${so.SO_ID}', ${total}, ${amountPaid})">💰 Receive</button>` : '<span style="color: green;">✓ Paid</span>'}
+                    </td>
                 </tr>`;
             });
 
             html += '</tbody></table>';
             document.getElementById('salesTable').innerHTML = html;
+        }
+        
+        function recordSalesPayment(soId, total, amountPaid) {
+            const remaining = total - amountPaid;
+            const payment = prompt(`Record payment for ${soId}
+            
+Total: $${total.toFixed(2)}
+Already Paid: $${amountPaid.toFixed(2)}
+Remaining: $${remaining.toFixed(2)}
+
+Enter payment amount:`);
+            
+            if (payment === null) return; // Cancelled
+            
+            const paymentAmount = parseFloat(payment);
+            if (isNaN(paymentAmount) || paymentAmount <= 0) {
+                alert('Please enter a valid payment amount');
+                return;
+            }
+            
+            if (paymentAmount > remaining) {
+                if (!confirm(`Payment ($${paymentAmount.toFixed(2)}) is more than remaining balance ($${remaining.toFixed(2)}). Continue?`)) {
+                    return;
+                }
+            }
+            
+            // Call backend
+            apiCall('recordSalesPayment', { soId: soId, paymentAmount: paymentAmount })
+                .then(result => {
+                    if (result && result.status === 'success') {
+                        showStatus('salesStatus', `✅ Payment received! Status: ${result.paymentStatus}`, 'success');
+                        loadSales();
+                    } else {
+                        showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                    }
+                });
         }
 
         // ==================== INVENTORY ====================
