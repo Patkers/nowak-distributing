@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Nowak Distributing - Inventory Management System</title>
     <style>
         * {
@@ -16,9 +18,21 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            /* Disable pull-to-refresh on mobile */
+            /* Disable pull-to-refresh on mobile - multiple approaches */
+            overscroll-behavior: contain;
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
+            /* Prevent viewport bounce */
+            position: fixed;
+            width: 100%;
+            overflow-y: auto;
+            height: 100vh;
+        }
+        
+        html {
+            /* Prevent scroll bounce at document level */
+            overscroll-behavior: none;
+            overflow: hidden;
         }
 
         .container {
@@ -72,6 +86,9 @@
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             display: none;
+            /* Contain content in landscape mode */
+            overflow-x: auto;
+            max-width: 100%;
         }
 
         .card.active {
@@ -82,6 +99,13 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Table wrapper for horizontal scroll on mobile landscape */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 20px 0;
         }
 
         .btn {
@@ -364,9 +388,177 @@
                 font-size: 14px;
             }
         }
+        
+        /* Landscape orientation on mobile devices */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+                height: 100vh;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0 5px;
+            }
+            
+            .header {
+                margin-bottom: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.3em;
+                margin-bottom: 5px;
+            }
+            
+            .header p {
+                font-size: 0.9em;
+            }
+            
+            .tabs {
+                margin-bottom: 10px;
+                gap: 3px;
+            }
+            
+            .tab {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            
+            .card {
+                padding: 10px;
+                max-height: calc(100vh - 120px);
+                overflow-y: auto;
+            }
+            
+            /* Make tables scroll horizontally in landscape */
+            .data-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                max-width: 100%;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+            
+            /* Compact form fields in landscape */
+            .form-group {
+                margin-bottom: 8px;
+            }
+            
+            .form-group label {
+                font-size: 12px;
+                margin-bottom: 3px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 6px;
+                font-size: 14px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .btn-small {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            
+            /* Reduce spacing in landscape */
+            .form-grid {
+                gap: 8px;
+            }
+        }
+        
+        /* ==================== COMPLETE THEME SYSTEM ==================== */
+        
+        /* Ocean Blue Theme */
+        body.theme-ocean {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        }
+        body.theme-ocean .btn {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        }
+        body.theme-ocean .tab.active {
+            color: #1e3c72 !important;
+        }
+        body.theme-ocean .tab:hover {
+            background: rgba(30, 60, 114, 0.3) !important;
+        }
+        
+        /* Forest Green Theme */
+        body.theme-forest {
+            background: linear-gradient(135deg, #134e4a 0%, #059669 100%) !important;
+        }
+        body.theme-forest .btn {
+            background: linear-gradient(135deg, #134e4a 0%, #059669 100%) !important;
+        }
+        body.theme-forest .tab.active {
+            color: #134e4a !important;
+        }
+        body.theme-forest .tab:hover {
+            background: rgba(19, 78, 74, 0.3) !important;
+        }
+        
+        /* Sunset Orange Theme */
+        body.theme-sunset {
+            background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important;
+        }
+        body.theme-sunset .btn {
+            background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important;
+        }
+        body.theme-sunset .tab.active {
+            color: #c2410c !important;
+        }
+        body.theme-sunset .tab:hover {
+            background: rgba(194, 65, 12, 0.3) !important;
+        }
+        
+        /* Professional Dark Theme */
+        body.theme-dark {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
+        }
+        body.theme-dark .btn {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%) !important;
+        }
+        body.theme-dark .tab {
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+        body.theme-dark .tab.active {
+            background: white !important;
+            color: #1f2937 !important;
+        }
+        body.theme-dark .tab:hover {
+            background: rgba(255, 255, 255, 0.25) !important;
+        }
+        body.theme-dark .card {
+            background: #f9fafb !important;
+        }
+        
+        /* Royal Purple Theme (Default) */
+        body.theme-purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+        body.theme-purple .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+        body.theme-purple .tab.active {
+            color: #667eea !important;
+        }
+        body.theme-purple .tab:hover {
+            background: rgba(102, 126, 234, 0.3) !important;
+        }
     </style>
 </head>
-<body>
+<body class="theme-purple">
     <div class="container">
         <div class="header">
             <h1>🚚 Nowak Distributing</h1>
@@ -405,10 +597,11 @@
                     Choose your color scheme
                 </p>
                 <select id="themeSelector" onchange="changeTheme()" style="width: 100%; padding: 10px; margin-bottom: 15px;">
-                    <option value="purple">🟣 Purple (Default)</option>
-                    <option value="blue">🔵 Blue</option>
-                    <option value="green">🟢 Green</option>
-                    <option value="dark">⚫ Dark</option>
+                    <option value="purple">🟣 Royal Purple (Default)</option>
+                    <option value="ocean">🌊 Ocean Blue</option>
+                    <option value="forest">🌲 Forest Green</option>
+                    <option value="sunset">🌅 Sunset Orange</option>
+                    <option value="dark">🌙 Professional Dark</option>
                 </select>
             </div>
             
@@ -1288,6 +1481,34 @@
             const today = new Date().toISOString().split('T')[0];
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
+            
+            // Prevent pull-to-refresh and scroll bounce on mobile
+            let lastTouchY = 0;
+            let preventPullToRefresh = false;
+            
+            document.body.addEventListener('touchstart', function(e) {
+                if (e.touches.length !== 1) return;
+                lastTouchY = e.touches[0].clientY;
+                // Prevent pull-to-refresh if we're at the top
+                preventPullToRefresh = (window.pageYOffset === 0);
+            }, { passive: false });
+            
+            document.body.addEventListener('touchmove', function(e) {
+                const touchY = e.touches[0].clientY;
+                const touchYDelta = touchY - lastTouchY;
+                lastTouchY = touchY;
+                
+                // Prevent pull-to-refresh when scrolling down at the top
+                if (preventPullToRefresh) {
+                    e.preventDefault();
+                    return;
+                }
+            }, { passive: false });
+            
+            // Also prevent scroll restoration
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
         });
 
         function switchTab(tabName) {
@@ -1316,23 +1537,11 @@
             const theme = document.getElementById('themeSelector').value;
             const body = document.body;
             
-            // Remove existing theme classes
-            body.className = '';
+            // Remove all existing theme classes
+            body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark');
             
-            // Apply theme
-            switch(theme) {
-                case 'blue':
-                    body.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
-                    break;
-                case 'green':
-                    body.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
-                    break;
-                case 'dark':
-                    body.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
-                    break;
-                default: // purple
-                    body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
+            // Add new theme class
+            body.classList.add('theme-' + theme);
             
             // Save preference
             localStorage.setItem('theme', theme);
@@ -1350,11 +1559,10 @@
         
         // Load theme on startup
         window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.getElementById('themeSelector').value = savedTheme;
-                changeTheme();
-            }
+            const savedTheme = localStorage.getItem('theme') || 'purple';
+            document.getElementById('themeSelector').value = savedTheme;
+            document.body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark');
+            document.body.classList.add('theme-' + savedTheme);
         });
         
         function saveConfig() {
