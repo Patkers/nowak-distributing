@@ -2631,6 +2631,21 @@
                     </div>`;
             }
             
+            // Aging Filter (for AR/AP)
+            if (options.aging) {
+                html += `
+                    <div class="form-group">
+                        <label>Aging</label>
+                        <select id="filter_aging">
+                            <option value="">All</option>
+                            <option value="Current">Current</option>
+                            <option value="1-30">1-30 days</option>
+                            <option value="31-60">31-60 days</option>
+                            <option value="60+">60+ days</option>
+                        </select>
+                    </div>`;
+            }
+            
             // Minimum Amount
             if (options.minAmount) {
                 html += `
@@ -2662,6 +2677,7 @@
                 paymentStatus: document.getElementById('filter_paymentStatus')?.value || '',
                 stockStatus: document.getElementById('filter_stockStatus')?.value || '',
                 turnoverStatus: document.getElementById('filter_turnoverStatus')?.value || '',
+                aging: document.getElementById('filter_aging')?.value || '',
                 minAmount: parseFloat(document.getElementById('filter_minAmount')?.value) || 0
             };
             
@@ -2831,13 +2847,29 @@
         async function generateSalesByProduct() {
             const salesResult = await apiCall('getSalesOrders');
             const itemsResult = await apiCall('getItems');
+            const suppliersResult = await apiCall('getSuppliers');
             
-            if (!salesResult?.data || !itemsResult?.data) {
+            if (!salesResult?.data || !itemsResult?.data || !suppliersResult?.data) {
                 throw new Error('Failed to load data');
             }
             
             const items = itemsResult.data;
-            const sales = salesResult.data;
+            const suppliers = suppliersResult.data;
+            let sales = salesResult.data;
+            
+            // Store raw data
+            rawReportData['sales-by-product'] = { sales, items, suppliers };
+            
+            // APPLY DATE FILTERS
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) >= fromDate);
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) <= toDate);
+            }
             
             // Build product sales summary
             const productSales = {};
@@ -2849,8 +2881,10 @@
                         if (!productSales[itemId]) {
                             const item = items.find(i => i.Item_ID === itemId);
                             productSales[itemId] = {
+                                id: itemId,
                                 description: item?.Item_Description || itemId,
                                 sku: item?.SKU || '',
+                                supplierId: item?.Supplier_ID || '',
                                 unitsSold: 0,
                                 revenue: 0,
                                 avgPrice: 0
@@ -2873,17 +2907,47 @@
                 }
             });
             
-            // Sort by revenue
-            const sorted = Object.values(productSales).sort((a, b) => b.revenue - a.revenue);
+            // APPLY FILTERS
+            let filtered = Object.values(productSales);
             
-            // Build HTML
-            let html = `
+            if (reportFilters.item) {
+                filtered = filtered.filter(p => p.id === reportFilters.item);
+            }
+            if (reportFilters.supplier) {
+                filtered = filtered.filter(p => p.supplierId === reportFilters.supplier);
+            }
+            if (reportFilters.minAmount) {
+                filtered = filtered.filter(p => p.revenue >= reportFilters.minAmount);
+            }
+            
+            // Sort by revenue
+            const sorted = filtered.sort((a, b) => b.revenue - a.revenue);
+            
+            // Build filter lists
+            const itemList = items.map(i => ({ id: i.Item_ID, name: `${i.Item_Description} (${i.SKU})` }));
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('sales-by-product', {
+                dateRange: true,
+                item: true,
+                itemList: itemList,
+                supplier: true,
+                supplierList: supplierList,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📦 Sales by Product Report</h3>
                     <p style="color: #666;">Products Sold: ${sorted.length} | Total Revenue: $${sorted.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('sales-by-product')">📥 Export to CSV</button>
-                </div>
-                <table class="data-table">
+                </div>`;
+            
+            if (sorted.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table">
                     <thead>
                         <tr>
                             <th>Product</th>
@@ -2895,17 +2959,18 @@
                     </thead>
                     <tbody>`;
             
-            sorted.forEach(prod => {
-                html += `<tr>
-                    <td><strong>${prod.description}</strong></td>
-                    <td>${prod.sku}</td>
-                    <td>${prod.unitsSold}</td>
-                    <td>$${prod.revenue.toFixed(2)}</td>
-                    <td>$${prod.avgPrice.toFixed(2)}</td>
-                </tr>`;
-            });
+                sorted.forEach(prod => {
+                    html += `<tr>
+                        <td><strong>${prod.description}</strong></td>
+                        <td>${prod.sku}</td>
+                        <td>${prod.unitsSold}</td>
+                        <td>$${prod.revenue.toFixed(2)}</td>
+                        <td>$${prod.avgPrice.toFixed(2)}</td>
+                    </tr>`;
+                });
             
-            html += '</tbody></table>';
+                html += '</tbody></table>';
+            }
             
             reportData['sales-by-product'] = sorted;
             document.getElementById('reportContainer').innerHTML = html;
@@ -2921,7 +2986,27 @@
             }
             
             const suppliers = suppliersResult.data;
-            const purchases = purchasesResult.data;
+            let purchases = purchasesResult.data;
+            
+            // Store raw data
+            rawReportData['purchase-by-supplier'] = { purchases, suppliers };
+            
+            // APPLY FILTERS
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                purchases = purchases.filter(po => new Date(po.PO_Date) >= fromDate);
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                purchases = purchases.filter(po => new Date(po.PO_Date) <= toDate);
+            }
+            if (reportFilters.supplier) {
+                purchases = purchases.filter(po => po.Supplier_ID === reportFilters.supplier);
+            }
+            if (reportFilters.minAmount) {
+                purchases = purchases.filter(po => parseFloat(po.Total_Amount || po.Invoice_Total || 0) >= reportFilters.minAmount);
+            }
             
             // Build supplier purchase summary
             const supplierPurchases = {};
@@ -2931,10 +3016,11 @@
                 if (!supplierPurchases[suppId]) {
                     const supplier = suppliers.find(s => s.Supplier_ID === suppId);
                     supplierPurchases[suppId] = {
+                        id: suppId,
                         name: supplier?.Supplier_Name || suppId,
                         totalSpent: 0,
                         orderCount: 0,
-                        lastOrder: null
+                        lastOrderDate: null
                     };
                 }
                 
@@ -2943,22 +3029,36 @@
                 supplierPurchases[suppId].orderCount++;
                 
                 const orderDate = new Date(po.PO_Date);
-                if (!supplierPurchases[suppId].lastOrder || orderDate > new Date(supplierPurchases[suppId].lastOrder)) {
-                    supplierPurchases[suppId].lastOrder = orderDate.toLocaleDateString();
+                if (!supplierPurchases[suppId].lastOrderDate || orderDate > supplierPurchases[suppId].lastOrderDate) {
+                    supplierPurchases[suppId].lastOrderDate = orderDate;
                 }
             });
             
             // Sort by total spent
             const sorted = Object.values(supplierPurchases).sort((a, b) => b.totalSpent - a.totalSpent);
             
-            // Build HTML
-            let html = `
+            // Build supplier list for filter
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('purchase-by-supplier', {
+                dateRange: true,
+                supplier: true,
+                supplierList: supplierList,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🏭 Purchase by Supplier Report</h3>
                     <p style="color: #666;">Suppliers: ${sorted.length} | Total Spent: $${sorted.reduce((sum, s) => sum + s.totalSpent, 0).toFixed(2)}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('purchase-by-supplier')">📥 Export to CSV</button>
-                </div>
-                <table class="data-table">
+                </div>`;
+            
+            if (sorted.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table">
                     <thead>
                         <tr>
                             <th>Supplier</th>
@@ -2970,19 +3070,20 @@
                     </thead>
                     <tbody>`;
             
-            sorted.forEach(supp => {
-                const avgOrder = supp.totalSpent / supp.orderCount;
-                
-                html += `<tr>
-                    <td><strong>${supp.name}</strong></td>
-                    <td>${supp.orderCount}</td>
-                    <td>$${supp.totalSpent.toFixed(2)}</td>
-                    <td>$${avgOrder.toFixed(2)}</td>
-                    <td>${supp.lastOrder || '-'}</td>
-                </tr>`;
-            });
+                sorted.forEach(supp => {
+                    const avgOrder = supp.totalSpent / supp.orderCount;
+                    
+                    html += `<tr>
+                        <td><strong>${supp.name}</strong></td>
+                        <td>${supp.orderCount}</td>
+                        <td>$${supp.totalSpent.toFixed(2)}</td>
+                        <td>$${avgOrder.toFixed(2)}</td>
+                        <td>${supp.lastOrderDate ? supp.lastOrderDate.toLocaleDateString() : '-'}</td>
+                    </tr>`;
+                });
             
-            html += '</tbody></table>';
+                html += '</tbody></table>';
+            }
             
             reportData['purchase-by-supplier'] = sorted;
             document.getElementById('reportContainer').innerHTML = html;
@@ -2992,13 +3093,18 @@
         async function generateInventoryTurnover() {
             const inventoryResult = await apiCall('getInventoryReport');
             const salesResult = await apiCall('getSalesOrders');
+            const suppliersResult = await apiCall('getSuppliers');
             
-            if (!inventoryResult?.data || !salesResult?.data) {
+            if (!inventoryResult?.data || !salesResult?.data || !suppliersResult?.data) {
                 throw new Error('Failed to load data');
             }
             
             const inventory = inventoryResult.data;
             const sales = salesResult.data;
+            const suppliers = suppliersResult.data;
+            
+            // Store raw data
+            rawReportData['inventory-turnover'] = { inventory, sales, suppliers };
             
             // Calculate units sold per item
             const unitsSold = {};
@@ -3012,30 +3118,62 @@
             });
             
             // Build turnover report
-            const turnoverData = inventory.map(item => {
+            let turnoverData = inventory.map(item => {
                 const sold = unitsSold[item.Item_ID] || 0;
                 const onHand = parseInt(item.Qty_On_Hand) || 0;
-                const avgInventory = onHand + (sold / 2); // Simplified calculation
+                const avgInventory = onHand + (sold / 2);
                 const turnover = avgInventory > 0 ? sold / avgInventory : 0;
+                const value = onHand * parseFloat(item.Cost_Price || 0);
                 
                 return {
+                    id: item.Item_ID,
                     description: item.Item_Description,
                     sku: item.SKU,
+                    supplierId: item.Supplier_ID,
                     onHand: onHand,
                     sold: sold,
                     turnover: turnover,
+                    value: value,
                     status: turnover > 4 ? 'Fast' : turnover > 2 ? 'Normal' : 'Slow'
                 };
-            }).sort((a, b) => b.turnover - a.turnover);
+            });
             
-            // Build HTML
-            let html = `
+            // APPLY FILTERS
+            if (reportFilters.supplier) {
+                turnoverData = turnoverData.filter(item => item.supplierId === reportFilters.supplier);
+            }
+            if (reportFilters.turnoverStatus) {
+                turnoverData = turnoverData.filter(item => item.status === reportFilters.turnoverStatus);
+            }
+            if (reportFilters.minAmount) {
+                turnoverData = turnoverData.filter(item => item.value >= reportFilters.minAmount);
+            }
+            
+            // Sort by turnover
+            turnoverData.sort((a, b) => b.turnover - a.turnover);
+            
+            // Build supplier list for filter
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('inventory-turnover', {
+                supplier: true,
+                supplierList: supplierList,
+                turnoverStatus: true,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🔄 Inventory Turnover Report</h3>
                     <p style="color: #666;">Total Items: ${turnoverData.length}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('inventory-turnover')">📥 Export to CSV</button>
-                </div>
-                <table class="data-table">
+                </div>`;
+            
+            if (turnoverData.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table">
                     <thead>
                         <tr>
                             <th>Product</th>
@@ -3048,20 +3186,21 @@
                     </thead>
                     <tbody>`;
             
-            turnoverData.forEach(item => {
-                const statusColor = item.status === 'Fast' ? 'green' : item.status === 'Normal' ? 'orange' : 'red';
-                
-                html += `<tr>
-                    <td><strong>${item.description}</strong></td>
-                    <td>${item.sku}</td>
-                    <td>${item.onHand}</td>
-                    <td>${item.sold}</td>
-                    <td>${item.turnover.toFixed(2)}</td>
-                    <td style="color: ${statusColor}; font-weight: bold;">${item.status}</td>
-                </tr>`;
-            });
+                turnoverData.forEach(item => {
+                    const statusColor = item.status === 'Fast' ? 'green' : item.status === 'Normal' ? 'orange' : 'red';
+                    
+                    html += `<tr>
+                        <td><strong>${item.description}</strong></td>
+                        <td>${item.sku}</td>
+                        <td>${item.onHand}</td>
+                        <td>${item.sold}</td>
+                        <td>${item.turnover.toFixed(2)}</td>
+                        <td style="color: ${statusColor}; font-weight: bold;">${item.status}</td>
+                    </tr>`;
+                });
             
-            html += '</tbody></table>';
+                html += '</tbody></table>';
+            }
             
             reportData['inventory-turnover'] = turnoverData;
             document.getElementById('reportContainer').innerHTML = html;
@@ -3071,16 +3210,21 @@
         async function generateGrossMargin() {
             const itemsResult = await apiCall('getItems');
             const salesResult = await apiCall('getSalesOrders');
+            const suppliersResult = await apiCall('getSuppliers');
             
-            if (!itemsResult?.data || !salesResult?.data) {
+            if (!itemsResult?.data || !salesResult?.data || !suppliersResult?.data) {
                 throw new Error('Failed to load data');
             }
             
             const items = itemsResult.data;
             const sales = salesResult.data;
+            const suppliers = suppliersResult.data;
+            
+            // Store raw data
+            rawReportData['gross-margin'] = { items, sales, suppliers };
             
             // Calculate margin per item
-            const marginData = items.map(item => {
+            let marginData = items.map(item => {
                 const cost = parseFloat(item.Cost_Price) || 0;
                 const sell = parseFloat(item.Sell_Price) || 0;
                 const margin = sell - cost;
@@ -3101,8 +3245,10 @@
                 const totalProfit = margin * unitsSold;
                 
                 return {
+                    id: item.Item_ID,
                     description: item.Item_Description,
                     sku: item.SKU,
+                    supplierId: item.Supplier_ID,
                     cost: cost,
                     sell: sell,
                     margin: margin,
@@ -3110,18 +3256,67 @@
                     unitsSold: unitsSold,
                     totalProfit: totalProfit
                 };
-            }).sort((a, b) => b.totalProfit - a.totalProfit);
+            });
             
-            // Build HTML
+            // APPLY FILTERS
+            if (reportFilters.supplier) {
+                marginData = marginData.filter(item => item.supplierId === reportFilters.supplier);
+            }
+            if (reportFilters.item) {
+                marginData = marginData.filter(item => item.id === reportFilters.item);
+            }
+            if (reportFilters.minAmount) {
+                marginData = marginData.filter(item => item.marginPercent >= reportFilters.minAmount);
+            }
+            // Add max margin filter (using minAmount field with special handling)
+            const maxMarginFilter = document.getElementById('filter_maxMargin');
+            if (maxMarginFilter && maxMarginFilter.value) {
+                const maxMargin = parseFloat(maxMarginFilter.value);
+                marginData = marginData.filter(item => item.marginPercent <= maxMargin);
+            }
+            
+            // Sort by total profit
+            marginData.sort((a, b) => b.totalProfit - a.totalProfit);
+            
+            // Build filter lists
+            const itemList = items.map(i => ({ id: i.Item_ID, name: `${i.Item_Description} (${i.SKU})` }));
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            
+            // Build HTML with filters (with custom min/max margin)
+            let html = buildFilterUI('gross-margin', {
+                supplier: true,
+                supplierList: supplierList,
+                item: true,
+                itemList: itemList,
+                minAmount: false // We'll add custom margin filters
+            });
+            
+            // Add custom min/max margin filters
+            const filterDiv = html.lastIndexOf('</div>');
+            html = html.substring(0, filterDiv) + `
+                <div class="form-group">
+                    <label>Min Margin %</label>
+                    <input type="number" id="filter_minMargin" step="0.1" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Max Margin %</label>
+                    <input type="number" id="filter_maxMargin" step="0.1" placeholder="100">
+                </div>
+            ` + html.substring(filterDiv);
+            
             const totalProfit = marginData.reduce((sum, item) => sum + item.totalProfit, 0);
             
-            let html = `
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💰 Gross Margin Report</h3>
                     <p style="color: #666;">Total Products: ${marginData.length} | Total Profit: $${totalProfit.toFixed(2)}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('gross-margin')">📥 Export to CSV</button>
-                </div>
-                <table class="data-table">
+                </div>`;
+            
+            if (marginData.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table">
                     <thead>
                         <tr>
                             <th>Product</th>
@@ -3136,22 +3331,23 @@
                     </thead>
                     <tbody>`;
             
-            marginData.forEach(item => {
-                const marginColor = item.marginPercent > 40 ? 'green' : item.marginPercent > 20 ? 'orange' : 'red';
-                
-                html += `<tr>
-                    <td><strong>${item.description}</strong></td>
-                    <td>${item.sku}</td>
-                    <td>$${item.cost.toFixed(2)}</td>
-                    <td>$${item.sell.toFixed(2)}</td>
-                    <td>$${item.margin.toFixed(2)}</td>
-                    <td style="color: ${marginColor}; font-weight: bold;">${item.marginPercent.toFixed(1)}%</td>
-                    <td>${item.unitsSold}</td>
-                    <td style="font-weight: bold;">$${item.totalProfit.toFixed(2)}</td>
-                </tr>`;
-            });
+                marginData.forEach(item => {
+                    const marginColor = item.marginPercent > 40 ? 'green' : item.marginPercent > 20 ? 'orange' : 'red';
+                    
+                    html += `<tr>
+                        <td><strong>${item.description}</strong></td>
+                        <td>${item.sku}</td>
+                        <td>$${item.cost.toFixed(2)}</td>
+                        <td>$${item.sell.toFixed(2)}</td>
+                        <td>$${item.margin.toFixed(2)}</td>
+                        <td style="color: ${marginColor}; font-weight: bold;">${item.marginPercent.toFixed(1)}%</td>
+                        <td>${item.unitsSold}</td>
+                        <td style="font-weight: bold;">$${item.totalProfit.toFixed(2)}</td>
+                    </tr>`;
+                });
             
-            html += '</tbody></table>';
+                html += '</tbody></table>';
+            }
             
             reportData['gross-margin'] = marginData;
             document.getElementById('reportContainer').innerHTML = html;
