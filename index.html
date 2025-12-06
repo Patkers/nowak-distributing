@@ -948,6 +948,55 @@
             <div class="status" id="inventoryStatus"></div>
             
             <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
+            <button class="btn" onclick="showAdjustInventoryForm()" style="background: #f39c12;">📝 Adjust Inventory</button>
+            
+            <!-- Manual Adjustment Form -->
+            <div id="adjustInventoryForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px; background: #fff8e1;">
+                <h3>📝 Manual Inventory Adjustment</h3>
+                <p style="color: #666; margin-bottom: 15px;">Use this for physical counts, damaged goods, shrinkage, etc.</p>
+                <form onsubmit="submitInventoryAdjustment(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Item *</label>
+                            <select id="adjustItem" required>
+                                <option value="">Select Item</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Quantity</label>
+                            <input type="number" id="adjustCurrentQty" readonly style="background: #f0f0f0;">
+                        </div>
+                        <div class="form-group">
+                            <label>Adjustment (+/-) *</label>
+                            <input type="number" id="adjustQuantity" placeholder="e.g., -5 or +10" required>
+                            <small style="color: #666;">Use negative for decrease, positive for increase</small>
+                        </div>
+                        <div class="form-group">
+                            <label>New Quantity</label>
+                            <input type="number" id="adjustNewQty" readonly style="background: #e8f5e9;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason *</label>
+                        <select id="adjustReason" required>
+                            <option value="">Select Reason</option>
+                            <option value="Physical Count">Physical Count</option>
+                            <option value="Damaged Goods">Damaged Goods</option>
+                            <option value="Expired Products">Expired Products</option>
+                            <option value="Shrinkage/Theft">Shrinkage/Theft</option>
+                            <option value="Found Inventory">Found Inventory</option>
+                            <option value="Data Correction">Data Correction</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="adjustNotes" rows="2" placeholder="Additional details..."></textarea>
+                    </div>
+                    <button type="submit" class="btn">💾 Save Adjustment</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAdjustInventoryForm()">Cancel</button>
+                </form>
+            </div>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
@@ -1857,13 +1906,22 @@
         
         function recordPurchasePayment(poId, total, amountPaid) {
             const remaining = total - amountPaid;
-            const payment = prompt(`Record payment for ${poId}
             
-Total: $${total.toFixed(2)}
-Already Paid: $${amountPaid.toFixed(2)}
-Remaining: $${remaining.toFixed(2)}
-
-Enter payment amount:`);
+            // Create better formatted prompt
+            let message = `💰 Record Payment for ${poId}\n\n`;
+            message += `Invoice Total:    $${total.toFixed(2)}\n`;
+            message += `Already Paid:     $${amountPaid.toFixed(2)}\n`;
+            message += `───────────────────────────\n`;
+            message += `Balance Due:      $${remaining.toFixed(2)}\n\n`;
+            
+            // Suggest full payment if unpaid
+            if (amountPaid === 0) {
+                message += `Tip: Enter ${remaining.toFixed(2)} to pay in full\n\n`;
+            }
+            
+            message += `Enter payment amount:`;
+            
+            const payment = prompt(message);
             
             if (payment === null) return; // Cancelled
             
@@ -1873,8 +1931,8 @@ Enter payment amount:`);
                 return;
             }
             
-            if (paymentAmount > remaining) {
-                if (!confirm(`Payment ($${paymentAmount.toFixed(2)}) is more than remaining balance ($${remaining.toFixed(2)}). Continue?`)) {
+            if (paymentAmount > remaining + 0.01) { // Allow 1 cent rounding
+                if (!confirm(`Payment ($${paymentAmount.toFixed(2)}) is more than balance due ($${remaining.toFixed(2)}).\n\nContinue anyway?`)) {
                     return;
                 }
             }
@@ -1883,11 +1941,16 @@ Enter payment amount:`);
             apiCall('recordPurchasePayment', { poId: poId, paymentAmount: paymentAmount })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        showStatus('purchasesStatus', `✅ Payment recorded! Status: ${result.paymentStatus}`, 'success');
+                        const newTotal = amountPaid + paymentAmount;
+                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
+                        showStatus('purchasesStatus', `✅ Payment recorded! $${newTotal.toFixed(2)} total paid. ${statusMsg}`, 'success');
                         loadPurchases();
                     } else {
                         showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
+                })
+                .catch(err => {
+                    showStatus('purchasesStatus', '❌ Error recording payment: ' + err.message, 'error');
                 });
         }
 
@@ -2086,13 +2149,22 @@ Enter payment amount:`);
         
         function recordSalesPayment(soId, total, amountPaid) {
             const remaining = total - amountPaid;
-            const payment = prompt(`Record payment for ${soId}
             
-Total: $${total.toFixed(2)}
-Already Paid: $${amountPaid.toFixed(2)}
-Remaining: $${remaining.toFixed(2)}
-
-Enter payment amount:`);
+            // Create better formatted prompt
+            let message = `💰 Record Payment for ${soId}\n\n`;
+            message += `Invoice Total:    $${total.toFixed(2)}\n`;
+            message += `Already Paid:     $${amountPaid.toFixed(2)}\n`;
+            message += `───────────────────────────\n`;
+            message += `Balance Due:      $${remaining.toFixed(2)}\n\n`;
+            
+            // Suggest full payment if unpaid
+            if (amountPaid === 0) {
+                message += `Tip: Enter ${remaining.toFixed(2)} to pay in full\n\n`;
+            }
+            
+            message += `Enter payment amount:`;
+            
+            const payment = prompt(message);
             
             if (payment === null) return; // Cancelled
             
@@ -2102,8 +2174,8 @@ Enter payment amount:`);
                 return;
             }
             
-            if (paymentAmount > remaining) {
-                if (!confirm(`Payment ($${paymentAmount.toFixed(2)}) is more than remaining balance ($${remaining.toFixed(2)}). Continue?`)) {
+            if (paymentAmount > remaining + 0.01) { // Allow 1 cent rounding
+                if (!confirm(`Payment ($${paymentAmount.toFixed(2)}) is more than balance due ($${remaining.toFixed(2)}).\n\nContinue anyway?`)) {
                     return;
                 }
             }
@@ -2112,11 +2184,16 @@ Enter payment amount:`);
             apiCall('recordSalesPayment', { soId: soId, paymentAmount: paymentAmount })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        showStatus('salesStatus', `✅ Payment received! Status: ${result.paymentStatus}`, 'success');
+                        const newTotal = amountPaid + paymentAmount;
+                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
+                        showStatus('salesStatus', `✅ Payment received! $${newTotal.toFixed(2)} total paid. ${statusMsg}`, 'success');
                         loadSales();
                     } else {
                         showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
+                })
+                .catch(err => {
+                    showStatus('salesStatus', '❌ Error recording payment: ' + err.message, 'error');
                 });
         }
 
@@ -2207,6 +2284,111 @@ Enter payment amount:`);
 
             html += '</tbody></table>';
             document.getElementById('inventoryTable').innerHTML = html;
+        }
+        
+        // ==================== MANUAL INVENTORY ADJUSTMENT ====================
+        
+        async function showAdjustInventoryForm() {
+            // Load items for dropdown
+            if (cachedItems.length === 0) {
+                await loadInventory();
+            }
+            
+            const select = document.getElementById('adjustItem');
+            select.innerHTML = '<option value="">Select Item</option>';
+            cachedItems.forEach(item => {
+                select.innerHTML += `<option value="${item.Item_ID}" data-qty="${item.Qty_On_Hand}">${item.Item_Description} (${item.SKU})</option>`;
+            });
+            
+            document.getElementById('adjustInventoryForm').style.display = 'block';
+        }
+        
+        function hideAdjustInventoryForm() {
+            document.getElementById('adjustInventoryForm').style.display = 'none';
+            document.querySelector('#adjustInventoryForm form').reset();
+            document.getElementById('adjustCurrentQty').value = '';
+            document.getElementById('adjustNewQty').value = '';
+        }
+        
+        // Update current and new quantities when item or adjustment changes
+        document.addEventListener('DOMContentLoaded', () => {
+            const itemSelect = document.getElementById('adjustItem');
+            const qtyInput = document.getElementById('adjustQuantity');
+            
+            if (itemSelect) {
+                itemSelect.addEventListener('change', updateAdjustmentCalc);
+            }
+            if (qtyInput) {
+                qtyInput.addEventListener('input', updateAdjustmentCalc);
+            }
+        });
+        
+        function updateAdjustmentCalc() {
+            const itemSelect = document.getElementById('adjustItem');
+            const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+            
+            if (selectedOption && selectedOption.value) {
+                const item = cachedItems.find(i => i.Item_ID === selectedOption.value);
+                const currentQty = item ? parseInt(item.Qty_On_Hand) : 0;
+                const adjustment = parseInt(document.getElementById('adjustQuantity').value) || 0;
+                const newQty = currentQty + adjustment;
+                
+                document.getElementById('adjustCurrentQty').value = currentQty;
+                document.getElementById('adjustNewQty').value = newQty;
+                
+                // Color code the new quantity
+                const newQtyInput = document.getElementById('adjustNewQty');
+                if (newQty < 0) {
+                    newQtyInput.style.background = '#ffebee';
+                    newQtyInput.style.color = '#c62828';
+                } else if (newQty < currentQty) {
+                    newQtyInput.style.background = '#fff3e0';
+                } else {
+                    newQtyInput.style.background = '#e8f5e9';
+                }
+            }
+        }
+        
+        async function submitInventoryAdjustment(e) {
+            e.preventDefault();
+            
+            const itemId = document.getElementById('adjustItem').value;
+            const adjustment = parseInt(document.getElementById('adjustQuantity').value);
+            const currentQty = parseInt(document.getElementById('adjustCurrentQty').value);
+            const newQty = parseInt(document.getElementById('adjustNewQty').value);
+            const reason = document.getElementById('adjustReason').value;
+            const notes = document.getElementById('adjustNotes').value;
+            
+            if (newQty < 0) {
+                if (!confirm(`Warning: This will set inventory to ${newQty} (NEGATIVE).\n\nAre you sure?`)) {
+                    return;
+                }
+            }
+            
+            // Confirm the adjustment
+            const item = cachedItems.find(i => i.Item_ID === itemId);
+            const confirmMsg = `Adjust ${item.Item_Description}?\n\nCurrent: ${currentQty}\nAdjustment: ${adjustment > 0 ? '+' : ''}${adjustment}\nNew Total: ${newQty}\n\nReason: ${reason}`;
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            const data = {
+                itemId: itemId,
+                adjustment: adjustment,
+                reference: 'MANUAL',
+                reason: reason + (notes ? ' - ' + notes : '')
+            };
+            
+            const result = await apiCall('adjustInventory', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('inventoryStatus', `✅ Inventory adjusted! ${item.Item_Description}: ${currentQty} → ${newQty}`, 'success');
+                hideAdjustInventoryForm();
+                loadInventory();
+            } else {
+                showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
         }
     </script>
 </body>
