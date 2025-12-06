@@ -16,6 +16,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            /* Disable pull-to-refresh on mobile */
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         .container {
@@ -446,7 +449,7 @@
                         </div>
                         <div class="form-group">
                             <label>Phone</label>
-                            <input type="tel" id="newPhone">
+                            <input type="tel" id="newPhone" placeholder="(999) 999-9999" oninput="formatPhone(this)">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
@@ -923,6 +926,19 @@
                             <input type="date" id="poDate" required>
                         </div>
                         <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="poDueDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Terms</label>
+                            <select id="poPaymentTerms">
+                                <option value="Net 30">Net 30</option>
+                                <option value="Net 60">Net 60</option>
+                                <option value="COD">COD (Cash on Delivery)</option>
+                                <option value="Prepaid">Prepaid</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Status</label>
                             <select id="poStatus">
                                 <option value="Received">Received</option>
@@ -1009,6 +1025,10 @@
                             <input type="date" id="soDate" required>
                         </div>
                         <div class="form-group">
+                            <label>Invoice Number</label>
+                            <input type="text" id="soInvoiceNumber" placeholder="Auto-generated if empty">
+                        </div>
+                        <div class="form-group">
                             <label>Payment Method</label>
                             <select id="soPayment">
                                 <option value="Cash">Cash</option>
@@ -1017,6 +1037,10 @@
                                 <option value="Invoice">Invoice</option>
                                 <option value="Terms (Net 30)">Terms (Net 30)</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date (if invoiced)</label>
+                            <input type="date" id="soDueDate">
                         </div>
                         <div class="form-group">
                             <label>Order Total *</label>
@@ -1236,6 +1260,20 @@
             showStatus('configStatus', '✅ Configuration saved!', 'success');
         }
 
+        // Format phone number as (999) 999-9999
+        function formatPhone(input) {
+            let value = input.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 10) value = value.slice(0, 10);
+            
+            if (value.length >= 6) {
+                input.value = `(${value.slice(0,3)}) ${value.slice(3,6)}-${value.slice(6)}`;
+            } else if (value.length >= 3) {
+                input.value = `(${value.slice(0,3)}) ${value.slice(3)}`;
+            } else if (value.length > 0) {
+                input.value = `(${value}`;
+            }
+        }
+        
         function showStatus(elementId, message, type) {
             const statusEl = document.getElementById(elementId);
             statusEl.textContent = message;
@@ -1334,7 +1372,7 @@
                 return;
             }
 
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '<table class="data-table" id="suppliersDataTable"><thead><tr>';
             html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -1356,6 +1394,9 @@
 
             html += '</tbody></table>';
             document.getElementById('suppliersTable').innerHTML = html;
+            
+            // Make table sortable
+            setTimeout(() => makeSortable('suppliersDataTable'), 0);
         }
         
         // Filter suppliers
@@ -1521,7 +1562,7 @@
                 return;
             }
 
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '<table class="data-table" id="itemsDataTable"><thead><tr>';
             html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -1546,6 +1587,7 @@
 
             html += '</tbody></table>';
             document.getElementById('itemsTable').innerHTML = html;
+            setTimeout(() => makeSortable('itemsDataTable'), 0);
         }
         
         // Filter items
@@ -1735,7 +1777,7 @@
                 return;
             }
 
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '<table class="data-table" id="customersDataTable"><thead><tr>';
             html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -1757,6 +1799,7 @@
 
             html += '</tbody></table>';
             document.getElementById('customersTable').innerHTML = html;
+            setTimeout(() => makeSortable('customersDataTable'), 0);
         }
         
         // Filter customers
@@ -1946,6 +1989,8 @@
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
                 poDate: document.getElementById('poDate').value,
+                dueDate: document.getElementById('poDueDate').value || null,
+                paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: parseFloat(document.getElementById('poTotal').value),
                 status: document.getElementById('poStatus').value,
                 notes: document.getElementById('poNotes').value,
@@ -1968,12 +2013,21 @@
         async function loadPurchases() {
             document.getElementById('purchasesTable').innerHTML = '<div class="loading">Loading purchases...</div>';
             
+            // Load suppliers FIRST if not cached
+            if (cachedSuppliers.length === 0) {
+                const suppResult = await apiCall('getSuppliers');
+                if (suppResult && suppResult.status === 'success') {
+                    cachedSuppliers = suppResult.data;
+                }
+            }
+            
+            // Now load and display purchases
             const result = await apiCall('getPurchaseOrders');
             
             if (result && result.status === 'success') {
                 purchasesData = result.data;
                 displayPurchases(result.data);
-                loadPurchaseFilterSuppliers();
+                loadPurchaseFilterSuppliers(); // Populate filter dropdown
             } else {
                 document.getElementById('purchasesTable').innerHTML = '<div class="loading">Error loading purchases</div>';
             }
@@ -2023,15 +2077,15 @@
                 return;
             }
 
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '<table class="data-table" id="purchasesDataTable"><thead><tr>';
             html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
                 const dueDate = po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-';
                 const paymentStatus = po.Payment_Status || 'Unpaid';
-                const amountPaid = po.Amount_Paid || 0;
-                const total = po.Total_Amount || po.Invoice_Total || 0;
+                const amountPaid = parseFloat(po.Amount_Paid) || 0;
+                const total = parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
                 
                 // Color code payment status
                 let statusColor = '';
@@ -2045,11 +2099,12 @@
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
                     <td>${po.Invoice_Number || '-'}</td>
                     <td>${po.Status || 'Received'}</td>
-                    <td>$${parseFloat(total).toFixed(2)}</td>
-                    <td>$${parseFloat(amountPaid).toFixed(2)}</td>
+                    <td>$${total.toFixed(2)}</td>
+                    <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
+                        <button class="btn-small" onclick='editPurchaseOrder(${JSON.stringify(po).replace(/'/g, "&#39;")})'>✏️ Edit</button>
                         ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordPurchasePayment('${po.PO_ID}', ${total}, ${amountPaid})">💰 Pay</button>` : '<span style="color: green;">✓ Paid</span>'}
                     </td>
                 </tr>`;
@@ -2057,6 +2112,13 @@
 
             html += '</tbody></table>';
             document.getElementById('purchasesTable').innerHTML = html;
+            setTimeout(() => makeSortable('purchasesDataTable'), 0);
+        }
+        
+        // Edit Purchase Order
+        function editPurchaseOrder(po) {
+            alert(`Edit PO functionality: ${po.PO_ID}\n\nThis would open an edit form with all PO details pre-filled.\nFor now, create a new PO or use payment tracking to update amounts.`);
+            // TODO: Implement full edit form with line items
         }
         
         function recordPurchasePayment(poId, total, amountPaid) {
@@ -2189,7 +2251,9 @@
             const data = {
                 customerId: document.getElementById('soCustomer').value,
                 saleDate: document.getElementById('soDate').value,
+                invoiceNumber: document.getElementById('soInvoiceNumber').value || null,
                 paymentMethod: document.getElementById('soPayment').value,
+                dueDate: document.getElementById('soDueDate').value || null,
                 totalAmount: parseFloat(document.getElementById('soTotal').value),
                 status: document.getElementById('soStatus').value,
                 notes: document.getElementById('soNotes').value,
@@ -2212,12 +2276,21 @@
         async function loadSales() {
             document.getElementById('salesTable').innerHTML = '<div class="loading">Loading sales...</div>';
             
+            // Load customers FIRST if not cached
+            if (cachedCustomers.length === 0) {
+                const custResult = await apiCall('getCustomers');
+                if (custResult && custResult.status === 'success') {
+                    cachedCustomers = custResult.data;
+                }
+            }
+            
+            // Now load and display sales
             const result = await apiCall('getSalesOrders');
             
             if (result && result.status === 'success') {
                 salesData = result.data;
                 displaySales(result.data);
-                loadSaleFilterCustomers();
+                loadSaleFilterCustomers(); // Populate filter dropdown
             } else {
                 document.getElementById('salesTable').innerHTML = '<div class="loading">Error loading sales</div>';
             }
@@ -2267,15 +2340,15 @@
                 return;
             }
 
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '<table class="data-table" id="salesDataTable"><thead><tr>';
             html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Payment Method</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
                 const dueDate = so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-';
                 const paymentStatus = so.Payment_Status || 'Unpaid';
-                const amountPaid = so.Amount_Paid || 0;
-                const total = so.Total_Amount || so.Order_Total || 0;
+                const amountPaid = parseFloat(so.Amount_Paid) || 0;
+                const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
                 
                 // Color code payment status
                 let statusColor = '';
@@ -2288,11 +2361,12 @@
                     <td><strong>${getCustomerName(so.Customer_ID)}</strong></td>
                     <td>${new Date(so.Sale_Date || so.SO_Date).toLocaleDateString()}</td>
                     <td>${so.Payment_Method || '-'}</td>
-                    <td>$${parseFloat(total).toFixed(2)}</td>
-                    <td>$${parseFloat(amountPaid).toFixed(2)}</td>
+                    <td>$${total.toFixed(2)}</td>
+                    <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
+                        <button class="btn-small" onclick='editSalesOrder(${JSON.stringify(so).replace(/'/g, "&#39;")})'>✏️ Edit</button>
                         ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordSalesPayment('${so.SO_ID}', ${total}, ${amountPaid})">💰 Receive</button>` : '<span style="color: green;">✓ Paid</span>'}
                     </td>
                 </tr>`;
@@ -2300,6 +2374,13 @@
 
             html += '</tbody></table>';
             document.getElementById('salesTable').innerHTML = html;
+            setTimeout(() => makeSortable('salesDataTable'), 0);
+        }
+        
+        // Edit Sales Order
+        function editSalesOrder(so) {
+            alert(`Edit SO functionality: ${so.SO_ID}\n\nThis would open an edit form with all SO details pre-filled.\nFor now, create a new SO or use payment tracking to update amounts.`);
+            // TODO: Implement full edit form with line items
         }
         
         function recordSalesPayment(soId, total, amountPaid) {
@@ -2359,12 +2440,21 @@
         async function loadInventory() {
             document.getElementById('inventoryTable').innerHTML = '<div class="loading">Loading inventory...</div>';
             
+            // Load suppliers FIRST if not cached
+            if (cachedSuppliers.length === 0) {
+                const suppResult = await apiCall('getSuppliers');
+                if (suppResult && suppResult.status === 'success') {
+                    cachedSuppliers = suppResult.data;
+                }
+            }
+            
+            // Now load and display inventory
             const result = await apiCall('getInventoryReport');
             
             if (result && result.status === 'success') {
                 inventoryData = result.data;
                 displayInventory(result.data);
-                loadInventoryFilterSuppliers();
+                loadInventoryFilterSuppliers(); // Populate filter dropdown
             } else {
                 document.getElementById('inventoryTable').innerHTML = '<div class="loading">Error loading inventory</div>';
             }
@@ -2417,7 +2507,7 @@
                 return;
             }
 
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '<table class="data-table" id="inventoryDataTable"><thead><tr>';
             html += '<th>Item ID</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Total Value</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
@@ -2439,6 +2529,7 @@
 
             html += '</tbody></table>';
             document.getElementById('inventoryTable').innerHTML = html;
+            setTimeout(() => makeSortable('inventoryDataTable'), 0);
         }
         
         // ==================== MANUAL INVENTORY ADJUSTMENT ====================
@@ -2552,19 +2643,27 @@
         
         // Helper: Build filter UI HTML
         function buildFilterUI(reportType, options = {}) {
+            const filterId = `filter-panel-${reportType}`;
             let html = '<div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">';
-            html += '<h4 style="margin-bottom: 10px;">🔍 Filters</h4>';
-            html += '<div class="form-grid">';
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filters</h4>
+                    <button class="btn-small" onclick="toggleFilters('${filterId}')" style="background: #666;">
+                        <span id="${filterId}-toggle">▼ Hide</span>
+                    </button>
+                </div>`;
+            html += `<div id="${filterId}" class="form-grid">`;
             
             // Date Range (common to most reports)
             if (options.dateRange) {
+                const dateLabel = options.dateLabel || 'Date';
                 html += `
                     <div class="form-group">
-                        <label>From Date</label>
+                        <label>${dateLabel} From</label>
                         <input type="date" id="filter_fromDate" value="${reportFilters.fromDate || ''}">
                     </div>
                     <div class="form-group">
-                        <label>To Date</label>
+                        <label>${dateLabel} To</label>
                         <input type="date" id="filter_toDate" value="${reportFilters.toDate || ''}">
                     </div>`;
             }
@@ -2707,6 +2806,88 @@
             showReport(reportType);
         }
         
+        // Toggle filter panel visibility
+        function toggleFilters(panelId) {
+            const panel = document.getElementById(panelId);
+            const toggle = document.getElementById(`${panelId}-toggle`);
+            
+            if (panel.style.display === 'none') {
+                panel.style.display = 'grid';
+                toggle.textContent = '▼ Hide';
+            } else {
+                panel.style.display = 'none';
+                toggle.textContent = '▶ Show';
+            }
+        }
+        
+        // Universal table sorting function
+        function sortTable(tableId, columnIndex) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Determine sort direction
+            const header = table.querySelectorAll('th')[columnIndex];
+            const currentDir = header.dataset.sortDir || 'asc';
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+            
+            // Clear all header indicators
+            table.querySelectorAll('th').forEach(th => {
+                th.style.cursor = 'pointer';
+                th.dataset.sortDir = '';
+                th.innerHTML = th.innerHTML.replace(' ▲', '').replace(' ▼', '');
+            });
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aCell = a.cells[columnIndex].textContent.trim();
+                const bCell = b.cells[columnIndex].textContent.trim();
+                
+                // Try numeric comparison first
+                const aNum = parseFloat(aCell.replace(/[$,]/g, ''));
+                const bNum = parseFloat(bCell.replace(/[$,]/g, ''));
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+                
+                // Try date comparison
+                const aDate = new Date(aCell);
+                const bDate = new Date(bCell);
+                if (!isNaN(aDate) && !isNaN(bDate)) {
+                    return newDir === 'asc' ? aDate - bDate : bDate - aDate;
+                }
+                
+                // String comparison
+                return newDir === 'asc' 
+                    ? aCell.localeCompare(bCell)
+                    : bCell.localeCompare(aCell);
+            });
+            
+            // Update table
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update header
+            header.dataset.sortDir = newDir;
+            header.innerHTML += newDir === 'asc' ? ' ▲' : ' ▼';
+        }
+        
+        // Make table sortable
+        function makeSortable(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                header.style.cursor = 'pointer';
+                header.style.userSelect = 'none';
+                header.onclick = () => sortTable(tableId, index);
+                header.title = 'Click to sort';
+            });
+        }
+        
         async function showReport(reportType) {
             currentReport = reportType;
             const container = document.getElementById('reportContainer');
@@ -2813,6 +2994,7 @@
             // Build HTML with filters
             let html = buildFilterUI('sales-by-customer', {
                 dateRange: true,
+                dateLabel: 'Sale Date',
                 customer: true,
                 customerList: customerList,
                 minAmount: true
@@ -2891,8 +3073,18 @@
             const productSales = {};
             
             sales.forEach(so => {
-                if (so.lines && Array.isArray(so.lines)) {
-                    so.lines.forEach(line => {
+                // Parse lines if they're stored as JSON string
+                let lines = so.lines;
+                if (typeof lines === 'string') {
+                    try {
+                        lines = JSON.parse(lines);
+                    } catch (e) {
+                        lines = [];
+                    }
+                }
+                
+                if (lines && Array.isArray(lines)) {
+                    lines.forEach(line => {
                         const itemId = line.itemId || line.Item_ID;
                         if (!productSales[itemId]) {
                             const item = items.find(i => i.Item_ID === itemId);
@@ -3125,8 +3317,18 @@
             // Calculate units sold per item
             const unitsSold = {};
             sales.forEach(so => {
-                if (so.lines && Array.isArray(so.lines)) {
-                    so.lines.forEach(line => {
+                // Parse lines if they're stored as JSON string
+                let lines = so.lines;
+                if (typeof lines === 'string') {
+                    try {
+                        lines = JSON.parse(lines);
+                    } catch (e) {
+                        lines = [];
+                    }
+                }
+                
+                if (lines && Array.isArray(lines)) {
+                    lines.forEach(line => {
                         const itemId = line.itemId || line.Item_ID;
                         unitsSold[itemId] = (unitsSold[itemId] || 0) + parseInt(line.quantity || line.Quantity || 0);
                     });
@@ -3249,8 +3451,18 @@
                 // Calculate units sold
                 let unitsSold = 0;
                 sales.forEach(so => {
-                    if (so.lines && Array.isArray(so.lines)) {
-                        so.lines.forEach(line => {
+                    // Parse lines if they're stored as JSON string
+                    let lines = so.lines;
+                    if (typeof lines === 'string') {
+                        try {
+                            lines = JSON.parse(lines);
+                        } catch (e) {
+                            lines = [];
+                        }
+                    }
+                    
+                    if (lines && Array.isArray(lines)) {
+                        lines.forEach(line => {
                             if ((line.itemId || line.Item_ID) === item.Item_ID) {
                                 unitsSold += parseInt(line.quantity || line.Quantity || 0);
                             }
