@@ -241,19 +241,27 @@
         .line-item-row {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 50px;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 12px;
             align-items: end;
+        }
+        
+        .line-item-row select,
+        .line-item-row input {
+            font-size: 16px;
+            padding: 12px;
+            height: 48px;
         }
 
         .remove-btn {
             background: #dc3545;
             color: white;
             border: none;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
+            height: 48px;
         }
 
         .config-box {
@@ -3284,15 +3292,15 @@
             const originalPrice = parseFloat(line[priceField]) || 0;
             
             return `
-                <div class="edit-line-item" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                    <select class="edit-item" required>
+                <div class="edit-line-item" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    <select class="edit-item" required style="font-size: 16px; padding: 12px; height: 48px;">
                         <option value="">Select Item</option>
                         ${itemOptions}
                     </select>
-                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" onchange="calculateEditLineTotal(this)">
-                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}" onchange="calculateEditLineTotal(this)">
-                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="$${(originalQty * originalPrice).toFixed(2)}">
-                    <button type="button" class="remove-btn" onclick="removeEditLineItem(this)" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
+                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" onchange="calculateEditLineTotal(this)" style="font-size: 16px; padding: 12px; height: 48px;">
+                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}" onchange="calculateEditLineTotal(this)" style="font-size: 16px; padding: 12px; height: 48px;">
+                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold; font-size: 16px; padding: 12px; height: 48px;" value="$${(originalQty * originalPrice).toFixed(2)}">
+                    <button type="button" class="remove-btn" onclick="removeEditLineItem(this)" style="background: #dc3545; color: white; border: none; border-radius: 6px; padding: 12px; cursor: pointer; font-size: 18px; height: 48px; width: 48px;">✕</button>
                 </div>
             `;
         }
