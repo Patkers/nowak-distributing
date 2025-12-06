@@ -16,17 +16,14 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             padding: 20px;
-            /* Disable pull-to-refresh on mobile - multiple approaches */
+            margin: 0;
+            /* Disable pull-to-refresh on mobile */
             overscroll-behavior: contain;
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
-            /* Prevent viewport bounce */
-            position: fixed;
-            width: 100%;
-            overflow-y: auto;
-            height: 100vh;
         }
         
         html {
@@ -484,8 +481,18 @@
         body.theme-ocean {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
         }
-        body.theme-ocean .btn {
+        body.theme-ocean .btn,
+        body.theme-ocean .btn-small {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        }
+        body.theme-ocean .btn-success {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+        }
+        body.theme-ocean .btn-secondary {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+        }
+        body.theme-ocean .btn-danger {
+            background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
         }
         body.theme-ocean .tab.active {
             color: #1e3c72 !important;
@@ -498,8 +505,18 @@
         body.theme-forest {
             background: linear-gradient(135deg, #134e4a 0%, #059669 100%) !important;
         }
-        body.theme-forest .btn {
+        body.theme-forest .btn,
+        body.theme-forest .btn-small {
             background: linear-gradient(135deg, #134e4a 0%, #059669 100%) !important;
+        }
+        body.theme-forest .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        }
+        body.theme-forest .btn-secondary {
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%) !important;
+        }
+        body.theme-forest .btn-danger {
+            background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
         }
         body.theme-forest .tab.active {
             color: #134e4a !important;
@@ -512,8 +529,18 @@
         body.theme-sunset {
             background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important;
         }
-        body.theme-sunset .btn {
+        body.theme-sunset .btn,
+        body.theme-sunset .btn-small {
             background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important;
+        }
+        body.theme-sunset .btn-success {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%) !important;
+        }
+        body.theme-sunset .btn-secondary {
+            background: linear-gradient(135deg, #9a3412 0%, #c2410c 100%) !important;
+        }
+        body.theme-sunset .btn-danger {
+            background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%) !important;
         }
         body.theme-sunset .tab.active {
             color: #c2410c !important;
@@ -526,8 +553,18 @@
         body.theme-dark {
             background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
         }
-        body.theme-dark .btn {
+        body.theme-dark .btn,
+        body.theme-dark .btn-small {
             background: linear-gradient(135deg, #374151 0%, #4b5563 100%) !important;
+        }
+        body.theme-dark .btn-success {
+            background: linear-gradient(135deg, #4b5563 0%, #6b7280 100%) !important;
+        }
+        body.theme-dark .btn-secondary {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
+        }
+        body.theme-dark .btn-danger {
+            background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%) !important;
         }
         body.theme-dark .tab {
             background: rgba(255, 255, 255, 0.15) !important;
@@ -547,8 +584,18 @@
         body.theme-purple {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         }
-        body.theme-purple .btn {
+        body.theme-purple .btn,
+        body.theme-purple .btn-small {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+        body.theme-purple .btn-success {
+            background: linear-gradient(135deg, #764ba2 0%, #9333ea 100%) !important;
+        }
+        body.theme-purple .btn-secondary {
+            background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%) !important;
+        }
+        body.theme-purple .btn-danger {
+            background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
         }
         body.theme-purple .tab.active {
             color: #667eea !important;
@@ -559,6 +606,13 @@
     </style>
 </head>
 <body class="theme-purple">
+    <!-- Immediate theme application -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'purple';
+            document.body.className = 'theme-' + savedTheme;
+        })();
+    </script>
     <div class="container">
         <div class="header">
             <h1>🚚 Nowak Distributing</h1>
