@@ -443,6 +443,34 @@
             <button class="btn" onclick="loadItems()">🔄 Refresh</button>
             <button class="btn btn-success" onclick="showAddItemForm()">➕ Add Item</button>
             
+            <!-- Filter Controls -->
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">🔍 Filter Items</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Search SKU/Description</label>
+                        <input type="text" id="filterItemSearch" placeholder="Type to filter..." onkeyup="filterItems()">
+                    </div>
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <select id="filterItemSupplier" onchange="filterItems()">
+                            <option value="">All Suppliers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Status</label>
+                        <select id="filterItemStock" onchange="filterItems()">
+                            <option value="">All Items</option>
+                            <option value="low">Low Stock Only</option>
+                            <option value="ok">Normal Stock</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="clearItemFilters()">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
                 <h3>Add New Item</h3>
                 <form onsubmit="addItem(event)">
@@ -456,6 +484,10 @@
                         <div class="form-group">
                             <label>Item Description *</label>
                             <input type="text" id="newItemDescription" required>
+                        </div>
+                        <div class="form-group">
+                            <label>SKU *</label>
+                            <input type="text" id="newItemSKU" required placeholder="e.g. BM-BBQ-001">
                         </div>
                         <div class="form-group">
                             <label>Unit of Measure</label>
@@ -490,6 +522,60 @@
                 </form>
             </div>
             
+            <!-- Edit Item Form -->
+            <div id="editItemForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
+                <h3>Edit Item</h3>
+                <form onsubmit="updateItem(event)">
+                    <input type="hidden" id="editItemId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Supplier *</label>
+                            <select id="editItemSupplier" required>
+                                <option value="">Select Supplier</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Item Description *</label>
+                            <input type="text" id="editItemDescription" required>
+                        </div>
+                        <div class="form-group">
+                            <label>SKU *</label>
+                            <input type="text" id="editItemSKU" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unit of Measure</label>
+                            <select id="editItemUOM">
+                                <option value="Each">Each</option>
+                                <option value="Case">Case</option>
+                                <option value="Box">Box</option>
+                                <option value="Pack">Pack</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Cost Price *</label>
+                            <input type="number" id="editCostPrice" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Sell Price *</label>
+                            <input type="number" id="editSellPrice" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Quantity</label>
+                            <input type="number" id="editQtyOnHand" readonly style="background: #f0f0f0;">
+                            <small style="color: #666;">Use Purchases/Sales to adjust quantity</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Reorder Point</label>
+                            <input type="number" id="editReorderPoint">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Update Item</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditItemForm()">Cancel</button>
+                </form>
+            </div>
+            
             <div id="itemsTable"></div>
         </div>
 
@@ -500,6 +586,28 @@
             
             <button class="btn" onclick="loadCustomers()">🔄 Refresh</button>
             <button class="btn btn-success" onclick="showAddCustomerForm()">➕ Add Customer</button>
+            
+            <!-- Filter Controls -->
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">🔍 Filter Customers</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Search Name</label>
+                        <input type="text" id="filterCustomerName" placeholder="Type to filter..." onkeyup="filterCustomers()">
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="filterCustomerCity" placeholder="Filter by city..." onkeyup="filterCustomers()">
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="filterCustomerState" placeholder="Filter by state..." onkeyup="filterCustomers()">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="clearCustomerFilters()">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
             
             <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
                 <h3>Add New Customer</h3>
@@ -564,6 +672,71 @@
                 </form>
             </div>
             
+            <!-- Edit Customer Form -->
+            <div id="editCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
+                <h3>Edit Customer</h3>
+                <form onsubmit="updateCustomer(event)">
+                    <input type="hidden" id="editCustomerId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Customer Name *</label>
+                            <input type="text" id="editCustomerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Name</label>
+                            <input type="text" id="editCustomerContact">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="editCustomerPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="editCustomerEmail">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="editCustomerAddress">
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="editCustomerCity">
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="editCustomerState" maxlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label>ZIP</label>
+                            <input type="text" id="editCustomerZip">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Credit Limit</label>
+                            <input type="number" id="editCreditLimit" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Terms</label>
+                            <select id="editCustomerPaymentTerms">
+                                <option value="Net 30">Net 30</option>
+                                <option value="Net 15">Net 15</option>
+                                <option value="Net 45">Net 45</option>
+                                <option value="COD">COD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="editCustomerNotes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn">💾 Update Customer</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditCustomerForm()">Cancel</button>
+                </form>
+            </div>
+            
             <div id="customersTable"></div>
         </div>
 
@@ -574,6 +747,30 @@
             
             <button class="btn" onclick="loadPurchases()">🔄 Refresh</button>
             <button class="btn btn-success" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
+            
+            <!-- Filter Controls -->
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">🔍 Filter Purchases</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <select id="filterPurchaseSupplier" onchange="filterPurchases()">
+                            <option value="">All Suppliers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date From</label>
+                        <input type="date" id="filterPurchaseDateFrom" onchange="filterPurchases()">
+                    </div>
+                    <div class="form-group">
+                        <label>Date To</label>
+                        <input type="date" id="filterPurchaseDateTo" onchange="filterPurchases()">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="clearPurchaseFilters()">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
             
             <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
                 <h3>Record New Purchase</h3>
@@ -637,6 +834,30 @@
             <button class="btn" onclick="loadSales()">🔄 Refresh</button>
             <button class="btn btn-success" onclick="showAddSaleForm()">➕ Record Sale</button>
             
+            <!-- Filter Controls -->
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">🔍 Filter Sales</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <select id="filterSaleCustomer" onchange="filterSales()">
+                            <option value="">All Customers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date From</label>
+                        <input type="date" id="filterSaleDateFrom" onchange="filterSales()">
+                    </div>
+                    <div class="form-group">
+                        <label>Date To</label>
+                        <input type="date" id="filterSaleDateTo" onchange="filterSales()">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="clearSaleFilters()">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
                 <h3>Record New Sale</h3>
                 <form onsubmit="addSale(event)">
@@ -694,6 +915,34 @@
             <div class="status" id="inventoryStatus"></div>
             
             <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
+            
+            <!-- Filter Controls -->
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <h4 style="margin-bottom: 10px;">🔍 Filter Inventory</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Search SKU/Description</label>
+                        <input type="text" id="filterInventorySearch" placeholder="Type to filter..." onkeyup="filterInventory()">
+                    </div>
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <select id="filterInventorySupplier" onchange="filterInventory()">
+                            <option value="">All Suppliers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Status</label>
+                        <select id="filterInventoryStock" onchange="filterInventory()">
+                            <option value="">All Items</option>
+                            <option value="low">Low Stock Only</option>
+                            <option value="ok">Normal Stock</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="clearInventoryFilters()">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
             
             <div id="inventoryTable"></div>
         </div>
@@ -994,12 +1243,14 @@
             
             const data = {
                 supplierId: document.getElementById('newItemSupplier').value,
-                itemDescription: document.getElementById('newItemDescription').value,
+                description: document.getElementById('newItemDescription').value,
                 uom: document.getElementById('newItemUOM').value,
                 costPrice: document.getElementById('newCostPrice').value,
                 sellPrice: document.getElementById('newSellPrice').value,
                 qtyOnHand: document.getElementById('newQtyOnHand').value,
-                reorderPoint: document.getElementById('newReorderPoint').value
+                reorderPoint: document.getElementById('newReorderPoint').value,
+                sku: document.getElementById('newItemSKU').value,
+                notes: ''
             };
 
             const result = await apiCall('addItem', data);
@@ -1021,6 +1272,7 @@
             if (result && result.status === 'success') {
                 cachedItems = result.data;
                 displayItems(result.data);
+                loadItemFilterSuppliers();
             } else {
                 document.getElementById('itemsTable').innerHTML = '<div class="loading">Error loading items</div>';
             }
@@ -1033,25 +1285,149 @@
             }
 
             let html = '<table class="data-table"><thead><tr>';
-            html += '<th>ID</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Reorder</th>';
+            html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
                 const lowStock = item.Qty_On_Hand < item.Reorder_Point ? 'style="background:#fff3cd;"' : '';
                 html += `<tr ${lowStock}>
                     <td>${item.Item_ID}</td>
-                    <td><strong>${item.Item_Description}</strong></td>
+                    <td><strong>${item.SKU || '-'}</strong></td>
+                    <td>${item.Item_Description}</td>
                     <td>${item.Supplier_ID}</td>
                     <td>${item.UOM}</td>
                     <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
                     <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
                     <td>${item.Qty_On_Hand}</td>
                     <td>${item.Reorder_Point}</td>
+                    <td>
+                        <button class="btn-small" onclick='editItem(${JSON.stringify(item)})'>✏️ Edit</button>
+                        <button class="btn-small btn-danger" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description}')">🗑️ Delete</button>
+                    </td>
                 </tr>`;
             });
 
             html += '</tbody></table>';
             document.getElementById('itemsTable').innerHTML = html;
+        }
+        
+        // Filter items
+        async function filterItems() {
+            const searchFilter = document.getElementById('filterItemSearch').value.toLowerCase();
+            const supplierFilter = document.getElementById('filterItemSupplier').value;
+            const stockFilter = document.getElementById('filterItemStock').value;
+            
+            const filtered = cachedItems.filter(item => {
+                const matchesSearch = !searchFilter || 
+                    (item.SKU && item.SKU.toLowerCase().includes(searchFilter)) ||
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
+                const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
+                const lowStock = item.Qty_On_Hand < item.Reorder_Point;
+                const matchesStock = !stockFilter || 
+                    (stockFilter === 'low' && lowStock) ||
+                    (stockFilter === 'ok' && !lowStock);
+                return matchesSearch && matchesSupplier && matchesStock;
+            });
+            
+            displayItems(filtered);
+        }
+        
+        async function clearItemFilters() {
+            document.getElementById('filterItemSearch').value = '';
+            document.getElementById('filterItemSupplier').value = '';
+            document.getElementById('filterItemStock').value = '';
+            displayItems(cachedItems);
+        }
+        
+        async function loadItemFilterSuppliers() {
+            if (cachedSuppliers.length === 0) {
+                const result = await apiCall('getSuppliers');
+                if (result && result.status === 'success') {
+                    cachedSuppliers = result.data;
+                }
+            }
+            
+            const select = document.getElementById('filterItemSupplier');
+            select.innerHTML = '<option value="">All Suppliers</option>';
+            cachedSuppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+            });
+        }
+        
+        // Edit item
+        async function editItem(item) {
+            // Load suppliers for dropdown
+            if (cachedSuppliers.length === 0) {
+                const result = await apiCall('getSuppliers');
+                if (result && result.status === 'success') {
+                    cachedSuppliers = result.data;
+                }
+            }
+            
+            const select = document.getElementById('editItemSupplier');
+            select.innerHTML = '<option value="">Select Supplier</option>';
+            cachedSuppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+            });
+            
+            document.getElementById('editItemId').value = item.Item_ID;
+            document.getElementById('editItemSupplier').value = item.Supplier_ID || '';
+            document.getElementById('editItemDescription').value = item.Item_Description || '';
+            document.getElementById('editItemSKU').value = item.SKU || '';
+            document.getElementById('editItemUOM').value = item.UOM || 'Each';
+            document.getElementById('editCostPrice').value = item.Cost_Price || '';
+            document.getElementById('editSellPrice').value = item.Sell_Price || '';
+            document.getElementById('editQtyOnHand').value = item.Qty_On_Hand || '';
+            document.getElementById('editReorderPoint').value = item.Reorder_Point || '';
+            
+            document.getElementById('editItemForm').style.display = 'block';
+            document.getElementById('addItemForm').style.display = 'none';
+        }
+        
+        function hideEditItemForm() {
+            document.getElementById('editItemForm').style.display = 'none';
+            document.querySelector('#editItemForm form').reset();
+        }
+        
+        async function updateItem(e) {
+            e.preventDefault();
+            
+            const data = {
+                itemId: document.getElementById('editItemId').value,
+                supplierId: document.getElementById('editItemSupplier').value,
+                description: document.getElementById('editItemDescription').value,
+                uom: document.getElementById('editItemUOM').value,
+                costPrice: document.getElementById('editCostPrice').value,
+                sellPrice: document.getElementById('editSellPrice').value,
+                reorderPoint: document.getElementById('editReorderPoint').value,
+                sku: document.getElementById('editItemSKU').value,
+                notes: ''
+            };
+            
+            const result = await apiCall('updateItem', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('itemsStatus', '✅ Item updated successfully!', 'success');
+                hideEditItemForm();
+                loadItems();
+            } else {
+                showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+        
+        async function deleteItem(itemId, itemDesc) {
+            if (!confirm(`Are you sure you want to delete item "${itemDesc}"?\n\nThis cannot be undone!`)) {
+                return;
+            }
+            
+            const result = await apiCall('deleteItem', { itemId });
+            
+            if (result && result.status === 'success') {
+                showStatus('itemsStatus', '✅ Item deleted successfully!', 'success');
+                loadItems();
+            } else {
+                showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
         }
 
         // ==================== CUSTOMERS ====================
@@ -1113,7 +1489,7 @@
             }
 
             let html = '<table class="data-table"><thead><tr>';
-            html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th>';
+            html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             customers.forEach(c => {
@@ -1125,11 +1501,106 @@
                     <td>${c.Email || '-'}</td>
                     <td>${c.City || '-'}, ${c.State || '-'}</td>
                     <td>$${parseFloat(c.Credit_Limit).toFixed(2)}</td>
+                    <td>
+                        <button class="btn-small" onclick='editCustomer(${JSON.stringify(c)})'>✏️ Edit</button>
+                        <button class="btn-small btn-danger" onclick="deleteCustomer('${c.Customer_ID}', '${c.Customer_Name}')">🗑️ Delete</button>
+                    </td>
                 </tr>`;
             });
 
             html += '</tbody></table>';
             document.getElementById('customersTable').innerHTML = html;
+        }
+        
+        // Filter customers
+        function filterCustomers() {
+            const nameFilter = document.getElementById('filterCustomerName').value.toLowerCase();
+            const cityFilter = document.getElementById('filterCustomerCity').value.toLowerCase();
+            const stateFilter = document.getElementById('filterCustomerState').value.toLowerCase();
+            
+            const filtered = cachedCustomers.filter(c => {
+                const matchesName = !nameFilter || (c.Customer_Name && c.Customer_Name.toLowerCase().includes(nameFilter));
+                const matchesCity = !cityFilter || (c.City && c.City.toLowerCase().includes(cityFilter));
+                const matchesState = !stateFilter || (c.State && c.State.toLowerCase().includes(stateFilter));
+                return matchesName && matchesCity && matchesState;
+            });
+            
+            displayCustomers(filtered);
+        }
+        
+        function clearCustomerFilters() {
+            document.getElementById('filterCustomerName').value = '';
+            document.getElementById('filterCustomerCity').value = '';
+            document.getElementById('filterCustomerState').value = '';
+            displayCustomers(cachedCustomers);
+        }
+        
+        // Edit customer
+        function editCustomer(customer) {
+            document.getElementById('editCustomerId').value = customer.Customer_ID;
+            document.getElementById('editCustomerName').value = customer.Customer_Name || '';
+            document.getElementById('editCustomerContact').value = customer.Contact_Name || '';
+            document.getElementById('editCustomerPhone').value = customer.Phone || '';
+            document.getElementById('editCustomerEmail').value = customer.Email || '';
+            document.getElementById('editCustomerAddress').value = customer.Address || '';
+            document.getElementById('editCustomerCity').value = customer.City || '';
+            document.getElementById('editCustomerState').value = customer.State || '';
+            document.getElementById('editCustomerZip').value = customer.ZIP || '';
+            document.getElementById('editCreditLimit').value = customer.Credit_Limit || '';
+            document.getElementById('editCustomerPaymentTerms').value = customer.Payment_Terms || 'Net 30';
+            document.getElementById('editCustomerNotes').value = customer.Notes || '';
+            
+            document.getElementById('editCustomerForm').style.display = 'block';
+            document.getElementById('addCustomerForm').style.display = 'none';
+        }
+        
+        function hideEditCustomerForm() {
+            document.getElementById('editCustomerForm').style.display = 'none';
+            document.querySelector('#editCustomerForm form').reset();
+        }
+        
+        async function updateCustomer(e) {
+            e.preventDefault();
+            
+            const data = {
+                customerId: document.getElementById('editCustomerId').value,
+                name: document.getElementById('editCustomerName').value,
+                address: document.getElementById('editCustomerAddress').value,
+                city: document.getElementById('editCustomerCity').value,
+                state: document.getElementById('editCustomerState').value,
+                zip: document.getElementById('editCustomerZip').value,
+                contactName: document.getElementById('editCustomerContact').value,
+                phone: document.getElementById('editCustomerPhone').value,
+                email: document.getElementById('editCustomerEmail').value,
+                creditLimit: document.getElementById('editCreditLimit').value,
+                paymentTerms: document.getElementById('editCustomerPaymentTerms').value,
+                notes: document.getElementById('editCustomerNotes').value
+            };
+            
+            const result = await apiCall('updateCustomer', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('customersStatus', '✅ Customer updated successfully!', 'success');
+                hideEditCustomerForm();
+                loadCustomers();
+            } else {
+                showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+        
+        async function deleteCustomer(customerId, customerName) {
+            if (!confirm(`Are you sure you want to delete customer "${customerName}"?\n\nThis cannot be undone!`)) {
+                return;
+            }
+            
+            const result = await apiCall('deleteCustomer', { customerId });
+            
+            if (result && result.status === 'success') {
+                showStatus('customersStatus', '✅ Customer deleted successfully!', 'success');
+                loadCustomers();
+            } else {
+                showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
         }
 
         // ==================== PURCHASES ====================
@@ -1231,16 +1702,58 @@
             }
         }
 
+        let purchasesData = []; // Cache for filtering
+        
         async function loadPurchases() {
             document.getElementById('purchasesTable').innerHTML = '<div class="loading">Loading purchases...</div>';
             
             const result = await apiCall('getPurchaseOrders');
             
             if (result && result.status === 'success') {
+                purchasesData = result.data;
                 displayPurchases(result.data);
+                loadPurchaseFilterSuppliers();
             } else {
                 document.getElementById('purchasesTable').innerHTML = '<div class="loading">Error loading purchases</div>';
             }
+        }
+        
+        async function loadPurchaseFilterSuppliers() {
+            if (cachedSuppliers.length === 0) {
+                const result = await apiCall('getSuppliers');
+                if (result && result.status === 'success') {
+                    cachedSuppliers = result.data;
+                }
+            }
+            
+            const select = document.getElementById('filterPurchaseSupplier');
+            select.innerHTML = '<option value="">All Suppliers</option>';
+            cachedSuppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+            });
+        }
+        
+        function filterPurchases() {
+            const supplierFilter = document.getElementById('filterPurchaseSupplier').value;
+            const dateFrom = document.getElementById('filterPurchaseDateFrom').value;
+            const dateTo = document.getElementById('filterPurchaseDateTo').value;
+            
+            const filtered = purchasesData.filter(po => {
+                const matchesSupplier = !supplierFilter || po.Supplier_ID === supplierFilter;
+                const poDate = new Date(po.PO_Date);
+                const matchesDateFrom = !dateFrom || poDate >= new Date(dateFrom);
+                const matchesDateTo = !dateTo || poDate <= new Date(dateTo);
+                return matchesSupplier && matchesDateFrom && matchesDateTo;
+            });
+            
+            displayPurchases(filtered);
+        }
+        
+        function clearPurchaseFilters() {
+            document.getElementById('filterPurchaseSupplier').value = '';
+            document.getElementById('filterPurchaseDateFrom').value = '';
+            document.getElementById('filterPurchaseDateTo').value = '';
+            displayPurchases(purchasesData);
         }
 
         function displayPurchases(orders) {
@@ -1355,16 +1868,58 @@
             }
         }
 
+        let salesData = []; // Cache for filtering
+        
         async function loadSales() {
             document.getElementById('salesTable').innerHTML = '<div class="loading">Loading sales...</div>';
             
             const result = await apiCall('getSalesOrders');
             
             if (result && result.status === 'success') {
+                salesData = result.data;
                 displaySales(result.data);
+                loadSaleFilterCustomers();
             } else {
                 document.getElementById('salesTable').innerHTML = '<div class="loading">Error loading sales</div>';
             }
+        }
+        
+        async function loadSaleFilterCustomers() {
+            if (cachedCustomers.length === 0) {
+                const result = await apiCall('getCustomers');
+                if (result && result.status === 'success') {
+                    cachedCustomers = result.data;
+                }
+            }
+            
+            const select = document.getElementById('filterSaleCustomer');
+            select.innerHTML = '<option value="">All Customers</option>';
+            cachedCustomers.forEach(c => {
+                select.innerHTML += `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`;
+            });
+        }
+        
+        function filterSales() {
+            const customerFilter = document.getElementById('filterSaleCustomer').value;
+            const dateFrom = document.getElementById('filterSaleDateFrom').value;
+            const dateTo = document.getElementById('filterSaleDateTo').value;
+            
+            const filtered = salesData.filter(so => {
+                const matchesCustomer = !customerFilter || so.Customer_ID === customerFilter;
+                const soDate = new Date(so.SO_Date);
+                const matchesDateFrom = !dateFrom || soDate >= new Date(dateFrom);
+                const matchesDateTo = !dateTo || soDate <= new Date(dateTo);
+                return matchesCustomer && matchesDateFrom && matchesDateTo;
+            });
+            
+            displaySales(filtered);
+        }
+        
+        function clearSaleFilters() {
+            document.getElementById('filterSaleCustomer').value = '';
+            document.getElementById('filterSaleDateFrom').value = '';
+            document.getElementById('filterSaleDateTo').value = '';
+            displaySales(salesData);
         }
 
         function displaySales(orders) {
@@ -1392,16 +1947,61 @@
 
         // ==================== INVENTORY ====================
 
+        let inventoryData = []; // Cache for filtering
+        
         async function loadInventory() {
             document.getElementById('inventoryTable').innerHTML = '<div class="loading">Loading inventory...</div>';
             
             const result = await apiCall('getInventoryReport');
             
             if (result && result.status === 'success') {
+                inventoryData = result.data;
                 displayInventory(result.data);
+                loadInventoryFilterSuppliers();
             } else {
                 document.getElementById('inventoryTable').innerHTML = '<div class="loading">Error loading inventory</div>';
             }
+        }
+        
+        async function loadInventoryFilterSuppliers() {
+            if (cachedSuppliers.length === 0) {
+                const result = await apiCall('getSuppliers');
+                if (result && result.status === 'success') {
+                    cachedSuppliers = result.data;
+                }
+            }
+            
+            const select = document.getElementById('filterInventorySupplier');
+            select.innerHTML = '<option value="">All Suppliers</option>';
+            cachedSuppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+            });
+        }
+        
+        function filterInventory() {
+            const searchFilter = document.getElementById('filterInventorySearch').value.toLowerCase();
+            const supplierFilter = document.getElementById('filterInventorySupplier').value;
+            const stockFilter = document.getElementById('filterInventoryStock').value;
+            
+            const filtered = inventoryData.filter(item => {
+                const matchesSearch = !searchFilter || 
+                    (item.Item_ID && item.Item_ID.toLowerCase().includes(searchFilter)) ||
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
+                const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
+                const matchesStock = !stockFilter || 
+                    (stockFilter === 'low' && item.Low_Stock) ||
+                    (stockFilter === 'ok' && !item.Low_Stock);
+                return matchesSearch && matchesSupplier && matchesStock;
+            });
+            
+            displayInventory(filtered);
+        }
+        
+        function clearInventoryFilters() {
+            document.getElementById('filterInventorySearch').value = '';
+            document.getElementById('filterInventorySupplier').value = '';
+            document.getElementById('filterInventoryStock').value = '';
+            displayInventory(inventoryData);
         }
 
         function displayInventory(items) {
