@@ -2742,7 +2742,7 @@
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
                         <button class="btn-small" onclick="editPurchaseOrder('${po.PO_ID}')">✏️ Edit</button>
-                        ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordPurchasePayment('${po.PO_ID}', ${total}, ${amountPaid})">💰 Pay</button>` : '<span style="color: green;">✓ Paid</span>'}
+                        ${paymentStatus === 'Paid' ? '<span style="color: green; margin-left: 10px;">✓ Paid</span>' : ''}
                     </td>
                 </tr>`;
             });
@@ -3864,7 +3864,7 @@
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
                         <button class="btn-small" onclick="editSalesOrder('${so.SO_ID}')">✏️ Edit</button>
-                        ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordSalesPayment('${so.SO_ID}', ${total}, ${amountPaid})">💰 Receive</button>` : '<span style="color: green;">✓ Paid</span>'}
+                        ${paymentStatus === 'Paid' ? '<span style="color: green; margin-left: 10px;">✓ Paid</span>' : ''}
                     </td>
                 </tr>`;
             });
