@@ -748,13 +748,13 @@
 
             suppliers.forEach(s => {
                 html += `<tr>
-                    <td>${s.supplierId}</td>
-                    <td><strong>${s.supplierName}</strong></td>
-                    <td>${s.contactName || '-'}</td>
-                    <td>${s.phone || '-'}</td>
-                    <td>${s.email || '-'}</td>
-                    <td>${s.city || '-'}, ${s.state || '-'}</td>
-                    <td>${s.paymentTerms || '-'}</td>
+                    <td>${s.Supplier_ID}</td>
+                    <td><strong>${s.Supplier_Name}</strong></td>
+                    <td>${s.Contact_Name || '-'}</td>
+                    <td>${s.Phone || '-'}</td>
+                    <td>${s.Email || '-'}</td>
+                    <td>${s.City || '-'}, ${s.State || '-'}</td>
+                    <td>${s.Payment_Terms || '-'}</td>
                 </tr>`;
             });
 
@@ -785,7 +785,7 @@
             const select = document.getElementById('newItemSupplier');
             select.innerHTML = '<option value="">Select Supplier</option>';
             cachedSuppliers.forEach(s => {
-                select.innerHTML += `<option value="${s.supplierId}">${s.supplierName}</option>`;
+                select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
             });
         }
 
@@ -837,16 +837,16 @@
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
-                const lowStock = item.qtyOnHand < item.reorderPoint ? 'style="background:#fff3cd;"' : '';
+                const lowStock = item.Qty_On_Hand < item.Reorder_Point ? 'style="background:#fff3cd;"' : '';
                 html += `<tr ${lowStock}>
-                    <td>${item.itemId}</td>
-                    <td><strong>${item.itemDescription}</strong></td>
-                    <td>${item.supplierId}</td>
-                    <td>${item.uom}</td>
-                    <td>$${parseFloat(item.costPrice).toFixed(2)}</td>
-                    <td>$${parseFloat(item.sellPrice).toFixed(2)}</td>
-                    <td>${item.qtyOnHand}</td>
-                    <td>${item.reorderPoint}</td>
+                    <td>${item.Item_ID}</td>
+                    <td><strong>${item.Item_Description}</strong></td>
+                    <td>${item.Supplier_ID}</td>
+                    <td>${item.UOM}</td>
+                    <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
+                    <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
+                    <td>${item.Qty_On_Hand}</td>
+                    <td>${item.Reorder_Point}</td>
                 </tr>`;
             });
 
@@ -918,13 +918,13 @@
 
             customers.forEach(c => {
                 html += `<tr>
-                    <td>${c.customerId}</td>
-                    <td><strong>${c.customerName}</strong></td>
-                    <td>${c.contactName || '-'}</td>
-                    <td>${c.phone || '-'}</td>
-                    <td>${c.email || '-'}</td>
-                    <td>${c.city || '-'}, ${c.state || '-'}</td>
-                    <td>$${parseFloat(c.creditLimit).toFixed(2)}</td>
+                    <td>${c.Customer_ID}</td>
+                    <td><strong>${c.Customer_Name}</strong></td>
+                    <td>${c.Contact_Name || '-'}</td>
+                    <td>${c.Phone || '-'}</td>
+                    <td>${c.Email || '-'}</td>
+                    <td>${c.City || '-'}, ${c.State || '-'}</td>
+                    <td>$${parseFloat(c.Credit_Limit).toFixed(2)}</td>
                 </tr>`;
             });
 
@@ -955,7 +955,7 @@
             const select = document.getElementById('poSupplier');
             select.innerHTML = '<option value="">Select Supplier</option>';
             cachedSuppliers.forEach(s => {
-                select.innerHTML += `<option value="${s.supplierId}">${s.supplierName}</option>`;
+                select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
             });
         }
 
@@ -969,12 +969,12 @@
                 }
             }
 
-            const supplierItems = cachedItems.filter(item => item.supplierId === supplierId);
+            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
             
             document.querySelectorAll('.po-item').forEach(select => {
                 select.innerHTML = '<option value="">Select Item</option>';
                 supplierItems.forEach(item => {
-                    select.innerHTML += `<option value="${item.itemId}">${item.itemDescription}</option>`;
+                    select.innerHTML += `<option value="${item.Item_ID}">${item.Item_Description}</option>`;
                 });
             });
         }
@@ -1050,17 +1050,16 @@
             }
 
             let html = '<table class="data-table"><thead><tr>';
-            html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Total</th><th>Status</th>';
+            html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Total</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
                 html += `<tr>
-                    <td>${po.poId}</td>
-                    <td>${po.supplierId}</td>
-                    <td>${new Date(po.poDate).toLocaleDateString()}</td>
-                    <td>${po.invoiceNumber}</td>
-                    <td>$${parseFloat(po.totalAmount).toFixed(2)}</td>
-                    <td>${po.status}</td>
+                    <td>${po.PO_ID}</td>
+                    <td>${po.Supplier_ID}</td>
+                    <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
+                    <td>${po.Invoice_Number}</td>
+                    <td>$${parseFloat(po.Invoice_Total).toFixed(2)}</td>
                 </tr>`;
             });
 
@@ -1091,7 +1090,7 @@
             const select = document.getElementById('soCustomer');
             select.innerHTML = '<option value="">Select Customer</option>';
             cachedCustomers.forEach(c => {
-                select.innerHTML += `<option value="${c.customerId}">${c.customerName}</option>`;
+                select.innerHTML += `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`;
             });
 
             if (cachedItems.length === 0) {
@@ -1104,7 +1103,7 @@
             document.querySelectorAll('.so-item').forEach(select => {
                 select.innerHTML = '<option value="">Select Item</option>';
                 cachedItems.forEach(item => {
-                    select.innerHTML += `<option value="${item.itemId}" data-price="${item.sellPrice}">${item.itemDescription}</option>`;
+                    select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Sell_Price}">${item.Item_Description}</option>`;
                 });
             });
         }
@@ -1175,17 +1174,15 @@
             }
 
             let html = '<table class="data-table"><thead><tr>';
-            html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th>';
+            html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Total</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
                 html += `<tr>
-                    <td>${so.soId}</td>
-                    <td>${so.customerId}</td>
-                    <td>${new Date(so.saleDate).toLocaleDateString()}</td>
-                    <td>$${parseFloat(so.totalAmount).toFixed(2)}</td>
-                    <td>${so.paymentMethod}</td>
-                    <td>${so.status}</td>
+                    <td>${so.SO_ID}</td>
+                    <td>${so.Customer_ID}</td>
+                    <td>${new Date(so.SO_Date).toLocaleDateString()}</td>
+                    <td>$${parseFloat(so.Order_Total).toFixed(2)}</td>
                 </tr>`;
             });
 
@@ -1218,17 +1215,17 @@
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
-                const lowStock = item.needsReorder ? 'style="background:#fff3cd;"' : '';
-                const status = item.needsReorder ? '⚠️ Low Stock' : '✅ OK';
+                const lowStock = item.Low_Stock ? 'style="background:#fff3cd;"' : '';
+                const status = item.Low_Stock ? '⚠️ Low Stock' : '✅ OK';
                 
                 html += `<tr ${lowStock}>
-                    <td>${item.itemId}</td>
-                    <td><strong>${item.itemDescription}</strong></td>
-                    <td>${item.supplierName}</td>
-                    <td>${item.qtyOnHand}</td>
-                    <td>$${parseFloat(item.costPrice).toFixed(2)}</td>
-                    <td>$${parseFloat(item.sellPrice).toFixed(2)}</td>
-                    <td>$${parseFloat(item.totalValue).toFixed(2)}</td>
+                    <td>${item.Item_ID}</td>
+                    <td><strong>${item.Item_Description}</strong></td>
+                    <td>${item.Supplier_ID}</td>
+                    <td>${item.Qty_On_Hand}</td>
+                    <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
+                    <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
+                    <td>$${parseFloat(item.Total_Value).toFixed(2)}</td>
                     <td>${status}</td>
                 </tr>`;
             });
