@@ -1273,7 +1273,13 @@
                         </div>
                         <div class="form-group">
                             <label>Invoice Total *</label>
-                            <input type="number" id="poTotal" step="0.01" min="0" required>
+                            <input type="number" id="poTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
+                            <small style="color: #666;">Auto-calculated from line items</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Paid</label>
+                            <input type="number" id="poAmountPaid" step="0.01" min="0" value="0" placeholder="0.00">
+                            <small style="color: #666;">Enter amount if paid at time of purchase</small>
                         </div>
                     </div>
                     
@@ -1374,7 +1380,13 @@
                         </div>
                         <div class="form-group">
                             <label>Order Total *</label>
-                            <input type="number" id="soTotal" step="0.01" min="0" required>
+                            <input type="number" id="soTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
+                            <small style="color: #666;">Auto-calculated from line items</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Paid</label>
+                            <input type="number" id="soAmountPaid" step="0.01" min="0" value="0" placeholder="0.00">
+                            <small style="color: #666;">Enter amount if paid at time of sale</small>
                         </div>
                         <div class="form-group">
                             <label>Status</label>
@@ -2453,6 +2465,7 @@
                 dueDate: document.getElementById('poDueDate').value || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: parseFloat(document.getElementById('poTotal').value),
+                amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
                 status: document.getElementById('poStatus').value,
                 notes: document.getElementById('poNotes').value,
                 lines: lineItems
@@ -2772,11 +2785,16 @@
                                 <strong>Current Total:</strong> $${parseFloat(po.Total_Amount || 0).toFixed(2)}
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Amount Paid:</strong> $${parseFloat(po.Amount_Paid || 0).toFixed(2)}
+                                <strong>Previously Paid:</strong> $${parseFloat(po.Amount_Paid || 0).toFixed(2)}
                             </div>
                             <div>
                                 <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</span>
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Update Amount Paid</label>
+                            <input type="number" id="editPOAmountPaid" step="0.01" min="0" value="${parseFloat(po.Amount_Paid || 0).toFixed(2)}">
+                            <small style="color: #666;">Update if making additional payment</small>
                         </div>
                         <div style="color: #666; font-size: 13px; background: #fff3cd; padding: 10px; border-radius: 6px;">
                             ⚠️ Total will recalculate based on line items below
@@ -2911,6 +2929,7 @@
                 status: document.getElementById('editPOStatus').value,
                 notes: document.getElementById('editPONotes').value,
                 totalAmount: totalAmount,
+                amountPaid: parseFloat(document.getElementById('editPOAmountPaid').value) || 0,
                 lines: newLines,
                 oldLines: currentEditingOrder._originalLines || []
             };
@@ -2995,11 +3014,16 @@
                                 <strong>Current Total:</strong> $${parseFloat(so.Total_Amount || 0).toFixed(2)}
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Amount Paid:</strong> $${parseFloat(so.Amount_Paid || 0).toFixed(2)}
+                                <strong>Previously Paid:</strong> $${parseFloat(so.Amount_Paid || 0).toFixed(2)}
                             </div>
                             <div>
                                 <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</span>
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Update Amount Paid</label>
+                            <input type="number" id="editSOAmountPaid" step="0.01" min="0" value="${parseFloat(so.Amount_Paid || 0).toFixed(2)}">
+                            <small style="color: #666;">Update if receiving additional payment</small>
                         </div>
                         <div style="color: #666; font-size: 13px; background: #fff3cd; padding: 10px; border-radius: 6px;">
                             ⚠️ Total will recalculate based on line items below
@@ -3072,6 +3096,7 @@
                 status: document.getElementById('editSOStatus').value,
                 notes: document.getElementById('editSONotes').value,
                 totalAmount: totalAmount,
+                amountPaid: parseFloat(document.getElementById('editSOAmountPaid').value) || 0,
                 lines: newLines
             };
             
@@ -3237,6 +3262,7 @@
                 paymentMethod: document.getElementById('soPayment').value,
                 dueDate: document.getElementById('soDueDate').value || null,
                 totalAmount: parseFloat(document.getElementById('soTotal').value),
+                amountPaid: parseFloat(document.getElementById('soAmountPaid').value) || 0,
                 status: document.getElementById('soStatus').value,
                 notes: document.getElementById('soNotes').value,
                 lines: lineItems
