@@ -4117,7 +4117,7 @@
                 
                 html += `<tr ${lowStock}>
                     <td>${item.Item_ID}</td>
-                    <td><strong>${item.Item_Description}</strong></td>
+                    <td><a href="javascript:void(0)" onclick="openItem('${item.Item_ID}')" style="color: #667eea; text-decoration: none;"><strong>${item.Item_Description}</strong></a></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td>${qty}</td>
                     <td>$${unitCost.toFixed(2)}</td>
