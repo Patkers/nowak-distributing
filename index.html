@@ -2599,9 +2599,488 @@
         }
         
         // Edit Purchase Order
-        function editPurchaseOrder(po) {
-            alert(`Edit PO functionality: ${po.PO_ID}\n\nThis would open an edit form with all PO details pre-filled.\nFor now, create a new PO or use payment tracking to update amounts.`);
-            // TODO: Implement full edit form with line items
+        let currentEditingOrder = null;
+        let currentEditingType = null; // 'purchase' or 'sales'
+        
+        async function editPurchaseOrder(poId) {
+            // Find the PO in cached data or fetch it
+            const result = await apiCall('getPurchaseOrders');
+            if (result && result.status === 'success') {
+                const po = result.data.find(p => p.PO_ID === poId);
+                if (po) {
+                    showPurchaseOrderDetails(po);
+                }
+            }
+        }
+        
+        async function showPurchaseOrderDetails(po) {
+            currentEditingOrder = po;
+            currentEditingType = 'purchase';
+            
+            // Get line items
+            const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
+            const lines = linesResult?.data || [];
+            
+            const supplierName = getSupplierName(po.Supplier_ID);
+            const dueDate = po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-';
+            const billDate = po.Bill_Date ? new Date(po.Bill_Date).toLocaleDateString() : '-';
+            
+            document.getElementById('modalTitle').textContent = `Purchase Order: ${po.PO_ID}`;
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Supplier:</td><td>${supplierName}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${po.Invoice_Number || '-'}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">PO Date:</td><td>${new Date(po.PO_Date).toLocaleDateString()}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Bill Date:</td><td>${billDate}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${po.Status}</span></td></tr>
+                        </table>
+                    </div>
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(po.Total_Amount || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(po.Amount_Paid || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${po.Payment_Status}</span></td></tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            if (lines.length > 0) {
+                html += `
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
+                    <table class="data-table" style="margin-bottom: 20px;">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                lines.forEach(line => {
+                    const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                    const lineTotal = (parseFloat(line.Quantity) || 0) * (parseFloat(line.Unit_Cost) || 0);
+                    html += `
+                        <tr>
+                            <td>${line.Item_ID}</td>
+                            <td>${item ? item.Item_Description : '-'}</td>
+                            <td>${line.Quantity}</td>
+                            <td>$${parseFloat(line.Unit_Cost || 0).toFixed(2)}</td>
+                            <td>$${lineTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            if (po.Notes) {
+                html += `
+                    <div style="margin-top: 20px;">
+                        <h3 style="color: #667eea; margin-bottom: 10px;">Notes</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            ${po.Notes}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('modalEditBtn').style.display = 'inline-block';
+            document.getElementById('modalSaveBtn').style.display = 'none';
+            document.getElementById('orderModal').style.display = 'block';
+        }
+        
+        function closeOrderModal() {
+            document.getElementById('orderModal').style.display = 'none';
+            currentEditingOrder = null;
+            currentEditingType = null;
+        }
+        
+        function enableEditMode() {
+            if (currentEditingType === 'purchase') {
+                enablePurchaseOrderEdit();
+            } else if (currentEditingType === 'sales') {
+                enableSalesOrderEdit();
+            }
+        }
+        
+        async function enablePurchaseOrderEdit() {
+            const po = currentEditingOrder;
+            
+            // Get line items
+            const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
+            const lines = linesResult?.data || [];
+            
+            const supplierName = getSupplierName(po.Supplier_ID);
+            
+            document.getElementById('modalTitle').textContent = `Edit Purchase Order: ${po.PO_ID}`;
+            
+            // Build supplier dropdown
+            let supplierOptions = '<option value="">Select Supplier</option>';
+            cachedSuppliers.forEach(s => {
+                supplierOptions += `<option value="${s.Supplier_ID}" ${s.Supplier_ID === po.Supplier_ID ? 'selected' : ''}>${s.Supplier_Name}</option>`;
+            });
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
+                        <div class="form-group">
+                            <label>Supplier *</label>
+                            <select id="editPOSupplier" required>${supplierOptions}</select>
+                        </div>
+                        <div class="form-group">
+                            <label>Invoice Number</label>
+                            <input type="text" id="editPOInvoiceNumber" value="${po.Invoice_Number || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>PO Date</label>
+                            <input type="date" id="editPODate" value="${po.PO_Date ? new Date(po.PO_Date).toISOString().split('T')[0] : ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="editPODueDate" value="${po.Due_Date ? new Date(po.Due_Date).toISOString().split('T')[0] : ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="editPOStatus">
+                                <option value="Pending" ${po.Status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Received" ${po.Status === 'Received' ? 'selected' : ''}>Received</option>
+                                <option value="Cancelled" ${po.Status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>Current Total:</strong> $${parseFloat(po.Total_Amount || 0).toFixed(2)}
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Amount Paid:</strong> $${parseFloat(po.Amount_Paid || 0).toFixed(2)}
+                            </div>
+                            <div>
+                                <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div style="color: #666; font-size: 13px; background: #fff3cd; padding: 10px; border-radius: 6px;">
+                            ⚠️ Total will recalculate based on line items below
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
+                <div id="editPOLineItems">
+            `;
+            
+            // Add existing line items as editable rows
+            lines.forEach((line, index) => {
+                const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                html += createEditableLineItem('PO', line, index, item);
+            });
+            
+            html += `
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addEditLineItem('PO')" style="margin-top: 10px;">+ Add Line Item</button>
+                
+                <div class="form-group" style="margin-top: 30px;">
+                    <label>Notes</label>
+                    <textarea id="editPONotes" rows="3" style="width: 100%;">${po.Notes || ''}</textarea>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('modalEditBtn').style.display = 'none';
+            document.getElementById('modalSaveBtn').style.display = 'inline-block';
+        }
+        
+        function createEditableLineItem(type, line, index, item) {
+            const itemOptions = cachedItems
+                .filter(i => type === 'PO' ? i.Supplier_ID === currentEditingOrder.Supplier_ID : true)
+                .map(i => `<option value="${i.Item_ID}" ${i.Item_ID === line.Item_ID ? 'selected' : ''}>${i.Item_Description}</option>`)
+                .join('');
+            
+            const qtyField = type === 'PO' ? 'Quantity' : 'Quantity';
+            const priceField = type === 'PO' ? 'Unit_Cost' : 'Unit_Price';
+            const originalQty = parseFloat(line[qtyField]) || 0;
+            const originalPrice = parseFloat(line[priceField]) || 0;
+            
+            return `
+                <div class="edit-line-item" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                    <select class="edit-item" required>
+                        <option value="">Select Item</option>
+                        ${itemOptions}
+                    </select>
+                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" onchange="calculateEditLineTotal(this)">
+                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}" onchange="calculateEditLineTotal(this)">
+                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="$${(originalQty * originalPrice).toFixed(2)}">
+                    <button type="button" class="remove-btn" onclick="removeEditLineItem(this)" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
+                </div>
+            `;
+        }
+        
+        function calculateEditLineTotal(input) {
+            const row = input.closest('.edit-line-item');
+            const qty = parseFloat(row.querySelector('.edit-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.edit-price').value) || 0;
+            const total = qty * price;
+            row.querySelector('.edit-total').value = '$' + total.toFixed(2);
+        }
+        
+        function addEditLineItem(type) {
+            const container = document.getElementById(type === 'PO' ? 'editPOLineItems' : 'editSOLineItems');
+            const newLine = {
+                Item_ID: '',
+                Quantity: 0,
+                [type === 'PO' ? 'Unit_Cost' : 'Unit_Price']: 0
+            };
+            const newItem = createEditableLineItem(type, newLine, -1, null);
+            container.insertAdjacentHTML('beforeend', newItem);
+        }
+        
+        function removeEditLineItem(btn) {
+            if (confirm('Remove this line item?')) {
+                btn.closest('.edit-line-item').remove();
+            }
+        }
+        
+        async function saveOrderChanges() {
+            if (currentEditingType === 'purchase') {
+                await savePurchaseOrderChanges();
+            } else if (currentEditingType === 'sales') {
+                await saveSalesOrderChanges();
+            }
+        }
+        
+        async function savePurchaseOrderChanges() {
+            const po = currentEditingOrder;
+            
+            // Collect line items
+            const newLines = [];
+            let totalAmount = 0;
+            
+            document.querySelectorAll('#editPOLineItems .edit-line-item').forEach(row => {
+                const itemId = row.querySelector('.edit-item').value;
+                const qty = parseInt(row.querySelector('.edit-qty').value) || 0;
+                const cost = parseFloat(row.querySelector('.edit-price').value) || 0;
+                
+                if (itemId && qty > 0) {
+                    newLines.push({
+                        itemId: itemId,
+                        quantity: qty,
+                        unitCost: cost,
+                        originalItem: row.dataset.originalItem,
+                        originalQty: parseInt(row.dataset.originalQty) || 0,
+                        lineId: row.dataset.lineId
+                    });
+                    totalAmount += qty * cost;
+                }
+            });
+            
+            if (newLines.length === 0) {
+                alert('Please add at least one line item');
+                return;
+            }
+            
+            const data = {
+                poId: po.PO_ID,
+                supplierId: document.getElementById('editPOSupplier').value,
+                invoiceNumber: document.getElementById('editPOInvoiceNumber').value,
+                poDate: document.getElementById('editPODate').value,
+                dueDate: document.getElementById('editPODueDate').value,
+                status: document.getElementById('editPOStatus').value,
+                notes: document.getElementById('editPONotes').value,
+                totalAmount: totalAmount,
+                lines: newLines,
+                oldLines: currentEditingOrder._originalLines || []
+            };
+            
+            showStatus('purchasesStatus', '⏳ Saving changes...', 'info');
+            
+            const result = await apiCall('updatePurchaseOrder', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('purchasesStatus', '✅ Purchase order updated successfully!', 'success');
+                closeOrderModal();
+                loadPurchases();
+            } else {
+                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+        
+        function enableEditMode() {
+            if (currentEditingType === 'purchase') {
+                enablePurchaseOrderEdit();
+            } else if (currentEditingType === 'sales') {
+                enableSalesOrderEdit();
+            }
+        }
+        
+        async function enableSalesOrderEdit() {
+            const so = currentEditingOrder;
+            
+            // Get line items
+            const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+            const lines = linesResult?.data || [];
+            
+            document.getElementById('modalTitle').textContent = `Edit Sales Order: ${so.SO_ID}`;
+            
+            // Build customer dropdown
+            let customerOptions = '<option value="">Select Customer</option>';
+            cachedCustomers.forEach(c => {
+                customerOptions += `<option value="${c.Customer_ID}" ${c.Customer_ID === so.Customer_ID ? 'selected' : ''}>${c.Customer_Name}</option>`;
+            });
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="editSOCustomer" required>${customerOptions}</select>
+                        </div>
+                        <div class="form-group">
+                            <label>Invoice Number</label>
+                            <input type="text" id="editSOInvoiceNumber" value="${so.Invoice_Number || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Sale Date</label>
+                            <input type="date" id="editSODate" value="${so.Sale_Date ? new Date(so.Sale_Date).toISOString().split('T')[0] : ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="editSODueDate" value="${so.Due_Date ? new Date(so.Due_Date).toISOString().split('T')[0] : ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select id="editSOPaymentMethod">
+                                <option value="Cash" ${so.Payment_Method === 'Cash' ? 'selected' : ''}>Cash</option>
+                                <option value="Check" ${so.Payment_Method === 'Check' ? 'selected' : ''}>Check</option>
+                                <option value="Invoice" ${so.Payment_Method === 'Invoice' ? 'selected' : ''}>Invoice</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="editSOStatus">
+                                <option value="Pending" ${so.Status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Completed" ${so.Status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                <option value="Cancelled" ${so.Status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>Current Total:</strong> $${parseFloat(so.Total_Amount || 0).toFixed(2)}
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Amount Paid:</strong> $${parseFloat(so.Amount_Paid || 0).toFixed(2)}
+                            </div>
+                            <div>
+                                <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div style="color: #666; font-size: 13px; background: #fff3cd; padding: 10px; border-radius: 6px;">
+                            ⚠️ Total will recalculate based on line items below
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
+                <div id="editSOLineItems">
+            `;
+            
+            // Add existing line items as editable rows
+            lines.forEach((line, index) => {
+                const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                html += createEditableLineItem('SO', line, index, item);
+            });
+            
+            html += `
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addEditLineItem('SO')" style="margin-top: 10px;">+ Add Line Item</button>
+                
+                <div class="form-group" style="margin-top: 30px;">
+                    <label>Notes</label>
+                    <textarea id="editSONotes" rows="3" style="width: 100%;">${so.Notes || ''}</textarea>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('modalEditBtn').style.display = 'none';
+            document.getElementById('modalSaveBtn').style.display = 'inline-block';
+        }
+        
+        async function saveSalesOrderChanges() {
+            const so = currentEditingOrder;
+            
+            // Collect line items
+            const newLines = [];
+            let totalAmount = 0;
+            
+            document.querySelectorAll('#editSOLineItems .edit-line-item').forEach(row => {
+                const itemId = row.querySelector('.edit-item').value;
+                const qty = parseInt(row.querySelector('.edit-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.edit-price').value) || 0;
+                
+                if (itemId && qty > 0) {
+                    newLines.push({
+                        itemId: itemId,
+                        quantity: qty,
+                        unitPrice: price,
+                        originalItem: row.dataset.originalItem,
+                        originalQty: parseInt(row.dataset.originalQty) || 0,
+                        lineId: row.dataset.lineId
+                    });
+                    totalAmount += qty * price;
+                }
+            });
+            
+            if (newLines.length === 0) {
+                alert('Please add at least one line item');
+                return;
+            }
+            
+            const data = {
+                soId: so.SO_ID,
+                customerId: document.getElementById('editSOCustomer').value,
+                invoiceNumber: document.getElementById('editSOInvoiceNumber').value,
+                saleDate: document.getElementById('editSODate').value,
+                dueDate: document.getElementById('editSODueDate').value,
+                paymentMethod: document.getElementById('editSOPaymentMethod').value,
+                status: document.getElementById('editSOStatus').value,
+                notes: document.getElementById('editSONotes').value,
+                totalAmount: totalAmount,
+                lines: newLines
+            };
+            
+            showStatus('salesStatus', '⏳ Saving changes...', 'info');
+            
+            const result = await apiCall('updateSalesOrder', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('salesStatus', '✅ Sales order updated successfully!', 'success');
+                closeOrderModal();
+                loadSales();
+            } else {
+                showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
         }
         
         function recordPurchasePayment(poId, total, amountPaid) {
@@ -2896,9 +3375,108 @@
         }
         
         // Edit Sales Order
-        function editSalesOrder(so) {
-            alert(`Edit SO functionality: ${so.SO_ID}\n\nThis would open an edit form with all SO details pre-filled.\nFor now, create a new SO or use payment tracking to update amounts.`);
-            // TODO: Implement full edit form with line items
+        async function editSalesOrder(soId) {
+            // Find the SO in cached data or fetch it
+            const result = await apiCall('getSalesOrders');
+            if (result && result.status === 'success') {
+                const so = result.data.find(s => s.SO_ID === soId);
+                if (so) {
+                    showSalesOrderDetails(so);
+                }
+            }
+        }
+        
+        async function showSalesOrderDetails(so) {
+            currentEditingOrder = so;
+            currentEditingType = 'sales';
+            
+            // Get line items
+            const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+            const lines = linesResult?.data || [];
+            
+            const customerName = getCustomerName(so.Customer_ID);
+            const dueDate = so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-';
+            const invoiceDate = so.Invoice_Date ? new Date(so.Invoice_Date).toLocaleDateString() : '-';
+            
+            document.getElementById('modalTitle').textContent = `Sales Order: ${so.SO_ID}`;
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Customer:</td><td>${customerName}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${so.Invoice_Number || '-'}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Sale Date:</td><td>${new Date(so.Sale_Date).toLocaleDateString()}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Invoice Date:</td><td>${invoiceDate}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Payment Method:</td><td>${so.Payment_Method}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${so.Status}</span></td></tr>
+                        </table>
+                    </div>
+                    <div>
+                        <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(so.Total_Amount || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(so.Amount_Paid || 0).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${so.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${so.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${so.Payment_Status}</span></td></tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            if (lines.length > 0) {
+                html += `
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
+                    <table class="data-table" style="margin-bottom: 20px;">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                lines.forEach(line => {
+                    const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                    const lineTotal = (parseFloat(line.Quantity) || 0) * (parseFloat(line.Unit_Price) || 0);
+                    html += `
+                        <tr>
+                            <td>${line.Item_ID}</td>
+                            <td>${item ? item.Item_Description : '-'}</td>
+                            <td>${line.Quantity}</td>
+                            <td>$${parseFloat(line.Unit_Price || 0).toFixed(2)}</td>
+                            <td>$${lineTotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            if (so.Notes) {
+                html += `
+                    <div style="margin-top: 20px;">
+                        <h3 style="color: #667eea; margin-bottom: 10px;">Notes</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            ${so.Notes}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('modalEditBtn').style.display = 'inline-block';
+            document.getElementById('modalSaveBtn').style.display = 'none';
+            document.getElementById('orderModal').style.display = 'block';
         }
         
         function recordSalesPayment(soId, total, amountPaid) {
@@ -4563,5 +5141,23 @@
             window.URL.revokeObjectURL(url);
         }
     </script>
+    
+    <!-- Order View/Edit Modal -->
+    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+        <div style="background: white; margin: 50px auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
+                <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div id="modalContent" style="padding: 30px; max-height: 70vh; overflow-y: auto;">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div id="modalFooter" style="padding: 20px 30px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
+                <button id="modalEditBtn" class="btn" onclick="enableEditMode()" style="display: none;">✏️ Edit Order</button>
+                <button id="modalSaveBtn" class="btn" onclick="saveOrderChanges()" style="display: none;">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
