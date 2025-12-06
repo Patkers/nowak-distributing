@@ -517,6 +517,10 @@
                             <input type="number" id="newReorderPoint" value="10">
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="newItemNotes" rows="2"></textarea>
+                    </div>
                     <button type="submit" class="btn">💾 Save Item</button>
                     <button type="button" class="btn btn-secondary" onclick="hideAddItemForm()">Cancel</button>
                 </form>
@@ -571,6 +575,10 @@
                             <input type="number" id="editReorderPoint">
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="editItemNotes" rows="2"></textarea>
+                    </div>
                     <button type="submit" class="btn">💾 Update Item</button>
                     <button type="button" class="btn btn-secondary" onclick="hideEditItemForm()">Cancel</button>
                 </form>
@@ -624,6 +632,10 @@
                         <div class="form-group">
                             <label>Phone</label>
                             <input type="tel" id="newCustomerPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Mobile</label>
+                            <input type="tel" id="newCustomerMobile">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
@@ -689,6 +701,10 @@
                         <div class="form-group">
                             <label>Phone</label>
                             <input type="tel" id="editCustomerPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Mobile</label>
+                            <input type="tel" id="editCustomerMobile">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
@@ -798,6 +814,10 @@
                                 <option value="Partial">Partial</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label>Invoice Total *</label>
+                            <input type="number" id="poTotal" step="0.01" min="0" required>
+                        </div>
                     </div>
                     
                     <h4 style="margin-top: 20px; margin-bottom: 10px;">Line Items</h4>
@@ -878,7 +898,20 @@
                                 <option value="Cash">Cash</option>
                                 <option value="Credit Card">Credit Card</option>
                                 <option value="Check">Check</option>
+                                <option value="Invoice">Invoice</option>
                                 <option value="Terms (Net 30)">Terms (Net 30)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Order Total *</label>
+                            <input type="number" id="soTotal" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="soStatus">
+                                <option value="Completed">Completed</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Cancelled">Cancelled</option>
                             </select>
                         </div>
                     </div>
@@ -1250,7 +1283,7 @@
                 qtyOnHand: document.getElementById('newQtyOnHand').value,
                 reorderPoint: document.getElementById('newReorderPoint').value,
                 sku: document.getElementById('newItemSKU').value,
-                notes: ''
+                notes: document.getElementById('newItemNotes').value
             };
 
             const result = await apiCall('addItem', data);
@@ -1379,6 +1412,7 @@
             document.getElementById('editSellPrice').value = item.Sell_Price || '';
             document.getElementById('editQtyOnHand').value = item.Qty_On_Hand || '';
             document.getElementById('editReorderPoint').value = item.Reorder_Point || '';
+            document.getElementById('editItemNotes').value = item.Notes || '';
             
             document.getElementById('editItemForm').style.display = 'block';
             document.getElementById('addItemForm').style.display = 'none';
@@ -1401,7 +1435,7 @@
                 sellPrice: document.getElementById('editSellPrice').value,
                 reorderPoint: document.getElementById('editReorderPoint').value,
                 sku: document.getElementById('editItemSKU').value,
-                notes: ''
+                notes: document.getElementById('editItemNotes').value
             };
             
             const result = await apiCall('updateItem', data);
@@ -1448,6 +1482,7 @@
                 name: document.getElementById('newCustomerName').value,
                 contactName: document.getElementById('newCustomerContact').value,
                 phone: document.getElementById('newCustomerPhone').value,
+                mobile: document.getElementById('newCustomerMobile').value,
                 email: document.getElementById('newCustomerEmail').value,
                 address: document.getElementById('newCustomerAddress').value,
                 city: document.getElementById('newCustomerCity').value,
@@ -1541,6 +1576,7 @@
             document.getElementById('editCustomerName').value = customer.Customer_Name || '';
             document.getElementById('editCustomerContact').value = customer.Contact_Name || '';
             document.getElementById('editCustomerPhone').value = customer.Phone || '';
+            document.getElementById('editCustomerMobile').value = customer.Mobile || '';
             document.getElementById('editCustomerEmail').value = customer.Email || '';
             document.getElementById('editCustomerAddress').value = customer.Address || '';
             document.getElementById('editCustomerCity').value = customer.City || '';
@@ -1571,6 +1607,7 @@
                 zip: document.getElementById('editCustomerZip').value,
                 contactName: document.getElementById('editCustomerContact').value,
                 phone: document.getElementById('editCustomerPhone').value,
+                mobile: document.getElementById('editCustomerMobile').value,
                 email: document.getElementById('editCustomerEmail').value,
                 creditLimit: document.getElementById('editCreditLimit').value,
                 paymentTerms: document.getElementById('editCustomerPaymentTerms').value,
@@ -1652,18 +1689,29 @@
 
         function addPOLineItem() {
             const container = document.getElementById('poLineItems');
+            const supplierId = document.getElementById('poSupplier').value;
+            
+            if (!supplierId) {
+                alert('Please select a supplier first');
+                return;
+            }
+            
+            // Get supplier items once
+            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
+            
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
                 <select class="po-item" required>
                     <option value="">Select Item</option>
+                    ${supplierItems.map(item => `<option value="${item.Item_ID}">${item.Item_Description}</option>`).join('')}
                 </select>
                 <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
                 <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
                 <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
             `;
             container.appendChild(newRow);
-            loadSupplierItems();
+            // DON'T call loadSupplierItems() - that resets all dropdowns!
         }
 
         function removeLineItem(btn) {
@@ -1686,9 +1734,10 @@
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
                 poDate: document.getElementById('poDate').value,
+                totalAmount: parseFloat(document.getElementById('poTotal').value),
                 status: document.getElementById('poStatus').value,
                 notes: document.getElementById('poNotes').value,
-                lineItems: lineItems
+                lines: lineItems
             };
 
             const result = await apiCall('createPurchaseOrder', data);
@@ -1823,18 +1872,26 @@
 
         function addSOLineItem() {
             const container = document.getElementById('soLineItems');
+            
+            // Get all items once
+            if (cachedItems.length === 0) {
+                alert('Please wait for items to load');
+                return;
+            }
+            
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
                 <select class="so-item" required>
                     <option value="">Select Item</option>
+                    ${cachedItems.map(item => `<option value="${item.Item_ID}">${item.Item_Description}</option>`).join('')}
                 </select>
                 <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
                 <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
                 <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
             `;
             container.appendChild(newRow);
-            loadSaleDropdowns();
+            // DON'T call loadSaleDropdowns() - that resets all dropdowns!
         }
 
         async function addSale(e) {
@@ -1853,8 +1910,10 @@
                 customerId: document.getElementById('soCustomer').value,
                 saleDate: document.getElementById('soDate').value,
                 paymentMethod: document.getElementById('soPayment').value,
+                totalAmount: parseFloat(document.getElementById('soTotal').value),
+                status: document.getElementById('soStatus').value,
                 notes: document.getElementById('soNotes').value,
-                lineItems: lineItems
+                lines: lineItems
             };
 
             const result = await apiCall('createSalesOrder', data);
