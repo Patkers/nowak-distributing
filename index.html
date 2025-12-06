@@ -3018,6 +3018,7 @@
     <div class="section">
         <div class="section-title">BILL TO:</div>
         <div><strong>${customer?.Customer_Name || 'Unknown Customer'}</strong></div>
+        ${customer?.Contact_Name ? `<div>Attn: ${customer.Contact_Name}</div>` : ''}
         ${customer?.Address_Line1 ? `<div>${customer.Address_Line1}</div>` : ''}
         ${customer?.Address_Line2 ? `<div>${customer.Address_Line2}</div>` : ''}
         ${customer?.City || customer?.State || customer?.Zip_Code ? `<div>${customer?.City || ''}, ${customer?.State || ''} ${customer?.Zip_Code || ''}</div>` : ''}
@@ -3097,11 +3098,39 @@
     </div>
 </body>
 </html>`;
+            // Create hidden print container instead of popup
+            let printContainer = document.getElementById('printContainer');
+            if (!printContainer) {
+                printContainer = document.createElement('div');
+                printContainer.id = 'printContainer';
+                printContainer.style.display = 'none';
+                document.body.appendChild(printContainer);
+            }
             
-            // Open in new window for printing
-            const printWindow = window.open('', '_blank', 'width=800,height=1000');
-            printWindow.document.write(invoiceHTML);
-            printWindow.document.close();
+            printContainer.innerHTML = invoiceHTML;
+            
+            // Create print iframe to avoid popup blockers
+            let printFrame = document.getElementById('printFrame');
+            if (!printFrame) {
+                printFrame = document.createElement('iframe');
+                printFrame.id = 'printFrame';
+                printFrame.style.position = 'absolute';
+                printFrame.style.width = '0';
+                printFrame.style.height = '0';
+                printFrame.style.border = 'none';
+                document.body.appendChild(printFrame);
+            }
+            
+            const frameDoc = printFrame.contentWindow.document;
+            frameDoc.open();
+            frameDoc.write(invoiceHTML);
+            frameDoc.close();
+            
+            // Wait for content to load, then print
+            setTimeout(() => {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+            }, 250);
         }
         
         function closeOrderModal() {
