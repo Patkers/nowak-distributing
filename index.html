@@ -3365,8 +3365,11 @@
             const customers = customersResult.data;
             const sales = salesResult.data;
             
+            // Store raw data
+            rawReportData['accounts-receivable'] = { sales, customers };
+            
             // Filter for unpaid/partial invoices
-            const receivables = sales
+            let receivables = sales
                 .filter(so => {
                     const status = so.Payment_Status || 'Unpaid';
                     return status !== 'Paid';
@@ -3380,7 +3383,14 @@
                     const today = new Date();
                     const daysOverdue = dueDate ? Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                     
+                    let aging;
+                    if (daysOverdue > 60) aging = '60+';
+                    else if (daysOverdue > 30) aging = '31-60';
+                    else if (daysOverdue > 0) aging = '1-30';
+                    else aging = 'Current';
+                    
                     return {
+                        customerId: so.Customer_ID,
                         customer: customer?.Customer_Name || so.Customer_ID,
                         invoiceId: so.SO_ID,
                         invoiceDate: new Date(so.Sale_Date || so.SO_Date).toLocaleDateString(),
@@ -3390,15 +3400,46 @@
                         balance: balance,
                         status: so.Payment_Status || 'Unpaid',
                         daysOverdue: daysOverdue,
-                        aging: daysOverdue > 60 ? '60+ days' : daysOverdue > 30 ? '31-60 days' : daysOverdue > 0 ? '1-30 days' : 'Current'
+                        aging: aging
                     };
-                })
-                .sort((a, b) => b.daysOverdue - a.daysOverdue);
+                });
+            
+            // APPLY FILTERS
+            if (reportFilters.customer) {
+                receivables = receivables.filter(r => r.customerId === reportFilters.customer);
+            }
+            if (reportFilters.minAmount) {
+                receivables = receivables.filter(r => r.balance >= reportFilters.minAmount);
+            }
+            if (reportFilters.paymentStatus) {
+                if (reportFilters.paymentStatus === 'Overdue') {
+                    receivables = receivables.filter(r => r.daysOverdue > 0);
+                } else {
+                    receivables = receivables.filter(r => r.status === reportFilters.paymentStatus);
+                }
+            }
+            if (reportFilters.aging) {
+                receivables = receivables.filter(r => r.aging === reportFilters.aging);
+            }
+            
+            // Sort by days overdue
+            receivables.sort((a, b) => b.daysOverdue - a.daysOverdue);
             
             const totalOutstanding = receivables.reduce((sum, r) => sum + r.balance, 0);
             
-            // Build HTML
-            let html = `
+            // Build customer list for filter
+            const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('accounts-receivable', {
+                customer: true,
+                customerList: customerList,
+                paymentStatus: true,
+                aging: true,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💵 Accounts Receivable Report</h3>
                     <p style="color: #666;">Outstanding Invoices: ${receivables.length} | Total AR: $${totalOutstanding.toFixed(2)}</p>
@@ -3462,8 +3503,11 @@
             const suppliers = suppliersResult.data;
             const purchases = purchasesResult.data;
             
+            // Store raw data
+            rawReportData['accounts-payable'] = { purchases, suppliers };
+            
             // Filter for unpaid/partial invoices
-            const payables = purchases
+            let payables = purchases
                 .filter(po => {
                     const status = po.Payment_Status || 'Unpaid';
                     return status !== 'Paid';
@@ -3477,7 +3521,14 @@
                     const today = new Date();
                     const daysOverdue = dueDate ? Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                     
+                    let aging;
+                    if (daysOverdue > 60) aging = '60+';
+                    else if (daysOverdue > 30) aging = '31-60';
+                    else if (daysOverdue > 0) aging = '1-30';
+                    else aging = 'Current';
+                    
                     return {
+                        supplierId: po.Supplier_ID,
                         supplier: supplier?.Supplier_Name || po.Supplier_ID,
                         invoiceId: po.Invoice_Number || po.PO_ID,
                         poId: po.PO_ID,
@@ -3488,15 +3539,46 @@
                         balance: balance,
                         status: po.Payment_Status || 'Unpaid',
                         daysOverdue: daysOverdue,
-                        aging: daysOverdue > 60 ? '60+ days' : daysOverdue > 30 ? '31-60 days' : daysOverdue > 0 ? '1-30 days' : 'Current'
+                        aging: aging
                     };
-                })
-                .sort((a, b) => b.daysOverdue - a.daysOverdue);
+                });
+            
+            // APPLY FILTERS
+            if (reportFilters.supplier) {
+                payables = payables.filter(p => p.supplierId === reportFilters.supplier);
+            }
+            if (reportFilters.minAmount) {
+                payables = payables.filter(p => p.balance >= reportFilters.minAmount);
+            }
+            if (reportFilters.paymentStatus) {
+                if (reportFilters.paymentStatus === 'Overdue') {
+                    payables = payables.filter(p => p.daysOverdue > 0);
+                } else {
+                    payables = payables.filter(p => p.status === reportFilters.paymentStatus);
+                }
+            }
+            if (reportFilters.aging) {
+                payables = payables.filter(p => p.aging === reportFilters.aging);
+            }
+            
+            // Sort by days overdue
+            payables.sort((a, b) => b.daysOverdue - a.daysOverdue);
             
             const totalOutstanding = payables.reduce((sum, p) => sum + p.balance, 0);
             
-            // Build HTML
-            let html = `
+            // Build supplier list for filter
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('accounts-payable', {
+                supplier: true,
+                supplierList: supplierList,
+                paymentStatus: true,
+                aging: true,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💸 Accounts Payable Report</h3>
                     <p style="color: #666;">Outstanding Bills: ${payables.length} | Total AP: $${totalOutstanding.toFixed(2)}</p>
@@ -3553,21 +3635,58 @@
         // 8. SIMPLE INVENTORY REPORT
         async function generateSimpleInventory() {
             const inventoryResult = await apiCall('getInventoryReport');
+            const suppliersResult = await apiCall('getSuppliers');
             
-            if (!inventoryResult?.data) {
+            if (!inventoryResult?.data || !suppliersResult?.data) {
                 throw new Error('Failed to load inventory');
             }
             
-            const inventory = inventoryResult.data.sort((a, b) => {
-                return a.Item_Description.localeCompare(b.Item_Description);
-            });
+            const suppliers = suppliersResult.data;
+            let inventory = inventoryResult.data;
+            
+            // Store raw data
+            rawReportData['simple-inventory'] = { inventory, suppliers };
+            
+            // APPLY FILTERS
+            if (reportFilters.supplier) {
+                inventory = inventory.filter(item => item.Supplier_ID === reportFilters.supplier);
+            }
+            if (reportFilters.item) {
+                inventory = inventory.filter(item => item.Item_ID === reportFilters.item);
+            }
+            if (reportFilters.stockStatus) {
+                if (reportFilters.stockStatus === 'low') {
+                    inventory = inventory.filter(item => item.Low_Stock);
+                } else if (reportFilters.stockStatus === 'ok') {
+                    inventory = inventory.filter(item => !item.Low_Stock);
+                }
+            }
+            if (reportFilters.minAmount) {
+                inventory = inventory.filter(item => parseFloat(item.Total_Value || 0) >= reportFilters.minAmount);
+            }
+            
+            // Sort alphabetically
+            inventory.sort((a, b) => a.Item_Description.localeCompare(b.Item_Description));
             
             const totalValue = inventory.reduce((sum, item) => sum + parseFloat(item.Total_Value || 0), 0);
             const totalItems = inventory.length;
             const lowStockCount = inventory.filter(item => item.Low_Stock).length;
             
-            // Build HTML
-            let html = `
+            // Build filter lists
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            const itemList = inventoryResult.data.map(i => ({ id: i.Item_ID, name: `${i.Item_Description} (${i.SKU})` }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('simple-inventory', {
+                supplier: true,
+                supplierList: supplierList,
+                item: true,
+                itemList: itemList,
+                stockStatus: true,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Inventory List Report</h3>
                     <p style="color: #666;">
@@ -3576,8 +3695,12 @@
                         Low Stock Items: ${lowStockCount}
                     </p>
                     <button class="btn btn-secondary" onclick="exportToCSV('simple-inventory')">📥 Export to CSV</button>
-                </div>
-                <table class="data-table">
+                </div>`;
+            
+            if (inventory.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table">
                     <thead>
                         <tr>
                             <th>SKU</th>
@@ -3594,27 +3717,28 @@
                     </thead>
                     <tbody>`;
             
-            inventory.forEach(item => {
-                const lowStock = item.Low_Stock;
-                const rowStyle = lowStock ? 'background: #fff3cd;' : '';
-                const status = lowStock ? '⚠️ Low Stock' : '✅ OK';
-                const statusColor = lowStock ? '#f39c12' : 'green';
-                
-                html += `<tr style="${rowStyle}">
-                    <td><strong>${item.SKU || '-'}</strong></td>
-                    <td>${item.Item_Description}</td>
-                    <td>${item.Supplier_ID}</td>
-                    <td>${item.UOM}</td>
-                    <td style="font-weight: bold;">${item.Qty_On_Hand}</td>
-                    <td>${item.Reorder_Point}</td>
-                    <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
-                    <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
-                    <td>$${parseFloat(item.Total_Value).toFixed(2)}</td>
-                    <td style="color: ${statusColor}; font-weight: bold;">${status}</td>
-                </tr>`;
-            });
+                inventory.forEach(item => {
+                    const lowStock = item.Low_Stock;
+                    const rowStyle = lowStock ? 'background: #fff3cd;' : '';
+                    const status = lowStock ? '⚠️ Low Stock' : '✅ OK';
+                    const statusColor = lowStock ? '#f39c12' : 'green';
+                    
+                    html += `<tr style="${rowStyle}">
+                        <td><strong>${item.SKU || '-'}</strong></td>
+                        <td>${item.Item_Description}</td>
+                        <td>${item.Supplier_ID}</td>
+                        <td>${item.UOM}</td>
+                        <td style="font-weight: bold;">${item.Qty_On_Hand}</td>
+                        <td>${item.Reorder_Point}</td>
+                        <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
+                        <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
+                        <td>$${parseFloat(item.Total_Value).toFixed(2)}</td>
+                        <td style="color: ${statusColor}; font-weight: bold;">${status}</td>
+                    </tr>`;
+                });
             
-            html += '</tbody></table>';
+                html += '</tbody></table>';
+            }
             
             reportData['simple-inventory'] = inventory;
             document.getElementById('reportContainer').innerHTML = html;
