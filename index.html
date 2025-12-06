@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nowak's Distributing - Relational System</title>
+    <title>Nowak Distributing - Inventory Management System</title>
     <style>
         * {
             margin: 0;
@@ -369,23 +369,23 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚚 Nowak's Distributing</h1>
-            <p>Relational Database Management System</p>
+            <h1>🚚 Nowak Distributing</h1>
+            <p>Professional Inventory & Order Management System</p>
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('config')">⚙️ Settings</button>
-            <button class="tab" onclick="switchTab('suppliers')">🏭 Suppliers</button>
+            <button class="tab active" onclick="switchTab('suppliers')">🏭 Suppliers</button>
             <button class="tab" onclick="switchTab('items')">📦 Items</button>
             <button class="tab" onclick="switchTab('customers')">👥 Customers</button>
             <button class="tab" onclick="switchTab('purchases')">📥 Purchases</button>
             <button class="tab" onclick="switchTab('sales')">💰 Sales</button>
             <button class="tab" onclick="switchTab('inventory')">📊 Inventory</button>
             <button class="tab" onclick="switchTab('reports')">📈 Reports</button>
+            <button class="tab" onclick="switchTab('config')">⚙️ Settings</button>
         </div>
 
         <!-- Settings Tab -->
-        <div id="config" class="card active">
+        <div id="config" class="card">
             <h2>System Configuration</h2>
             <div class="status" id="configStatus"></div>
             
@@ -398,6 +398,27 @@
                        placeholder="https://script.google.com/macros/s/.../exec">
                 <button class="btn" onclick="saveConfig()">💾 Save Configuration</button>
             </div>
+            
+            <div class="config-box">
+                <h3>Theme</h3>
+                <p style="margin-bottom: 10px; color: #666;">
+                    Choose your color scheme
+                </p>
+                <select id="themeSelector" onchange="changeTheme()" style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                    <option value="purple">🟣 Purple (Default)</option>
+                    <option value="blue">🔵 Blue</option>
+                    <option value="green">🟢 Green</option>
+                    <option value="dark">⚫ Dark</option>
+                </select>
+            </div>
+            
+            <div class="config-box">
+                <h3>Backup Data</h3>
+                <p style="margin-bottom: 10px; color: #666;">
+                    Download a copy of your database
+                </p>
+                <button class="btn btn-secondary" onclick="openBackup()">📥 Open Google Sheet</button>
+            </div>
 
             <div class="config-box">
                 <h3>Current Status</h3>
@@ -406,7 +427,7 @@
         </div>
 
         <!-- Suppliers Tab -->
-        <div id="suppliers" class="card">
+        <div id="suppliers" class="card active">
             <h2>Suppliers</h2>
             <div class="status" id="suppliersStatus"></div>
             
@@ -720,7 +741,11 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Search Name</label>
-                        <input type="text" id="filterCustomerName" placeholder="Type to filter..." onkeyup="filterCustomers()">
+                        <input type="text" id="filterCustomerName" placeholder="Customer name..." onkeyup="filterCustomers()">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Name</label>
+                        <input type="text" id="filterCustomerContact" placeholder="Contact name..." onkeyup="filterCustomers()">
                     </div>
                     <div class="form-group">
                         <label>City</label>
@@ -888,6 +913,10 @@
                 <h4 style="margin-bottom: 10px;">🔍 Filter Purchases</h4>
                 <div class="form-grid">
                     <div class="form-group">
+                        <label>PO Number</label>
+                        <input type="text" id="filterPurchasePO" placeholder="PO-001" onchange="filterPurchases()">
+                    </div>
+                    <div class="form-group">
                         <label>Supplier</label>
                         <select id="filterPurchaseSupplier" onchange="filterPurchases()">
                             <option value="">All Suppliers</option>
@@ -900,6 +929,15 @@
                     <div class="form-group">
                         <label>Date To</label>
                         <input type="date" id="filterPurchaseDateTo" onchange="filterPurchases()">
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Status</label>
+                        <select id="filterPurchasePaymentStatus" onchange="filterPurchases()">
+                            <option value="">All</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Unpaid">Unpaid</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <button class="btn btn-secondary" onclick="clearPurchaseFilters()">Clear Filters</button>
@@ -1244,6 +1282,51 @@
             }
         }
 
+        function changeTheme() {
+            const theme = document.getElementById('themeSelector').value;
+            const body = document.body;
+            
+            // Remove existing theme classes
+            body.className = '';
+            
+            // Apply theme
+            switch(theme) {
+                case 'blue':
+                    body.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+                    break;
+                case 'green':
+                    body.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+                    break;
+                case 'dark':
+                    body.style.background = 'linear-gradient(135deg, #232526 0%, #414345 100%)';
+                    break;
+                default: // purple
+                    body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+            
+            // Save preference
+            localStorage.setItem('theme', theme);
+            showStatus('configStatus', `✅ Theme changed to ${theme}!`, 'success');
+        }
+        
+        function openBackup() {
+            if (!API_URL) {
+                alert('Please configure your API URL first!');
+                return;
+            }
+            // Extract the Google Sheets URL from API URL pattern
+            alert('To backup your data:\n\n1. Go to your Google Sheets database\n2. File → Make a copy\n3. Download as Excel or CSV\n\nYour Google Sheet contains all your data!');
+        }
+        
+        // Load theme on startup
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.getElementById('themeSelector').value = savedTheme;
+                changeTheme();
+            }
+        });
+        
         function saveConfig() {
             const apiUrl = document.getElementById('apiUrl').value.trim();
             const status = document.getElementById('configStatus');
@@ -1805,14 +1888,16 @@
         // Filter customers
         function filterCustomers() {
             const nameFilter = document.getElementById('filterCustomerName').value.toLowerCase();
+            const contactFilter = document.getElementById('filterCustomerContact').value.toLowerCase();
             const cityFilter = document.getElementById('filterCustomerCity').value.toLowerCase();
             const stateFilter = document.getElementById('filterCustomerState').value.toLowerCase();
             
             const filtered = cachedCustomers.filter(c => {
                 const matchesName = !nameFilter || (c.Customer_Name && c.Customer_Name.toLowerCase().includes(nameFilter));
+                const matchesContact = !contactFilter || (c.Contact_Name && c.Contact_Name.toLowerCase().includes(contactFilter));
                 const matchesCity = !cityFilter || (c.City && c.City.toLowerCase().includes(cityFilter));
                 const matchesState = !stateFilter || (c.State && c.State.toLowerCase().includes(stateFilter));
-                return matchesName && matchesCity && matchesState;
+                return matchesName && matchesContact && matchesCity && matchesState;
             });
             
             displayCustomers(filtered);
@@ -1820,6 +1905,7 @@
         
         function clearCustomerFilters() {
             document.getElementById('filterCustomerName').value = '';
+            document.getElementById('filterCustomerContact').value = '';
             document.getElementById('filterCustomerCity').value = '';
             document.getElementById('filterCustomerState').value = '';
             displayCustomers(cachedCustomers);
@@ -2049,25 +2135,31 @@
         }
         
         function filterPurchases() {
+            const poFilter = document.getElementById('filterPurchasePO').value.toLowerCase();
             const supplierFilter = document.getElementById('filterPurchaseSupplier').value;
             const dateFrom = document.getElementById('filterPurchaseDateFrom').value;
             const dateTo = document.getElementById('filterPurchaseDateTo').value;
+            const paymentStatusFilter = document.getElementById('filterPurchasePaymentStatus').value;
             
             const filtered = purchasesData.filter(po => {
+                const matchesPO = !poFilter || (po.PO_ID && po.PO_ID.toLowerCase().includes(poFilter));
                 const matchesSupplier = !supplierFilter || po.Supplier_ID === supplierFilter;
                 const poDate = new Date(po.PO_Date);
                 const matchesDateFrom = !dateFrom || poDate >= new Date(dateFrom);
                 const matchesDateTo = !dateTo || poDate <= new Date(dateTo);
-                return matchesSupplier && matchesDateFrom && matchesDateTo;
+                const matchesPaymentStatus = !paymentStatusFilter || (po.Payment_Status === paymentStatusFilter);
+                return matchesPO && matchesSupplier && matchesDateFrom && matchesDateTo && matchesPaymentStatus;
             });
             
             displayPurchases(filtered);
         }
         
         function clearPurchaseFilters() {
+            document.getElementById('filterPurchasePO').value = '';
             document.getElementById('filterPurchaseSupplier').value = '';
             document.getElementById('filterPurchaseDateFrom').value = '';
             document.getElementById('filterPurchaseDateTo').value = '';
+            document.getElementById('filterPurchasePaymentStatus').value = '';
             displayPurchases(purchasesData);
         }
 
@@ -2341,7 +2433,7 @@
             }
 
             let html = '<table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Payment Method</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
+            html += '<th>SO ID</th><th>Invoice #</th><th>Customer</th><th>Date</th><th>Status</th><th>Payment Method</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -2349,6 +2441,8 @@
                 const paymentStatus = so.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(so.Amount_Paid) || 0;
                 const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
+                const status = so.Status || 'Completed';
+                const invoiceNum = so.Invoice_Number || '-';
                 
                 // Color code payment status
                 let statusColor = '';
@@ -2358,8 +2452,10 @@
                 
                 html += `<tr>
                     <td>${so.SO_ID}</td>
+                    <td>${invoiceNum}</td>
                     <td><strong>${getCustomerName(so.Customer_ID)}</strong></td>
                     <td>${new Date(so.Sale_Date || so.SO_Date).toLocaleDateString()}</td>
+                    <td>${status}</td>
                     <td>${so.Payment_Method || '-'}</td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
@@ -3138,6 +3234,7 @@
             // Build HTML with filters
             let html = buildFilterUI('sales-by-product', {
                 dateRange: true,
+                dateLabel: 'Sale Date',
                 item: true,
                 itemList: itemList,
                 supplier: true,
@@ -3251,6 +3348,7 @@
             // Build HTML with filters
             let html = buildFilterUI('purchase-by-supplier', {
                 dateRange: true,
+                dateLabel: 'Purchase Date',
                 supplier: true,
                 supplierList: supplierList,
                 minAmount: true
