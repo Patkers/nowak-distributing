@@ -378,6 +378,7 @@
             <button class="tab" onclick="switchTab('purchases')">📥 Purchases</button>
             <button class="tab" onclick="switchTab('sales')">💰 Sales</button>
             <button class="tab" onclick="switchTab('inventory')">📊 Inventory</button>
+            <button class="tab" onclick="switchTab('reports')">📈 Reports</button>
         </div>
 
         <!-- Settings Tab -->
@@ -1142,6 +1143,26 @@
             </div>
             
             <div id="inventoryTable"></div>
+        </div>
+        
+        <!-- REPORTS TAB -->
+        <div id="reports" class="card">
+            <h2>📈 Business Reports</h2>
+            <div class="status" id="reportsStatus"></div>
+            
+            <p style="color: #666; margin-bottom: 20px;">Generate professional reports to analyze your business performance</p>
+            
+            <!-- Report Selection Buttons -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px;">
+                <button class="btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
+                <button class="btn" onclick="showReport('sales-by-product')">📦 Sales by Product</button>
+                <button class="btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
+                <button class="btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
+                <button class="btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
+            </div>
+            
+            <!-- Report Container -->
+            <div id="reportContainer"></div>
         </div>
     </div>
 
@@ -2501,6 +2522,486 @@
             } else {
                 showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
+        }
+        
+        // ==================== REPORTS ====================
+        
+        let currentReport = null;
+        let reportData = {};
+        
+        async function showReport(reportType) {
+            currentReport = reportType;
+            const container = document.getElementById('reportContainer');
+            
+            // Show loading
+            container.innerHTML = '<div class="loading">Generating report...</div>';
+            
+            try {
+                switch(reportType) {
+                    case 'sales-by-customer':
+                        await generateSalesByCustomer();
+                        break;
+                    case 'sales-by-product':
+                        await generateSalesByProduct();
+                        break;
+                    case 'purchase-by-supplier':
+                        await generatePurchaseBySupplier();
+                        break;
+                    case 'inventory-turnover':
+                        await generateInventoryTurnover();
+                        break;
+                    case 'gross-margin':
+                        await generateGrossMargin();
+                        break;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="loading" style="color: red;">Error generating report: ${error.message}</div>`;
+            }
+        }
+        
+        // 1. SALES BY CUSTOMER REPORT
+        async function generateSalesByCustomer() {
+            const salesResult = await apiCall('getSalesOrders');
+            const customersResult = await apiCall('getCustomers');
+            const itemsResult = await apiCall('getItems');
+            
+            if (!salesResult?.data || !customersResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const customers = customersResult.data;
+            const items = itemsResult.data;
+            const sales = salesResult.data;
+            
+            // Build customer sales summary
+            const customerSales = {};
+            
+            sales.forEach(so => {
+                const custId = so.Customer_ID;
+                if (!customerSales[custId]) {
+                    const customer = customers.find(c => c.Customer_ID === custId);
+                    customerSales[custId] = {
+                        name: customer?.Customer_Name || custId,
+                        totalSales: 0,
+                        orderCount: 0,
+                        orders: []
+                    };
+                }
+                
+                const total = parseFloat(so.Total_Amount || so.Order_Total || 0);
+                customerSales[custId].totalSales += total;
+                customerSales[custId].orderCount++;
+                customerSales[custId].orders.push({
+                    date: new Date(so.Sale_Date || so.SO_Date).toLocaleDateString(),
+                    orderId: so.SO_ID,
+                    total: total
+                });
+            });
+            
+            // Sort by total sales
+            const sorted = Object.values(customerSales).sort((a, b) => b.totalSales - a.totalSales);
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>📊 Sales by Customer Report</h3>
+                    <p style="color: #666;">Total Customers: ${sorted.length} | Total Sales: $${sorted.reduce((sum, c) => sum + c.totalSales, 0).toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Orders</th>
+                            <th>Total Sales</th>
+                            <th>Avg Order</th>
+                            <th>Last Order</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            sorted.forEach(cust => {
+                const avgOrder = cust.totalSales / cust.orderCount;
+                const lastOrder = cust.orders.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                
+                html += `<tr>
+                    <td><strong>${cust.name}</strong></td>
+                    <td>${cust.orderCount}</td>
+                    <td>$${cust.totalSales.toFixed(2)}</td>
+                    <td>$${avgOrder.toFixed(2)}</td>
+                    <td>${lastOrder.date}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            reportData['sales-by-customer'] = sorted;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 2. SALES BY PRODUCT REPORT
+        async function generateSalesByProduct() {
+            const salesResult = await apiCall('getSalesOrders');
+            const itemsResult = await apiCall('getItems');
+            
+            if (!salesResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            const sales = salesResult.data;
+            
+            // Build product sales summary
+            const productSales = {};
+            
+            sales.forEach(so => {
+                if (so.lines && Array.isArray(so.lines)) {
+                    so.lines.forEach(line => {
+                        const itemId = line.itemId || line.Item_ID;
+                        if (!productSales[itemId]) {
+                            const item = items.find(i => i.Item_ID === itemId);
+                            productSales[itemId] = {
+                                description: item?.Item_Description || itemId,
+                                sku: item?.SKU || '',
+                                unitsSold: 0,
+                                revenue: 0,
+                                avgPrice: 0
+                            };
+                        }
+                        
+                        const qty = parseInt(line.quantity || line.Quantity || 0);
+                        const price = parseFloat(line.unitPrice || line.Unit_Price || 0);
+                        
+                        productSales[itemId].unitsSold += qty;
+                        productSales[itemId].revenue += qty * price;
+                    });
+                }
+            });
+            
+            // Calculate average prices
+            Object.values(productSales).forEach(p => {
+                if (p.unitsSold > 0) {
+                    p.avgPrice = p.revenue / p.unitsSold;
+                }
+            });
+            
+            // Sort by revenue
+            const sorted = Object.values(productSales).sort((a, b) => b.revenue - a.revenue);
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>📦 Sales by Product Report</h3>
+                    <p style="color: #666;">Products Sold: ${sorted.length} | Total Revenue: $${sorted.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-product')">📥 Export to CSV</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>Units Sold</th>
+                            <th>Revenue</th>
+                            <th>Avg Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            sorted.forEach(prod => {
+                html += `<tr>
+                    <td><strong>${prod.description}</strong></td>
+                    <td>${prod.sku}</td>
+                    <td>${prod.unitsSold}</td>
+                    <td>$${prod.revenue.toFixed(2)}</td>
+                    <td>$${prod.avgPrice.toFixed(2)}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            reportData['sales-by-product'] = sorted;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 3. PURCHASE BY SUPPLIER REPORT
+        async function generatePurchaseBySupplier() {
+            const purchasesResult = await apiCall('getPurchaseOrders');
+            const suppliersResult = await apiCall('getSuppliers');
+            
+            if (!purchasesResult?.data || !suppliersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const suppliers = suppliersResult.data;
+            const purchases = purchasesResult.data;
+            
+            // Build supplier purchase summary
+            const supplierPurchases = {};
+            
+            purchases.forEach(po => {
+                const suppId = po.Supplier_ID;
+                if (!supplierPurchases[suppId]) {
+                    const supplier = suppliers.find(s => s.Supplier_ID === suppId);
+                    supplierPurchases[suppId] = {
+                        name: supplier?.Supplier_Name || suppId,
+                        totalSpent: 0,
+                        orderCount: 0,
+                        lastOrder: null
+                    };
+                }
+                
+                const total = parseFloat(po.Total_Amount || po.Invoice_Total || 0);
+                supplierPurchases[suppId].totalSpent += total;
+                supplierPurchases[suppId].orderCount++;
+                
+                const orderDate = new Date(po.PO_Date);
+                if (!supplierPurchases[suppId].lastOrder || orderDate > new Date(supplierPurchases[suppId].lastOrder)) {
+                    supplierPurchases[suppId].lastOrder = orderDate.toLocaleDateString();
+                }
+            });
+            
+            // Sort by total spent
+            const sorted = Object.values(supplierPurchases).sort((a, b) => b.totalSpent - a.totalSpent);
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>🏭 Purchase by Supplier Report</h3>
+                    <p style="color: #666;">Suppliers: ${sorted.length} | Total Spent: $${sorted.reduce((sum, s) => sum + s.totalSpent, 0).toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-by-supplier')">📥 Export to CSV</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Supplier</th>
+                            <th>Orders</th>
+                            <th>Total Spent</th>
+                            <th>Avg Order</th>
+                            <th>Last Order</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            sorted.forEach(supp => {
+                const avgOrder = supp.totalSpent / supp.orderCount;
+                
+                html += `<tr>
+                    <td><strong>${supp.name}</strong></td>
+                    <td>${supp.orderCount}</td>
+                    <td>$${supp.totalSpent.toFixed(2)}</td>
+                    <td>$${avgOrder.toFixed(2)}</td>
+                    <td>${supp.lastOrder || '-'}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            reportData['purchase-by-supplier'] = sorted;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 4. INVENTORY TURNOVER REPORT
+        async function generateInventoryTurnover() {
+            const inventoryResult = await apiCall('getInventoryReport');
+            const salesResult = await apiCall('getSalesOrders');
+            
+            if (!inventoryResult?.data || !salesResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const inventory = inventoryResult.data;
+            const sales = salesResult.data;
+            
+            // Calculate units sold per item
+            const unitsSold = {};
+            sales.forEach(so => {
+                if (so.lines && Array.isArray(so.lines)) {
+                    so.lines.forEach(line => {
+                        const itemId = line.itemId || line.Item_ID;
+                        unitsSold[itemId] = (unitsSold[itemId] || 0) + parseInt(line.quantity || line.Quantity || 0);
+                    });
+                }
+            });
+            
+            // Build turnover report
+            const turnoverData = inventory.map(item => {
+                const sold = unitsSold[item.Item_ID] || 0;
+                const onHand = parseInt(item.Qty_On_Hand) || 0;
+                const avgInventory = onHand + (sold / 2); // Simplified calculation
+                const turnover = avgInventory > 0 ? sold / avgInventory : 0;
+                
+                return {
+                    description: item.Item_Description,
+                    sku: item.SKU,
+                    onHand: onHand,
+                    sold: sold,
+                    turnover: turnover,
+                    status: turnover > 4 ? 'Fast' : turnover > 2 ? 'Normal' : 'Slow'
+                };
+            }).sort((a, b) => b.turnover - a.turnover);
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>🔄 Inventory Turnover Report</h3>
+                    <p style="color: #666;">Total Items: ${turnoverData.length}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('inventory-turnover')">📥 Export to CSV</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>On Hand</th>
+                            <th>Units Sold</th>
+                            <th>Turnover Rate</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            turnoverData.forEach(item => {
+                const statusColor = item.status === 'Fast' ? 'green' : item.status === 'Normal' ? 'orange' : 'red';
+                
+                html += `<tr>
+                    <td><strong>${item.description}</strong></td>
+                    <td>${item.sku}</td>
+                    <td>${item.onHand}</td>
+                    <td>${item.sold}</td>
+                    <td>${item.turnover.toFixed(2)}</td>
+                    <td style="color: ${statusColor}; font-weight: bold;">${item.status}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            reportData['inventory-turnover'] = turnoverData;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 5. GROSS MARGIN REPORT
+        async function generateGrossMargin() {
+            const itemsResult = await apiCall('getItems');
+            const salesResult = await apiCall('getSalesOrders');
+            
+            if (!itemsResult?.data || !salesResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            const sales = salesResult.data;
+            
+            // Calculate margin per item
+            const marginData = items.map(item => {
+                const cost = parseFloat(item.Cost_Price) || 0;
+                const sell = parseFloat(item.Sell_Price) || 0;
+                const margin = sell - cost;
+                const marginPercent = sell > 0 ? (margin / sell) * 100 : 0;
+                
+                // Calculate units sold
+                let unitsSold = 0;
+                sales.forEach(so => {
+                    if (so.lines && Array.isArray(so.lines)) {
+                        so.lines.forEach(line => {
+                            if ((line.itemId || line.Item_ID) === item.Item_ID) {
+                                unitsSold += parseInt(line.quantity || line.Quantity || 0);
+                            }
+                        });
+                    }
+                });
+                
+                const totalProfit = margin * unitsSold;
+                
+                return {
+                    description: item.Item_Description,
+                    sku: item.SKU,
+                    cost: cost,
+                    sell: sell,
+                    margin: margin,
+                    marginPercent: marginPercent,
+                    unitsSold: unitsSold,
+                    totalProfit: totalProfit
+                };
+            }).sort((a, b) => b.totalProfit - a.totalProfit);
+            
+            // Build HTML
+            const totalProfit = marginData.reduce((sum, item) => sum + item.totalProfit, 0);
+            
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>💰 Gross Margin Report</h3>
+                    <p style="color: #666;">Total Products: ${marginData.length} | Total Profit: $${totalProfit.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('gross-margin')">📥 Export to CSV</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>SKU</th>
+                            <th>Cost</th>
+                            <th>Sell</th>
+                            <th>Margin</th>
+                            <th>Margin %</th>
+                            <th>Units Sold</th>
+                            <th>Total Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            marginData.forEach(item => {
+                const marginColor = item.marginPercent > 40 ? 'green' : item.marginPercent > 20 ? 'orange' : 'red';
+                
+                html += `<tr>
+                    <td><strong>${item.description}</strong></td>
+                    <td>${item.sku}</td>
+                    <td>$${item.cost.toFixed(2)}</td>
+                    <td>$${item.sell.toFixed(2)}</td>
+                    <td>$${item.margin.toFixed(2)}</td>
+                    <td style="color: ${marginColor}; font-weight: bold;">${item.marginPercent.toFixed(1)}%</td>
+                    <td>${item.unitsSold}</td>
+                    <td style="font-weight: bold;">$${item.totalProfit.toFixed(2)}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            reportData['gross-margin'] = marginData;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // Export to CSV function
+        function exportToCSV(reportType) {
+            const data = reportData[reportType];
+            if (!data || data.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Get column headers from first row
+            const headers = Object.keys(data[0]);
+            let csv = headers.join(',') + '\\n';
+            
+            // Add data rows
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const val = row[header];
+                    // Escape commas and quotes
+                    if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+                        return '"' + val.replace(/"/g, '""') + '"';
+                    }
+                    return val;
+                });
+                csv += values.join(',') + '\\n';
+            });
+            
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = reportType + '-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
     </script>
 </body>
