@@ -1926,12 +1926,18 @@
                 return;
             }
 
+            // Calculate totals
+            let totalQty = 0;
+            
             let html = '<table class="data-table" id="itemsDataTable"><thead><tr>';
             html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
                 const lowStock = item.Qty_On_Hand < item.Reorder_Point ? 'style="background:#fff3cd;"' : '';
+                const qty = parseFloat(item.Qty_On_Hand) || 0;
+                totalQty += qty;
+                
                 html += `<tr ${lowStock}>
                     <td>${item.Item_ID}</td>
                     <td><strong>${item.SKU || '-'}</strong></td>
@@ -1940,7 +1946,7 @@
                     <td>${item.UOM}</td>
                     <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
                     <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
-                    <td>${item.Qty_On_Hand}</td>
+                    <td>${qty}</td>
                     <td>${item.Reorder_Point}</td>
                     <td>
                         <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
@@ -1948,6 +1954,13 @@
                     </td>
                 </tr>`;
             });
+
+            // Add totals row
+            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
+                <td colspan="7" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td>${totalQty.toLocaleString()}</td>
+                <td colspan="2"></td>
+            </tr>`;
 
             html += '</tbody></table>';
             document.getElementById('itemsTable').innerHTML = html;
@@ -2450,6 +2463,10 @@
                 return;
             }
 
+            // Calculate totals
+            let totalAmount = 0;
+            let totalPaid = 0;
+            
             let html = '<table class="data-table" id="purchasesDataTable"><thead><tr>';
             html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
@@ -2459,6 +2476,9 @@
                 const paymentStatus = po.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(po.Amount_Paid) || 0;
                 const total = parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
+                
+                totalAmount += total;
+                totalPaid += amountPaid;
                 
                 // Color code payment status
                 let statusColor = '';
@@ -2482,6 +2502,15 @@
                     </td>
                 </tr>`;
             });
+
+            // Add totals row
+            const balance = totalAmount - totalPaid;
+            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
+                <td colspan="5" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td colspan="3" style="text-align: left;">Balance Due: <strong style="color: ${balance > 0 ? 'red' : 'green'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+            </tr>`;
 
             html += '</tbody></table>';
             document.getElementById('purchasesTable').innerHTML = html;
@@ -2713,6 +2742,10 @@
                 return;
             }
 
+            // Calculate totals
+            let totalAmount = 0;
+            let totalPaid = 0;
+            
             let html = '<table class="data-table" id="salesDataTable"><thead><tr>';
             html += '<th>SO ID</th><th>Invoice #</th><th>Customer</th><th>Date</th><th>Status</th><th>Payment Method</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
@@ -2724,6 +2757,9 @@
                 const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
                 const status = so.Status || 'Completed';
                 const invoiceNum = so.Invoice_Number || '-';
+                
+                totalAmount += total;
+                totalPaid += amountPaid;
                 
                 // Color code payment status
                 let statusColor = '';
@@ -2748,6 +2784,15 @@
                     </td>
                 </tr>`;
             });
+
+            // Add totals row
+            const balance = totalAmount - totalPaid;
+            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
+                <td colspan="6" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td>$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td colspan="3" style="text-align: left;">Balance Due: <strong style="color: ${balance > 0 ? 'red' : 'green'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+            </tr>`;
 
             html += '</tbody></table>';
             document.getElementById('salesTable').innerHTML = html;
@@ -2884,6 +2929,10 @@
                 return;
             }
 
+            // Calculate totals
+            let totalQty = 0;
+            let totalValue = 0;
+            
             let html = '<table class="data-table" id="inventoryDataTable"><thead><tr>';
             html += '<th>Item ID</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Total Value</th><th>Status</th>';
             html += '</tr></thead><tbody>';
@@ -2891,18 +2940,32 @@
             items.forEach(item => {
                 const lowStock = item.Low_Stock ? 'style="background:#fff3cd;"' : '';
                 const status = item.Low_Stock ? '⚠️ Low Stock' : '✅ OK';
+                const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const value = parseFloat(item.Total_Value) || 0;
+                
+                totalQty += qty;
+                totalValue += value;
                 
                 html += `<tr ${lowStock}>
                     <td>${item.Item_ID}</td>
                     <td><strong>${item.Item_Description}</strong></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
-                    <td>${item.Qty_On_Hand}</td>
+                    <td>${qty}</td>
                     <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
                     <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
-                    <td>$${parseFloat(item.Total_Value).toFixed(2)}</td>
+                    <td>$${value.toFixed(2)}</td>
                     <td>${status}</td>
                 </tr>`;
             });
+
+            // Add totals row
+            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
+                <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td>${totalQty.toLocaleString()}</td>
+                <td colspan="2"></td>
+                <td>$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td></td>
+            </tr>`;
 
             html += '</tbody></table>';
             document.getElementById('inventoryTable').innerHTML = html;
