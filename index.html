@@ -2578,7 +2578,7 @@
                     <td>${dueDate}</td>
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
-                        <button class="btn-small" onclick='editPurchaseOrder(${JSON.stringify(po).replace(/'/g, "&#39;")})'>✏️ Edit</button>
+                        <button class="btn-small" onclick="editPurchaseOrder('${po.PO_ID}')">✏️ Edit</button>
                         ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordPurchasePayment('${po.PO_ID}', ${total}, ${amountPaid})">💰 Pay</button>` : '<span style="color: green;">✓ Paid</span>'}
                     </td>
                 </tr>`;
@@ -3354,7 +3354,7 @@
                     <td>${dueDate}</td>
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
-                        <button class="btn-small" onclick='editSalesOrder(${JSON.stringify(so).replace(/'/g, "&#39;")})'>✏️ Edit</button>
+                        <button class="btn-small" onclick="editSalesOrder('${so.SO_ID}')">✏️ Edit</button>
                         ${paymentStatus !== 'Paid' ? `<button class="btn-small" onclick="recordSalesPayment('${so.SO_ID}', ${total}, ${amountPaid})">💰 Receive</button>` : '<span style="color: green;">✓ Paid</span>'}
                     </td>
                 </tr>`;
