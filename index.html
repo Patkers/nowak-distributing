@@ -20,16 +20,14 @@
             min-height: 100vh;
             padding: 20px;
             margin: 0;
-            /* Disable pull-to-refresh on mobile */
-            overscroll-behavior: contain;
+            /* Minimal pull-to-refresh prevention */
             overscroll-behavior-y: contain;
-            -webkit-overflow-scrolling: touch;
         }
         
         html {
-            /* Prevent scroll bounce but allow scrolling */
-            overscroll-behavior: contain;
-            overflow-y: auto;
+            /* Allow normal scrolling */
+            margin: 0;
+            padding: 0;
         }
 
         .container {
@@ -1536,33 +1534,24 @@
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
             
-            // Prevent pull-to-refresh and scroll bounce on mobile
+            // Minimal pull-to-refresh prevention (only at very top)
             let lastTouchY = 0;
-            let preventPullToRefresh = false;
             
             document.body.addEventListener('touchstart', function(e) {
                 if (e.touches.length !== 1) return;
                 lastTouchY = e.touches[0].clientY;
-                // Prevent pull-to-refresh if we're at the top
-                preventPullToRefresh = (window.pageYOffset === 0);
-            }, { passive: false });
+            }, { passive: true });
             
             document.body.addEventListener('touchmove', function(e) {
                 const touchY = e.touches[0].clientY;
                 const touchYDelta = touchY - lastTouchY;
                 lastTouchY = touchY;
                 
-                // Prevent pull-to-refresh when scrolling down at the top
-                if (preventPullToRefresh) {
+                // Only prevent if at absolute top AND pulling down
+                if (window.pageYOffset === 0 && touchYDelta > 0) {
                     e.preventDefault();
-                    return;
                 }
             }, { passive: false });
-            
-            // Also prevent scroll restoration
-            if ('scrollRestoration' in history) {
-                history.scrollRestoration = 'manual';
-            }
         });
 
         function switchTab(tabName) {
