@@ -1159,6 +1159,9 @@
                 <button class="btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
                 <button class="btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
                 <button class="btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
+                <button class="btn" onclick="showReport('accounts-receivable')" style="background: #28a745;">💵 Accounts Receivable</button>
+                <button class="btn" onclick="showReport('accounts-payable')" style="background: #dc3545;">💸 Accounts Payable</button>
+                <button class="btn" onclick="showReport('simple-inventory')" style="background: #17a2b8;">📋 Inventory List</button>
             </div>
             
             <!-- Report Container -->
@@ -2528,6 +2531,149 @@
         
         let currentReport = null;
         let reportData = {};
+        let rawReportData = {}; // Store unfiltered data for re-filtering
+        let reportFilters = {}; // Store current filter values
+        
+        // Helper: Build filter UI HTML
+        function buildFilterUI(reportType, options = {}) {
+            let html = '<div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">';
+            html += '<h4 style="margin-bottom: 10px;">🔍 Filters</h4>';
+            html += '<div class="form-grid">';
+            
+            // Date Range (common to most reports)
+            if (options.dateRange) {
+                html += `
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" id="filter_fromDate" value="${reportFilters.fromDate || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" id="filter_toDate" value="${reportFilters.toDate || ''}">
+                    </div>`;
+            }
+            
+            // Customer dropdown
+            if (options.customer) {
+                html += `
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <select id="filter_customer">
+                            <option value="">All Customers</option>
+                            ${options.customerList.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Supplier dropdown
+            if (options.supplier) {
+                html += `
+                    <div class="form-group">
+                        <label>Supplier</label>
+                        <select id="filter_supplier">
+                            <option value="">All Suppliers</option>
+                            ${options.supplierList.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Item dropdown
+            if (options.item) {
+                html += `
+                    <div class="form-group">
+                        <label>Product</label>
+                        <select id="filter_item">
+                            <option value="">All Products</option>
+                            ${options.itemList.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Payment Status
+            if (options.paymentStatus) {
+                html += `
+                    <div class="form-group">
+                        <label>Payment Status</label>
+                        <select id="filter_paymentStatus">
+                            <option value="">All</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Stock Status
+            if (options.stockStatus) {
+                html += `
+                    <div class="form-group">
+                        <label>Stock Status</label>
+                        <select id="filter_stockStatus">
+                            <option value="">All Items</option>
+                            <option value="low">Low Stock</option>
+                            <option value="ok">Normal Stock</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Turnover Status
+            if (options.turnoverStatus) {
+                html += `
+                    <div class="form-group">
+                        <label>Movement</label>
+                        <select id="filter_turnoverStatus">
+                            <option value="">All</option>
+                            <option value="Fast">Fast Movers</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Slow">Slow Movers</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Minimum Amount
+            if (options.minAmount) {
+                html += `
+                    <div class="form-group">
+                        <label>Min Amount ($)</label>
+                        <input type="number" id="filter_minAmount" step="0.01" placeholder="0.00">
+                    </div>`;
+            }
+            
+            html += '</div>';
+            html += `
+                <button class="btn" onclick="applyReportFilters('${reportType}')">🔍 Apply Filters</button>
+                <button class="btn btn-secondary" onclick="clearReportFilters('${reportType}')">🧹 Clear Filters</button>
+            `;
+            html += '</div>';
+            
+            return html;
+        }
+        
+        // Apply filters to current report
+        async function applyReportFilters(reportType) {
+            // Capture filter values
+            reportFilters = {
+                fromDate: document.getElementById('filter_fromDate')?.value || '',
+                toDate: document.getElementById('filter_toDate')?.value || '',
+                customer: document.getElementById('filter_customer')?.value || '',
+                supplier: document.getElementById('filter_supplier')?.value || '',
+                item: document.getElementById('filter_item')?.value || '',
+                paymentStatus: document.getElementById('filter_paymentStatus')?.value || '',
+                stockStatus: document.getElementById('filter_stockStatus')?.value || '',
+                turnoverStatus: document.getElementById('filter_turnoverStatus')?.value || '',
+                minAmount: parseFloat(document.getElementById('filter_minAmount')?.value) || 0
+            };
+            
+            // Re-render report with filters
+            await showReport(reportType);
+        }
+        
+        // Clear all filters
+        function clearReportFilters(reportType) {
+            reportFilters = {};
+            showReport(reportType);
+        }
         
         async function showReport(reportType) {
             currentReport = reportType;
@@ -2553,6 +2699,15 @@
                     case 'gross-margin':
                         await generateGrossMargin();
                         break;
+                    case 'accounts-receivable':
+                        await generateAccountsReceivable();
+                        break;
+                    case 'accounts-payable':
+                        await generateAccountsPayable();
+                        break;
+                    case 'simple-inventory':
+                        await generateSimpleInventory();
+                        break;
                 }
             } catch (error) {
                 container.innerHTML = `<div class="loading" style="color: red;">Error generating report: ${error.message}</div>`;
@@ -2563,15 +2718,33 @@
         async function generateSalesByCustomer() {
             const salesResult = await apiCall('getSalesOrders');
             const customersResult = await apiCall('getCustomers');
-            const itemsResult = await apiCall('getItems');
             
-            if (!salesResult?.data || !customersResult?.data || !itemsResult?.data) {
+            if (!salesResult?.data || !customersResult?.data) {
                 throw new Error('Failed to load data');
             }
             
             const customers = customersResult.data;
-            const items = itemsResult.data;
-            const sales = salesResult.data;
+            let sales = salesResult.data;
+            
+            // Store raw data
+            rawReportData['sales-by-customer'] = { sales, customers };
+            
+            // APPLY FILTERS
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) >= fromDate);
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                sales = sales.filter(so => new Date(so.Sale_Date || so.SO_Date) <= toDate);
+            }
+            if (reportFilters.customer) {
+                sales = sales.filter(so => so.Customer_ID === reportFilters.customer);
+            }
+            if (reportFilters.minAmount) {
+                sales = sales.filter(so => parseFloat(so.Total_Amount || so.Order_Total || 0) >= reportFilters.minAmount);
+            }
             
             // Build customer sales summary
             const customerSales = {};
@@ -2581,34 +2754,49 @@
                 if (!customerSales[custId]) {
                     const customer = customers.find(c => c.Customer_ID === custId);
                     customerSales[custId] = {
+                        id: custId,
                         name: customer?.Customer_Name || custId,
                         totalSales: 0,
                         orderCount: 0,
-                        orders: []
+                        lastOrderDate: null
                     };
                 }
                 
                 const total = parseFloat(so.Total_Amount || so.Order_Total || 0);
                 customerSales[custId].totalSales += total;
                 customerSales[custId].orderCount++;
-                customerSales[custId].orders.push({
-                    date: new Date(so.Sale_Date || so.SO_Date).toLocaleDateString(),
-                    orderId: so.SO_ID,
-                    total: total
-                });
+                
+                const orderDate = new Date(so.Sale_Date || so.SO_Date);
+                if (!customerSales[custId].lastOrderDate || orderDate > customerSales[custId].lastOrderDate) {
+                    customerSales[custId].lastOrderDate = orderDate;
+                }
             });
             
             // Sort by total sales
             const sorted = Object.values(customerSales).sort((a, b) => b.totalSales - a.totalSales);
             
-            // Build HTML
-            let html = `
+            // Build customer list for filter
+            const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('sales-by-customer', {
+                dateRange: true,
+                customer: true,
+                customerList: customerList,
+                minAmount: true
+            });
+            
+            html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📊 Sales by Customer Report</h3>
                     <p style="color: #666;">Total Customers: ${sorted.length} | Total Sales: $${sorted.reduce((sum, c) => sum + c.totalSales, 0).toFixed(2)}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
-                </div>
-                <table class="data-table">
+                </div>`;
+            
+            if (sorted.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table">
                     <thead>
                         <tr>
                             <th>Customer</th>
@@ -2620,20 +2808,20 @@
                     </thead>
                     <tbody>`;
             
-            sorted.forEach(cust => {
-                const avgOrder = cust.totalSales / cust.orderCount;
-                const lastOrder = cust.orders.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                
-                html += `<tr>
-                    <td><strong>${cust.name}</strong></td>
-                    <td>${cust.orderCount}</td>
-                    <td>$${cust.totalSales.toFixed(2)}</td>
-                    <td>$${avgOrder.toFixed(2)}</td>
-                    <td>${lastOrder.date}</td>
-                </tr>`;
-            });
+                sorted.forEach(cust => {
+                    const avgOrder = cust.totalSales / cust.orderCount;
+                    
+                    html += `<tr>
+                        <td><strong>${cust.name}</strong></td>
+                        <td>${cust.orderCount}</td>
+                        <td>$${cust.totalSales.toFixed(2)}</td>
+                        <td>$${avgOrder.toFixed(2)}</td>
+                        <td>${cust.lastOrderDate ? cust.lastOrderDate.toLocaleDateString() : '-'}</td>
+                    </tr>`;
+                });
             
-            html += '</tbody></table>';
+                html += '</tbody></table>';
+            }
             
             reportData['sales-by-customer'] = sorted;
             document.getElementById('reportContainer').innerHTML = html;
@@ -2966,6 +3154,273 @@
             html += '</tbody></table>';
             
             reportData['gross-margin'] = marginData;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 6. ACCOUNTS RECEIVABLE REPORT (Who owes you money)
+        async function generateAccountsReceivable() {
+            const salesResult = await apiCall('getSalesOrders');
+            const customersResult = await apiCall('getCustomers');
+            
+            if (!salesResult?.data || !customersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const customers = customersResult.data;
+            const sales = salesResult.data;
+            
+            // Filter for unpaid/partial invoices
+            const receivables = sales
+                .filter(so => {
+                    const status = so.Payment_Status || 'Unpaid';
+                    return status !== 'Paid';
+                })
+                .map(so => {
+                    const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
+                    const total = parseFloat(so.Total_Amount || so.Order_Total || 0);
+                    const paid = parseFloat(so.Amount_Paid || 0);
+                    const balance = total - paid;
+                    const dueDate = so.Due_Date ? new Date(so.Due_Date) : null;
+                    const today = new Date();
+                    const daysOverdue = dueDate ? Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)) : 0;
+                    
+                    return {
+                        customer: customer?.Customer_Name || so.Customer_ID,
+                        invoiceId: so.SO_ID,
+                        invoiceDate: new Date(so.Sale_Date || so.SO_Date).toLocaleDateString(),
+                        dueDate: dueDate ? dueDate.toLocaleDateString() : '-',
+                        total: total,
+                        paid: paid,
+                        balance: balance,
+                        status: so.Payment_Status || 'Unpaid',
+                        daysOverdue: daysOverdue,
+                        aging: daysOverdue > 60 ? '60+ days' : daysOverdue > 30 ? '31-60 days' : daysOverdue > 0 ? '1-30 days' : 'Current'
+                    };
+                })
+                .sort((a, b) => b.daysOverdue - a.daysOverdue);
+            
+            const totalOutstanding = receivables.reduce((sum, r) => sum + r.balance, 0);
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>💵 Accounts Receivable Report</h3>
+                    <p style="color: #666;">Outstanding Invoices: ${receivables.length} | Total AR: $${totalOutstanding.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-receivable')">📥 Export to CSV</button>
+                </div>`;
+            
+            if (receivables.length === 0) {
+                html += '<p style="color: green; font-size: 18px; text-align: center; padding: 40px;">✅ All invoices paid! No outstanding receivables.</p>';
+            } else {
+                html += `<table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Invoice #</th>
+                            <th>Invoice Date</th>
+                            <th>Due Date</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Balance Due</th>
+                            <th>Days Overdue</th>
+                            <th>Aging</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                receivables.forEach(r => {
+                    const statusColor = r.status === 'Overdue' || r.daysOverdue > 0 ? 'red' : 'orange';
+                    const agingColor = r.daysOverdue > 60 ? 'red' : r.daysOverdue > 30 ? 'orange' : r.daysOverdue > 0 ? '#f39c12' : 'green';
+                    
+                    html += `<tr>
+                        <td><strong>${r.customer}</strong></td>
+                        <td>${r.invoiceId}</td>
+                        <td>${r.invoiceDate}</td>
+                        <td>${r.dueDate}</td>
+                        <td>$${r.total.toFixed(2)}</td>
+                        <td>$${r.paid.toFixed(2)}</td>
+                        <td style="font-weight: bold; color: ${statusColor};">$${r.balance.toFixed(2)}</td>
+                        <td style="color: ${r.daysOverdue > 0 ? 'red' : 'green'};">${r.daysOverdue > 0 ? r.daysOverdue : '-'}</td>
+                        <td style="color: ${agingColor}; font-weight: bold;">${r.aging}</td>
+                        <td style="color: ${statusColor};">${r.status}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+            }
+            
+            reportData['accounts-receivable'] = receivables;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 7. ACCOUNTS PAYABLE REPORT (Who you owe money to)
+        async function generateAccountsPayable() {
+            const purchasesResult = await apiCall('getPurchaseOrders');
+            const suppliersResult = await apiCall('getSuppliers');
+            
+            if (!purchasesResult?.data || !suppliersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const suppliers = suppliersResult.data;
+            const purchases = purchasesResult.data;
+            
+            // Filter for unpaid/partial invoices
+            const payables = purchases
+                .filter(po => {
+                    const status = po.Payment_Status || 'Unpaid';
+                    return status !== 'Paid';
+                })
+                .map(po => {
+                    const supplier = suppliers.find(s => s.Supplier_ID === po.Supplier_ID);
+                    const total = parseFloat(po.Total_Amount || po.Invoice_Total || 0);
+                    const paid = parseFloat(po.Amount_Paid || 0);
+                    const balance = total - paid;
+                    const dueDate = po.Due_Date ? new Date(po.Due_Date) : null;
+                    const today = new Date();
+                    const daysOverdue = dueDate ? Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)) : 0;
+                    
+                    return {
+                        supplier: supplier?.Supplier_Name || po.Supplier_ID,
+                        invoiceId: po.Invoice_Number || po.PO_ID,
+                        poId: po.PO_ID,
+                        invoiceDate: new Date(po.PO_Date).toLocaleDateString(),
+                        dueDate: dueDate ? dueDate.toLocaleDateString() : '-',
+                        total: total,
+                        paid: paid,
+                        balance: balance,
+                        status: po.Payment_Status || 'Unpaid',
+                        daysOverdue: daysOverdue,
+                        aging: daysOverdue > 60 ? '60+ days' : daysOverdue > 30 ? '31-60 days' : daysOverdue > 0 ? '1-30 days' : 'Current'
+                    };
+                })
+                .sort((a, b) => b.daysOverdue - a.daysOverdue);
+            
+            const totalOutstanding = payables.reduce((sum, p) => sum + p.balance, 0);
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>💸 Accounts Payable Report</h3>
+                    <p style="color: #666;">Outstanding Bills: ${payables.length} | Total AP: $${totalOutstanding.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-payable')">📥 Export to CSV</button>
+                </div>`;
+            
+            if (payables.length === 0) {
+                html += '<p style="color: green; font-size: 18px; text-align: center; padding: 40px;">✅ All bills paid! No outstanding payables.</p>';
+            } else {
+                html += `<table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Supplier</th>
+                            <th>Invoice #</th>
+                            <th>PO #</th>
+                            <th>Invoice Date</th>
+                            <th>Due Date</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Balance Due</th>
+                            <th>Days Overdue</th>
+                            <th>Aging</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                payables.forEach(p => {
+                    const statusColor = p.daysOverdue > 0 ? 'red' : 'orange';
+                    const agingColor = p.daysOverdue > 60 ? 'red' : p.daysOverdue > 30 ? 'orange' : p.daysOverdue > 0 ? '#f39c12' : 'green';
+                    
+                    html += `<tr>
+                        <td><strong>${p.supplier}</strong></td>
+                        <td>${p.invoiceId}</td>
+                        <td>${p.poId}</td>
+                        <td>${p.invoiceDate}</td>
+                        <td>${p.dueDate}</td>
+                        <td>$${p.total.toFixed(2)}</td>
+                        <td>$${p.paid.toFixed(2)}</td>
+                        <td style="font-weight: bold; color: ${statusColor};">$${p.balance.toFixed(2)}</td>
+                        <td style="color: ${p.daysOverdue > 0 ? 'red' : 'green'};">${p.daysOverdue > 0 ? p.daysOverdue : '-'}</td>
+                        <td style="color: ${agingColor}; font-weight: bold;">${p.aging}</td>
+                        <td style="color: ${statusColor};">${p.status}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+            }
+            
+            reportData['accounts-payable'] = payables;
+            document.getElementById('reportContainer').innerHTML = html;
+        }
+        
+        // 8. SIMPLE INVENTORY REPORT
+        async function generateSimpleInventory() {
+            const inventoryResult = await apiCall('getInventoryReport');
+            
+            if (!inventoryResult?.data) {
+                throw new Error('Failed to load inventory');
+            }
+            
+            const inventory = inventoryResult.data.sort((a, b) => {
+                return a.Item_Description.localeCompare(b.Item_Description);
+            });
+            
+            const totalValue = inventory.reduce((sum, item) => sum + parseFloat(item.Total_Value || 0), 0);
+            const totalItems = inventory.length;
+            const lowStockCount = inventory.filter(item => item.Low_Stock).length;
+            
+            // Build HTML
+            let html = `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>📋 Inventory List Report</h3>
+                    <p style="color: #666;">
+                        Total Items: ${totalItems} | 
+                        Total Value: $${totalValue.toFixed(2)} | 
+                        Low Stock Items: ${lowStockCount}
+                    </p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('simple-inventory')">📥 Export to CSV</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Description</th>
+                            <th>Supplier</th>
+                            <th>UOM</th>
+                            <th>Qty On Hand</th>
+                            <th>Reorder Point</th>
+                            <th>Cost</th>
+                            <th>Sell Price</th>
+                            <th>Total Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            inventory.forEach(item => {
+                const lowStock = item.Low_Stock;
+                const rowStyle = lowStock ? 'background: #fff3cd;' : '';
+                const status = lowStock ? '⚠️ Low Stock' : '✅ OK';
+                const statusColor = lowStock ? '#f39c12' : 'green';
+                
+                html += `<tr style="${rowStyle}">
+                    <td><strong>${item.SKU || '-'}</strong></td>
+                    <td>${item.Item_Description}</td>
+                    <td>${item.Supplier_ID}</td>
+                    <td>${item.UOM}</td>
+                    <td style="font-weight: bold;">${item.Qty_On_Hand}</td>
+                    <td>${item.Reorder_Point}</td>
+                    <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
+                    <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
+                    <td>$${parseFloat(item.Total_Value).toFixed(2)}</td>
+                    <td style="color: ${statusColor}; font-weight: bold;">${status}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            reportData['simple-inventory'] = inventory;
             document.getElementById('reportContainer').innerHTML = html;
         }
         
