@@ -1174,6 +1174,22 @@
         let cachedSuppliers = [];
         let cachedItems = [];
         let cachedCustomers = [];
+        
+        // Helper functions to lookup names from IDs
+        function getCustomerName(customerId) {
+            const customer = cachedCustomers.find(c => c.Customer_ID === customerId);
+            return customer ? customer.Customer_Name : customerId;
+        }
+        
+        function getSupplierName(supplierId) {
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
+            return supplier ? supplier.Supplier_Name : supplierId;
+        }
+        
+        function getItemDescription(itemId) {
+            const item = cachedItems.find(i => i.Item_ID === itemId);
+            return item ? item.Item_Description : itemId;
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
             updateConfigStatus();
@@ -1515,7 +1531,7 @@
                     <td>${item.Item_ID}</td>
                     <td><strong>${item.SKU || '-'}</strong></td>
                     <td>${item.Item_Description}</td>
-                    <td>${item.Supplier_ID}</td>
+                    <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td>${item.UOM}</td>
                     <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
                     <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
@@ -2025,7 +2041,7 @@
                 
                 html += `<tr>
                     <td>${po.PO_ID}</td>
-                    <td>${po.Supplier_ID}</td>
+                    <td><strong>${getSupplierName(po.Supplier_ID)}</strong></td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
                     <td>${po.Invoice_Number || '-'}</td>
                     <td>${po.Status || 'Received'}</td>
@@ -2269,7 +2285,7 @@
                 
                 html += `<tr>
                     <td>${so.SO_ID}</td>
-                    <td>${so.Customer_ID}</td>
+                    <td><strong>${getCustomerName(so.Customer_ID)}</strong></td>
                     <td>${new Date(so.Sale_Date || so.SO_Date).toLocaleDateString()}</td>
                     <td>${so.Payment_Method || '-'}</td>
                     <td>$${parseFloat(total).toFixed(2)}</td>
@@ -2412,7 +2428,7 @@
                 html += `<tr ${lowStock}>
                     <td>${item.Item_ID}</td>
                     <td><strong>${item.Item_Description}</strong></td>
-                    <td>${item.Supplier_ID}</td>
+                    <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td>${item.Qty_On_Hand}</td>
                     <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
                     <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
@@ -3383,11 +3399,10 @@
                     const today = new Date();
                     const daysOverdue = dueDate ? Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                     
-                    let aging;
-                    if (daysOverdue > 60) aging = '60+';
-                    else if (daysOverdue > 30) aging = '31-60';
-                    else if (daysOverdue > 0) aging = '1-30';
-                    else aging = 'Current';
+                    let aging = 'Current';
+                    if (daysOverdue > 60) aging = '60+ days';
+                    else if (daysOverdue > 30) aging = '31-60 days';
+                    else if (daysOverdue > 0) aging = '1-30 days';
                     
                     return {
                         customerId: so.Customer_ID,
@@ -3400,7 +3415,8 @@
                         balance: balance,
                         status: so.Payment_Status || 'Unpaid',
                         daysOverdue: daysOverdue,
-                        aging: aging
+                        aging: aging,
+                        agingCategory: aging // For filtering
                     };
                 });
             
@@ -3419,7 +3435,16 @@
                 }
             }
             if (reportFilters.aging) {
-                receivables = receivables.filter(r => r.aging === reportFilters.aging);
+                const agingFilter = reportFilters.aging;
+                if (agingFilter === '1-30') {
+                    receivables = receivables.filter(r => r.aging === '1-30 days');
+                } else if (agingFilter === '31-60') {
+                    receivables = receivables.filter(r => r.aging === '31-60 days');
+                } else if (agingFilter === '60+') {
+                    receivables = receivables.filter(r => r.aging === '60+ days');
+                } else if (agingFilter === 'Current') {
+                    receivables = receivables.filter(r => r.aging === 'Current');
+                }
             }
             
             // Sort by days overdue
@@ -3521,11 +3546,10 @@
                     const today = new Date();
                     const daysOverdue = dueDate ? Math.floor((today - dueDate) / (1000 * 60 * 60 * 24)) : 0;
                     
-                    let aging;
-                    if (daysOverdue > 60) aging = '60+';
-                    else if (daysOverdue > 30) aging = '31-60';
-                    else if (daysOverdue > 0) aging = '1-30';
-                    else aging = 'Current';
+                    let aging = 'Current';
+                    if (daysOverdue > 60) aging = '60+ days';
+                    else if (daysOverdue > 30) aging = '31-60 days';
+                    else if (daysOverdue > 0) aging = '1-30 days';
                     
                     return {
                         supplierId: po.Supplier_ID,
@@ -3539,7 +3563,8 @@
                         balance: balance,
                         status: po.Payment_Status || 'Unpaid',
                         daysOverdue: daysOverdue,
-                        aging: aging
+                        aging: aging,
+                        agingCategory: aging // For filtering
                     };
                 });
             
@@ -3558,7 +3583,16 @@
                 }
             }
             if (reportFilters.aging) {
-                payables = payables.filter(p => p.aging === reportFilters.aging);
+                const agingFilter = reportFilters.aging;
+                if (agingFilter === '1-30') {
+                    payables = payables.filter(p => p.aging === '1-30 days');
+                } else if (agingFilter === '31-60') {
+                    payables = payables.filter(p => p.aging === '31-60 days');
+                } else if (agingFilter === '60+') {
+                    payables = payables.filter(p => p.aging === '60+ days');
+                } else if (agingFilter === 'Current') {
+                    payables = payables.filter(p => p.aging === 'Current');
+                }
             }
             
             // Sort by days overdue
@@ -3638,7 +3672,7 @@
             const suppliersResult = await apiCall('getSuppliers');
             
             if (!inventoryResult?.data || !suppliersResult?.data) {
-                throw new Error('Failed to load inventory');
+                throw new Error('Failed to load data');
             }
             
             const suppliers = suppliersResult.data;
@@ -3698,7 +3732,7 @@
                 </div>`;
             
             if (inventory.length === 0) {
-                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No items match your filters</p>';
             } else {
                 html += `<table class="data-table">
                     <thead>
@@ -3726,7 +3760,7 @@
                     html += `<tr style="${rowStyle}">
                         <td><strong>${item.SKU || '-'}</strong></td>
                         <td>${item.Item_Description}</td>
-                        <td>${item.Supplier_ID}</td>
+                        <td>${getSupplierName(item.Supplier_ID)}</td>
                         <td>${item.UOM}</td>
                         <td style="font-weight: bold;">${item.Qty_On_Hand}</td>
                         <td>${item.Reorder_Point}</td>
