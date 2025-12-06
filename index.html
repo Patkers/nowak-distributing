@@ -664,6 +664,57 @@
                 </p>
                 <button class="btn btn-secondary" onclick="openBackup()">📥 Open Google Sheet</button>
             </div>
+            
+            <div class="config-box">
+                <h3>📄 Invoice Settings</h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Customize your printed invoices
+                </p>
+                
+                <div class="form-group">
+                    <label>Company Name *</label>
+                    <input type="text" id="invoiceCompanyName" placeholder="Nowak Distributing">
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="invoicePhone" placeholder="(920)634-4351">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="invoiceEmail" placeholder="jnowaksnfoodistributors@gmail.com">
+                </div>
+                
+                <div class="form-group">
+                    <label>Address Line 1</label>
+                    <input type="text" id="invoiceAddress1" placeholder="123 Business Street">
+                </div>
+                
+                <div class="form-group">
+                    <label>Address Line 2</label>
+                    <input type="text" id="invoiceAddress2" placeholder="Suite 100 (optional)">
+                </div>
+                
+                <div class="form-group">
+                    <label>City, State, ZIP</label>
+                    <input type="text" id="invoiceCityStateZip" placeholder="Milwaukee, WI 53201">
+                </div>
+                
+                <div class="form-group">
+                    <label>Footer Message</label>
+                    <textarea id="invoiceFooter" rows="2" placeholder="Thank you for doing business with us!"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="invoiceSignatureLine" checked>
+                        Include signature line on invoices
+                    </label>
+                </div>
+                
+                <button class="btn" onclick="saveInvoiceSettings()">💾 Save Invoice Settings</button>
+            </div>
 
             <div class="config-box">
                 <h3>Current Status</h3>
@@ -1528,6 +1579,7 @@
                 <button class="btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
                 <button class="btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                 <button class="btn" onclick="showReport('sales-by-product')">📦 Sales by Product</button>
+                <button class="btn" onclick="showReport('purchase-order-detail')">📋 Purchase Order Detail</button>
                 <button class="btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
                 <button class="btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
                 <button class="btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
@@ -1565,6 +1617,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             updateConfigStatus();
+            loadInvoiceSettings();
             const today = new Date().toISOString().split('T')[0];
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
@@ -1657,6 +1710,57 @@
             updateConfigStatus();
             
             showStatus('configStatus', '✅ Configuration saved!', 'success');
+        }
+        
+        // Save Invoice Settings
+        function saveInvoiceSettings() {
+            const settings = {
+                companyName: document.getElementById('invoiceCompanyName').value,
+                phone: document.getElementById('invoicePhone').value,
+                email: document.getElementById('invoiceEmail').value,
+                address1: document.getElementById('invoiceAddress1').value,
+                address2: document.getElementById('invoiceAddress2').value,
+                cityStateZip: document.getElementById('invoiceCityStateZip').value,
+                footer: document.getElementById('invoiceFooter').value,
+                signatureLine: document.getElementById('invoiceSignatureLine').checked
+            };
+            
+            localStorage.setItem('invoiceSettings', JSON.stringify(settings));
+            showStatus('configStatus', '✅ Invoice settings saved!', 'success');
+        }
+        
+        // Load Invoice Settings
+        function loadInvoiceSettings() {
+            const saved = localStorage.getItem('invoiceSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                document.getElementById('invoiceCompanyName').value = settings.companyName || '';
+                document.getElementById('invoicePhone').value = settings.phone || '';
+                document.getElementById('invoiceEmail').value = settings.email || '';
+                document.getElementById('invoiceAddress1').value = settings.address1 || '';
+                document.getElementById('invoiceAddress2').value = settings.address2 || '';
+                document.getElementById('invoiceCityStateZip').value = settings.cityStateZip || '';
+                document.getElementById('invoiceFooter').value = settings.footer || '';
+                document.getElementById('invoiceSignatureLine').checked = settings.signatureLine !== false;
+            }
+        }
+        
+        // Get Invoice Settings
+        function getInvoiceSettings() {
+            const saved = localStorage.getItem('invoiceSettings');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            return {
+                companyName: 'Nowak Distributing',
+                phone: '(920)634-4351',
+                email: 'jnowaksnfoodistributors@gmail.com',
+                address1: '',
+                address2: '',
+                cityStateZip: '',
+                footer: 'Thank you for doing business with us!',
+                signatureLine: true
+            };
         }
 
         // Format phone number as (999) 999-9999
@@ -1842,6 +1946,15 @@
         function hideEditSupplierForm() {
             document.getElementById('editSupplierForm').style.display = 'none';
             document.querySelector('#editSupplierForm form').reset();
+            
+            // Return to previous tab if we came from Reports
+            if (returnToTab === 'reports') {
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="reports"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('reports').classList.add('active');
+                returnToTab = null;
+            }
         }
         
         async function updateSupplier(e) {
@@ -2116,6 +2229,15 @@
         function hideEditItemForm() {
             document.getElementById('editItemForm').style.display = 'none';
             document.querySelector('#editItemForm form').reset();
+            
+            // Return to previous tab if we came from Reports
+            if (returnToTab === 'reports') {
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="reports"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('reports').classList.add('active');
+                returnToTab = null;
+            }
         }
         
         async function updateItem(e) {
@@ -2293,6 +2415,15 @@
         function hideEditCustomerForm() {
             document.getElementById('editCustomerForm').style.display = 'none';
             document.querySelector('#editCustomerForm form').reset();
+            
+            // Return to previous tab if we came from Reports
+            if (returnToTab === 'reports') {
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="reports"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('reports').classList.add('active');
+                returnToTab = null;
+            }
         }
         
         async function updateCustomer(e) {
@@ -2406,27 +2537,37 @@
                     <option value="">Select Item</option>
                     ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package}" data-cost="${item.Package_Cost}" data-uom="${item.Purchase_UOM}">${item.Item_Description}</option>`).join('')}
                 </select>
-                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required oninput="calculatePOLine(this)">
-                <span class="po-info" style="color: #666; font-size: 12px;">-</span>
-                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required>
-                <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required oninput="calculatePOTotal()">
+                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required oninput="calculatePOTotal()">
+                <button type="button" class="remove-btn" onclick="removeLineItem(this); calculatePOTotal();">✕</button>
             `;
             container.appendChild(newRow);
         }
         
         function updatePOItemInfo(selectElement) {
             const option = selectElement.options[selectElement.selectedIndex];
-            const units = option.getAttribute('data-units');
             const cost = option.getAttribute('data-cost');
-            const uom = option.getAttribute('data-uom');
             
             const row = selectElement.parentElement;
             const costInput = row.querySelector('.po-cost');
-            const infoSpan = row.querySelector('.po-info');
             
-            if (units && cost) {
+            if (cost) {
                 costInput.value = cost;
-                infoSpan.textContent = `(${units} units/${uom})`;
+            }
+            
+            calculatePOTotal();
+        }
+        
+        function calculatePOTotal() {
+            let total = 0;
+            document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
+                const cost = parseFloat(row.querySelector('.po-cost')?.value) || 0;
+                total += qty * cost;
+            });
+            const totalField = document.getElementById('poTotal');
+            if (totalField) {
+                totalField.value = total.toFixed(2);
             }
         }
         
@@ -2451,12 +2592,20 @@
             e.preventDefault();
             
             const lineItems = [];
+            let calculatedTotal = 0;
+            
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                const qty = parseInt(row.querySelector('.po-qty').value) || 0;
+                const cost = parseFloat(row.querySelector('.po-cost').value) || 0;
+                const lineTotal = qty * cost;
+                
                 lineItems.push({
                     itemId: row.querySelector('.po-item').value,
-                    quantity: parseInt(row.querySelector('.po-qty').value),
-                    unitCost: parseFloat(row.querySelector('.po-cost').value)
+                    quantity: qty,
+                    unitCost: cost
                 });
+                
+                calculatedTotal += lineTotal;
             });
 
             const data = {
@@ -2465,7 +2614,7 @@
                 poDate: document.getElementById('poDate').value,
                 dueDate: document.getElementById('poDueDate').value || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
-                totalAmount: parseFloat(document.getElementById('poTotal').value),
+                totalAmount: calculatedTotal,
                 amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
                 status: document.getElementById('poStatus').value,
                 notes: document.getElementById('poNotes').value,
@@ -2615,6 +2764,7 @@
         // Edit Purchase Order
         let currentEditingOrder = null;
         let currentEditingType = null; // 'purchase' or 'sales'
+        let returnToTab = null; // Track which tab to return to after closing modal
         
         async function editPurchaseOrder(poId) {
             // Find the PO in cached data or fetch it
@@ -2723,14 +2873,250 @@
             
             document.getElementById('modalContent').innerHTML = html;
             document.getElementById('modalEditBtn').style.display = 'inline-block';
+            document.getElementById('modalPrintBtn').style.display = 'none';
             document.getElementById('modalSaveBtn').style.display = 'none';
             document.getElementById('orderModal').style.display = 'block';
+        }
+        
+        // PRINT INVOICE FUNCTION
+        async function printInvoice() {
+            if (!currentEditingOrder || currentEditingType !== 'sales') {
+                alert('Please select a sales order first');
+                return;
+            }
+            
+            const so = currentEditingOrder;
+            const settings = getInvoiceSettings();
+            
+            // Get customer details
+            const customersResult = await apiCall('getCustomers');
+            const customer = customersResult.data.find(c => c.Customer_ID === so.Customer_ID);
+            
+            // Get line items
+            const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+            const lines = linesResult?.data || [];
+            
+            // Build invoice HTML
+            let invoiceHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice ${so.SO_ID}</title>
+    <style>
+        @media print {
+            @page { margin: 0.5in; }
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 11pt;
+            line-height: 1.4;
+            max-width: 8in;
+            margin: 0 auto;
+            padding: 0.25in;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .company-name {
+            font-size: 16pt;
+            font-weight: bold;
+        }
+        .invoice-title {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .section {
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.items {
+            margin-top: 10px;
+        }
+        table.items th {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 5px 2px;
+            text-align: left;
+        }
+        table.items td {
+            padding: 4px 2px;
+            border-bottom: 1px dotted #ccc;
+        }
+        table.items .qty { text-align: center; width: 8%; }
+        table.items .desc { width: 52%; }
+        table.items .price { text-align: right; width: 20%; }
+        table.items .amount { text-align: right; width: 20%; }
+        .totals {
+            margin-top: 15px;
+            float: right;
+            width: 40%;
+        }
+        .totals table td {
+            padding: 3px 10px;
+        }
+        .totals .label {
+            text-align: right;
+            font-weight: bold;
+        }
+        .totals .value {
+            text-align: right;
+        }
+        .total-line {
+            border-top: 2px solid #000;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+        .footer {
+            clear: both;
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #000;
+            text-align: center;
+        }
+        .signature {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .signature-line {
+            display: inline-block;
+            width: 300px;
+            border-bottom: 1px solid #000;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">${settings.companyName || 'Nowak Distributing'}</div>
+        ${settings.phone ? `<div>${settings.phone}</div>` : ''}
+        ${settings.email ? `<div>${settings.email}</div>` : ''}
+        ${settings.address1 ? `<div>${settings.address1}</div>` : ''}
+        ${settings.address2 ? `<div>${settings.address2}</div>` : ''}
+        ${settings.cityStateZip ? `<div>${settings.cityStateZip}</div>` : ''}
+    </div>
+    
+    <div style="text-align: right; margin-bottom: 15px;">
+        <div class="invoice-title">INVOICE #${so.Invoice_Number || so.SO_ID}</div>
+        <div>Date: ${new Date(so.Sale_Date).toLocaleDateString()}</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">BILL TO:</div>
+        <div><strong>${customer?.Customer_Name || 'Unknown Customer'}</strong></div>
+        ${customer?.Address_Line1 ? `<div>${customer.Address_Line1}</div>` : ''}
+        ${customer?.Address_Line2 ? `<div>${customer.Address_Line2}</div>` : ''}
+        ${customer?.City || customer?.State || customer?.Zip_Code ? `<div>${customer?.City || ''}, ${customer?.State || ''} ${customer?.Zip_Code || ''}</div>` : ''}
+        ${customer?.Phone ? `<div>Phone: ${customer.Phone}</div>` : ''}
+    </div>
+    
+    <table class="items">
+        <thead>
+            <tr>
+                <th class="qty">QTY</th>
+                <th class="desc">DESCRIPTION</th>
+                <th class="price">PRICE</th>
+                <th class="amount">AMOUNT</th>
+            </tr>
+        </thead>
+        <tbody>`;
+            
+            // Add line items
+            let subtotal = 0;
+            lines.forEach(line => {
+                const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                const lineTotal = parseFloat(line.Line_Total || 0);
+                subtotal += lineTotal;
+                
+                invoiceHTML += `
+            <tr>
+                <td class="qty">${line.Quantity}</td>
+                <td class="desc">${item?.Item_Description || line.Item_ID}</td>
+                <td class="price">$${parseFloat(line.Unit_Price || 0).toFixed(2)}</td>
+                <td class="amount">$${lineTotal.toFixed(2)}</td>
+            </tr>`;
+            });
+            
+            const total = parseFloat(so.Total_Amount || 0);
+            const paid = parseFloat(so.Amount_Paid || 0);
+            const balance = total - paid;
+            
+            invoiceHTML += `
+        </tbody>
+    </table>
+    
+    <div class="totals">
+        <table>
+            <tr>
+                <td class="label">SUBTOTAL:</td>
+                <td class="value">$${subtotal.toFixed(2)}</td>
+            </tr>
+            <tr class="total-line">
+                <td class="label">TOTAL:</td>
+                <td class="value">$${total.toFixed(2)}</td>
+            </tr>
+            ${paid > 0 ? `
+            <tr>
+                <td class="label">PAID:</td>
+                <td class="value">$${paid.toFixed(2)}</td>
+            </tr>` : ''}
+            ${balance > 0 ? `
+            <tr class="total-line">
+                <td class="label">BALANCE DUE:</td>
+                <td class="value">$${balance.toFixed(2)}</td>
+            </tr>` : ''}
+        </table>
+    </div>
+    
+    <div class="footer">
+        <div>${settings.footer || 'Thank you for your business!'}</div>
+        ${settings.signatureLine ? `
+        <div class="signature">
+            Signature: <span class="signature-line"></span>
+        </div>` : ''}
+        <div style="margin-top: 20px; font-size: 9pt;">KEEP THIS SLIP FOR REFERENCE</div>
+    </div>
+    
+    <div class="no-print" style="margin-top: 30px; text-align: center;">
+        <button onclick="window.print()" style="padding: 12px 30px; font-size: 14pt; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">🖨️ Print Invoice</button>
+        <button onclick="window.close()" style="padding: 12px 30px; font-size: 14pt; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">Close</button>
+    </div>
+</body>
+</html>`;
+            
+            // Open in new window for printing
+            const printWindow = window.open('', '_blank', 'width=800,height=1000');
+            printWindow.document.write(invoiceHTML);
+            printWindow.document.close();
         }
         
         function closeOrderModal() {
             document.getElementById('orderModal').style.display = 'none';
             currentEditingOrder = null;
             currentEditingType = null;
+            
+            // Return to previous tab if we came from Reports
+            if (returnToTab === 'reports') {
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.tab[onclick*="reports"]').classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                document.getElementById('reports').classList.add('active');
+                returnToTab = null;
+            }
         }
         
         function enableEditMode() {
@@ -3264,10 +3650,9 @@
                     <option value="">Select Item</option>
                     ${cachedItems.map(item => `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-qty="${item.Qty_On_Hand}">${item.Item_Description}</option>`).join('')}
                 </select>
-                <input type="number" class="so-qty" placeholder="# of Units" min="1" required>
-                <span class="so-info" style="color: #666; font-size: 12px;">-</span>
-                <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required>
-                <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+                <input type="number" class="so-qty" placeholder="# of Units" min="1" required oninput="calculateSOTotal()">
+                <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required oninput="calculateSOTotal()">
+                <button type="button" class="remove-btn" onclick="removeLineItem(this); calculateSOTotal();">✕</button>
             `;
             container.appendChild(newRow);
         }
@@ -3275,15 +3660,27 @@
         function updateSOItemInfo(selectElement) {
             const option = selectElement.options[selectElement.selectedIndex];
             const price = option.getAttribute('data-price');
-            const qtyAvail = option.getAttribute('data-qty');
             
             const row = selectElement.parentElement;
             const priceInput = row.querySelector('.so-price');
-            const infoSpan = row.querySelector('.so-info');
             
             if (price) {
                 priceInput.value = price;
-                infoSpan.textContent = `(${qtyAvail} units available)`;
+            }
+            
+            calculateSOTotal();
+        }
+        
+        function calculateSOTotal() {
+            let total = 0;
+            document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
+                const qty = parseInt(row.querySelector('.so-qty')?.value) || 0;
+                const price = parseFloat(row.querySelector('.so-price')?.value) || 0;
+                total += qty * price;
+            });
+            const totalField = document.getElementById('soTotal');
+            if (totalField) {
+                totalField.value = total.toFixed(2);
             }
         }
 
@@ -3291,12 +3688,20 @@
             e.preventDefault();
             
             const lineItems = [];
+            let calculatedTotal = 0;
+            
             document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
+                const qty = parseInt(row.querySelector('.so-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.so-price').value) || 0;
+                const lineTotal = qty * price;
+                
                 lineItems.push({
                     itemId: row.querySelector('.so-item').value,
-                    quantity: parseInt(row.querySelector('.so-qty').value),
-                    unitPrice: parseFloat(row.querySelector('.so-price').value)
+                    quantity: qty,
+                    unitPrice: price
                 });
+                
+                calculatedTotal += lineTotal;
             });
 
             const data = {
@@ -3305,7 +3710,7 @@
                 invoiceNumber: document.getElementById('soInvoiceNumber').value || null,
                 paymentMethod: document.getElementById('soPayment').value,
                 dueDate: document.getElementById('soDueDate').value || null,
-                totalAmount: parseFloat(document.getElementById('soTotal').value),
+                totalAmount: calculatedTotal,
                 amountPaid: parseFloat(document.getElementById('soAmountPaid').value) || 0,
                 status: document.getElementById('soStatus').value,
                 notes: document.getElementById('soNotes').value,
@@ -3558,6 +3963,7 @@
             
             document.getElementById('modalContent').innerHTML = html;
             document.getElementById('modalEditBtn').style.display = 'inline-block';
+            document.getElementById('modalPrintBtn').style.display = 'inline-block';
             document.getElementById('modalSaveBtn').style.display = 'none';
             document.getElementById('orderModal').style.display = 'block';
         }
@@ -3974,8 +4380,10 @@
             }
             
             html += `
-                <button class="btn" onclick="applyReportFilters('${reportType}')">🔍 Apply Filters</button>
-                <button class="btn btn-secondary" onclick="clearReportFilters('${reportType}')">🧹 Clear Filters</button>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn" onclick="applyReportFilters('${reportType}')">🔍 Apply Filters</button>
+                    <button class="btn btn-secondary" onclick="clearReportFilters('${reportType}')">🧹 Clear Filters</button>
+                </div>
             </div>`;
             html += '</div>';
             
@@ -4107,6 +4515,9 @@
                         break;
                     case 'sales-by-product':
                         await generateSalesByProduct();
+                        break;
+                    case 'purchase-order-detail':
+                        await generatePurchaseOrderDetail();
                         break;
                     case 'purchase-by-supplier':
                         await generatePurchaseBySupplier();
@@ -4243,7 +4654,7 @@
                         <td><strong><a href="javascript:void(0)" onclick="openSalesOrder('${detail.soId}')" style="color: #667eea; text-decoration: none;">${detail.soId}</a></strong></td>
                         <td>${new Date(detail.soDate).toLocaleDateString()}</td>
                         <td><a href="javascript:void(0)" onclick="openCustomer('${detail.customerId}')" style="color: #667eea; text-decoration: none;">${detail.customerName}</a></td>
-                        <td>${detail.itemDescription}</td>
+                        <td><a href="javascript:void(0)" onclick="openItem('${detail.itemId}')" style="color: #667eea; text-decoration: none;">${detail.itemDescription}</a></td>
                         <td>${detail.quantity}</td>
                         <td>$${detail.unitPrice.toFixed(2)}</td>
                         <td>$${detail.lineTotal.toFixed(2)}</td>
@@ -4384,7 +4795,7 @@
                         <td><a href="javascript:void(0)" onclick="openSalesOrder('${detail.soId}')" style="color: #667eea; text-decoration: none;"><strong>${detail.soId}</strong></a></td>
                         <td>${new Date(detail.soDate).toLocaleDateString()}</td>
                         <td><a href="javascript:void(0)" onclick="openCustomer('${detail.customerId}')" style="color: #667eea; text-decoration: none;">${detail.customerName}</a></td>
-                        <td>${detail.itemDescription}</td>
+                        <td><a href="javascript:void(0)" onclick="openItem('${detail.itemId}')" style="color: #667eea; text-decoration: none;">${detail.itemDescription}</a></td>
                         <td>${detail.sku}</td>
                         <td>${detail.quantity}</td>
                         <td>$${detail.unitPrice.toFixed(2)}</td>
@@ -4516,7 +4927,12 @@
             if (sorted.length === 0) {
                 html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
             } else {
-                html += `<table class="data-table">
+                // Calculate totals
+                const totalUnits = sorted.reduce((sum, p) => sum + p.unitsSold, 0);
+                const totalRevenue = sorted.reduce((sum, p) => sum + p.revenue, 0);
+                const avgPrice = totalRevenue / totalUnits;
+                
+                html += `<table class="data-table" id="salesByProductTable">
                     <thead>
                         <tr>
                             <th>Product</th>
@@ -4530,19 +4946,171 @@
             
                 sorted.forEach(prod => {
                     html += `<tr>
-                        <td><strong>${prod.description}</strong></td>
+                        <td><a href="javascript:void(0)" onclick="openItem('${prod.id}')" style="color: #667eea; text-decoration: none;"><strong>${prod.description}</strong></a></td>
                         <td>${prod.sku}</td>
                         <td>${prod.unitsSold}</td>
                         <td>$${prod.revenue.toFixed(2)}</td>
                         <td>$${prod.avgPrice.toFixed(2)}</td>
                     </tr>`;
                 });
+                
+                // Add totals row
+                html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
+                    <td colspan="2" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                    <td>${totalUnits.toLocaleString()}</td>
+                    <td>$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td>$${avgPrice.toFixed(2)}</td>
+                </tr>`;
             
                 html += '</tbody></table>';
             }
             
             reportData['sales-by-product'] = sorted;
             document.getElementById('reportContainer').innerHTML = html;
+            setTimeout(() => makeSortable('salesByProductTable'), 0);
+        }
+        
+        // PURCHASE ORDER DETAIL REPORT (NEW!)
+        async function generatePurchaseOrderDetail() {
+            const purchasesResult = await apiCall('getPurchaseOrders');
+            const suppliersResult = await apiCall('getSuppliers');
+            const itemsResult = await apiCall('getItems');
+            
+            if (!purchasesResult?.data || !suppliersResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const suppliers = suppliersResult.data;
+            const items = itemsResult.data;
+            let purchases = purchasesResult.data;
+            
+            // Fetch ALL purchase order lines with their PO info
+            const allDetails = [];
+            for (const po of purchases) {
+                const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        allDetails.push({
+                            poId: po.PO_ID,
+                            poDate: po.PO_Date,
+                            supplierId: po.Supplier_ID,
+                            supplierName: getSupplierName(po.Supplier_ID),
+                            itemId: line.Item_ID,
+                            itemDescription: item?.Item_Description || line.Item_ID,
+                            sku: item?.SKU || '',
+                            quantity: parseInt(line.Quantity || 0),
+                            unitCost: parseFloat(line.Unit_Cost || 0),
+                            lineTotal: parseFloat(line.Line_Total || 0),
+                            paymentStatus: po.Payment_Status || 'Unknown',
+                            status: po.Status || 'Received'
+                        });
+                    });
+                }
+            }
+            
+            // Store raw data
+            rawReportData['purchase-order-detail'] = { purchases, suppliers, items, allDetails };
+            
+            // APPLY FILTERS
+            let filtered = allDetails;
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                filtered = filtered.filter(d => new Date(d.poDate) >= fromDate);
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                filtered = filtered.filter(d => new Date(d.poDate) <= toDate);
+            }
+            if (reportFilters.supplier) {
+                filtered = filtered.filter(d => d.supplierId === reportFilters.supplier);
+            }
+            if (reportFilters.item) {
+                filtered = filtered.filter(d => d.itemId === reportFilters.item);
+            }
+            if (reportFilters.paymentStatus) {
+                filtered = filtered.filter(d => d.paymentStatus === reportFilters.paymentStatus);
+            }
+            if (reportFilters.minAmount) {
+                filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
+            }
+            
+            // Sort by date (newest first), then by PO ID
+            filtered.sort((a, b) => {
+                const dateCompare = new Date(b.poDate) - new Date(a.poDate);
+                if (dateCompare !== 0) return dateCompare;
+                return b.poId.localeCompare(a.poId);
+            });
+            
+            // Calculate totals
+            const totalPurchases = filtered.reduce((sum, d) => sum + d.lineTotal, 0);
+            const totalOrders = new Set(filtered.map(d => d.poId)).size;
+            
+            // Build lists for filters
+            const supplierList = suppliers.map(s => ({ id: s.Supplier_ID, name: s.Supplier_Name }));
+            const itemList = items.map(i => ({ id: i.Item_ID, name: `${i.Item_Description} (${i.SKU})` }));
+            
+            // Build HTML with filters
+            let html = buildFilterUI('purchase-order-detail', {
+                dateRange: true,
+                dateLabel: 'Purchase Date',
+                supplier: true,
+                supplierList: supplierList,
+                item: true,
+                itemList: itemList,
+                paymentStatus: true,
+                minAmount: true
+            });
+            
+            html += `
+                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3>📋 Purchase Order Detail Report</h3>
+                    <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Purchases: $${totalPurchases.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-order-detail')">📥 Export to CSV</button>
+                </div>`;
+            
+            if (filtered.length === 0) {
+                html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
+            } else {
+                html += `<table class="data-table" id="purchaseOrderDetailTable">
+                    <thead>
+                        <tr>
+                            <th>PO #</th>
+                            <th>Date</th>
+                            <th>Supplier</th>
+                            <th>Item</th>
+                            <th>SKU</th>
+                            <th>Qty</th>
+                            <th>Cost</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+                filtered.forEach(detail => {
+                    html += `<tr>
+                        <td><a href="javascript:void(0)" onclick="openPurchaseOrder('${detail.poId}')" style="color: #667eea; text-decoration: none;"><strong>${detail.poId}</strong></a></td>
+                        <td>${new Date(detail.poDate).toLocaleDateString()}</td>
+                        <td><a href="javascript:void(0)" onclick="openSupplier('${detail.supplierId}')" style="color: #667eea; text-decoration: none;">${detail.supplierName}</a></td>
+                        <td><a href="javascript:void(0)" onclick="openItem('${detail.itemId}')" style="color: #667eea; text-decoration: none;">${detail.itemDescription}</a></td>
+                        <td>${detail.sku}</td>
+                        <td>${detail.quantity}</td>
+                        <td>$${detail.unitCost.toFixed(2)}</td>
+                        <td>$${detail.lineTotal.toFixed(2)}</td>
+                        <td>${detail.status}</td>
+                        <td><span style="color: ${detail.paymentStatus === 'Paid' ? 'green' : detail.paymentStatus === 'Partial' ? 'orange' : 'red'};">${detail.paymentStatus}</span></td>
+                    </tr>`;
+                });
+            
+                html += '</tbody></table>';
+            }
+            
+            reportData['purchase-order-detail'] = filtered;
+            document.getElementById('reportContainer').innerHTML = html;
+            setTimeout(() => makeSortable('purchaseOrderDetailTable'), 0);
         }
         
         // 3. PURCHASE BY SUPPLIER REPORT
@@ -5070,8 +5638,8 @@
                     const agingColor = r.daysOverdue > 60 ? 'red' : r.daysOverdue > 30 ? 'orange' : r.daysOverdue > 0 ? '#f39c12' : 'green';
                     
                     html += `<tr>
-                        <td><strong>${r.customer}</strong></td>
-                        <td>${r.invoiceId}</td>
+                        <td><a href="javascript:void(0)" onclick="openCustomer('${r.customerId}')" style="color: #667eea; text-decoration: none;"><strong>${r.customer}</strong></a></td>
+                        <td><a href="javascript:void(0)" onclick="openSalesOrder('${r.invoiceId}')" style="color: #667eea; text-decoration: none;"><strong>${r.invoiceId}</strong></a></td>
                         <td>${r.invoiceDate}</td>
                         <td>${r.dueDate}</td>
                         <td>$${r.total.toFixed(2)}</td>
@@ -5219,9 +5787,9 @@
                     const agingColor = p.daysOverdue > 60 ? 'red' : p.daysOverdue > 30 ? 'orange' : p.daysOverdue > 0 ? '#f39c12' : 'green';
                     
                     html += `<tr>
-                        <td><strong>${p.supplier}</strong></td>
+                        <td><a href="javascript:void(0)" onclick="openSupplier('${p.supplierId}')" style="color: #667eea; text-decoration: none;"><strong>${p.supplier}</strong></a></td>
                         <td>${p.invoiceId}</td>
-                        <td>${p.poId}</td>
+                        <td><a href="javascript:void(0)" onclick="openPurchaseOrder('${p.poId}')" style="color: #667eea; text-decoration: none;"><strong>${p.poId}</strong></a></td>
                         <td>${p.invoiceDate}</td>
                         <td>${p.dueDate}</td>
                         <td>$${p.total.toFixed(2)}</td>
@@ -5355,6 +5923,14 @@
         // ==================== HOT LINK FUNCTIONS ====================
         
         async function openSalesOrder(soId) {
+            // Remember current tab to return to later
+            const currentTab = document.querySelector('.card.active');
+            if (currentTab && currentTab.id === 'reports') {
+                returnToTab = 'reports';
+            } else {
+                returnToTab = null;
+            }
+            
             // Load the sales order and open edit modal
             const result = await apiCall('getSalesOrders');
             const so = result.data.find(s => s.SO_ID === soId);
@@ -5374,6 +5950,14 @@
         }
         
         async function openPurchaseOrder(poId) {
+            // Remember current tab to return to later
+            const currentTab = document.querySelector('.card.active');
+            if (currentTab && currentTab.id === 'reports') {
+                returnToTab = 'reports';
+            } else {
+                returnToTab = null;
+            }
+            
             // Load the purchase order and open edit modal
             const result = await apiCall('getPurchaseOrders');
             const po = result.data.find(p => p.PO_ID === poId);
@@ -5393,6 +5977,14 @@
         }
         
         async function openCustomer(customerId) {
+            // Remember current tab to return to later
+            const currentTab = document.querySelector('.card.active');
+            if (currentTab && currentTab.id === 'reports') {
+                returnToTab = 'reports';
+            } else {
+                returnToTab = null;
+            }
+            
             // Load customer and open edit modal
             const result = await apiCall('getCustomers');
             const customer = result.data.find(c => c.Customer_ID === customerId);
@@ -5411,6 +6003,14 @@
         }
         
         async function openSupplier(supplierId) {
+            // Remember current tab to return to later
+            const currentTab = document.querySelector('.card.active');
+            if (currentTab && currentTab.id === 'reports') {
+                returnToTab = 'reports';
+            } else {
+                returnToTab = null;
+            }
+            
             // Load supplier and open edit modal
             const result = await apiCall('getSuppliers');
             const supplier = result.data.find(s => s.Supplier_ID === supplierId);
@@ -5429,6 +6029,14 @@
         }
         
         async function openItem(itemId) {
+            // Remember current tab to return to later
+            const currentTab = document.querySelector('.card.active');
+            if (currentTab && currentTab.id === 'reports') {
+                returnToTab = 'reports';
+            } else {
+                returnToTab = null;
+            }
+            
             // Load item and open edit modal
             const result = await apiCall('getItems');
             const item = result.data.find(i => i.Item_ID === itemId);
@@ -5494,6 +6102,7 @@
             </div>
             <div id="modalFooter" style="padding: 20px 30px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
+                <button id="modalPrintBtn" class="btn" onclick="printInvoice()" style="display: none; background: #28a745;">🖨️ Print Invoice</button>
                 <button id="modalEditBtn" class="btn" onclick="enableEditMode()" style="display: none;">✏️ Edit Order</button>
                 <button id="modalSaveBtn" class="btn" onclick="saveOrderChanges()" style="display: none;">💾 Save Changes</button>
             </div>
