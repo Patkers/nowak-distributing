@@ -665,10 +665,16 @@
             }
 
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, ...data })
+                // Use GET with query parameters to avoid CORS preflight
+                const params = new URLSearchParams({
+                    action: action,
+                    data: JSON.stringify(data)
+                });
+                
+                const url = `${API_URL}?${params.toString()}`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
                 });
 
                 const result = await response.json();
