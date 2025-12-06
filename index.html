@@ -2879,6 +2879,8 @@
                 const qty = parseInt(row.querySelector('.edit-qty').value) || 0;
                 const cost = parseFloat(row.querySelector('.edit-price').value) || 0;
                 
+                console.log('Line item:', { itemId, qty, cost });  // DEBUG
+                
                 if (itemId && qty > 0) {
                     newLines.push({
                         itemId: itemId,
@@ -2892,8 +2894,11 @@
                 }
             });
             
+            console.log('Total lines collected:', newLines.length);  // DEBUG
+            
             if (newLines.length === 0) {
-                alert('Please add at least one line item');
+                const rowCount = document.querySelectorAll('#editPOLineItems .edit-line-item').length;
+                alert(`No valid line items found!\n\nRows found: ${rowCount}\n\nPlease make sure each line has:\n- An item selected\n- A quantity > 0`);
                 return;
             }
             
