@@ -3098,28 +3098,21 @@
     </div>
 </body>
 </html>`;
-            // Create hidden print container instead of popup
-            let printContainer = document.getElementById('printContainer');
-            if (!printContainer) {
-                printContainer = document.createElement('div');
-                printContainer.id = 'printContainer';
-                printContainer.style.display = 'none';
-                document.body.appendChild(printContainer);
-            }
-            
-            printContainer.innerHTML = invoiceHTML;
-            
-            // Create print iframe to avoid popup blockers
+            // Create temporary print iframe to avoid popup blockers
             let printFrame = document.getElementById('printFrame');
-            if (!printFrame) {
-                printFrame = document.createElement('iframe');
-                printFrame.id = 'printFrame';
-                printFrame.style.position = 'absolute';
-                printFrame.style.width = '0';
-                printFrame.style.height = '0';
-                printFrame.style.border = 'none';
-                document.body.appendChild(printFrame);
+            if (printFrame) {
+                // Remove old iframe if it exists
+                printFrame.remove();
             }
+            
+            printFrame = document.createElement('iframe');
+            printFrame.id = 'printFrame';
+            printFrame.style.position = 'absolute';
+            printFrame.style.width = '0';
+            printFrame.style.height = '0';
+            printFrame.style.border = 'none';
+            printFrame.style.visibility = 'hidden';
+            document.body.appendChild(printFrame);
             
             const frameDoc = printFrame.contentWindow.document;
             frameDoc.open();
@@ -3130,6 +3123,13 @@
             setTimeout(() => {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
+                
+                // Clean up iframe after printing (wait for print dialog to close)
+                setTimeout(() => {
+                    if (printFrame && printFrame.parentNode) {
+                        printFrame.remove();
+                    }
+                }, 1000);
             }, 250);
         }
         
@@ -4593,11 +4593,12 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
                         allDetails.push({
                             soId: so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
                             customerId: so.Customer_ID,
-                            customerName: getCustomerName(so.Customer_ID),
+                            customerName: customer?.Customer_Name || so.Customer_ID,
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             quantity: parseInt(line.Quantity || 0),
@@ -4657,7 +4658,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📊 Sales by Customer Report</h3>
                     <p style="color: #666;">Total Customers: ${new Set(filtered.map(d => d.customerId)).size} | Total Sales: $${totalSales.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -4720,11 +4720,12 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
                         allDetails.push({
                             soId: so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
                             customerId: so.Customer_ID,
-                            customerName: getCustomerName(so.Customer_ID),
+                            customerName: customer?.Customer_Name || so.Customer_ID,
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
@@ -4796,7 +4797,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Sales Order Detail Report</h3>
                     <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Sales: $${totalSales.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('sales-order-detail')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -4950,7 +4950,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📦 Sales by Product Report</h3>
                     <p style="color: #666;">Products Sold: ${sorted.length} | Total Revenue: $${sorted.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-product')">📥 Export to CSV</button>
                 </div>`;
             
             if (sorted.length === 0) {
@@ -5020,11 +5019,12 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const supplier = suppliers.find(s => s.Supplier_ID === po.Supplier_ID);
                         allDetails.push({
                             poId: po.PO_ID,
                             poDate: po.PO_Date,
                             supplierId: po.Supplier_ID,
-                            supplierName: getSupplierName(po.Supplier_ID),
+                            supplierName: supplier?.Supplier_Name || po.Supplier_ID,
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
@@ -5096,7 +5096,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Purchase Order Detail Report</h3>
                     <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Purchases: $${totalPurchases.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-order-detail')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -5219,7 +5218,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🏭 Purchase by Supplier Report</h3>
                     <p style="color: #666;">Suppliers: ${sorted.length} | Total Spent: $${sorted.reduce((sum, s) => sum + s.totalSpent, 0).toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-by-supplier')">📥 Export to CSV</button>
                 </div>`;
             
             if (sorted.length === 0) {
@@ -5344,7 +5342,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🔄 Inventory Turnover Report</h3>
                     <p style="color: #666;">Total Items: ${turnoverData.length}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('inventory-turnover')">📥 Export to CSV</button>
                 </div>`;
             
             if (turnoverData.length === 0) {
@@ -5497,7 +5494,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💰 Gross Margin Report</h3>
                     <p style="color: #666;">Total Products: ${marginData.length} | Total Profit: $${totalProfit.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('gross-margin')">📥 Export to CSV</button>
                 </div>`;
             
             if (marginData.length === 0) {
@@ -5639,7 +5635,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💵 Accounts Receivable Report</h3>
                     <p style="color: #666;">Outstanding Invoices: ${receivables.length} | Total AR: $${totalOutstanding.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-receivable')">📥 Export to CSV</button>
                 </div>`;
             
             if (receivables.length === 0) {
@@ -5787,7 +5782,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💸 Accounts Payable Report</h3>
                     <p style="color: #666;">Outstanding Bills: ${payables.length} | Total AP: $${totalOutstanding.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-payable')">📥 Export to CSV</button>
                 </div>`;
             
             if (payables.length === 0) {
@@ -5899,7 +5893,6 @@
                         Total Value: $${totalValue.toFixed(2)} | 
                         Low Stock Items: ${lowStockCount}
                     </p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('simple-inventory')">📥 Export to CSV</button>
                 </div>`;
             
             if (inventory.length === 0) {
