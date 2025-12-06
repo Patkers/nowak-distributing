@@ -436,8 +436,13 @@
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="margin-bottom: 10px;">🔍 Filter Suppliers</h4>
-                <div class="form-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filter Suppliers</h4>
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-suppliers')" style="background: #666;">
+                        <span id="filter-panel-suppliers-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="filter-panel-suppliers" class="form-grid">
                     <div class="form-group">
                         <label>Search Name</label>
                         <input type="text" id="filterSupplierName" placeholder="Type to filter..." onkeyup="filterSuppliers()">
@@ -585,8 +590,13 @@
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="margin-bottom: 10px;">🔍 Filter Items</h4>
-                <div class="form-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filter Items</h4>
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-items')" style="background: #666;">
+                        <span id="filter-panel-items-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="filter-panel-items" class="form-grid">
                     <div class="form-group">
                         <label>Search SKU/Description</label>
                         <input type="text" id="filterItemSearch" placeholder="Type to filter..." onkeyup="filterItems()">
@@ -737,8 +747,13 @@
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="margin-bottom: 10px;">🔍 Filter Customers</h4>
-                <div class="form-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filter Customers</h4>
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-customers')" style="background: #666;">
+                        <span id="filter-panel-customers-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="filter-panel-customers" class="form-grid">
                     <div class="form-group">
                         <label>Search Name</label>
                         <input type="text" id="filterCustomerName" placeholder="Customer name..." onkeyup="filterCustomers()">
@@ -910,8 +925,13 @@
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="margin-bottom: 10px;">🔍 Filter Purchases</h4>
-                <div class="form-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filter Purchases</h4>
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-purchases')" style="background: #666;">
+                        <span id="filter-panel-purchases-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="filter-panel-purchases" class="form-grid">
                     <div class="form-group">
                         <label>PO Number</label>
                         <input type="text" id="filterPurchasePO" placeholder="PO-001" onchange="filterPurchases()">
@@ -1026,8 +1046,13 @@
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="margin-bottom: 10px;">🔍 Filter Sales</h4>
-                <div class="form-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filter Sales</h4>
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-sales')" style="background: #666;">
+                        <span id="filter-panel-sales-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="filter-panel-sales" class="form-grid">
                     <div class="form-group">
                         <label>Customer</label>
                         <select id="filterSaleCustomer" onchange="filterSales()">
@@ -1178,8 +1203,13 @@
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                <h4 style="margin-bottom: 10px;">🔍 Filter Inventory</h4>
-                <div class="form-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">🔍 Filter Inventory</h4>
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-inventory')" style="background: #666;">
+                        <span id="filter-panel-inventory-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="filter-panel-inventory" class="form-grid">
                     <div class="form-group">
                         <label>Search SKU/Description</label>
                         <input type="text" id="filterInventorySearch" placeholder="Type to filter..." onkeyup="filterInventory()">
