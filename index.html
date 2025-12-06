@@ -885,30 +885,41 @@
                             <input type="text" id="newItemSKU" required placeholder="e.g. BM-BBQ-001">
                         </div>
                         <div class="form-group">
-                            <label>Unit of Measure</label>
-                            <select id="newItemUOM">
-                                <option value="Each">Each</option>
-                                <option value="Case">Case</option>
+                            <label>Purchase UOM (What you buy)</label>
+                            <select id="newItemPurchaseUOM">
                                 <option value="Box">Box</option>
+                                <option value="Case">Case</option>
+                                <option value="Pallet">Pallet</option>
+                                <option value="Each">Each</option>
                                 <option value="Pack">Pack</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Cost Price *</label>
-                            <input type="number" id="newCostPrice" step="0.01" required>
+                            <label>Units Per Package * <span style="font-size: 12px; color: #666;">(How many individual units in one box/case)</span></label>
+                            <input type="number" id="newUnitsPerPackage" step="1" min="1" required placeholder="e.g. 27">
                         </div>
                         <div class="form-group">
-                            <label>Sell Price *</label>
-                            <input type="number" id="newSellPrice" step="0.01" required>
+                            <label>Package Cost * <span style="font-size: 12px; color: #666;">(Cost per box/case)</span></label>
+                            <input type="number" id="newPackageCost" step="0.01" required placeholder="e.g. 20.00" oninput="calculateUnitCost()">
                         </div>
                         <div class="form-group">
-                            <label>Initial Quantity</label>
+                            <label>Unit Cost (Calculated)</label>
+                            <input type="text" id="calculatedUnitCost" readonly style="background: #f0f0f0; font-weight: bold;" value="$0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Unit Sell Price * <span style="font-size: 12px; color: #666;">(Price per individual unit)</span></label>
+                            <input type="number" id="newUnitSellPrice" step="0.01" required placeholder="e.g. 3.00">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Initial Quantity <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
                             <input type="number" id="newQtyOnHand" value="0">
                         </div>
                         <div class="form-group">
-                            <label>Reorder Point</label>
+                            <label>Reorder Point <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
                             <input type="number" id="newReorderPoint" value="10">
                         </div>
                     </div>
@@ -942,31 +953,42 @@
                             <input type="text" id="editItemSKU" required>
                         </div>
                         <div class="form-group">
-                            <label>Unit of Measure</label>
-                            <select id="editItemUOM">
-                                <option value="Each">Each</option>
-                                <option value="Case">Case</option>
+                            <label>Purchase UOM</label>
+                            <select id="editItemPurchaseUOM">
                                 <option value="Box">Box</option>
+                                <option value="Case">Case</option>
+                                <option value="Pallet">Pallet</option>
+                                <option value="Each">Each</option>
                                 <option value="Pack">Pack</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Cost Price *</label>
-                            <input type="number" id="editCostPrice" step="0.01" required>
+                            <label>Units Per Package *</label>
+                            <input type="number" id="editUnitsPerPackage" step="1" min="1" required oninput="calculateEditUnitCost()">
                         </div>
                         <div class="form-group">
-                            <label>Sell Price *</label>
-                            <input type="number" id="editSellPrice" step="0.01" required>
+                            <label>Package Cost *</label>
+                            <input type="number" id="editPackageCost" step="0.01" required oninput="calculateEditUnitCost()">
                         </div>
                         <div class="form-group">
-                            <label>Current Quantity</label>
+                            <label>Unit Cost (Calculated)</label>
+                            <input type="text" id="calculatedEditUnitCost" readonly style="background: #f0f0f0; font-weight: bold;" value="$0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Unit Sell Price *</label>
+                            <input type="number" id="editUnitSellPrice" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Current Quantity <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
                             <input type="number" id="editQtyOnHand" readonly style="background: #f0f0f0;">
                             <small style="color: #666;">Use Purchases/Sales to adjust quantity</small>
                         </div>
                         <div class="form-group">
-                            <label>Reorder Point</label>
+                            <label>Reorder Point <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
                             <input type="number" id="editReorderPoint">
                         </div>
                     </div>
@@ -1880,15 +1902,32 @@
             });
         }
 
+        // Calculate unit cost in Add Item form
+        function calculateUnitCost() {
+            const packageCost = parseFloat(document.getElementById('newPackageCost').value) || 0;
+            const unitsPerPackage = parseFloat(document.getElementById('newUnitsPerPackage').value) || 1;
+            const unitCost = packageCost / unitsPerPackage;
+            document.getElementById('calculatedUnitCost').value = '$' + unitCost.toFixed(2);
+        }
+        
+        // Calculate unit cost in Edit Item form
+        function calculateEditUnitCost() {
+            const packageCost = parseFloat(document.getElementById('editPackageCost').value) || 0;
+            const unitsPerPackage = parseFloat(document.getElementById('editUnitsPerPackage').value) || 1;
+            const unitCost = packageCost / unitsPerPackage;
+            document.getElementById('calculatedEditUnitCost').value = '$' + unitCost.toFixed(2);
+        }
+        
         async function addItem(e) {
             e.preventDefault();
             
             const data = {
                 supplierId: document.getElementById('newItemSupplier').value,
                 description: document.getElementById('newItemDescription').value,
-                uom: document.getElementById('newItemUOM').value,
-                costPrice: document.getElementById('newCostPrice').value,
-                sellPrice: document.getElementById('newSellPrice').value,
+                purchaseUOM: document.getElementById('newItemPurchaseUOM').value,
+                unitsPerPackage: document.getElementById('newUnitsPerPackage').value,
+                packageCost: document.getElementById('newPackageCost').value,
+                unitSellPrice: document.getElementById('newUnitSellPrice').value,
                 qtyOnHand: document.getElementById('newQtyOnHand').value,
                 reorderPoint: document.getElementById('newReorderPoint').value,
                 sku: document.getElementById('newItemSKU').value,
@@ -1930,12 +1969,18 @@
             let totalQty = 0;
             
             let html = '<table class="data-table" id="itemsDataTable"><thead><tr>';
-            html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Reorder</th><th>Actions</th>';
+            html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>Purchase UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Unit Sell</th><th>Qty (Pkgs)</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
-                const lowStock = item.Qty_On_Hand < item.Reorder_Point ? 'style="background:#fff3cd;"' : '';
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const unitsPerPkg = parseFloat(item.Units_Per_Package) || 1;
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitCost = packageCost / unitsPerPkg;
+                const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const packages = (qty / unitsPerPkg).toFixed(1);
+                
+                const lowStock = qty < (item.Reorder_Point || 0) ? 'style="background:#fff3cd;"' : '';
                 totalQty += qty;
                 
                 html += `<tr ${lowStock}>
@@ -1943,10 +1988,12 @@
                     <td><strong>${item.SKU || '-'}</strong></td>
                     <td>${item.Item_Description}</td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
-                    <td>${item.UOM}</td>
-                    <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
-                    <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
-                    <td>${qty}</td>
+                    <td>${item.Purchase_UOM}</td>
+                    <td>${unitsPerPkg}</td>
+                    <td>$${packageCost.toFixed(2)}</td>
+                    <td>$${unitCost.toFixed(2)}</td>
+                    <td>$${unitSellPrice.toFixed(2)}</td>
+                    <td><strong>${qty}</strong> <span style="color: #666; font-size: 11px;">(${packages} ${item.Purchase_UOM})</span></td>
                     <td>${item.Reorder_Point}</td>
                     <td>
                         <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
@@ -1957,8 +2004,8 @@
 
             // Add totals row
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="7" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>${totalQty.toLocaleString()}</td>
+                <td colspan="9" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td>${totalQty.toLocaleString()} units</td>
                 <td colspan="2"></td>
             </tr>`;
 
@@ -2038,12 +2085,16 @@
             document.getElementById('editItemSupplier').value = item.Supplier_ID || '';
             document.getElementById('editItemDescription').value = item.Item_Description || '';
             document.getElementById('editItemSKU').value = item.SKU || '';
-            document.getElementById('editItemUOM').value = item.UOM || 'Each';
-            document.getElementById('editCostPrice').value = item.Cost_Price || '';
-            document.getElementById('editSellPrice').value = item.Sell_Price || '';
+            document.getElementById('editItemPurchaseUOM').value = item.Purchase_UOM || 'Box';
+            document.getElementById('editUnitsPerPackage').value = item.Units_Per_Package || 1;
+            document.getElementById('editPackageCost').value = item.Package_Cost || '';
+            document.getElementById('editUnitSellPrice').value = item.Unit_Sell_Price || '';
             document.getElementById('editQtyOnHand').value = item.Qty_On_Hand || '';
             document.getElementById('editReorderPoint').value = item.Reorder_Point || '';
             document.getElementById('editItemNotes').value = item.Notes || '';
+            
+            // Calculate unit cost for display
+            calculateEditUnitCost();
             
             document.getElementById('editItemForm').style.display = 'block';
             document.getElementById('addItemForm').style.display = 'none';
@@ -2061,9 +2112,10 @@
                 itemId: document.getElementById('editItemId').value,
                 supplierId: document.getElementById('editItemSupplier').value,
                 description: document.getElementById('editItemDescription').value,
-                uom: document.getElementById('editItemUOM').value,
-                costPrice: document.getElementById('editCostPrice').value,
-                sellPrice: document.getElementById('editSellPrice').value,
+                purchaseUOM: document.getElementById('editItemPurchaseUOM').value,
+                unitsPerPackage: document.getElementById('editUnitsPerPackage').value,
+                packageCost: document.getElementById('editPackageCost').value,
+                unitSellPrice: document.getElementById('editUnitSellPrice').value,
                 reorderPoint: document.getElementById('editReorderPoint').value,
                 sku: document.getElementById('editItemSKU').value,
                 notes: document.getElementById('editItemNotes').value
@@ -2337,16 +2389,45 @@
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
-                <select class="po-item" required>
+                <select class="po-item" required onchange="updatePOItemInfo(this)">
                     <option value="">Select Item</option>
-                    ${supplierItems.map(item => `<option value="${item.Item_ID}">${item.Item_Description}</option>`).join('')}
+                    ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package}" data-cost="${item.Package_Cost}" data-uom="${item.Purchase_UOM}">${item.Item_Description}</option>`).join('')}
                 </select>
-                <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
-                <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
+                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required oninput="calculatePOLine(this)">
+                <span class="po-info" style="color: #666; font-size: 12px;">-</span>
+                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required>
                 <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
             `;
             container.appendChild(newRow);
-            // DON'T call loadSupplierItems() - that resets all dropdowns!
+        }
+        
+        function updatePOItemInfo(selectElement) {
+            const option = selectElement.options[selectElement.selectedIndex];
+            const units = option.getAttribute('data-units');
+            const cost = option.getAttribute('data-cost');
+            const uom = option.getAttribute('data-uom');
+            
+            const row = selectElement.parentElement;
+            const costInput = row.querySelector('.po-cost');
+            const infoSpan = row.querySelector('.po-info');
+            
+            if (units && cost) {
+                costInput.value = cost;
+                infoSpan.textContent = `(${units} units/${uom})`;
+            }
+        }
+        
+        function calculatePOLine(qtyInput) {
+            const row = qtyInput.parentElement;
+            const selectElement = row.querySelector('.po-item');
+            const option = selectElement.options[selectElement.selectedIndex];
+            const units = parseFloat(option.getAttribute('data-units')) || 1;
+            const qty = parseFloat(qtyInput.value) || 0;
+            const infoSpan = row.querySelector('.po-info');
+            const totalUnits = qty * units;
+            const uom = option.getAttribute('data-uom');
+            
+            infoSpan.textContent = `(${units} units/${uom} = ${totalUnits} total units)`;
         }
 
         function removeLineItem(btn) {
@@ -2626,16 +2707,31 @@
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
-                <select class="so-item" required>
+                <select class="so-item" required onchange="updateSOItemInfo(this)">
                     <option value="">Select Item</option>
-                    ${cachedItems.map(item => `<option value="${item.Item_ID}">${item.Item_Description}</option>`).join('')}
+                    ${cachedItems.map(item => `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-qty="${item.Qty_On_Hand}">${item.Item_Description}</option>`).join('')}
                 </select>
-                <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
-                <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
+                <input type="number" class="so-qty" placeholder="# of Units" min="1" required>
+                <span class="so-info" style="color: #666; font-size: 12px;">-</span>
+                <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required>
                 <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
             `;
             container.appendChild(newRow);
-            // DON'T call loadSaleDropdowns() - that resets all dropdowns!
+        }
+        
+        function updateSOItemInfo(selectElement) {
+            const option = selectElement.options[selectElement.selectedIndex];
+            const price = option.getAttribute('data-price');
+            const qtyAvail = option.getAttribute('data-qty');
+            
+            const row = selectElement.parentElement;
+            const priceInput = row.querySelector('.so-price');
+            const infoSpan = row.querySelector('.so-info');
+            
+            if (price) {
+                priceInput.value = price;
+                infoSpan.textContent = `(${qtyAvail} units available)`;
+            }
         }
 
         async function addSale(e) {
