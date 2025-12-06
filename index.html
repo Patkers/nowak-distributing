@@ -1,947 +1,1241 @@
-/**
- * Nowak's Distributing - Relational Database Backend
- * Version 3.0 - CORS FIXED (Proper Method)
- * 
- * IMPORTANT: Google Apps Script web apps automatically handle CORS
- * when deployed with "Anyone" access. The issue is likely the deployment settings.
- * 
- * INSTALLATION:
- * 1. Open your "Nowak Distributing Master" spreadsheet
- * 2. Go to Extensions → Apps Script
- * 3. SELECT ALL existing code and DELETE it
- * 4. Paste this entire script
- * 5. Click Save (disk icon)
- * 6. Click Deploy → New deployment (NOT manage deployments)
- * 7. Type: Web app
- * 8. Description: "v3 - CORS fixed"
- * 9. Execute as: Me
- * 10. Who has access: Anyone
- * 11. Click Deploy
- * 12. Copy the NEW Web App URL and update it in your frontend Settings!
- */
-
-// ==================== UTILITY FUNCTIONS ====================
-
-function doGet(e) {
-  // Handle API calls via GET to avoid CORS preflight issues
-  if (e.parameter && e.parameter.action) {
-    try {
-      const action = e.parameter.action;
-      const data = e.parameter.data ? JSON.parse(e.parameter.data) : {};
-      
-      // Route to appropriate handler (same as doPost)
-      let result;
-      switch (action) {
-        // Supplier operations
-        case 'addSupplier':
-          result = addSupplier(data);
-          break;
-        case 'updateSupplier':
-          result = updateSupplier(data);
-          break;
-        case 'deleteSupplier':
-          result = deleteSupplier(data);
-          break;
-        case 'getSuppliers':
-          result = getSuppliers();
-          break;
-        
-        // Item operations
-        case 'addItem':
-          result = addItem(data);
-          break;
-        case 'updateItem':
-          result = updateItem(data);
-          break;
-        case 'deleteItem':
-          result = deleteItem(data);
-          break;
-        case 'getItems':
-          result = getItems();
-          break;
-        
-        // Customer operations
-        case 'addCustomer':
-          result = addCustomer(data);
-          break;
-        case 'updateCustomer':
-          result = updateCustomer(data);
-          break;
-        case 'deleteCustomer':
-          result = deleteCustomer(data);
-          break;
-        case 'getCustomers':
-          result = getCustomers();
-          break;
-        
-        // Purchase Order operations
-        case 'createPurchaseOrder':
-          result = createPurchaseOrder(data);
-          break;
-        case 'getPurchaseOrders':
-          result = getPurchaseOrders();
-          break;
-        
-        // Sales Order operations
-        case 'createSalesOrder':
-          result = createSalesOrder(data);
-          break;
-        case 'getSalesOrders':
-          result = getSalesOrders();
-          break;
-        
-        // Inventory operations
-        case 'adjustInventory':
-          result = adjustInventory(data);
-          break;
-        case 'getInventoryReport':
-          result = getInventoryReport();
-          break;
-        
-        default:
-          result = {
-            status: 'error',
-            message: 'Unknown action: ' + action
-          };
-      }
-      
-      return ContentService
-        .createTextOutput(JSON.stringify(result))
-        .setMimeType(ContentService.MimeType.JSON);
-        
-    } catch (error) {
-      return ContentService
-        .createTextOutput(JSON.stringify({
-          status: 'error',
-          message: error.toString()
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-  
-  // Default response for testing
-  const response = {
-    status: 'success',
-    message: 'Nowak\'s Distributing Relational API v3.0',
-    timestamp: new Date().toISOString(),
-    note: 'Use GET with action and data parameters'
-  };
-  
-  return ContentService
-    .createTextOutput(JSON.stringify(response))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const action = data.action;
-    
-    // Route to appropriate handler
-    let result;
-    switch (action) {
-      // Supplier operations
-      case 'addSupplier':
-        result = addSupplier(data);
-        break;
-      case 'updateSupplier':
-        result = updateSupplier(data);
-        break;
-      case 'deleteSupplier':
-        result = deleteSupplier(data);
-        break;
-      case 'getSuppliers':
-        result = getSuppliers();
-        break;
-      
-      // Item operations
-      case 'addItem':
-        result = addItem(data);
-        break;
-      case 'updateItem':
-        result = updateItem(data);
-        break;
-      case 'deleteItem':
-        result = deleteItem(data);
-        break;
-      case 'getItems':
-        result = getItems();
-        break;
-      
-      // Customer operations
-      case 'addCustomer':
-        result = addCustomer(data);
-        break;
-      case 'updateCustomer':
-        result = updateCustomer(data);
-        break;
-      case 'deleteCustomer':
-        result = deleteCustomer(data);
-        break;
-      case 'getCustomers':
-        result = getCustomers();
-        break;
-      
-      // Purchase Order operations
-      case 'createPurchaseOrder':
-        result = createPurchaseOrder(data);
-        break;
-      case 'getPurchaseOrders':
-        result = getPurchaseOrders();
-        break;
-      
-      // Sales Order operations
-      case 'createSalesOrder':
-        result = createSalesOrder(data);
-        break;
-      case 'getSalesOrders':
-        result = getSalesOrders();
-        break;
-      
-      // Inventory operations
-      case 'adjustInventory':
-        result = adjustInventory(data);
-        break;
-      case 'getInventoryReport':
-        result = getInventoryReport();
-        break;
-      
-      default:
-        result = {
-          status: 'error',
-          message: 'Unknown action: ' + action
-        };
-    }
-    
-    return ContentService
-      .createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
-      
-  } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        status: 'error',
-        message: error.toString()
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function getSpreadsheet() {
-  return SpreadsheetApp.getActiveSpreadsheet();
-}
-
-function getSheet(sheetName) {
-  return getSpreadsheet().getSheetByName(sheetName);
-}
-
-function generateId(prefix, sheet) {
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return prefix + '001';
-  
-  const ids = data.slice(1).map(row => row[0]).filter(id => id);
-  if (ids.length === 0) return prefix + '001';
-  
-  const numbers = ids.map(id => parseInt(id.replace(prefix, ''))).filter(n => !isNaN(n));
-  const maxNum = Math.max(...numbers);
-  return prefix + String(maxNum + 1).padStart(3, '0');
-}
-
-// ==================== SUPPLIER OPERATIONS ====================
-
-function getSuppliers() {
-  try {
-    const sheet = getSheet('Suppliers');
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    
-    const suppliers = data.slice(1).map(row => {
-      const supplier = {};
-      headers.forEach((header, index) => {
-        supplier[header] = row[index];
-      });
-      return supplier;
-    }).filter(s => s.Supplier_ID);
-    
-    return {
-      status: 'success',
-      data: suppliers
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
-
-function addSupplier(data) {
-  try {
-    const sheet = getSheet('Suppliers');
-    const supplierId = generateId('S', sheet);
-    
-    const newRow = [
-      supplierId,
-      data.name || '',
-      data.address || '',
-      data.city || '',
-      data.state || '',
-      data.zip || '',
-      data.contactName || '',
-      data.phone || '',
-      data.fax || '',
-      data.email || '',
-      data.paymentTerms || 'Net 30',
-      data.notes || ''
-    ];
-    
-    sheet.appendRow(newRow);
-    
-    return {
-      status: 'success',
-      message: 'Supplier added successfully',
-      supplierId: supplierId
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
-
-function updateSupplier(data) {
-  try {
-    const sheet = getSheet('Suppliers');
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === data.supplierId) {
-        sheet.getRange(i + 1, 2).setValue(data.name || values[i][1]);
-        sheet.getRange(i + 1, 3).setValue(data.address || values[i][2]);
-        sheet.getRange(i + 1, 4).setValue(data.city || values[i][3]);
-        sheet.getRange(i + 1, 5).setValue(data.state || values[i][4]);
-        sheet.getRange(i + 1, 6).setValue(data.zip || values[i][5]);
-        sheet.getRange(i + 1, 7).setValue(data.contactName || values[i][6]);
-        sheet.getRange(i + 1, 8).setValue(data.phone || values[i][7]);
-        sheet.getRange(i + 1, 9).setValue(data.fax || values[i][8]);
-        sheet.getRange(i + 1, 10).setValue(data.email || values[i][9]);
-        sheet.getRange(i + 1, 11).setValue(data.paymentTerms || values[i][10]);
-        sheet.getRange(i + 1, 12).setValue(data.notes || values[i][11]);
-        
-        return {
-          status: 'success',
-          message: 'Supplier updated successfully'
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Supplier not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
-
-function deleteSupplier(data) {
-  try {
-    const sheet = getSheet('Suppliers');
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === data.supplierId) {
-        sheet.deleteRow(i + 1);
-        return {
-          status: 'success',
-          message: 'Supplier deleted successfully'
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Supplier not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
-
-// ==================== ITEM OPERATIONS ====================
-
-function getItems() {
-  try {
-    const sheet = getSheet('Items');
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    
-    const items = data.slice(1).map(row => {
-      const item = {};
-      headers.forEach((header, index) => {
-        item[header] = row[index];
-      });
-      return item;
-    }).filter(i => i.Item_ID);
-    
-    return {
-      status: 'success',
-      data: items
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
-
-function addItem(data) {
-  try {
-    const sheet = getSheet('Items');
-    const itemId = generateId('ITM', sheet);
-    
-    const newRow = [
-      itemId,
-      data.description || '',
-      data.supplierId || '',
-      data.uom || 'EA',
-      parseFloat(data.costPrice) || 0,
-      parseFloat(data.sellPrice) || 0,
-      parseInt(data.qtyOnHand) || 0,
-      parseInt(data.reorderPoint) || 0,
-      data.notes || ''
-    ];
-    
-    sheet.appendRow(newRow);
-    
-    return {
-      status: 'success',
-      message: 'Item added successfully',
-      itemId: itemId
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
-
-function updateItem(data) {
-  try {
-    const sheet = getSheet('Items');
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === data.itemId) {
-        sheet.getRange(i + 1, 2).setValue(data.description || values[i][1]);
-        sheet.getRange(i + 1, 3).setValue(data.supplierId || values[i][2]);
-        sheet.getRange(i + 1, 4).setValue(data.uom || values[i][3]);
-        sheet.getRange(i + 1, 5).setValue(parseFloat(data.costPrice) || values[i][4]);
-        sheet.getRange(i + 1, 6).setValue(parseFloat(data.sellPrice) || values[i][5]);
-        if (data.qtyOnHand !== undefined) {
-          sheet.getRange(i + 1, 7).setValue(parseInt(data.qtyOnHand));
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nowak's Distributing - Relational System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        sheet.getRange(i + 1, 8).setValue(parseInt(data.reorderPoint) || values[i][7]);
-        sheet.getRange(i + 1, 9).setValue(data.notes || values[i][8]);
-        
-        return {
-          status: 'success',
-          message: 'Item updated successfully'
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Item not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
 
-function deleteItem(data) {
-  try {
-    const sheet = getSheet('Items');
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === data.itemId) {
-        sheet.deleteRow(i + 1);
-        return {
-          status: 'success',
-          message: 'Item deleted successfully'
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Item not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-// ==================== CUSTOMER OPERATIONS ====================
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-function getCustomers() {
-  try {
-    const sheet = getSheet('Customers');
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    
-    const customers = data.slice(1).map(row => {
-      const customer = {};
-      headers.forEach((header, index) => {
-        customer[header] = row[index];
-      });
-      return customer;
-    }).filter(c => c.Customer_ID);
-    
-    return {
-      status: 'success',
-      data: customers
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
 
-function addCustomer(data) {
-  try {
-    const sheet = getSheet('Customers');
-    const customerId = generateId('C', sheet);
-    
-    const newRow = [
-      customerId,
-      data.name || '',
-      data.address || '',
-      data.city || '',
-      data.state || '',
-      data.zip || '',
-      data.contactName || '',
-      data.phone || '',
-      data.email || '',
-      parseFloat(data.creditLimit) || 0,
-      data.paymentTerms || 'Net 30',
-      data.notes || ''
-    ];
-    
-    sheet.appendRow(newRow);
-    
-    return {
-      status: 'success',
-      message: 'Customer added successfully',
-      customerId: customerId
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
 
-function updateCustomer(data) {
-  try {
-    const sheet = getSheet('Customers');
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === data.customerId) {
-        sheet.getRange(i + 1, 2).setValue(data.name || values[i][1]);
-        sheet.getRange(i + 1, 3).setValue(data.address || values[i][2]);
-        sheet.getRange(i + 1, 4).setValue(data.city || values[i][3]);
-        sheet.getRange(i + 1, 5).setValue(data.state || values[i][4]);
-        sheet.getRange(i + 1, 6).setValue(data.zip || values[i][5]);
-        sheet.getRange(i + 1, 7).setValue(data.contactName || values[i][6]);
-        sheet.getRange(i + 1, 8).setValue(data.phone || values[i][7]);
-        sheet.getRange(i + 1, 9).setValue(data.email || values[i][8]);
-        sheet.getRange(i + 1, 10).setValue(parseFloat(data.creditLimit) || values[i][9]);
-        sheet.getRange(i + 1, 11).setValue(data.paymentTerms || values[i][10]);
-        sheet.getRange(i + 1, 12).setValue(data.notes || values[i][11]);
-        
-        return {
-          status: 'success',
-          message: 'Customer updated successfully'
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Customer not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
 
-function deleteCustomer(data) {
-  try {
-    const sheet = getSheet('Customers');
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
-    
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === data.customerId) {
-        sheet.deleteRow(i + 1);
-        return {
-          status: 'success',
-          message: 'Customer deleted successfully'
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Customer not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        .tab {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
 
-// ==================== PURCHASE ORDER OPERATIONS ====================
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
-function createPurchaseOrder(data) {
-  try {
-    const poSheet = getSheet('Purchase_Orders');
-    const polSheet = getSheet('Purchase_Order_Lines');
-    const itemsSheet = getSheet('Items');
-    const invAdjSheet = getSheet('Inventory_Adjustments');
-    
-    // Generate PO ID
-    const year = new Date().getFullYear();
-    const poId = 'PO-' + year + '-' + String(poSheet.getLastRow()).padStart(3, '0');
-    
-    // Add PO header
-    const poRow = [
-      poId,
-      data.supplierId || '',
-      new Date(),
-      data.invoiceNumber || '',
-      parseFloat(data.invoiceTotal) || 0,
-      data.notes || ''
-    ];
-    poSheet.appendRow(poRow);
-    
-    // Add PO lines and update inventory
-    if (data.lines && Array.isArray(data.lines)) {
-      data.lines.forEach(line => {
-        // Add line
-        const polRow = [
-          poId,
-          line.itemId || '',
-          parseInt(line.quantity) || 0,
-          parseFloat(line.unitCost) || 0
-        ];
-        polSheet.appendRow(polRow);
-        
-        // Update inventory
-        const itemData = itemsSheet.getDataRange().getValues();
-        for (let i = 1; i < itemData.length; i++) {
-          if (itemData[i][0] === line.itemId) {
-            const currentQty = parseInt(itemData[i][6]) || 0;
-            const newQty = currentQty + (parseInt(line.quantity) || 0);
-            itemsSheet.getRange(i + 1, 7).setValue(newQty);
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .card.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table th {
+            background: #f8f9ff;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .line-items-container {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .line-item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 50px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: end;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .config-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚚 Nowak's Distributing</h1>
+            <p>Relational Database Management System</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('config')">⚙️ Settings</button>
+            <button class="tab" onclick="switchTab('suppliers')">🏭 Suppliers</button>
+            <button class="tab" onclick="switchTab('items')">📦 Items</button>
+            <button class="tab" onclick="switchTab('customers')">👥 Customers</button>
+            <button class="tab" onclick="switchTab('purchases')">📥 Purchases</button>
+            <button class="tab" onclick="switchTab('sales')">💰 Sales</button>
+            <button class="tab" onclick="switchTab('inventory')">📊 Inventory</button>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="config" class="card active">
+            <h2>System Configuration</h2>
+            <div class="status" id="configStatus"></div>
             
-            // Log inventory adjustment
-            const adjRow = [
-              new Date(),
-              line.itemId,
-              'Purchase',
-              poId,
-              parseInt(line.quantity) || 0,
-              currentQty,
-              newQty,
-              'Purchase order received'
-            ];
-            invAdjSheet.appendRow(adjRow);
-            break;
-          }
-        }
-      });
-    }
-    
-    return {
-      status: 'success',
-      message: 'Purchase order created successfully',
-      poId: poId
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+            <div class="config-box">
+                <h3>Backend API URL</h3>
+                <p style="margin-bottom: 10px; color: #666;">
+                    Enter your Google Apps Script Web App URL
+                </p>
+                <input type="text" id="apiUrl" class="form-group" style="width: 100%; padding: 10px; margin-bottom: 15px;" 
+                       placeholder="https://script.google.com/macros/s/.../exec">
+                <button class="btn" onclick="saveConfig()">💾 Save Configuration</button>
+            </div>
 
-function getPurchaseOrders() {
-  try {
-    const poSheet = getSheet('Purchase_Orders');
-    const polSheet = getSheet('Purchase_Order_Lines');
-    
-    const poData = poSheet.getDataRange().getValues();
-    const polData = polSheet.getDataRange().getValues();
-    
-    const orders = poData.slice(1).map(row => {
-      const poId = row[0];
-      const lines = polData.slice(1)
-        .filter(l => l[0] === poId)
-        .map(l => ({
-          itemId: l[1],
-          quantity: l[2],
-          unitCost: l[3]
-        }));
-      
-      return {
-        PO_ID: poId,
-        Supplier_ID: row[1],
-        PO_Date: row[2],
-        Invoice_Number: row[3],
-        Invoice_Total: row[4],
-        Notes: row[5],
-        lines: lines
-      };
-    }).filter(po => po.PO_ID);
-    
-    return {
-      status: 'success',
-      data: orders
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+            <div class="config-box">
+                <h3>Current Status</h3>
+                <p id="configStatusText">⚠️ Not configured</p>
+            </div>
+        </div>
 
-// ==================== SALES ORDER OPERATIONS ====================
-
-function createSalesOrder(data) {
-  try {
-    const soSheet = getSheet('Sales_Orders');
-    const solSheet = getSheet('Sales_Order_Lines');
-    const itemsSheet = getSheet('Items');
-    const invAdjSheet = getSheet('Inventory_Adjustments');
-    
-    // Generate SO ID
-    const year = new Date().getFullYear();
-    const soId = 'SO-' + year + '-' + String(soSheet.getLastRow()).padStart(3, '0');
-    
-    // Add SO header
-    const soRow = [
-      soId,
-      data.customerId || '',
-      new Date(),
-      parseFloat(data.orderTotal) || 0,
-      data.notes || ''
-    ];
-    soSheet.appendRow(soRow);
-    
-    // Add SO lines and update inventory
-    if (data.lines && Array.isArray(data.lines)) {
-      data.lines.forEach(line => {
-        // Add line
-        const solRow = [
-          soId,
-          line.itemId || '',
-          parseInt(line.quantity) || 0,
-          parseFloat(line.unitPrice) || 0
-        ];
-        solSheet.appendRow(solRow);
-        
-        // Update inventory (decrease)
-        const itemData = itemsSheet.getDataRange().getValues();
-        for (let i = 1; i < itemData.length; i++) {
-          if (itemData[i][0] === line.itemId) {
-            const currentQty = parseInt(itemData[i][6]) || 0;
-            const newQty = currentQty - (parseInt(line.quantity) || 0);
-            itemsSheet.getRange(i + 1, 7).setValue(newQty);
+        <!-- Suppliers Tab -->
+        <div id="suppliers" class="card">
+            <h2>Suppliers</h2>
+            <div class="status" id="suppliersStatus"></div>
             
-            // Log inventory adjustment
-            const adjRow = [
-              new Date(),
-              line.itemId,
-              'Sale',
-              soId,
-              -(parseInt(line.quantity) || 0),
-              currentQty,
-              newQty,
-              'Sales order fulfilled'
-            ];
-            invAdjSheet.appendRow(adjRow);
-            break;
-          }
+            <button class="btn" onclick="loadSuppliers()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="showAddSupplierForm()">➕ Add Supplier</button>
+            
+            <div id="addSupplierForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+                <h3>Add New Supplier</h3>
+                <form onsubmit="addSupplier(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Supplier Name *</label>
+                            <input type="text" id="newSupplierName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Name</label>
+                            <input type="text" id="newContactName">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="newPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="newEmail">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="newAddress">
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="newCity">
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="newState" maxlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label>ZIP</label>
+                            <input type="text" id="newZip">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Terms</label>
+                        <select id="newPaymentTerms">
+                            <option value="Net 30">Net 30</option>
+                            <option value="Net 45">Net 45</option>
+                            <option value="Net 60">Net 60</option>
+                            <option value="COD">COD</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="newNotes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn">💾 Save Supplier</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddSupplierForm()">Cancel</button>
+                </form>
+            </div>
+            
+            <div id="suppliersTable"></div>
+        </div>
+
+        <!-- Items Tab -->
+        <div id="items" class="card">
+            <h2>Items</h2>
+            <div class="status" id="itemsStatus"></div>
+            
+            <button class="btn" onclick="loadItems()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="showAddItemForm()">➕ Add Item</button>
+            
+            <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+                <h3>Add New Item</h3>
+                <form onsubmit="addItem(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Supplier *</label>
+                            <select id="newItemSupplier" required>
+                                <option value="">Select Supplier</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Item Description *</label>
+                            <input type="text" id="newItemDescription" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unit of Measure</label>
+                            <select id="newItemUOM">
+                                <option value="Each">Each</option>
+                                <option value="Case">Case</option>
+                                <option value="Box">Box</option>
+                                <option value="Pack">Pack</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Cost Price *</label>
+                            <input type="number" id="newCostPrice" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Sell Price *</label>
+                            <input type="number" id="newSellPrice" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Initial Quantity</label>
+                            <input type="number" id="newQtyOnHand" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Reorder Point</label>
+                            <input type="number" id="newReorderPoint" value="10">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Save Item</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddItemForm()">Cancel</button>
+                </form>
+            </div>
+            
+            <div id="itemsTable"></div>
+        </div>
+
+        <!-- Customers Tab -->
+        <div id="customers" class="card">
+            <h2>Customers</h2>
+            <div class="status" id="customersStatus"></div>
+            
+            <button class="btn" onclick="loadCustomers()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="showAddCustomerForm()">➕ Add Customer</button>
+            
+            <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+                <h3>Add New Customer</h3>
+                <form onsubmit="addCustomer(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Customer Name *</label>
+                            <input type="text" id="newCustomerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Name</label>
+                            <input type="text" id="newCustomerContact">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="newCustomerPhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="newCustomerEmail">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="newCustomerAddress">
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="newCustomerCity">
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="newCustomerState" maxlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label>ZIP</label>
+                            <input type="text" id="newCustomerZip">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Credit Limit</label>
+                            <input type="number" id="newCreditLimit" step="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Terms</label>
+                            <select id="newCustomerPaymentTerms">
+                                <option value="Net 30">Net 30</option>
+                                <option value="Net 15">Net 15</option>
+                                <option value="Net 45">Net 45</option>
+                                <option value="COD">COD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="newCustomerNotes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn">💾 Save Customer</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddCustomerForm()">Cancel</button>
+                </form>
+            </div>
+            
+            <div id="customersTable"></div>
+        </div>
+
+        <!-- Purchases Tab -->
+        <div id="purchases" class="card">
+            <h2>Purchase Orders</h2>
+            <div class="status" id="purchasesStatus"></div>
+            
+            <button class="btn" onclick="loadPurchases()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
+            
+            <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+                <h3>Record New Purchase</h3>
+                <form onsubmit="addPurchase(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Supplier *</label>
+                            <select id="poSupplier" required onchange="loadSupplierItems()">
+                                <option value="">Select Supplier</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Invoice Number *</label>
+                            <input type="text" id="poInvoiceNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Purchase Date *</label>
+                            <input type="date" id="poDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="poStatus">
+                                <option value="Received">Received</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Partial">Partial</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Line Items</h4>
+                    <div class="line-items-container" id="poLineItems">
+                        <div class="line-item-row">
+                            <select class="po-item" required>
+                                <option value="">Select Item</option>
+                            </select>
+                            <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
+                            <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
+                            <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Notes</label>
+                        <textarea id="poNotes" rows="2"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 Save Purchase Order</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddPurchaseForm()">Cancel</button>
+                </form>
+            </div>
+            
+            <div id="purchasesTable"></div>
+        </div>
+
+        <!-- Sales Tab -->
+        <div id="sales" class="card">
+            <h2>Sales Orders</h2>
+            <div class="status" id="salesStatus"></div>
+            
+            <button class="btn" onclick="loadSales()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="showAddSaleForm()">➕ Record Sale</button>
+            
+            <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+                <h3>Record New Sale</h3>
+                <form onsubmit="addSale(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Customer *</label>
+                            <select id="soCustomer" required>
+                                <option value="">Select Customer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sale Date *</label>
+                            <input type="date" id="soDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select id="soPayment">
+                                <option value="Cash">Cash</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Check">Check</option>
+                                <option value="Terms (Net 30)">Terms (Net 30)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Items Sold</h4>
+                    <div class="line-items-container" id="soLineItems">
+                        <div class="line-item-row">
+                            <select class="so-item" required>
+                                <option value="">Select Item</option>
+                            </select>
+                            <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
+                            <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
+                            <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addSOLineItem()">+ Add Line Item</button>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Notes</label>
+                        <textarea id="soNotes" rows="2"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">💾 Save Sale</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddSaleForm()">Cancel</button>
+                </form>
+            </div>
+            
+            <div id="salesTable"></div>
+        </div>
+
+        <!-- Inventory Tab -->
+        <div id="inventory" class="card">
+            <h2>Inventory Report</h2>
+            <div class="status" id="inventoryStatus"></div>
+            
+            <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
+            
+            <div id="inventoryTable"></div>
+        </div>
+    </div>
+
+    <script>
+        let API_URL = localStorage.getItem('apiUrl') || '';
+        let cachedSuppliers = [];
+        let cachedItems = [];
+        let cachedCustomers = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateConfigStatus();
+            const today = new Date().toISOString().split('T')[0];
+            if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
+            if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
         }
-      });
-    }
-    
-    return {
-      status: 'success',
-      message: 'Sales order created successfully',
-      soId: soId
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
 
-function getSalesOrders() {
-  try {
-    const soSheet = getSheet('Sales_Orders');
-    const solSheet = getSheet('Sales_Order_Lines');
-    
-    const soData = soSheet.getDataRange().getValues();
-    const solData = solSheet.getDataRange().getValues();
-    
-    const orders = soData.slice(1).map(row => {
-      const soId = row[0];
-      const lines = solData.slice(1)
-        .filter(l => l[0] === soId)
-        .map(l => ({
-          itemId: l[1],
-          quantity: l[2],
-          unitPrice: l[3]
-        }));
-      
-      return {
-        SO_ID: soId,
-        Customer_ID: row[1],
-        SO_Date: row[2],
-        Order_Total: row[3],
-        Notes: row[4],
-        lines: lines
-      };
-    }).filter(so => so.SO_ID);
-    
-    return {
-      status: 'success',
-      data: orders
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        function updateConfigStatus() {
+            const statusEl = document.getElementById('configStatusText');
+            const apiInput = document.getElementById('apiUrl');
+            
+            if (API_URL) {
+                apiInput.value = API_URL;
+                statusEl.innerHTML = '✅ API configured and ready!';
+                statusEl.style.color = '#2e7d32';
+            } else {
+                statusEl.innerHTML = '⚠️ Not configured - enter API URL above';
+                statusEl.style.color = '#f57c00';
+            }
+        }
 
-// ==================== INVENTORY OPERATIONS ====================
+        function saveConfig() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const status = document.getElementById('configStatus');
+            
+            if (!apiUrl) {
+                showStatus('configStatus', 'Please enter an API URL', 'error');
+                return;
+            }
+            
+            API_URL = apiUrl;
+            localStorage.setItem('apiUrl', apiUrl);
+            updateConfigStatus();
+            
+            showStatus('configStatus', '✅ Configuration saved!', 'success');
+        }
 
-function adjustInventory(data) {
-  try {
-    const itemsSheet = getSheet('Items');
-    const invAdjSheet = getSheet('Inventory_Adjustments');
-    
-    const itemData = itemsSheet.getDataRange().getValues();
-    for (let i = 1; i < itemData.length; i++) {
-      if (itemData[i][0] === data.itemId) {
-        const currentQty = parseInt(itemData[i][6]) || 0;
-        const adjustment = parseInt(data.adjustment) || 0;
-        const newQty = currentQty + adjustment;
-        
-        itemsSheet.getRange(i + 1, 7).setValue(newQty);
-        
-        // Log adjustment
-        const adjRow = [
-          new Date(),
-          data.itemId,
-          'Manual',
-          data.reference || '',
-          adjustment,
-          currentQty,
-          newQty,
-          data.reason || 'Manual adjustment'
-        ];
-        invAdjSheet.appendRow(adjRow);
-        
-        return {
-          status: 'success',
-          message: 'Inventory adjusted successfully',
-          oldQty: currentQty,
-          newQty: newQty
-        };
-      }
-    }
-    
-    return {
-      status: 'error',
-      message: 'Item not found'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        function showStatus(elementId, message, type) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
 
-function getInventoryReport() {
-  try {
-    const itemsSheet = getSheet('Items');
-    const data = itemsSheet.getDataRange().getValues();
-    const headers = data[0];
-    
-    const inventory = data.slice(1).map(row => {
-      const item = {};
-      headers.forEach((header, index) => {
-        item[header] = row[index];
-      });
-      
-      // Calculate value
-      item.Total_Value = (parseFloat(item.Qty_On_Hand) || 0) * (parseFloat(item.Cost_Price) || 0);
-      
-      // Check if low stock
-      item.Low_Stock = (parseInt(item.Qty_On_Hand) || 0) <= (parseInt(item.Reorder_Point) || 0);
-      
-      return item;
-    }).filter(i => i.Item_ID);
-    
-    return {
-      status: 'success',
-      data: inventory
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error.toString()
-    };
-  }
-}
+        async function apiCall(action, data = {}) {
+            if (!API_URL) {
+                alert('Please configure your API URL in Settings first!');
+                switchTab('config');
+                return null;
+            }
+
+            try {
+                // Use GET with query parameters to avoid CORS preflight
+                const params = new URLSearchParams({
+                    action: action,
+                    data: JSON.stringify(data)
+                });
+                
+                const url = `${API_URL}?${params.toString()}`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('API Error:', error);
+                return { status: 'error', message: error.toString() };
+            }
+        }
+
+        // ==================== SUPPLIERS ====================
+
+        function showAddSupplierForm() {
+            document.getElementById('addSupplierForm').style.display = 'block';
+        }
+
+        function hideAddSupplierForm() {
+            document.getElementById('addSupplierForm').style.display = 'none';
+            document.querySelector('#addSupplierForm form').reset();
+        }
+
+        async function addSupplier(e) {
+            e.preventDefault();
+            
+            const data = {
+                supplierName: document.getElementById('newSupplierName').value,
+                contactName: document.getElementById('newContactName').value,
+                phone: document.getElementById('newPhone').value,
+                email: document.getElementById('newEmail').value,
+                address: document.getElementById('newAddress').value,
+                city: document.getElementById('newCity').value,
+                state: document.getElementById('newState').value,
+                zip: document.getElementById('newZip').value,
+                paymentTerms: document.getElementById('newPaymentTerms').value,
+                notes: document.getElementById('newNotes').value
+            };
+
+            const result = await apiCall('addSupplier', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('suppliersStatus', '✅ Supplier added successfully!', 'success');
+                hideAddSupplierForm();
+                loadSuppliers();
+            } else {
+                showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadSuppliers() {
+            document.getElementById('suppliersTable').innerHTML = '<div class="loading">Loading suppliers...</div>';
+            
+            const result = await apiCall('getSuppliers');
+            
+            if (result && result.status === 'success') {
+                cachedSuppliers = result.data;
+                displaySuppliers(result.data);
+            } else {
+                document.getElementById('suppliersTable').innerHTML = '<div class="loading">Error loading suppliers</div>';
+            }
+        }
+
+        function displaySuppliers(suppliers) {
+            if (!suppliers || suppliers.length === 0) {
+                document.getElementById('suppliersTable').innerHTML = '<p>No suppliers yet. Add your first supplier!</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th>';
+            html += '</tr></thead><tbody>';
+
+            suppliers.forEach(s => {
+                html += `<tr>
+                    <td>${s.supplierId}</td>
+                    <td><strong>${s.supplierName}</strong></td>
+                    <td>${s.contactName || '-'}</td>
+                    <td>${s.phone || '-'}</td>
+                    <td>${s.email || '-'}</td>
+                    <td>${s.city || '-'}, ${s.state || '-'}</td>
+                    <td>${s.paymentTerms || '-'}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('suppliersTable').innerHTML = html;
+        }
+
+        // ==================== ITEMS ====================
+
+        function showAddItemForm() {
+            loadSuppliersList();
+            document.getElementById('addItemForm').style.display = 'block';
+        }
+
+        function hideAddItemForm() {
+            document.getElementById('addItemForm').style.display = 'none';
+            document.querySelector('#addItemForm form').reset();
+        }
+
+        async function loadSuppliersList() {
+            if (cachedSuppliers.length === 0) {
+                const result = await apiCall('getSuppliers');
+                if (result && result.status === 'success') {
+                    cachedSuppliers = result.data;
+                }
+            }
+
+            const select = document.getElementById('newItemSupplier');
+            select.innerHTML = '<option value="">Select Supplier</option>';
+            cachedSuppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.supplierId}">${s.supplierName}</option>`;
+            });
+        }
+
+        async function addItem(e) {
+            e.preventDefault();
+            
+            const data = {
+                supplierId: document.getElementById('newItemSupplier').value,
+                itemDescription: document.getElementById('newItemDescription').value,
+                uom: document.getElementById('newItemUOM').value,
+                costPrice: document.getElementById('newCostPrice').value,
+                sellPrice: document.getElementById('newSellPrice').value,
+                qtyOnHand: document.getElementById('newQtyOnHand').value,
+                reorderPoint: document.getElementById('newReorderPoint').value
+            };
+
+            const result = await apiCall('addItem', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('itemsStatus', '✅ Item added successfully!', 'success');
+                hideAddItemForm();
+                loadItems();
+            } else {
+                showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadItems() {
+            document.getElementById('itemsTable').innerHTML = '<div class="loading">Loading items...</div>';
+            
+            const result = await apiCall('getItems');
+            
+            if (result && result.status === 'success') {
+                cachedItems = result.data;
+                displayItems(result.data);
+            } else {
+                document.getElementById('itemsTable').innerHTML = '<div class="loading">Error loading items</div>';
+            }
+        }
+
+        function displayItems(items) {
+            if (!items || items.length === 0) {
+                document.getElementById('itemsTable').innerHTML = '<p>No items yet. Add your first item!</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>ID</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Reorder</th>';
+            html += '</tr></thead><tbody>';
+
+            items.forEach(item => {
+                const lowStock = item.qtyOnHand < item.reorderPoint ? 'style="background:#fff3cd;"' : '';
+                html += `<tr ${lowStock}>
+                    <td>${item.itemId}</td>
+                    <td><strong>${item.itemDescription}</strong></td>
+                    <td>${item.supplierId}</td>
+                    <td>${item.uom}</td>
+                    <td>$${parseFloat(item.costPrice).toFixed(2)}</td>
+                    <td>$${parseFloat(item.sellPrice).toFixed(2)}</td>
+                    <td>${item.qtyOnHand}</td>
+                    <td>${item.reorderPoint}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('itemsTable').innerHTML = html;
+        }
+
+        // ==================== CUSTOMERS ====================
+
+        function showAddCustomerForm() {
+            document.getElementById('addCustomerForm').style.display = 'block';
+        }
+
+        function hideAddCustomerForm() {
+            document.getElementById('addCustomerForm').style.display = 'none';
+            document.querySelector('#addCustomerForm form').reset();
+        }
+
+        async function addCustomer(e) {
+            e.preventDefault();
+            
+            const data = {
+                customerName: document.getElementById('newCustomerName').value,
+                contactName: document.getElementById('newCustomerContact').value,
+                phone: document.getElementById('newCustomerPhone').value,
+                email: document.getElementById('newCustomerEmail').value,
+                address: document.getElementById('newCustomerAddress').value,
+                city: document.getElementById('newCustomerCity').value,
+                state: document.getElementById('newCustomerState').value,
+                zip: document.getElementById('newCustomerZip').value,
+                creditLimit: document.getElementById('newCreditLimit').value,
+                paymentTerms: document.getElementById('newCustomerPaymentTerms').value,
+                notes: document.getElementById('newCustomerNotes').value
+            };
+
+            const result = await apiCall('addCustomer', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('customersStatus', '✅ Customer added successfully!', 'success');
+                hideAddCustomerForm();
+                loadCustomers();
+            } else {
+                showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadCustomers() {
+            document.getElementById('customersTable').innerHTML = '<div class="loading">Loading customers...</div>';
+            
+            const result = await apiCall('getCustomers');
+            
+            if (result && result.status === 'success') {
+                cachedCustomers = result.data;
+                displayCustomers(result.data);
+            } else {
+                document.getElementById('customersTable').innerHTML = '<div class="loading">Error loading customers</div>';
+            }
+        }
+
+        function displayCustomers(customers) {
+            if (!customers || customers.length === 0) {
+                document.getElementById('customersTable').innerHTML = '<p>No customers yet. Add your first customer!</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th>';
+            html += '</tr></thead><tbody>';
+
+            customers.forEach(c => {
+                html += `<tr>
+                    <td>${c.customerId}</td>
+                    <td><strong>${c.customerName}</strong></td>
+                    <td>${c.contactName || '-'}</td>
+                    <td>${c.phone || '-'}</td>
+                    <td>${c.email || '-'}</td>
+                    <td>${c.city || '-'}, ${c.state || '-'}</td>
+                    <td>$${parseFloat(c.creditLimit).toFixed(2)}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('customersTable').innerHTML = html;
+        }
+
+        // ==================== PURCHASES ====================
+
+        function showAddPurchaseForm() {
+            loadPurchaseDropdowns();
+            document.getElementById('addPurchaseForm').style.display = 'block';
+        }
+
+        function hideAddPurchaseForm() {
+            document.getElementById('addPurchaseForm').style.display = 'none';
+            document.querySelector('#addPurchaseForm form').reset();
+        }
+
+        async function loadPurchaseDropdowns() {
+            if (cachedSuppliers.length === 0) {
+                const result = await apiCall('getSuppliers');
+                if (result && result.status === 'success') {
+                    cachedSuppliers = result.data;
+                }
+            }
+
+            const select = document.getElementById('poSupplier');
+            select.innerHTML = '<option value="">Select Supplier</option>';
+            cachedSuppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.supplierId}">${s.supplierName}</option>`;
+            });
+        }
+
+        async function loadSupplierItems() {
+            const supplierId = document.getElementById('poSupplier').value;
+            
+            if (cachedItems.length === 0) {
+                const result = await apiCall('getItems');
+                if (result && result.status === 'success') {
+                    cachedItems = result.data;
+                }
+            }
+
+            const supplierItems = cachedItems.filter(item => item.supplierId === supplierId);
+            
+            document.querySelectorAll('.po-item').forEach(select => {
+                select.innerHTML = '<option value="">Select Item</option>';
+                supplierItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.itemId}">${item.itemDescription}</option>`;
+                });
+            });
+        }
+
+        function addPOLineItem() {
+            const container = document.getElementById('poLineItems');
+            const newRow = document.createElement('div');
+            newRow.className = 'line-item-row';
+            newRow.innerHTML = `
+                <select class="po-item" required>
+                    <option value="">Select Item</option>
+                </select>
+                <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
+                <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
+                <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+            `;
+            container.appendChild(newRow);
+            loadSupplierItems();
+        }
+
+        function removeLineItem(btn) {
+            btn.parentElement.remove();
+        }
+
+        async function addPurchase(e) {
+            e.preventDefault();
+            
+            const lineItems = [];
+            document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                lineItems.push({
+                    itemId: row.querySelector('.po-item').value,
+                    quantity: parseInt(row.querySelector('.po-qty').value),
+                    unitCost: parseFloat(row.querySelector('.po-cost').value)
+                });
+            });
+
+            const data = {
+                supplierId: document.getElementById('poSupplier').value,
+                invoiceNumber: document.getElementById('poInvoiceNumber').value,
+                poDate: document.getElementById('poDate').value,
+                status: document.getElementById('poStatus').value,
+                notes: document.getElementById('poNotes').value,
+                lineItems: lineItems
+            };
+
+            const result = await apiCall('createPurchaseOrder', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('purchasesStatus', '✅ Purchase order created! Inventory updated.', 'success');
+                hideAddPurchaseForm();
+                loadPurchases();
+            } else {
+                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadPurchases() {
+            document.getElementById('purchasesTable').innerHTML = '<div class="loading">Loading purchases...</div>';
+            
+            const result = await apiCall('getPurchaseOrders');
+            
+            if (result && result.status === 'success') {
+                displayPurchases(result.data);
+            } else {
+                document.getElementById('purchasesTable').innerHTML = '<div class="loading">Error loading purchases</div>';
+            }
+        }
+
+        function displayPurchases(orders) {
+            if (!orders || orders.length === 0) {
+                document.getElementById('purchasesTable').innerHTML = '<p>No purchase orders yet. Record your first purchase!</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Total</th><th>Status</th>';
+            html += '</tr></thead><tbody>';
+
+            orders.forEach(po => {
+                html += `<tr>
+                    <td>${po.poId}</td>
+                    <td>${po.supplierId}</td>
+                    <td>${new Date(po.poDate).toLocaleDateString()}</td>
+                    <td>${po.invoiceNumber}</td>
+                    <td>$${parseFloat(po.totalAmount).toFixed(2)}</td>
+                    <td>${po.status}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('purchasesTable').innerHTML = html;
+        }
+
+        // ==================== SALES ====================
+
+        function showAddSaleForm() {
+            loadSaleDropdowns();
+            document.getElementById('addSaleForm').style.display = 'block';
+        }
+
+        function hideAddSaleForm() {
+            document.getElementById('addSaleForm').style.display = 'none';
+            document.querySelector('#addSaleForm form').reset();
+        }
+
+        async function loadSaleDropdowns() {
+            if (cachedCustomers.length === 0) {
+                const result = await apiCall('getCustomers');
+                if (result && result.status === 'success') {
+                    cachedCustomers = result.data;
+                }
+            }
+
+            const select = document.getElementById('soCustomer');
+            select.innerHTML = '<option value="">Select Customer</option>';
+            cachedCustomers.forEach(c => {
+                select.innerHTML += `<option value="${c.customerId}">${c.customerName}</option>`;
+            });
+
+            if (cachedItems.length === 0) {
+                const result = await apiCall('getItems');
+                if (result && result.status === 'success') {
+                    cachedItems = result.data;
+                }
+            }
+
+            document.querySelectorAll('.so-item').forEach(select => {
+                select.innerHTML = '<option value="">Select Item</option>';
+                cachedItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.itemId}" data-price="${item.sellPrice}">${item.itemDescription}</option>`;
+                });
+            });
+        }
+
+        function addSOLineItem() {
+            const container = document.getElementById('soLineItems');
+            const newRow = document.createElement('div');
+            newRow.className = 'line-item-row';
+            newRow.innerHTML = `
+                <select class="so-item" required>
+                    <option value="">Select Item</option>
+                </select>
+                <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
+                <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
+                <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+            `;
+            container.appendChild(newRow);
+            loadSaleDropdowns();
+        }
+
+        async function addSale(e) {
+            e.preventDefault();
+            
+            const lineItems = [];
+            document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
+                lineItems.push({
+                    itemId: row.querySelector('.so-item').value,
+                    quantity: parseInt(row.querySelector('.so-qty').value),
+                    unitPrice: parseFloat(row.querySelector('.so-price').value)
+                });
+            });
+
+            const data = {
+                customerId: document.getElementById('soCustomer').value,
+                saleDate: document.getElementById('soDate').value,
+                paymentMethod: document.getElementById('soPayment').value,
+                notes: document.getElementById('soNotes').value,
+                lineItems: lineItems
+            };
+
+            const result = await apiCall('createSalesOrder', data);
+            
+            if (result && result.status === 'success') {
+                showStatus('salesStatus', '✅ Sale recorded! Inventory updated.', 'success');
+                hideAddSaleForm();
+                loadSales();
+            } else {
+                showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            }
+        }
+
+        async function loadSales() {
+            document.getElementById('salesTable').innerHTML = '<div class="loading">Loading sales...</div>';
+            
+            const result = await apiCall('getSalesOrders');
+            
+            if (result && result.status === 'success') {
+                displaySales(result.data);
+            } else {
+                document.getElementById('salesTable').innerHTML = '<div class="loading">Error loading sales</div>';
+            }
+        }
+
+        function displaySales(orders) {
+            if (!orders || orders.length === 0) {
+                document.getElementById('salesTable').innerHTML = '<p>No sales yet. Record your first sale!</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>SO ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th>';
+            html += '</tr></thead><tbody>';
+
+            orders.forEach(so => {
+                html += `<tr>
+                    <td>${so.soId}</td>
+                    <td>${so.customerId}</td>
+                    <td>${new Date(so.saleDate).toLocaleDateString()}</td>
+                    <td>$${parseFloat(so.totalAmount).toFixed(2)}</td>
+                    <td>${so.paymentMethod}</td>
+                    <td>${so.status}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('salesTable').innerHTML = html;
+        }
+
+        // ==================== INVENTORY ====================
+
+        async function loadInventory() {
+            document.getElementById('inventoryTable').innerHTML = '<div class="loading">Loading inventory...</div>';
+            
+            const result = await apiCall('getInventoryReport');
+            
+            if (result && result.status === 'success') {
+                displayInventory(result.data);
+            } else {
+                document.getElementById('inventoryTable').innerHTML = '<div class="loading">Error loading inventory</div>';
+            }
+        }
+
+        function displayInventory(items) {
+            if (!items || items.length === 0) {
+                document.getElementById('inventoryTable').innerHTML = '<p>No inventory yet.</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>Item ID</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Total Value</th><th>Status</th>';
+            html += '</tr></thead><tbody>';
+
+            items.forEach(item => {
+                const lowStock = item.needsReorder ? 'style="background:#fff3cd;"' : '';
+                const status = item.needsReorder ? '⚠️ Low Stock' : '✅ OK';
+                
+                html += `<tr ${lowStock}>
+                    <td>${item.itemId}</td>
+                    <td><strong>${item.itemDescription}</strong></td>
+                    <td>${item.supplierName}</td>
+                    <td>${item.qtyOnHand}</td>
+                    <td>$${parseFloat(item.costPrice).toFixed(2)}</td>
+                    <td>$${parseFloat(item.sellPrice).toFixed(2)}</td>
+                    <td>$${parseFloat(item.totalValue).toFixed(2)}</td>
+                    <td>${status}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('inventoryTable').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
