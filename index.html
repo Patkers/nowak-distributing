@@ -2533,15 +2533,38 @@
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
-                <select class="po-item" required onchange="updatePOItemInfo(this)">
+                <select class="po-item" required>
                     <option value="">Select Item</option>
                     ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package}" data-cost="${item.Package_Cost}" data-uom="${item.Purchase_UOM}">${item.Item_Description}</option>`).join('')}
                 </select>
-                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required oninput="calculatePOTotal()">
-                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required oninput="calculatePOTotal()">
-                <button type="button" class="remove-btn" onclick="removeLineItem(this); calculatePOTotal();">✕</button>
+                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required>
+                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required>
+                <button type="button" class="remove-btn">✕</button>
             `;
             container.appendChild(newRow);
+            
+            // Attach event listeners programmatically (CSP-safe)
+            const itemSelect = newRow.querySelector('.po-item');
+            const qtyInput = newRow.querySelector('.po-qty');
+            const costInput = newRow.querySelector('.po-cost');
+            const removeBtn = newRow.querySelector('.remove-btn');
+            
+            itemSelect.addEventListener('change', function() {
+                updatePOItemInfo(this);
+            });
+            
+            qtyInput.addEventListener('input', function() {
+                calculatePOTotal();
+            });
+            
+            costInput.addEventListener('input', function() {
+                calculatePOTotal();
+            });
+            
+            removeBtn.addEventListener('click', function() {
+                removeLineItem(this);
+                calculatePOTotal();
+            });
         }
         
         function updatePOItemInfo(selectElement) {
@@ -3675,15 +3698,38 @@
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
-                <select class="so-item" required onchange="updateSOItemInfo(this)">
+                <select class="so-item" required>
                     <option value="">Select Item</option>
                     ${cachedItems.map(item => `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-qty="${item.Qty_On_Hand}">${item.Item_Description}</option>`).join('')}
                 </select>
-                <input type="number" class="so-qty" placeholder="# of Units" min="1" required oninput="calculateSOTotal()">
-                <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required oninput="calculateSOTotal()">
-                <button type="button" class="remove-btn" onclick="removeLineItem(this); calculateSOTotal();">✕</button>
+                <input type="number" class="so-qty" placeholder="# of Units" min="1" required>
+                <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required>
+                <button type="button" class="remove-btn">✕</button>
             `;
             container.appendChild(newRow);
+            
+            // Attach event listeners programmatically (CSP-safe)
+            const itemSelect = newRow.querySelector('.so-item');
+            const qtyInput = newRow.querySelector('.so-qty');
+            const priceInput = newRow.querySelector('.so-price');
+            const removeBtn = newRow.querySelector('.remove-btn');
+            
+            itemSelect.addEventListener('change', function() {
+                updateSOItemInfo(this);
+            });
+            
+            qtyInput.addEventListener('input', function() {
+                calculateSOTotal();
+            });
+            
+            priceInput.addEventListener('input', function() {
+                calculateSOTotal();
+            });
+            
+            removeBtn.addEventListener('click', function() {
+                removeLineItem(this);
+                calculateSOTotal();
+            });
         }
         
         function updateSOItemInfo(selectElement) {
