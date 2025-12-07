@@ -1256,17 +1256,43 @@
                 </div>
                 
                 <h3>Line Items</h3>
-                <div id="createPOLineItems">
-                    <div class="line-item-row">
-                        <select class="createpo-item" style="flex: 3;">
-                            <option value="">Select item...</option>
-                        </select>
-                        <input type="number" class="createpo-qty" placeholder="Cases" min="1" style="flex: 1;">
-                        <input type="number" class="createpo-units" placeholder="Units/Case" readonly style="flex: 1; background: #f0f0f0;">
-                        <input type="number" class="createpo-totalunits" placeholder="Total Units" readonly style="flex: 1; background: #f0f0f0;">
-                        <input type="number" class="createpo-cost" placeholder="Cost/Case" step="0.01" min="0" readonly style="flex: 1;">
-                        <button type="button" class="btn-danger remove-btn" onclick="removeLineItem(this)">🗑️</button>
-                    </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="width: 100%; margin-bottom: 20px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Item</th>
+                                <th style="width: 10%; text-align: center;">Cases</th>
+                                <th style="width: 10%; text-align: center;">Units/Case</th>
+                                <th style="width: 12%; text-align: center;">Total Units</th>
+                                <th style="width: 12%; text-align: right;">Cost/Case</th>
+                                <th style="width: 8%; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="createPOLineItems">
+                            <tr class="line-item-row">
+                                <td>
+                                    <select class="createpo-item" style="width: 100%; padding: 8px;">
+                                        <option value="">Select item...</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" class="createpo-qty" placeholder="Cases" min="1" style="width: 100%; padding: 8px; text-align: center;">
+                                </td>
+                                <td>
+                                    <input type="number" class="createpo-units" placeholder="0" readonly style="width: 100%; padding: 8px; background: #f0f0f0; text-align: center;">
+                                </td>
+                                <td>
+                                    <input type="number" class="createpo-totalunits" placeholder="0" readonly style="width: 100%; padding: 8px; background: #e3f2fd; text-align: center; font-weight: bold;">
+                                </td>
+                                <td>
+                                    <input type="number" class="createpo-cost" placeholder="$0.00" step="0.01" min="0" readonly style="width: 100%; padding: 8px; text-align: right;">
+                                </td>
+                                <td style="text-align: center;">
+                                    <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="padding: 8px 12px;">🗑️</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 
                 <button class="btn btn-secondary" onclick="addCreatePOLineItem()">➕ Add Line Item</button>
@@ -1685,7 +1711,7 @@
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
             
             // Attach event listeners to the first Create PO line item
-            const firstCreatePORow = document.querySelector('#createPOLineItems .line-item-row');
+            const firstCreatePORow = document.querySelector('#createPOLineItems tr.line-item-row');
             if (firstCreatePORow) {
                 const itemSelect = firstCreatePORow.querySelector('.createpo-item');
                 const qtyInput = firstCreatePORow.querySelector('.createpo-qty');
@@ -6465,17 +6491,29 @@
                 return;
             }
             
-            const newRow = document.createElement('div');
+            const newRow = document.createElement('tr');
             newRow.className = 'line-item-row';
             newRow.innerHTML = `
-                <select class="createpo-item" style="flex: 3;" onchange="updateCreatePOItemCost(this)">
-                    <option value="">Select item...</option>
-                </select>
-                <input type="number" class="createpo-qty" placeholder="Cases" min="1" oninput="calculateCreatePOTotal()" style="flex: 1;">
-                <input type="number" class="createpo-units" placeholder="Units/Case" readonly style="flex: 1; background: #f0f0f0;">
-                <input type="number" class="createpo-totalunits" placeholder="Total Units" readonly style="flex: 1; background: #f0f0f0;">
-                <input type="number" class="createpo-cost" placeholder="Cost/Case" step="0.01" min="0" readonly style="flex: 1;">
-                <button type="button" class="btn-danger remove-btn" onclick="removeLineItem(this); calculateCreatePOTotal();">🗑️</button>
+                <td>
+                    <select class="createpo-item" style="width: 100%; padding: 8px;" onchange="updateCreatePOItemCost(this)">
+                        <option value="">Select item...</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="createpo-qty" placeholder="Cases" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 8px; text-align: center;">
+                </td>
+                <td>
+                    <input type="number" class="createpo-units" placeholder="0" readonly style="width: 100%; padding: 8px; background: #f0f0f0; text-align: center;">
+                </td>
+                <td>
+                    <input type="number" class="createpo-totalunits" placeholder="0" readonly style="width: 100%; padding: 8px; background: #e3f2fd; text-align: center; font-weight: bold;">
+                </td>
+                <td>
+                    <input type="number" class="createpo-cost" placeholder="$0.00" step="0.01" min="0" readonly style="width: 100%; padding: 8px; text-align: right;">
+                </td>
+                <td style="text-align: center;">
+                    <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="padding: 8px 12px;">🗑️</button>
+                </td>
             `;
             
             container.appendChild(newRow);
@@ -6529,7 +6567,7 @@
                 const totalUnitsInput = row.querySelector('.createpo-totalunits');
                 
                 // Update total units
-                if (totalUnitsInput) {
+                if (totalUnitsInput && unitsPerCase > 0) {
                     totalUnitsInput.value = qty * unitsPerCase;
                 }
                 
