@@ -1236,30 +1236,31 @@
 
         <!-- Create PO Tab (Generate Only - No Database Save) -->
         <div id="createpo" class="card">
-            <h2>📝 Create Purchase Order (Print/Email Only)</h2>
-            <p style="color: #666; margin-bottom: 20px;">
-                Generate a purchase order document to send to suppliers. This does NOT save to the database or update inventory.
-            </p>
-            
-            <div id="createPOForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Supplier *</label>
-                        <select id="createPOSupplier" required onchange="filterItemsBySupplier()">
-                            <option value="">Select Supplier...</option>
-                        </select>
+            <div style="max-width: 100%; overflow: hidden;">
+                <h2>📝 Create Purchase Order (Print/Email Only)</h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Generate a purchase order document to send to suppliers. This does NOT save to the database or update inventory.
+                </p>
+                
+                <div id="createPOForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Supplier *</label>
+                            <select id="createPOSupplier" required onchange="filterItemsBySupplier()">
+                                <option value="">Select Supplier...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>PO Date *</label>
+                            <input type="date" id="createPODate" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>PO Date *</label>
-                        <input type="date" id="createPODate" required>
-                    </div>
-                </div>
                 
                 <h3>Line Items</h3>
                 
                 <!-- Wrapper for horizontal scroll on mobile -->
-                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
-                    <div style="min-width: 900px;">
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; width: 100%; position: relative;">
+                    <div style="min-width: 900px; width: max-content;">
                         <!-- Header Row -->
                         <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; padding: 15px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0;">
                             <div>Item</div>
@@ -1290,25 +1291,28 @@
                 
                 <button class="btn btn-secondary" onclick="addCreatePOLineItem()">➕ Add Line Item</button>
                 
-                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
-                    <div>
-                        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cases</h3>
-                        <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotalCases">0</p>
-                    </div>
-                    <div>
-                        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Units</h3>
-                        <p style="font-size: 28px; font-weight: bold; color: #1565C0; margin: 0;" id="createPOTotalUnits">0</p>
-                    </div>
-                    <div>
-                        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cost</h3>
-                        <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotal">$0.00</p>
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div style="text-align: center;">
+                            <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cases</h3>
+                            <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotalCases">0</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Units</h3>
+                            <p style="font-size: 28px; font-weight: bold; color: #1565C0; margin: 0;" id="createPOTotalUnits">0</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cost</h3>
+                            <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotal">$0.00</p>
+                        </div>
                     </div>
                 </div>
                 
-                <div style="margin-top: 20px;">
-                    <button class="btn btn-success" onclick="generatePrintablePO()">🖨️ Generate Printable PO</button>
-                    <button class="btn btn-secondary" onclick="clearCreatePOForm()">🔄 Clear Form</button>
+                <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-success" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Generate Printable PO</button>
+                    <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                 </div>
+            </div>
             </div>
             
             <!-- Printable PO Document (Hidden initially) -->
