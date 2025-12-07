@@ -2152,6 +2152,17 @@
             
             if (result && result.status === 'success') {
                 cachedItems = result.data;
+                
+                // DEBUG: Log the first item to see what properties it actually has
+                if (cachedItems.length > 0) {
+                    console.log('=== ITEM DATA STRUCTURE DEBUG ===');
+                    console.log('First item keys:', Object.keys(cachedItems[0]));
+                    console.log('First item full data:', cachedItems[0]);
+                    console.log('Unit_Sell_Price:', cachedItems[0].Unit_Sell_Price);
+                    console.log('Sell_Price:', cachedItems[0].Sell_Price);
+                    console.log('=================================');
+                }
+                
                 displayItems(result.data);
                 loadItemFilterSuppliers();
             } else {
@@ -3358,6 +3369,13 @@
             `;
             
             document.getElementById('modalContent').innerHTML = html;
+            
+            // Attach event listeners to all PO line items in the edit modal
+            console.log('Attaching listeners to PO edit modal line items'); // DEBUG
+            document.querySelectorAll('#editPOLineItems .edit-line-item').forEach(row => {
+                attachEditLineItemListeners(row);
+            });
+            
             document.getElementById('modalEditBtn').style.display = 'none';
             document.getElementById('modalSaveBtn').style.display = 'inline-block';
         }
@@ -3370,7 +3388,10 @@
             
             const itemOptions = cachedItems
                 .filter(i => type === 'PO' ? i.Supplier_ID === currentEditingOrder.Supplier_ID : true)
-                .map(i => `<option value="${i.Item_ID}" ${i.Item_ID === line.Item_ID ? 'selected' : ''}>${i.Item_Description}</option>`)
+                .map(i => {
+                    const priceAttr = type === 'PO' ? `data-cost="${i.Package_Cost}"` : `data-price="${i.Unit_Sell_Price}"`;
+                    return `<option value="${i.Item_ID}" ${priceAttr} ${i.Item_ID === line.Item_ID ? 'selected' : ''}>${i.Item_Description}</option>`;
+                })
                 .join('');
             
             console.log('Items for dropdown:', cachedItems.length, 'Filtered:', itemOptions.length);
@@ -3381,15 +3402,15 @@
             const originalPrice = parseFloat(line[priceField]) || 0;
             
             return `
-                <div class="edit-line-item" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                <div class="edit-line-item" data-type="${type}" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
                     <select class="edit-item" required>
                         <option value="">Select Item</option>
                         ${itemOptions}
                     </select>
-                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" onchange="calculateEditLineTotal(this)">
-                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}" onchange="calculateEditLineTotal(this)">
+                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}">
+                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}">
                     <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="$${(originalQty * originalPrice).toFixed(2)}">
-                    <button type="button" class="remove-btn" onclick="removeEditLineItem(this)" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
+                    <button type="button" class="remove-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
                 </div>
             `;
         }
@@ -3402,6 +3423,48 @@
             row.querySelector('.edit-total').value = '$' + total.toFixed(2);
         }
         
+        function attachEditLineItemListeners(row) {
+            const type = row.getAttribute('data-type');
+            const itemSelect = row.querySelector('.edit-item');
+            const qtyInput = row.querySelector('.edit-qty');
+            const priceInput = row.querySelector('.edit-price');
+            const removeBtn = row.querySelector('.remove-btn');
+            
+            console.log('Attaching edit modal listeners, type:', type); // DEBUG
+            
+            // Auto-fill price when item selected
+            itemSelect.addEventListener('change', function() {
+                console.log('Edit modal item changed!'); // DEBUG
+                const option = this.options[this.selectedIndex];
+                const priceAttr = type === 'PO' ? 'data-cost' : 'data-price';
+                const price = option.getAttribute(priceAttr);
+                console.log('Price from data attribute:', price); // DEBUG
+                
+                if (price) {
+                    priceInput.value = price;
+                    calculateEditLineTotal(qtyInput);
+                }
+            });
+            
+            // Recalculate when qty or price changes
+            qtyInput.addEventListener('input', function() {
+                calculateEditLineTotal(this);
+            });
+            
+            priceInput.addEventListener('input', function() {
+                calculateEditLineTotal(this);
+            });
+            
+            // Remove button
+            removeBtn.addEventListener('click', function() {
+                if (confirm('Remove this line item?')) {
+                    row.remove();
+                }
+            });
+            
+            console.log('Edit modal listeners attached!'); // DEBUG
+        }
+        
         function addEditLineItem(type) {
             const container = document.getElementById(type === 'PO' ? 'editPOLineItems' : 'editSOLineItems');
             const newLine = {
@@ -3411,6 +3474,10 @@
             };
             const newItem = createEditableLineItem(type, newLine, -1, null);
             container.insertAdjacentHTML('beforeend', newItem);
+            
+            // Attach listeners to the newly added item
+            const newRow = container.lastElementChild;
+            attachEditLineItemListeners(newRow);
         }
         
         function removeEditLineItem(btn) {
@@ -3608,6 +3675,13 @@
             `;
             
             document.getElementById('modalContent').innerHTML = html;
+            
+            // Attach event listeners to all SO line items in the edit modal
+            console.log('Attaching listeners to SO edit modal line items'); // DEBUG
+            document.querySelectorAll('#editSOLineItems .edit-line-item').forEach(row => {
+                attachEditLineItemListeners(row);
+            });
+            
             document.getElementById('modalEditBtn').style.display = 'none';
             document.getElementById('modalSaveBtn').style.display = 'inline-block';
         }
