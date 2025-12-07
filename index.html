@@ -3700,7 +3700,10 @@
             newRow.innerHTML = `
                 <select class="so-item" required>
                     <option value="">Select Item</option>
-                    ${cachedItems.map(item => `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-qty="${item.Qty_On_Hand}">${item.Item_Description}</option>`).join('')}
+                    ${cachedItems.map(item => {
+                        console.log('Item:', item.Item_Description, 'Unit_Sell_Price:', item.Unit_Sell_Price); // DEBUG
+                        return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-qty="${item.Qty_On_Hand}">${item.Item_Description}</option>`;
+                    }).join('')}
                 </select>
                 <input type="number" class="so-qty" placeholder="# of Units" min="1" required>
                 <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required>
@@ -3733,14 +3736,23 @@
         }
         
         function updateSOItemInfo(selectElement) {
+            console.log('updateSOItemInfo called!'); // DEBUG
             const option = selectElement.options[selectElement.selectedIndex];
+            console.log('Selected option:', option); // DEBUG
+            console.log('Option text:', option.text); // DEBUG
+            console.log('data-price attribute:', option.getAttribute('data-price')); // DEBUG
+            console.log('All attributes:', option.attributes); // DEBUG
+            
             const price = option.getAttribute('data-price');
             
             const row = selectElement.parentElement;
             const priceInput = row.querySelector('.so-price');
             
             if (price) {
+                console.log('Setting price to:', price); // DEBUG
                 priceInput.value = price;
+            } else {
+                console.log('NO PRICE FOUND!'); // DEBUG
             }
             
             calculateSOTotal();
