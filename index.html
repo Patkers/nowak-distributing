@@ -1554,6 +1554,7 @@
                             <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
                             <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
                             <button type="button" class="remove-btn">✕</button>
+                            <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
                         </div>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="addSOLineItem()">+ Add Line Item</button>
@@ -1762,6 +1763,12 @@
                 
                 if (qtyInput) {
                     qtyInput.addEventListener('input', function() {
+                        // Update stock info when quantity changes
+                        const row = this.closest('.line-item-row');
+                        const itemSelect = row.querySelector('.so-item');
+                        if (itemSelect.value) {
+                            updateSOItemInfo(itemSelect);
+                        }
                         calculateSOTotal();
                     });
                 }
@@ -3577,20 +3584,16 @@
             // Calculate balance due
             const balanceDue = newTotal - previouslyPaid;
             
-            // Find and update the payment info display divs
-            const paymentInfoDiv = document.querySelector('#modalContent .form-grid > div:nth-child(2)');
-            if (paymentInfoDiv) {
-                // Update the display values
-                const currentTotalDiv = paymentInfoDiv.querySelector('div > div:nth-child(1)');
-                const previouslyPaidDiv = paymentInfoDiv.querySelector('div > div:nth-child(2)');
-                const balanceDueDiv = paymentInfoDiv.querySelector('div > div:nth-child(3)');
-                
-                if (currentTotalDiv) {
-                    currentTotalDiv.innerHTML = `<strong>Current Total:</strong> $${newTotal.toFixed(2)}`;
-                }
-                if (balanceDueDiv) {
-                    balanceDueDiv.innerHTML = `<strong>Balance Due:</strong> <span style="color: #e74c3c;">$${balanceDue.toFixed(2)}</span>`;
-                }
+            // Update the display fields using IDs
+            const currentTotalDiv = document.getElementById('editSOCurrentTotal');
+            const balanceDueDiv = document.getElementById('editSOBalanceDue');
+            
+            if (currentTotalDiv) {
+                currentTotalDiv.innerHTML = `<strong>Current Total:</strong> $${newTotal.toFixed(2)}`;
+            }
+            
+            if (balanceDueDiv) {
+                balanceDueDiv.innerHTML = `<strong>Balance Due:</strong> <span style="color: #e74c3c;">$${balanceDue.toFixed(2)}</span>`;
             }
         }
         
@@ -3808,13 +3811,13 @@
                     <div>
                         <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <div style="margin-bottom: 10px;">
+                            <div id="editSOCurrentTotal" style="margin-bottom: 10px;">
                                 <strong>Current Total:</strong> $${parseFloat(so.Total_Amount || 0).toFixed(2)}
                             </div>
-                            <div style="margin-bottom: 10px;">
+                            <div id="editSOPreviouslyPaid" style="margin-bottom: 10px;">
                                 <strong>Previously Paid:</strong> $${parseFloat(so.Amount_Paid || 0).toFixed(2)}
                             </div>
-                            <div>
+                            <div id="editSOBalanceDue">
                                 <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</span>
                             </div>
                         </div>
@@ -4009,7 +4012,7 @@
                 select.innerHTML = '<option value="">Select Item</option>';
                 cachedItems.forEach(item => {
                     console.log(`Adding option: ${item.Item_Description}, Unit_Sell_Price: ${item.Unit_Sell_Price}`); // DEBUG
-                    select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}">${item.Item_Description}</option>`;
+                    select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
                 });
             });
             
@@ -4032,12 +4035,13 @@
                     <option value="">Select Item</option>
                     ${cachedItems.map(item => {
                         console.log('Item:', item.Item_Description, 'Unit_Sell_Price:', item.Unit_Sell_Price); // DEBUG
-                        return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-qty="${item.Qty_On_Hand}">${item.Item_Description}</option>`;
+                        return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
                     }).join('')}
                 </select>
                 <input type="number" class="so-qty" placeholder="# of Units" min="1" required>
                 <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required>
                 <button type="button" class="remove-btn">✕</button>
+                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
             `;
             container.appendChild(newRow);
             
@@ -4055,6 +4059,12 @@
             });
             
             qtyInput.addEventListener('input', function() {
+                // Update stock info when quantity changes
+                const row = this.closest('.line-item-row');
+                const itemSelect = row.querySelector('.so-item');
+                if (itemSelect.value) {
+                    updateSOItemInfo(itemSelect);
+                }
                 calculateSOTotal();
             });
             
@@ -4076,18 +4086,57 @@
             console.log('Selected option:', option); // DEBUG
             console.log('Option text:', option.text); // DEBUG
             console.log('data-price attribute:', option.getAttribute('data-price')); // DEBUG
-            console.log('All attributes:', option.attributes); // DEBUG
+            console.log('data-stock attribute:', option.getAttribute('data-stock')); // DEBUG
             
             const price = option.getAttribute('data-price');
+            const stock = parseFloat(option.getAttribute('data-stock')) || 0;
             
-            const row = selectElement.parentElement;
+            const row = selectElement.closest('.line-item-row');
             const priceInput = row.querySelector('.so-price');
+            const qtyInput = row.querySelector('.so-qty');
+            const stockInfoDiv = row.querySelector('.so-stock-info');
             
             if (price) {
                 console.log('Setting price to:', price); // DEBUG
                 priceInput.value = price;
             } else {
                 console.log('NO PRICE FOUND!'); // DEBUG
+            }
+            
+            // Show stock info
+            if (stockInfoDiv && option.value) {
+                stockInfoDiv.style.display = 'block';
+                
+                const qty = parseFloat(qtyInput.value) || 0;
+                const remaining = stock - qty;
+                
+                let message = `📦 Current Stock: ${stock} units`;
+                let bgColor = '#e3f2fd';
+                let textColor = '#1565c0';
+                
+                if (qty > 0) {
+                    message += ` → After sale: ${remaining} units`;
+                    
+                    if (remaining < 0) {
+                        bgColor = '#ffebee';
+                        textColor = '#c62828';
+                        message += ' ⚠️ INSUFFICIENT STOCK - This will create a negative inventory!';
+                    } else if (remaining === 0) {
+                        bgColor = '#fff3e0';
+                        textColor = '#ef6c00';
+                        message += ' ⚠️ This will deplete stock to zero';
+                    } else if (remaining < 10) {
+                        bgColor = '#fff3e0';
+                        textColor = '#ef6c00';
+                        message += ' ⚠️ Low stock warning';
+                    }
+                }
+                
+                stockInfoDiv.textContent = message;
+                stockInfoDiv.style.background = bgColor;
+                stockInfoDiv.style.color = textColor;
+                stockInfoDiv.style.border = `1px solid ${textColor}`;
+                stockInfoDiv.style.borderRadius = '4px';
             }
             
             calculateSOTotal();
@@ -4523,10 +4572,27 @@
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
-                const lowStock = item.Low_Stock ? 'style="background:#fff3cd;"' : '';
-                const status = item.Low_Stock ? '⚠️ Low Stock' : '✅ OK';
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const reorderPoint = parseFloat(item.Reorder_Point) || 0;
                 const value = parseFloat(item.Total_Value) || 0;
+                
+                // Determine status with color coding
+                let status = '';
+                let statusColor = '';
+                let rowStyle = '';
+                
+                if (qty <= 0) {
+                    status = '🔴 OUT OF STOCK';
+                    statusColor = 'color: #fff; background: #c62828; padding: 4px 8px; border-radius: 4px; font-weight: bold;';
+                    rowStyle = 'background: #ffebee;';
+                } else if (qty < reorderPoint) {
+                    status = '🟡 LOW STOCK';
+                    statusColor = 'color: #fff; background: #ef6c00; padding: 4px 8px; border-radius: 4px; font-weight: bold;';
+                    rowStyle = 'background: #fff3e0;';
+                } else {
+                    status = '🟢 IN STOCK';
+                    statusColor = 'color: #fff; background: #2e7d32; padding: 4px 8px; border-radius: 4px;';
+                }
                 
                 // Calculate unit cost from package cost
                 const packageCost = parseFloat(item.Package_Cost) || 0;
@@ -4537,15 +4603,15 @@
                 totalQty += qty;
                 totalValue += value;
                 
-                html += `<tr ${lowStock}>
+                html += `<tr style="${rowStyle}">
                     <td>${item.Item_ID}</td>
                     <td><a href="javascript:void(0)" onclick="openItem('${item.Item_ID}')" style="color: #667eea; text-decoration: none;"><strong>${item.Item_Description}</strong></a></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
-                    <td>${qty}</td>
+                    <td><strong>${qty}</strong></td>
                     <td>$${unitCost.toFixed(2)}</td>
                     <td>$${unitSellPrice.toFixed(2)}</td>
                     <td>$${value.toFixed(2)}</td>
-                    <td>${status}</td>
+                    <td><span style="${statusColor}">${status}</span></td>
                 </tr>`;
             });
 
