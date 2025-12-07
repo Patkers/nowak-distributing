@@ -618,6 +618,7 @@
         </div>
 
         <div class="tabs">
+            <button class="tab" onclick="goBack()" style="background: #9e9e9e; margin-right: 10px;" title="Go back to previous tab">⬅️ Back</button>
             <button class="tab active" onclick="switchTab('suppliers')">🏭 Suppliers</button>
             <button class="tab" onclick="switchTab('items')">📦 Items</button>
             <button class="tab" onclick="switchTab('customers')">👥 Customers</button>
@@ -628,6 +629,11 @@
             <button class="tab" onclick="switchTab('reports')">📈 Reports</button>
             <button class="tab" onclick="switchTab('config')">⚙️ Settings</button>
         </div>
+        
+        <!-- Back to Top Button -->
+        <button id="backToTopBtn" onclick="scrollToTop()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 1000; background: #667eea; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" title="Back to top">
+            ⬆️
+        </button>
 
         <!-- Settings Tab -->
         <div id="config" class="card">
@@ -1441,7 +1447,10 @@
                             <button type="button" class="remove-btn">✕</button>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
+                        <button type="button" class="btn" onclick="addNewItemFromPO()" style="background: #9c27b0;">➕ Add New Item to Catalog</button>
+                    </div>
                     
                     <div class="form-group" style="margin-top: 20px;">
                         <label>Notes</label>
@@ -1480,6 +1489,14 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Sales Order #</label>
+                        <input type="text" id="filterSalesOrderNumber" placeholder="SO-2025-001" oninput="filterSales()">
+                    </div>
+                    <div class="form-group">
+                        <label>Invoice #</label>
+                        <input type="text" id="filterInvoiceNumber" placeholder="INV-120725-001" oninput="filterSales()">
+                    </div>
+                    <div class="form-group">
                         <label>Date From</label>
                         <input type="date" id="filterSaleDateFrom" onchange="filterSales()">
                     </div>
@@ -1506,10 +1523,6 @@
                         <div class="form-group">
                             <label>Sale Date *</label>
                             <input type="date" id="soDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Invoice Number</label>
-                            <input type="text" id="soInvoiceNumber" placeholder="Auto-generated if empty">
                         </div>
                         <div class="form-group">
                             <label>Payment Method</label>
@@ -1860,13 +1873,117 @@
             }, { passive: false });
         });
 
+        // Navigation history for back button
+        let navigationHistory = ['suppliers'];
+        
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             event.target.classList.add('active');
             
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
+            
+            // Add to history (avoid duplicates of current tab)
+            if (navigationHistory[navigationHistory.length - 1] !== tabName) {
+                navigationHistory.push(tabName);
+                // Keep only last 20 tabs in history
+                if (navigationHistory.length > 20) {
+                    navigationHistory.shift();
+                }
+            }
+            
+            // Check if we need to restore PO form when switching to purchases
+            if (tabName === 'purchases') {
+                checkAndRestorePOForm();
+            }
+            
+            // Scroll to top when switching tabs
+            window.scrollTo(0, 0);
         }
+        
+        function goBack() {
+            // Remove current tab from history
+            if (navigationHistory.length > 1) {
+                navigationHistory.pop();
+                const previousTab = navigationHistory[navigationHistory.length - 1];
+                
+                // Switch to previous tab
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+                
+                document.getElementById(previousTab).classList.add('active');
+                
+                // Highlight the correct tab button
+                const tabButtons = document.querySelectorAll('.tabs .tab');
+                tabButtons.forEach(btn => {
+                    if (btn.textContent.toLowerCase().includes(previousTab.substring(0, 4))) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                window.scrollTo(0, 0);
+                
+                // Check if we need to restore PO form state
+                checkAndRestorePOForm();
+            }
+        }
+        
+        function checkAndRestorePOForm() {
+            const savedState = localStorage.getItem('poFormState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                if (state.returnToPO) {
+                    // Show a notification
+                    const currentTab = document.querySelector('.card.active');
+                    if (currentTab && currentTab.id === 'purchases') {
+                        setTimeout(() => {
+                            if (confirm('Resume your purchase order entry?')) {
+                                showAddPurchaseForm();
+                                
+                                // Restore form fields
+                                setTimeout(() => {
+                                    if (state.supplier) document.getElementById('poSupplier').value = state.supplier;
+                                    if (state.invoiceNumber) document.getElementById('poInvoiceNumber').value = state.invoiceNumber;
+                                    if (state.purchaseDate) document.getElementById('poPurchaseDate').value = state.purchaseDate;
+                                    if (state.dueDate) document.getElementById('poDueDate').value = state.dueDate;
+                                    if (state.paymentTerms) document.getElementById('poPaymentTerms').value = state.paymentTerms;
+                                    if (state.status) document.getElementById('poStatus').value = state.status;
+                                    if (state.amountPaid) document.getElementById('poAmountPaid').value = state.amountPaid;
+                                    if (state.notes) document.getElementById('poNotes').value = state.notes;
+                                    
+                                    // Reload supplier items
+                                    if (state.supplier) {
+                                        loadSupplierItems();
+                                    }
+                                    
+                                    showStatus('purchaseStatus', '✅ Purchase order form restored! The new item should now be available in the dropdown.', 'success');
+                                }, 200);
+                            }
+                            
+                            // Clear saved state
+                            localStorage.removeItem('poFormState');
+                        }, 500);
+                    }
+                }
+            }
+        }
+        
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Show/hide back to top button based on scroll position
+        window.addEventListener('scroll', function() {
+            const backToTopBtn = document.getElementById('backToTopBtn');
+            if (window.pageYOffset > 300) {
+                backToTopBtn.style.display = 'block';
+            } else {
+                backToTopBtn.style.display = 'none';
+            }
+        });
         
         function goToAddItem() {
             // Switch to Items tab
@@ -1885,6 +2002,60 @@
             
             // Scroll to top of page
             window.scrollTo(0, 0);
+        }
+        
+        function addNewItemFromPO() {
+            // Get current supplier from PO form
+            const currentSupplier = document.getElementById('poSupplier')?.value;
+            
+            if (!currentSupplier) {
+                alert('Please select a supplier first before adding items');
+                return;
+            }
+            
+            // Save PO form state to localStorage for later restoration
+            const poFormState = {
+                supplier: currentSupplier,
+                invoiceNumber: document.getElementById('poInvoiceNumber')?.value,
+                purchaseDate: document.getElementById('poPurchaseDate')?.value,
+                dueDate: document.getElementById('poDueDate')?.value,
+                paymentTerms: document.getElementById('poPaymentTerms')?.value,
+                status: document.getElementById('poStatus')?.value,
+                amountPaid: document.getElementById('poAmountPaid')?.value,
+                notes: document.getElementById('poNotes')?.value,
+                returnToPO: true
+            };
+            localStorage.setItem('poFormState', JSON.stringify(poFormState));
+            
+            // Switch to Items tab
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.textContent.includes('Items')) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById('items').classList.add('active');
+            
+            // Open Add Item form
+            showAddItemForm();
+            
+            // Pre-select supplier if one was selected in PO
+            setTimeout(() => {
+                const supplierSelect = document.getElementById('itemSupplier');
+                if (supplierSelect) {
+                    supplierSelect.value = currentSupplier;
+                }
+            }, 100);
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+            
+            // Show helper message
+            setTimeout(() => {
+                showStatus('itemStatus', '💡 After saving the item, click "⬅️ Back" to return to your purchase order', 'info');
+            }, 200);
         }
 
         function updateConfigStatus() {
@@ -2773,7 +2944,9 @@
             document.querySelectorAll('.po-item').forEach(select => {
                 select.innerHTML = '<option value="">Select Item</option>';
                 supplierItems.forEach(item => {
-                    select.innerHTML += `<option value="${item.Item_ID}">${item.Item_Description}</option>`;
+                    const packageCost = parseFloat(item.Package_Cost) || 0;
+                    const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                    select.innerHTML += `<option value="${item.Item_ID}" data-cost="${packageCost.toFixed(2)}" data-units="${unitsPerPackage}">${item.Item_Description}</option>`;
                 });
             });
         }
@@ -4209,10 +4382,43 @@
                 calculatedTotal += lineTotal;
             });
 
+            // AUTO-GENERATE INVOICE NUMBER
+            // Format: INV-MMDDYY-XXX (e.g., INV-120725-001)
+            const saleDate = document.getElementById('soDate').value;
+            const dateObj = saleDate ? new Date(saleDate) : new Date();
+            
+            // Format date as MMDDYY
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const year = String(dateObj.getFullYear()).slice(-2); // Last 2 digits
+            const dateStr = `${month}${day}${year}`;
+            
+            // Get all existing sales orders to find the next number for this date
+            const existingSales = await apiCall('getSalesOrders');
+            let nextNumber = 1;
+            
+            if (existingSales && existingSales.data && existingSales.data.length > 0) {
+                // Find highest invoice number for this date
+                const prefix = `INV-${dateStr}-`;
+                const todayInvoices = existingSales.data
+                    .filter(so => so.Invoice_Number && so.Invoice_Number.startsWith(prefix))
+                    .map(so => {
+                        const parts = so.Invoice_Number.split('-');
+                        return parseInt(parts[2]) || 0;
+                    });
+                
+                if (todayInvoices.length > 0) {
+                    nextNumber = Math.max(...todayInvoices) + 1;
+                }
+            }
+            
+            // Generate invoice number: INV-120725-001
+            const invoiceNumber = `INV-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
+
             const data = {
                 customerId: document.getElementById('soCustomer').value,
                 saleDate: document.getElementById('soDate').value,
-                invoiceNumber: document.getElementById('soInvoiceNumber').value || null,
+                invoiceNumber: invoiceNumber,
                 paymentMethod: document.getElementById('soPayment').value,
                 dueDate: document.getElementById('soDueDate').value || null,
                 totalAmount: calculatedTotal,
@@ -4225,7 +4431,7 @@
             const result = await apiCall('createSalesOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('salesStatus', '✅ Sale recorded! Inventory updated.', 'success');
+                showStatus('salesStatus', `✅ Sale recorded! Invoice #: ${invoiceNumber}`, 'success');
                 hideAddSaleForm();
                 loadSales();
             } else {
@@ -4275,15 +4481,19 @@
         
         function filterSales() {
             const customerFilter = document.getElementById('filterSaleCustomer').value;
+            const soNumberFilter = document.getElementById('filterSalesOrderNumber').value.trim().toLowerCase();
+            const invoiceNumberFilter = document.getElementById('filterInvoiceNumber').value.trim().toLowerCase();
             const dateFrom = document.getElementById('filterSaleDateFrom').value;
             const dateTo = document.getElementById('filterSaleDateTo').value;
             
             const filtered = salesData.filter(so => {
                 const matchesCustomer = !customerFilter || so.Customer_ID === customerFilter;
+                const matchesSO = !soNumberFilter || (so.SO_ID && so.SO_ID.toLowerCase().includes(soNumberFilter));
+                const matchesInvoice = !invoiceNumberFilter || (so.Invoice_Number && so.Invoice_Number.toLowerCase().includes(invoiceNumberFilter));
                 const soDate = new Date(so.SO_Date);
                 const matchesDateFrom = !dateFrom || soDate >= new Date(dateFrom);
                 const matchesDateTo = !dateTo || soDate <= new Date(dateTo);
-                return matchesCustomer && matchesDateFrom && matchesDateTo;
+                return matchesCustomer && matchesSO && matchesInvoice && matchesDateFrom && matchesDateTo;
             });
             
             displaySales(filtered);
@@ -4291,6 +4501,8 @@
         
         function clearSaleFilters() {
             document.getElementById('filterSaleCustomer').value = '';
+            document.getElementById('filterSalesOrderNumber').value = '';
+            document.getElementById('filterInvoiceNumber').value = '';
             document.getElementById('filterSaleDateFrom').value = '';
             document.getElementById('filterSaleDateTo').value = '';
             displaySales(salesData);
@@ -5193,7 +5405,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📊 Sales by Customer Summary</h3>
                     <p style="color: #666;">Total Customers: ${summaryArray.length} | Total Revenue: $${grandTotalRevenue.toFixed(2)} | Total Profit: $${grandTotalProfit.toFixed(2)} | Gross Margin: ${grandMargin.toFixed(1)}%</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
                 </div>`;
             
             if (summaryArray.length === 0) {
@@ -5342,7 +5553,6 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Sales Order Detail Report</h3>
                     <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Sales: $${totalSales.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('sales-order-detail')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -5502,7 +5712,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📦 Product Pricing & Margin Analysis</h3>
                     <p style="color: #666;">Total Products: ${sorted.length} | Average Margin: ${avgMarginPercent.toFixed(1)}% | Total Profit (from sales): $${totalPotentialProfit.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-product')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (sorted.length === 0) {
@@ -5642,7 +5852,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Purchase Order Detail Report</h3>
                     <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Purchases: $${totalPurchases.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-order-detail')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (filtered.length === 0) {
@@ -5765,7 +5975,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🏭 Purchase by Supplier Report</h3>
                     <p style="color: #666;">Suppliers: ${sorted.length} | Total Spent: $${sorted.reduce((sum, s) => sum + s.totalSpent, 0).toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-by-supplier')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (sorted.length === 0) {
@@ -5890,7 +6100,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🔄 Inventory Turnover Report</h3>
                     <p style="color: #666;">Total Items: ${turnoverData.length}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('inventory-turnover')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (turnoverData.length === 0) {
@@ -5948,8 +6158,10 @@
             
             // Calculate margin per item
             let marginData = items.map(item => {
-                const cost = parseFloat(item.Cost_Price) || 0;
-                const sell = parseFloat(item.Sell_Price) || 0;
+                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const cost = packageCost / unitsPerPackage;
+                const sell = parseFloat(item.Unit_Sell_Price) || 0;
                 const margin = sell - cost;
                 const marginPercent = sell > 0 ? (margin / sell) * 100 : 0;
                 
@@ -6043,7 +6255,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💰 Gross Margin Report</h3>
                     <p style="color: #666;">Total Products: ${marginData.length} | Total Profit: $${totalProfit.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('gross-margin')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (marginData.length === 0) {
@@ -6185,7 +6397,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💵 Accounts Receivable Report</h3>
                     <p style="color: #666;">Outstanding Invoices: ${receivables.length} | Total AR: $${totalOutstanding.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-receivable')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (receivables.length === 0) {
@@ -6333,7 +6545,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💸 Accounts Payable Report</h3>
                     <p style="color: #666;">Outstanding Bills: ${payables.length} | Total AP: $${totalOutstanding.toFixed(2)}</p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-payable')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (payables.length === 0) {
@@ -6445,7 +6657,7 @@
                         Total Value: $${totalValue.toFixed(2)} | 
                         Low Stock Items: ${lowStockCount}
                     </p>
-                    <button class="btn btn-secondary" onclick="exportToCSV('simple-inventory')">📥 Export to CSV</button>
+                    
                 </div>`;
             
             if (inventory.length === 0) {
@@ -6481,8 +6693,8 @@
                         <td>${item.UOM}</td>
                         <td style="font-weight: bold;">${item.Qty_On_Hand}</td>
                         <td>${item.Reorder_Point}</td>
-                        <td>$${parseFloat(item.Cost_Price).toFixed(2)}</td>
-                        <td>$${parseFloat(item.Sell_Price).toFixed(2)}</td>
+                        <td>$${(parseFloat(item.Package_Cost) / parseFloat(item.Units_Per_Package || 1)).toFixed(2)}</td>
+                        <td>$${parseFloat(item.Unit_Sell_Price).toFixed(2)}</td>
                         <td>$${parseFloat(item.Total_Value).toFixed(2)}</td>
                         <td style="color: ${statusColor}; font-weight: bold;">${status}</td>
                     </tr>`;
@@ -6608,40 +6820,6 @@
             editItemById(itemId);
         }
         
-        // Export to CSV function
-        function exportToCSV(reportType) {
-            const data = reportData[reportType];
-            if (!data || data.length === 0) {
-                alert('No data to export');
-                return;
-            }
-            
-            // Get column headers from first row
-            const headers = Object.keys(data[0]);
-            let csv = headers.join(',') + '\\n';
-            
-            // Add data rows
-            data.forEach(row => {
-                const values = headers.map(header => {
-                    const val = row[header];
-                    // Escape commas and quotes
-                    if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-                        return '"' + val.replace(/"/g, '""') + '"';
-                    }
-                    return val;
-                });
-                csv += values.join(',') + '\\n';
-            });
-            
-            // Download
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = reportType + '-' + new Date().toISOString().split('T')[0] + '.csv';
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
         
         // ==================== CREATE PO (PRINT ONLY) FUNCTIONS ====================
         
