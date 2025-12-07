@@ -3352,13 +3352,23 @@
             const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
             const lines = linesResult?.data || [];
             
-            // Build invoice HTML
+            // Calculate totals
+            let subtotal = 0;
+            lines.forEach(line => {
+                subtotal += parseFloat(line.Line_Total || 0);
+            });
+            
+            const total = parseFloat(so.Total_Amount || 0);
+            const paid = parseFloat(so.Amount_Paid || 0);
+            const balance = total - paid;
+            
+            // Build invoice HTML with PO-style layout
             let invoiceHTML = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Invoice ${so.SO_ID}</title>
+    <title>Invoice ${so.Invoice_Number || so.SO_ID}</title>
     <style>
         @media print {
             @page { margin: 0.5in; }
@@ -3366,64 +3376,75 @@
             .no-print { display: none; }
         }
         body {
-            font-family: 'Courier New', monospace;
+            font-family: Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.4;
             max-width: 8in;
             margin: 0 auto;
-            padding: 0.25in;
+            padding: 0.5in;
         }
-        .header {
+        .invoice-header {
             text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
         }
-        .company-name {
-            font-size: 16pt;
-            font-weight: bold;
+        .invoice-header h1 {
+            color: #667eea;
+            margin: 0 0 10px 0;
+            font-size: 28pt;
         }
-        .invoice-title {
+        .invoice-number {
             font-size: 14pt;
             font-weight: bold;
-            margin-top: 5px;
+            margin: 5px 0;
         }
-        .section {
-            margin-bottom: 15px;
+        .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
         }
-        .section-title {
-            font-weight: bold;
-            text-decoration: underline;
-            margin-bottom: 5px;
+        .info-box {
+            flex: 1;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+        .info-box p {
+            margin: 2px 0;
         }
         table.items {
-            margin-top: 10px;
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
         }
         table.items th {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            padding: 5px 2px;
+            background: #667eea;
+            color: white;
+            padding: 12px;
             text-align: left;
+            font-weight: bold;
         }
         table.items td {
-            padding: 4px 2px;
-            border-bottom: 1px dotted #ccc;
+            border: 1px solid #ddd;
+            padding: 10px;
         }
-        table.items .qty { text-align: center; width: 8%; }
-        table.items .desc { width: 52%; }
+        table.items .qty { text-align: center; width: 10%; }
+        table.items .desc { width: 50%; }
         table.items .price { text-align: right; width: 20%; }
         table.items .amount { text-align: right; width: 20%; }
         .totals {
-            margin-top: 15px;
+            margin-top: 30px;
             float: right;
             width: 40%;
         }
-        .totals table td {
-            padding: 3px 10px;
+        .totals table {
+            width: 100%;
+        }
+        .totals td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
         }
         .totals .label {
             text-align: right;
@@ -3431,56 +3452,59 @@
         }
         .totals .value {
             text-align: right;
+            width: 40%;
         }
         .total-line {
-            border-top: 2px solid #000;
-            font-size: 12pt;
+            border-top: 2px solid #667eea !important;
+            border-bottom: 3px double #667eea !important;
+            font-size: 14pt;
             font-weight: bold;
         }
         .footer {
             clear: both;
-            margin-top: 40px;
-            padding-top: 15px;
-            border-top: 1px solid #000;
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #667eea;
             text-align: center;
+            font-style: italic;
+            color: #666;
         }
         .signature {
-            margin-top: 30px;
-            text-align: left;
-        }
-        .signature-line {
-            display: inline-block;
+            margin-top: 40px;
+            padding-top: 10px;
+            border-top: 1px solid #000;
             width: 300px;
-            border-bottom: 1px solid #000;
-            margin-left: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="company-name">${settings.companyName || 'Nowak Distributing'}</div>
-        ${settings.phone ? `<div>${settings.phone}</div>` : ''}
-        ${settings.email ? `<div>${settings.email}</div>` : ''}
-        ${settings.address1 ? `<div>${settings.address1}</div>` : ''}
-        ${settings.address2 ? `<div>${settings.address2}</div>` : ''}
-        ${settings.cityStateZip ? `<div>${settings.cityStateZip}</div>` : ''}
+
+    <div class="invoice-header">
+        <h1>INVOICE</h1>
+        <div class="invoice-number">#${so.Invoice_Number || so.SO_ID}</div>
+        <p>Date: ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()}</p>
     </div>
-    
-    <div style="text-align: right; margin-bottom: 15px;">
-        <div class="invoice-title">INVOICE #${so.Invoice_Number || so.SO_ID}</div>
-        <div>Date: ${new Date(so.Sale_Date).toLocaleDateString()}</div>
+
+    <div class="invoice-info">
+        <div class="info-box">
+            <h3>From:</h3>
+            <p><strong>${settings.companyName}</strong></p>
+            <p>${settings.address1}</p>
+            ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
+            <p>${settings.cityStateZip}</p>
+            <p>Phone: ${settings.phone}</p>
+            <p>Email: ${settings.email}</p>
+        </div>
+        <div class="info-box">
+            <h3>Bill To:</h3>
+            <p><strong>${customer?.Customer_Name || 'Unknown Customer'}</strong></p>
+            ${customer?.Contact_Name ? `<p>Attn: ${customer.Contact_Name}</p>` : ''}
+            ${customer?.Address ? `<p>${customer.Address}</p>` : ''}
+            ${customer?.City || customer?.State || customer?.ZIP ? `<p>${customer.City || ''}${customer.City && customer.State ? ', ' : ''}${customer.State || ''} ${customer.ZIP || ''}</p>` : ''}
+            ${customer?.Phone ? `<p>Phone: ${customer.Phone}</p>` : ''}
+        </div>
     </div>
-    
-    <div class="section">
-        <div class="section-title">BILL TO:</div>
-        <div><strong>${customer?.Customer_Name || 'Unknown Customer'}</strong></div>
-        ${customer?.Contact_Name ? `<div>Attn: ${customer.Contact_Name}</div>` : ''}
-        ${customer?.Address_Line1 ? `<div>${customer.Address_Line1}</div>` : ''}
-        ${customer?.Address_Line2 ? `<div>${customer.Address_Line2}</div>` : ''}
-        ${customer?.City || customer?.State || customer?.Zip_Code ? `<div>${customer?.City || ''}, ${customer?.State || ''} ${customer?.Zip_Code || ''}</div>` : ''}
-        ${customer?.Phone ? `<div>Phone: ${customer.Phone}</div>` : ''}
-    </div>
-    
+
     <table class="items">
         <thead>
             <tr>
@@ -3493,11 +3517,9 @@
         <tbody>`;
             
             // Add line items
-            let subtotal = 0;
             lines.forEach(line => {
                 const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
                 const lineTotal = parseFloat(line.Line_Total || 0);
-                subtotal += lineTotal;
                 
                 invoiceHTML += `
             <tr>
@@ -3508,14 +3530,10 @@
             </tr>`;
             });
             
-            const total = parseFloat(so.Total_Amount || 0);
-            const paid = parseFloat(so.Amount_Paid || 0);
-            const balance = total - paid;
-            
             invoiceHTML += `
         </tbody>
     </table>
-    
+
     <div class="totals">
         <table>
             <tr>
@@ -3532,61 +3550,37 @@
                 <td class="value">$${paid.toFixed(2)}</td>
             </tr>` : ''}
             ${balance > 0 ? `
-            <tr class="total-line">
+            <tr style="background: #fff3cd;">
                 <td class="label">BALANCE DUE:</td>
-                <td class="value">$${balance.toFixed(2)}</td>
+                <td class="value" style="color: #e74c3c; font-weight: bold;">$${balance.toFixed(2)}</td>
             </tr>` : ''}
         </table>
     </div>
-    
+
     <div class="footer">
-        <div>${settings.footer || 'Thank you for your business!'}</div>
-        ${settings.signatureLine ? `
-        <div class="signature">
-            Signature: <span class="signature-line"></span>
-        </div>` : ''}
-        <div style="margin-top: 20px; font-size: 9pt;">KEEP THIS SLIP FOR REFERENCE</div>
+        Thank you for doing Business with ${settings.companyName}
     </div>
-    
-    <div class="no-print" style="margin-top: 30px; text-align: center;">
-        <button onclick="window.print()" style="padding: 12px 30px; font-size: 14pt; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">🖨️ Print Invoice</button>
-        <button onclick="window.close()" style="padding: 12px 30px; font-size: 14pt; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; margin-left: 10px;">Close</button>
+
+    <div class="signature">
+        Signature: ___________________________
     </div>
+
+    <p style="clear: both; text-align: center; margin-top: 40px; font-size: 9pt; color: #999;">
+        KEEP THIS SLIP FOR REFERENCE
+    </p>
+
+    <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
+        <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #667eea; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
+        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #9e9e9e; color: white; border: none; border-radius: 5px;">✕ Close</button>
+    </div>
+
 </body>
 </html>`;
-            // Create hidden print container instead of popup
-            let printContainer = document.getElementById('printContainer');
-            if (!printContainer) {
-                printContainer = document.createElement('div');
-                printContainer.id = 'printContainer';
-                printContainer.style.display = 'none';
-                document.body.appendChild(printContainer);
-            }
             
-            printContainer.innerHTML = invoiceHTML;
-            
-            // Create print iframe to avoid popup blockers
-            let printFrame = document.getElementById('printFrame');
-            if (!printFrame) {
-                printFrame = document.createElement('iframe');
-                printFrame.id = 'printFrame';
-                printFrame.style.position = 'absolute';
-                printFrame.style.width = '0';
-                printFrame.style.height = '0';
-                printFrame.style.border = 'none';
-                document.body.appendChild(printFrame);
-            }
-            
-            const frameDoc = printFrame.contentWindow.document;
-            frameDoc.open();
-            frameDoc.write(invoiceHTML);
-            frameDoc.close();
-            
-            // Wait for content to load, then print
-            setTimeout(() => {
-                printFrame.contentWindow.focus();
-                printFrame.contentWindow.print();
-            }, 250);
+            // Open in new window
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(invoiceHTML);
+            printWindow.document.close();
         }
         
         function closeOrderModal() {
