@@ -1256,43 +1256,36 @@
                 </div>
                 
                 <h3>Line Items</h3>
-                <div style="overflow-x: auto;">
-                    <table class="data-table" style="width: 100%; margin-bottom: 20px;">
-                        <thead>
-                            <tr>
-                                <th style="width: 40%;">Item</th>
-                                <th style="width: 10%; text-align: center;">Cases</th>
-                                <th style="width: 10%; text-align: center;">Units/Case</th>
-                                <th style="width: 12%; text-align: center;">Total Units</th>
-                                <th style="width: 12%; text-align: right;">Cost/Case</th>
-                                <th style="width: 8%; text-align: center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="createPOLineItems">
-                            <tr class="line-item-row">
-                                <td>
-                                    <select class="createpo-item" style="width: 100%; padding: 8px;">
-                                        <option value="">Select item...</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="number" class="createpo-qty" placeholder="Cases" min="1" style="width: 100%; padding: 8px; text-align: center;">
-                                </td>
-                                <td>
-                                    <input type="number" class="createpo-units" placeholder="0" readonly style="width: 100%; padding: 8px; background: #f0f0f0; text-align: center;">
-                                </td>
-                                <td>
-                                    <input type="number" class="createpo-totalunits" placeholder="0" readonly style="width: 100%; padding: 8px; background: #e3f2fd; text-align: center; font-weight: bold;">
-                                </td>
-                                <td>
-                                    <input type="number" class="createpo-cost" placeholder="$0.00" step="0.01" min="0" readonly style="width: 100%; padding: 8px; text-align: right;">
-                                </td>
-                                <td style="text-align: center;">
-                                    <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="padding: 8px 12px;">🗑️</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                
+                <!-- Wrapper for horizontal scroll on mobile -->
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
+                    <div style="min-width: 900px;">
+                        <!-- Header Row -->
+                        <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; padding: 15px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0;">
+                            <div>Item</div>
+                            <div style="text-align: center;">Cases</div>
+                            <div style="text-align: center;">Units/Case</div>
+                            <div style="text-align: center;">Total Units</div>
+                            <div style="text-align: right;">Cost/Case</div>
+                            <div style="text-align: right;">Line Total</div>
+                            <div style="text-align: center;">Action</div>
+                        </div>
+                        
+                        <!-- Line Items Container -->
+                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 10px;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; margin-bottom: 10px; align-items: center;">
+                                <select class="createpo-item" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                    <option value="">Select item...</option>
+                                </select>
+                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
+                                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666;">-</div>
+                                <div class="createpo-totalunits" style="text-align: center; font-size: 18px; font-weight: bold; color: #1565C0;">-</div>
+                                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666;">-</div>
+                                <div class="createpo-linetotal" style="text-align: right; font-size: 16px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 12px; border-radius: 4px;">$0.00</div>
+                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 12px; font-size: 18px;">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <button class="btn btn-secondary" onclick="addCreatePOLineItem()">➕ Add Line Item</button>
@@ -1711,7 +1704,7 @@
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
             
             // Attach event listeners to the first Create PO line item
-            const firstCreatePORow = document.querySelector('#createPOLineItems tr.line-item-row');
+            const firstCreatePORow = document.querySelector('#createPOLineItems div.line-item-row');
             if (firstCreatePORow) {
                 const itemSelect = firstCreatePORow.querySelector('.createpo-item');
                 const qtyInput = firstCreatePORow.querySelector('.createpo-qty');
@@ -6491,29 +6484,19 @@
                 return;
             }
             
-            const newRow = document.createElement('tr');
+            const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; margin-bottom: 10px; align-items: center;';
             newRow.innerHTML = `
-                <td>
-                    <select class="createpo-item" style="width: 100%; padding: 8px;" onchange="updateCreatePOItemCost(this)">
-                        <option value="">Select item...</option>
-                    </select>
-                </td>
-                <td>
-                    <input type="number" class="createpo-qty" placeholder="Cases" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 8px; text-align: center;">
-                </td>
-                <td>
-                    <input type="number" class="createpo-units" placeholder="0" readonly style="width: 100%; padding: 8px; background: #f0f0f0; text-align: center;">
-                </td>
-                <td>
-                    <input type="number" class="createpo-totalunits" placeholder="0" readonly style="width: 100%; padding: 8px; background: #e3f2fd; text-align: center; font-weight: bold;">
-                </td>
-                <td>
-                    <input type="number" class="createpo-cost" placeholder="$0.00" step="0.01" min="0" readonly style="width: 100%; padding: 8px; text-align: right;">
-                </td>
-                <td style="text-align: center;">
-                    <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="padding: 8px 12px;">🗑️</button>
-                </td>
+                <select class="createpo-item" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" onchange="updateCreatePOItemCost(this)">
+                    <option value="">Select item...</option>
+                </select>
+                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
+                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666;">-</div>
+                <div class="createpo-totalunits" style="text-align: center; font-size: 18px; font-weight: bold; color: #1565C0;">-</div>
+                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666;">-</div>
+                <div class="createpo-linetotal" style="text-align: right; font-size: 16px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 12px; border-radius: 4px;">$0.00</div>
+                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 12px; font-size: 18px;">🗑️</button>
             `;
             
             container.appendChild(newRow);
@@ -6533,24 +6516,26 @@
         
         function updateCreatePOItemCost(selectElement) {
             const row = selectElement.closest('.line-item-row');
-            const costInput = row.querySelector('.createpo-cost');
-            const unitsInput = row.querySelector('.createpo-units');
+            const costDiv = row.querySelector('.createpo-cost');
+            const unitsDiv = row.querySelector('.createpo-units');
             const qtyInput = row.querySelector('.createpo-qty');
             const selectedOption = selectElement.options[selectElement.selectedIndex];
             
             if (selectedOption && selectedOption.dataset.cost) {
-                costInput.value = parseFloat(selectedOption.dataset.cost).toFixed(2);
-                unitsInput.value = selectedOption.dataset.units || 1;
+                const cost = parseFloat(selectedOption.dataset.cost);
+                const units = parseFloat(selectedOption.dataset.units) || 1;
+                
+                costDiv.textContent = '$' + cost.toFixed(2);
+                unitsDiv.textContent = units;
                 
                 // Calculate total units if qty is entered
                 const qty = parseFloat(qtyInput.value) || 0;
-                const unitsPerCase = parseFloat(unitsInput.value) || 0;
-                const totalUnitsInput = row.querySelector('.createpo-totalunits');
-                totalUnitsInput.value = qty * unitsPerCase;
+                const totalUnitsDiv = row.querySelector('.createpo-totalunits');
+                totalUnitsDiv.textContent = qty > 0 ? (qty * units) : '-';
             } else {
-                costInput.value = '';
-                unitsInput.value = '';
-                row.querySelector('.createpo-totalunits').value = '';
+                costDiv.textContent = '-';
+                unitsDiv.textContent = '-';
+                row.querySelector('.createpo-totalunits').textContent = '-';
             }
             
             calculateCreatePOTotal();
@@ -6562,16 +6547,35 @@
             
             rows.forEach(row => {
                 const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
-                const cost = parseFloat(row.querySelector('.createpo-cost').value) || 0;
-                const unitsPerCase = parseFloat(row.querySelector('.createpo-units').value) || 0;
-                const totalUnitsInput = row.querySelector('.createpo-totalunits');
+                const costDiv = row.querySelector('.createpo-cost');
+                const unitsDiv = row.querySelector('.createpo-units');
+                const totalUnitsDiv = row.querySelector('.createpo-totalunits');
+                const lineTotalDiv = row.querySelector('.createpo-linetotal');
+                
+                // Get cost from text (strip $ and parse)
+                const costText = costDiv.textContent.replace('$', '');
+                const cost = costText === '-' ? 0 : parseFloat(costText);
+                
+                // Get units per case
+                const unitsText = unitsDiv.textContent;
+                const unitsPerCase = unitsText === '-' ? 0 : parseFloat(unitsText);
                 
                 // Update total units
-                if (totalUnitsInput && unitsPerCase > 0) {
-                    totalUnitsInput.value = qty * unitsPerCase;
+                if (unitsPerCase > 0 && qty > 0) {
+                    totalUnitsDiv.textContent = qty * unitsPerCase;
+                } else {
+                    totalUnitsDiv.textContent = '-';
                 }
                 
-                total += qty * cost;
+                // Update line total
+                const lineTotal = qty * cost;
+                if (lineTotal > 0) {
+                    lineTotalDiv.textContent = '$' + lineTotal.toFixed(2);
+                } else {
+                    lineTotalDiv.textContent = '$0.00';
+                }
+                
+                total += lineTotal;
             });
             
             document.getElementById('createPOTotal').textContent = '$' + total.toFixed(2);
@@ -6594,9 +6598,21 @@
             rows.forEach(row => {
                 const itemId = row.querySelector('.createpo-item').value;
                 const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
-                const cost = parseFloat(row.querySelector('.createpo-cost').value) || 0;
-                const unitsPerCase = parseFloat(row.querySelector('.createpo-units').value) || 0;
-                const totalUnits = parseFloat(row.querySelector('.createpo-totalunits').value) || 0;
+                const costDiv = row.querySelector('.createpo-cost');
+                const unitsDiv = row.querySelector('.createpo-units');
+                const totalUnitsDiv = row.querySelector('.createpo-totalunits');
+                
+                // Parse cost from text
+                const costText = costDiv.textContent.replace('$', '');
+                const cost = costText === '-' ? 0 : parseFloat(costText);
+                
+                // Parse units from text
+                const unitsText = unitsDiv.textContent;
+                const unitsPerCase = unitsText === '-' ? 0 : parseFloat(unitsText);
+                
+                // Parse total units from text
+                const totalUnitsText = totalUnitsDiv.textContent;
+                const totalUnits = totalUnitsText === '-' ? 0 : parseFloat(totalUnitsText);
                 
                 if (itemId && qty > 0) {
                     const item = cachedItems.find(i => i.Item_ID === itemId);
@@ -6748,9 +6764,10 @@
                 if (index === 0) {
                     row.querySelector('.createpo-item').value = '';
                     row.querySelector('.createpo-qty').value = '';
-                    row.querySelector('.createpo-units').value = '';
-                    row.querySelector('.createpo-totalunits').value = '';
-                    row.querySelector('.createpo-cost').value = '';
+                    row.querySelector('.createpo-units').textContent = '-';
+                    row.querySelector('.createpo-totalunits').textContent = '-';
+                    row.querySelector('.createpo-cost').textContent = '-';
+                    row.querySelector('.createpo-linetotal').textContent = '$0.00';
                 } else {
                     row.remove();
                 }
