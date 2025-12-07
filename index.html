@@ -629,15 +629,15 @@
             <button class="tab" onclick="switchTab('config')">⚙️ Settings</button>
         </div>
         
-        <!-- Floating Navigation Buttons - Bottom Right Corner -->
-        <!-- Back Button - Above Back to Top -->
-        <button id="backBtn" onclick="goBack()" style="display: none; position: fixed; bottom: 100px; right: 30px; z-index: 1000; background: #9e9e9e; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Go back to previous tab">
-            ⬅️
+        <!-- Floating Navigation Buttons - Bottom Left Corner -->
+        <!-- Back to Top Button - Top -->
+        <button id="backToTopBtn" onclick="scrollToTop()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" style="display: none; position: fixed; bottom: 100px; left: 30px; z-index: 1000; background: #667eea; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" title="Back to top">
+            ⬆️
         </button>
         
-        <!-- Back to Top Button - Bottom -->
-        <button id="backToTopBtn" onclick="scrollToTop()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 1000; background: #667eea; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" title="Back to top">
-            ⬆️
+        <!-- Back Button - Bottom -->
+        <button id="backBtn" onclick="goBack()" style="display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; background: #9e9e9e; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Go back to previous tab">
+            ⬅️
         </button>
 
         <!-- Settings Tab -->
@@ -3360,6 +3360,14 @@
                 return;
             }
             
+            // CRITICAL: Open window BEFORE any async calls to avoid iPhone popup blocker
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('Please allow popups for this site');
+                return;
+            }
+            printWindow.document.write('<html><body><h2>Loading invoice...</h2></body></html>');
+            
             const so = currentEditingOrder;
             const settings = getInvoiceSettings();
             
@@ -3596,8 +3604,7 @@
 </body>
 </html>`;
             
-            // Open in new window
-            const printWindow = window.open('', '_blank');
+            // Write to the already-opened window
             printWindow.document.write(invoiceHTML);
             printWindow.document.close();
         }
