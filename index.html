@@ -241,27 +241,19 @@
         .line-item-row {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 50px;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 10px;
             align-items: end;
-        }
-        
-        .line-item-row select,
-        .line-item-row input {
-            font-size: 16px;
-            padding: 12px;
-            height: 48px;
         }
 
         .remove-btn {
             background: #dc3545;
             color: white;
             border: none;
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 18px;
-            height: 48px;
+            font-size: 14px;
         }
 
         .config-box {
@@ -3106,21 +3098,28 @@
     </div>
 </body>
 </html>`;
-            // Create temporary print iframe to avoid popup blockers
-            let printFrame = document.getElementById('printFrame');
-            if (printFrame) {
-                // Remove old iframe if it exists
-                printFrame.remove();
+            // Create hidden print container instead of popup
+            let printContainer = document.getElementById('printContainer');
+            if (!printContainer) {
+                printContainer = document.createElement('div');
+                printContainer.id = 'printContainer';
+                printContainer.style.display = 'none';
+                document.body.appendChild(printContainer);
             }
             
-            printFrame = document.createElement('iframe');
-            printFrame.id = 'printFrame';
-            printFrame.style.position = 'absolute';
-            printFrame.style.width = '0';
-            printFrame.style.height = '0';
-            printFrame.style.border = 'none';
-            printFrame.style.visibility = 'hidden';
-            document.body.appendChild(printFrame);
+            printContainer.innerHTML = invoiceHTML;
+            
+            // Create print iframe to avoid popup blockers
+            let printFrame = document.getElementById('printFrame');
+            if (!printFrame) {
+                printFrame = document.createElement('iframe');
+                printFrame.id = 'printFrame';
+                printFrame.style.position = 'absolute';
+                printFrame.style.width = '0';
+                printFrame.style.height = '0';
+                printFrame.style.border = 'none';
+                document.body.appendChild(printFrame);
+            }
             
             const frameDoc = printFrame.contentWindow.document;
             frameDoc.open();
@@ -3131,13 +3130,6 @@
             setTimeout(() => {
                 printFrame.contentWindow.focus();
                 printFrame.contentWindow.print();
-                
-                // Clean up iframe after printing (wait for print dialog to close)
-                setTimeout(() => {
-                    if (printFrame && printFrame.parentNode) {
-                        printFrame.remove();
-                    }
-                }, 1000);
             }, 250);
         }
         
@@ -3292,15 +3284,15 @@
             const originalPrice = parseFloat(line[priceField]) || 0;
             
             return `
-                <div class="edit-line-item" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 6px;">
-                    <select class="edit-item" required style="font-size: 16px; padding: 12px; height: 48px;">
+                <div class="edit-line-item" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                    <select class="edit-item" required>
                         <option value="">Select Item</option>
                         ${itemOptions}
                     </select>
-                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" onchange="calculateEditLineTotal(this)" style="font-size: 16px; padding: 12px; height: 48px;">
-                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}" onchange="calculateEditLineTotal(this)" style="font-size: 16px; padding: 12px; height: 48px;">
-                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold; font-size: 16px; padding: 12px; height: 48px;" value="$${(originalQty * originalPrice).toFixed(2)}">
-                    <button type="button" class="remove-btn" onclick="removeEditLineItem(this)" style="background: #dc3545; color: white; border: none; border-radius: 6px; padding: 12px; cursor: pointer; font-size: 18px; height: 48px; width: 48px;">✕</button>
+                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" onchange="calculateEditLineTotal(this)">
+                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}" onchange="calculateEditLineTotal(this)">
+                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="$${(originalQty * originalPrice).toFixed(2)}">
+                    <button type="button" class="remove-btn" onclick="removeEditLineItem(this)" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
                 </div>
             `;
         }
@@ -3698,21 +3690,11 @@
             const option = selectElement.options[selectElement.selectedIndex];
             const price = option.getAttribute('data-price');
             
-            console.log('updateSOItemInfo called');
-            console.log('Selected option:', option.text);
-            console.log('data-price attribute:', price);
-            
             const row = selectElement.parentElement;
             const priceInput = row.querySelector('.so-price');
             
-            console.log('Price input found:', priceInput);
-            console.log('Setting price to:', price);
-            
-            if (price && price !== 'undefined' && price !== 'null') {
-                priceInput.value = parseFloat(price).toFixed(2);
-                console.log('Price set successfully to:', priceInput.value);
-            } else {
-                console.warn('No valid price found for this item');
+            if (price) {
+                priceInput.value = price;
             }
             
             calculateSOTotal();
@@ -4611,12 +4593,11 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
-                        const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
                         allDetails.push({
                             soId: so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
                             customerId: so.Customer_ID,
-                            customerName: customer?.Customer_Name || so.Customer_ID,
+                            customerName: getCustomerName(so.Customer_ID),
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             quantity: parseInt(line.Quantity || 0),
@@ -4676,6 +4657,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📊 Sales by Customer Report</h3>
                     <p style="color: #666;">Total Customers: ${new Set(filtered.map(d => d.customerId)).size} | Total Sales: $${totalSales.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -4738,12 +4720,11 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
-                        const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
                         allDetails.push({
                             soId: so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
                             customerId: so.Customer_ID,
-                            customerName: customer?.Customer_Name || so.Customer_ID,
+                            customerName: getCustomerName(so.Customer_ID),
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
@@ -4815,6 +4796,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Sales Order Detail Report</h3>
                     <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Sales: $${totalSales.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('sales-order-detail')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -4968,6 +4950,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📦 Sales by Product Report</h3>
                     <p style="color: #666;">Products Sold: ${sorted.length} | Total Revenue: $${sorted.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('sales-by-product')">📥 Export to CSV</button>
                 </div>`;
             
             if (sorted.length === 0) {
@@ -5037,12 +5020,11 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
-                        const supplier = suppliers.find(s => s.Supplier_ID === po.Supplier_ID);
                         allDetails.push({
                             poId: po.PO_ID,
                             poDate: po.PO_Date,
                             supplierId: po.Supplier_ID,
-                            supplierName: supplier?.Supplier_Name || po.Supplier_ID,
+                            supplierName: getSupplierName(po.Supplier_ID),
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
@@ -5114,6 +5096,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>📋 Purchase Order Detail Report</h3>
                     <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Purchases: $${totalPurchases.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-order-detail')">📥 Export to CSV</button>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -5236,6 +5219,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🏭 Purchase by Supplier Report</h3>
                     <p style="color: #666;">Suppliers: ${sorted.length} | Total Spent: $${sorted.reduce((sum, s) => sum + s.totalSpent, 0).toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('purchase-by-supplier')">📥 Export to CSV</button>
                 </div>`;
             
             if (sorted.length === 0) {
@@ -5360,6 +5344,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>🔄 Inventory Turnover Report</h3>
                     <p style="color: #666;">Total Items: ${turnoverData.length}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('inventory-turnover')">📥 Export to CSV</button>
                 </div>`;
             
             if (turnoverData.length === 0) {
@@ -5512,6 +5497,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💰 Gross Margin Report</h3>
                     <p style="color: #666;">Total Products: ${marginData.length} | Total Profit: $${totalProfit.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('gross-margin')">📥 Export to CSV</button>
                 </div>`;
             
             if (marginData.length === 0) {
@@ -5653,6 +5639,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💵 Accounts Receivable Report</h3>
                     <p style="color: #666;">Outstanding Invoices: ${receivables.length} | Total AR: $${totalOutstanding.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-receivable')">📥 Export to CSV</button>
                 </div>`;
             
             if (receivables.length === 0) {
@@ -5800,6 +5787,7 @@
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                     <h3>💸 Accounts Payable Report</h3>
                     <p style="color: #666;">Outstanding Bills: ${payables.length} | Total AP: $${totalOutstanding.toFixed(2)}</p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('accounts-payable')">📥 Export to CSV</button>
                 </div>`;
             
             if (payables.length === 0) {
@@ -5911,6 +5899,7 @@
                         Total Value: $${totalValue.toFixed(2)} | 
                         Low Stock Items: ${lowStockCount}
                     </p>
+                    <button class="btn btn-secondary" onclick="exportToCSV('simple-inventory')">📥 Export to CSV</button>
                 </div>`;
             
             if (inventory.length === 0) {
