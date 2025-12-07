@@ -1342,7 +1342,7 @@
                             </select>
                             <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
                             <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
-                            <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+                            <button type="button" class="remove-btn">✕</button>
                         </div>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
@@ -1457,7 +1457,7 @@
                             </select>
                             <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
                             <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
-                            <button type="button" class="remove-btn" onclick="removeLineItem(this)">✕</button>
+                            <button type="button" class="remove-btn">✕</button>
                         </div>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="addSOLineItem()">+ Add Line Item</button>
@@ -1621,6 +1621,80 @@
             const today = new Date().toISOString().split('T')[0];
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
+            
+            // Attach event listeners to the first hardcoded Sales Order line item
+            const firstSORow = document.querySelector('#soLineItems .line-item-row');
+            if (firstSORow) {
+                console.log('Attaching listeners to first SO line item'); // DEBUG
+                const itemSelect = firstSORow.querySelector('.so-item');
+                const qtyInput = firstSORow.querySelector('.so-qty');
+                const priceInput = firstSORow.querySelector('.so-price');
+                const removeBtn = firstSORow.querySelector('.remove-btn');
+                
+                if (itemSelect) {
+                    itemSelect.addEventListener('change', function() {
+                        console.log('First row CHANGE EVENT FIRED!'); // DEBUG
+                        updateSOItemInfo(this);
+                    });
+                }
+                
+                if (qtyInput) {
+                    qtyInput.addEventListener('input', function() {
+                        calculateSOTotal();
+                    });
+                }
+                
+                if (priceInput) {
+                    priceInput.addEventListener('input', function() {
+                        calculateSOTotal();
+                    });
+                }
+                
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() {
+                        removeLineItem(this);
+                        calculateSOTotal();
+                    });
+                }
+                console.log('First SO row listeners attached!'); // DEBUG
+            }
+            
+            // Attach event listeners to the first hardcoded Purchase Order line item
+            const firstPORow = document.querySelector('#poLineItems .line-item-row');
+            if (firstPORow) {
+                console.log('Attaching listeners to first PO line item'); // DEBUG
+                const itemSelect = firstPORow.querySelector('.po-item');
+                const qtyInput = firstPORow.querySelector('.po-qty');
+                const costInput = firstPORow.querySelector('.po-cost');
+                const removeBtn = firstPORow.querySelector('.remove-btn');
+                
+                if (itemSelect) {
+                    itemSelect.addEventListener('change', function() {
+                        console.log('First PO row CHANGE EVENT FIRED!'); // DEBUG
+                        updatePOItemInfo(this);
+                    });
+                }
+                
+                if (qtyInput) {
+                    qtyInput.addEventListener('input', function() {
+                        calculatePOTotal();
+                    });
+                }
+                
+                if (costInput) {
+                    costInput.addEventListener('input', function() {
+                        calculatePOTotal();
+                    });
+                }
+                
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() {
+                        removeLineItem(this);
+                        calculatePOTotal();
+                    });
+                }
+                console.log('First PO row listeners attached!'); // DEBUG
+            }
             
             // Minimal pull-to-refresh prevention (only at very top)
             let lastTouchY = 0;
@@ -3717,7 +3791,10 @@
             const priceInput = newRow.querySelector('.so-price');
             const removeBtn = newRow.querySelector('.remove-btn');
             
+            console.log('Attaching listeners to:', itemSelect); // DEBUG
+            
             itemSelect.addEventListener('change', function() {
+                console.log('CHANGE EVENT FIRED!'); // DEBUG
                 updateSOItemInfo(this);
             });
             
@@ -3733,6 +3810,8 @@
                 removeLineItem(this);
                 calculateSOTotal();
             });
+            
+            console.log('Event listeners attached successfully!'); // DEBUG
         }
         
         function updateSOItemInfo(selectElement) {
