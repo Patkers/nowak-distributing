@@ -5186,28 +5186,39 @@
             
             // Sort rows
             rows.sort((a, b) => {
-                const aCell = a.cells[columnIndex].textContent.trim();
-                const bCell = b.cells[columnIndex].textContent.trim();
+                // Safety checks for undefined cells
+                const aCell = a.cells[columnIndex];
+                const bCell = b.cells[columnIndex];
+                
+                if (!aCell || !bCell) return 0;
+                
+                const aCellText = (aCell.textContent || '').trim();
+                const bCellText = (bCell.textContent || '').trim();
+                
+                // Handle empty cells
+                if (!aCellText && !bCellText) return 0;
+                if (!aCellText) return 1;
+                if (!bCellText) return -1;
                 
                 // Try numeric comparison first
-                const aNum = parseFloat(aCell.replace(/[$,]/g, ''));
-                const bNum = parseFloat(bCell.replace(/[$,]/g, ''));
+                const aNum = parseFloat(aCellText.replace(/[$,]/g, ''));
+                const bNum = parseFloat(bCellText.replace(/[$,]/g, ''));
                 
                 if (!isNaN(aNum) && !isNaN(bNum)) {
                     return newDir === 'asc' ? aNum - bNum : bNum - aNum;
                 }
                 
                 // Try date comparison
-                const aDate = new Date(aCell);
-                const bDate = new Date(bCell);
-                if (!isNaN(aDate) && !isNaN(bDate)) {
+                const aDate = new Date(aCellText);
+                const bDate = new Date(bCellText);
+                if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime()) && aCellText.match(/\d/)) {
                     return newDir === 'asc' ? aDate - bDate : bDate - aDate;
                 }
                 
                 // String comparison
                 return newDir === 'asc' 
-                    ? aCell.localeCompare(bCell)
-                    : bCell.localeCompare(aCell);
+                    ? aCellText.localeCompare(bCellText)
+                    : bCellText.localeCompare(aCellText);
             });
             
             // Update table
