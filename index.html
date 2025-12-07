@@ -621,6 +621,7 @@
             <button class="tab active" onclick="switchTab('suppliers')">🏭 Suppliers</button>
             <button class="tab" onclick="switchTab('items')">📦 Items</button>
             <button class="tab" onclick="switchTab('customers')">👥 Customers</button>
+            <button class="tab" onclick="switchTab('createpo')">📝 Create PO</button>
             <button class="tab" onclick="switchTab('purchases')">📥 Purchases</button>
             <button class="tab" onclick="switchTab('sales')">💰 Sales</button>
             <button class="tab" onclick="switchTab('inventory')">📊 Inventory</button>
@@ -1233,6 +1234,66 @@
             <div id="customersTable"></div>
         </div>
 
+        <!-- Create PO Tab (Generate Only - No Database Save) -->
+        <div id="createpo" class="card">
+            <h2>📝 Create Purchase Order (Print/Email Only)</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Generate a purchase order document to send to suppliers. This does NOT save to the database or update inventory.
+            </p>
+            
+            <div id="createPOForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Supplier *</label>
+                        <select id="createPOSupplier" required onchange="filterItemsBySupplier()">
+                            <option value="">Select Supplier...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>PO Date *</label>
+                        <input type="date" id="createPODate" required>
+                    </div>
+                </div>
+                
+                <h3>Line Items</h3>
+                <div id="createPOLineItems">
+                    <div class="line-item-row">
+                        <select class="createpo-item" style="flex: 3;">
+                            <option value="">Select item...</option>
+                        </select>
+                        <input type="number" class="createpo-qty" placeholder="Cases" min="1" style="flex: 1;">
+                        <input type="number" class="createpo-units" placeholder="Units/Case" readonly style="flex: 1; background: #f0f0f0;">
+                        <input type="number" class="createpo-totalunits" placeholder="Total Units" readonly style="flex: 1; background: #f0f0f0;">
+                        <input type="number" class="createpo-cost" placeholder="Cost/Case" step="0.01" min="0" readonly style="flex: 1;">
+                        <button type="button" class="btn-danger remove-btn" onclick="removeLineItem(this)">🗑️</button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="addCreatePOLineItem()">➕ Add Line Item</button>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h3>Total</h3>
+                    <p style="font-size: 24px; font-weight: bold; color: #667eea;" id="createPOTotal">$0.00</p>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="generatePrintablePO()">🖨️ Generate Printable PO</button>
+                    <button class="btn btn-secondary" onclick="clearCreatePOForm()">🔄 Clear Form</button>
+                </div>
+            </div>
+            
+            <!-- Printable PO Document (Hidden initially) -->
+            <div id="printablePOContainer" style="display: none; margin-top: 30px;">
+                <div style="text-align: right; margin-bottom: 20px;">
+                    <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn btn-secondary" onclick="closePrintablePO()">❌ Close</button>
+                </div>
+                <div id="printablePO" style="background: white; padding: 40px; border: 1px solid #ddd; max-width: 800px; margin: 0 auto;">
+                    <!-- Printable PO will be generated here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Purchases Tab -->
         <div id="purchases" class="card">
             <h2>Purchase Orders</h2>
@@ -1621,6 +1682,26 @@
             const today = new Date().toISOString().split('T')[0];
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
+            if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
+            
+            // Attach event listeners to the first Create PO line item
+            const firstCreatePORow = document.querySelector('#createPOLineItems .line-item-row');
+            if (firstCreatePORow) {
+                const itemSelect = firstCreatePORow.querySelector('.createpo-item');
+                const qtyInput = firstCreatePORow.querySelector('.createpo-qty');
+                
+                if (itemSelect) {
+                    itemSelect.addEventListener('change', function() {
+                        updateCreatePOItemCost(this);
+                    });
+                }
+                
+                if (qtyInput) {
+                    qtyInput.addEventListener('input', function() {
+                        calculateCreatePOTotal();
+                    });
+                }
+            }
             
             // Attach event listeners to the first hardcoded Sales Order line item
             const firstSORow = document.querySelector('#soLineItems .line-item-row');
@@ -1938,6 +2019,18 @@
             if (result && result.status === 'success') {
                 cachedSuppliers = result.data;
                 displaySuppliers(result.data);
+                
+                // Populate Create PO supplier dropdown
+                const createPOSupplierSelect = document.getElementById('createPOSupplier');
+                if (createPOSupplierSelect) {
+                    createPOSupplierSelect.innerHTML = '<option value="">Select Supplier...</option>';
+                    result.data.forEach(supplier => {
+                        const option = document.createElement('option');
+                        option.value = supplier.Supplier_ID;
+                        option.textContent = supplier.Supplier_Name;
+                        createPOSupplierSelect.appendChild(option);
+                    });
+                }
             } else {
                 document.getElementById('suppliersTable').innerHTML = '<div class="loading">Error loading suppliers</div>';
             }
@@ -6334,6 +6427,298 @@
             a.download = reportType + '-' + new Date().toISOString().split('T')[0] + '.csv';
             a.click();
             window.URL.revokeObjectURL(url);
+        }
+        
+        // ==================== CREATE PO (PRINT ONLY) FUNCTIONS ====================
+        
+        function filterItemsBySupplier() {
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const itemSelects = document.querySelectorAll('.createpo-item');
+            
+            itemSelects.forEach(select => {
+                // Clear existing options
+                select.innerHTML = '<option value="">Select item...</option>';
+                
+                if (supplierId) {
+                    // Filter items by supplier
+                    const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
+                    supplierItems.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.Item_ID;
+                        option.textContent = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
+                        option.dataset.cost = item.Package_Cost || 0;
+                        option.dataset.units = item.Units_Per_Package || 1;
+                        select.appendChild(option);
+                    });
+                }
+            });
+            
+            calculateCreatePOTotal();
+        }
+        
+        function addCreatePOLineItem() {
+            const container = document.getElementById('createPOLineItems');
+            const supplierId = document.getElementById('createPOSupplier').value;
+            
+            if (!supplierId) {
+                alert('Please select a supplier first');
+                return;
+            }
+            
+            const newRow = document.createElement('div');
+            newRow.className = 'line-item-row';
+            newRow.innerHTML = `
+                <select class="createpo-item" style="flex: 3;" onchange="updateCreatePOItemCost(this)">
+                    <option value="">Select item...</option>
+                </select>
+                <input type="number" class="createpo-qty" placeholder="Cases" min="1" oninput="calculateCreatePOTotal()" style="flex: 1;">
+                <input type="number" class="createpo-units" placeholder="Units/Case" readonly style="flex: 1; background: #f0f0f0;">
+                <input type="number" class="createpo-totalunits" placeholder="Total Units" readonly style="flex: 1; background: #f0f0f0;">
+                <input type="number" class="createpo-cost" placeholder="Cost/Case" step="0.01" min="0" readonly style="flex: 1;">
+                <button type="button" class="btn-danger remove-btn" onclick="removeLineItem(this); calculateCreatePOTotal();">🗑️</button>
+            `;
+            
+            container.appendChild(newRow);
+            
+            // Populate the new select with filtered items
+            const itemSelect = newRow.querySelector('.createpo-item');
+            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
+            supplierItems.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.Item_ID;
+                option.textContent = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
+                option.dataset.cost = item.Package_Cost || 0;
+                option.dataset.units = item.Units_Per_Package || 1;
+                itemSelect.appendChild(option);
+            });
+        }
+        
+        function updateCreatePOItemCost(selectElement) {
+            const row = selectElement.closest('.line-item-row');
+            const costInput = row.querySelector('.createpo-cost');
+            const unitsInput = row.querySelector('.createpo-units');
+            const qtyInput = row.querySelector('.createpo-qty');
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            
+            if (selectedOption && selectedOption.dataset.cost) {
+                costInput.value = parseFloat(selectedOption.dataset.cost).toFixed(2);
+                unitsInput.value = selectedOption.dataset.units || 1;
+                
+                // Calculate total units if qty is entered
+                const qty = parseFloat(qtyInput.value) || 0;
+                const unitsPerCase = parseFloat(unitsInput.value) || 0;
+                const totalUnitsInput = row.querySelector('.createpo-totalunits');
+                totalUnitsInput.value = qty * unitsPerCase;
+            } else {
+                costInput.value = '';
+                unitsInput.value = '';
+                row.querySelector('.createpo-totalunits').value = '';
+            }
+            
+            calculateCreatePOTotal();
+        }
+        
+        function calculateCreatePOTotal() {
+            let total = 0;
+            const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
+            
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
+                const cost = parseFloat(row.querySelector('.createpo-cost').value) || 0;
+                const unitsPerCase = parseFloat(row.querySelector('.createpo-units').value) || 0;
+                const totalUnitsInput = row.querySelector('.createpo-totalunits');
+                
+                // Update total units
+                if (totalUnitsInput) {
+                    totalUnitsInput.value = qty * unitsPerCase;
+                }
+                
+                total += qty * cost;
+            });
+            
+            document.getElementById('createPOTotal').textContent = '$' + total.toFixed(2);
+            return total;
+        }
+        
+        function generatePrintablePO() {
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const poDate = document.getElementById('createPODate').value;
+            
+            if (!supplierId || !poDate) {
+                alert('Please select supplier and date');
+                return;
+            }
+            
+            // Get line items
+            const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
+            const lineItems = [];
+            
+            rows.forEach(row => {
+                const itemId = row.querySelector('.createpo-item').value;
+                const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
+                const cost = parseFloat(row.querySelector('.createpo-cost').value) || 0;
+                const unitsPerCase = parseFloat(row.querySelector('.createpo-units').value) || 0;
+                const totalUnits = parseFloat(row.querySelector('.createpo-totalunits').value) || 0;
+                
+                if (itemId && qty > 0) {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    if (item) {
+                        lineItems.push({
+                            sku: item.SKU || item.Item_ID,
+                            description: item.Item_Description,
+                            qty: qty,
+                            unitsPerCase: unitsPerCase,
+                            totalUnits: totalUnits,
+                            cost: cost,
+                            total: qty * cost
+                        });
+                    }
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                alert('Please add at least one line item');
+                return;
+            }
+            
+            // Get supplier info
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
+            if (!supplier) {
+                alert('Supplier not found');
+                return;
+            }
+            
+            // Get invoice settings
+            const companyName = localStorage.getItem('invoiceCompanyName') || 'Nowak Distributing';
+            const companyPhone = localStorage.getItem('invoicePhone') || '(920) 634-4351';
+            const companyEmail = localStorage.getItem('invoiceEmail') || 'jnowaksnfoodistributors@gmail.com';
+            const companyAddress1 = localStorage.getItem('invoiceAddress1') || '520 Proulx Street';
+            const companyAddress2 = localStorage.getItem('invoiceAddress2') || '';
+            const companyCityStateZip = localStorage.getItem('invoiceCityStateZip') || 'Green Bay, WI 54302';
+            
+            const total = lineItems.reduce((sum, item) => sum + item.total, 0);
+            
+            // Generate printable HTML
+            let html = `
+                <style>
+                    @media print {
+                        body * { visibility: hidden; }
+                        #printablePO, #printablePO * { visibility: visible; }
+                        #printablePO { position: absolute; left: 0; top: 0; width: 100%; }
+                        button { display: none !important; }
+                    }
+                    .po-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #667eea; padding-bottom: 20px; }
+                    .po-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                    .po-box { flex: 1; }
+                    .po-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    .po-table th { background: #667eea; color: white; padding: 12px; text-align: left; }
+                    .po-table td { border: 1px solid #ddd; padding: 10px; }
+                    .po-total { text-align: right; font-size: 20px; font-weight: bold; margin-top: 20px; }
+                </style>
+                
+                <div class="po-header">
+                    <h1 style="color: #667eea; margin: 0;">PURCHASE ORDER</h1>
+                    <p style="margin: 5px 0;">Date: ${new Date(poDate).toLocaleDateString()}</p>
+                </div>
+                
+                <div class="po-info">
+                    <div class="po-box">
+                        <h3>From:</h3>
+                        <p><strong>${companyName}</strong></p>
+                        <p>${companyAddress1}</p>
+                        ${companyAddress2 ? `<p>${companyAddress2}</p>` : ''}
+                        <p>${companyCityStateZip}</p>
+                        <p>Phone: ${companyPhone}</p>
+                        <p>Email: ${companyEmail}</p>
+                    </div>
+                    <div class="po-box">
+                        <h3>To:</h3>
+                        <p><strong>${supplier.Supplier_Name}</strong></p>
+                        ${supplier.Address ? `<p>${supplier.Address}</p>` : ''}
+                        ${supplier.City || supplier.State || supplier.ZIP ? `<p>${supplier.City || ''}${supplier.City && supplier.State ? ', ' : ''}${supplier.State || ''} ${supplier.ZIP || ''}</p>` : ''}
+                        ${supplier.Phone ? `<p>Phone: ${supplier.Phone}</p>` : ''}
+                        ${supplier.Email ? `<p>Email: ${supplier.Email}</p>` : ''}
+                    </div>
+                </div>
+                
+                <table class="po-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Description</th>
+                            <th style="text-align: center;">Cases</th>
+                            <th style="text-align: center;">Units/Case</th>
+                            <th style="text-align: center;">Total Units</th>
+                            <th style="text-align: right;">Cost/Case</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            lineItems.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.sku}</td>
+                        <td>${item.description}</td>
+                        <td style="text-align: center;">${item.qty}</td>
+                        <td style="text-align: center;">${item.unitsPerCase}</td>
+                        <td style="text-align: center;"><strong>${item.totalUnits}</strong></td>
+                        <td style="text-align: right;">$${item.cost.toFixed(2)}</td>
+                        <td style="text-align: right;">$${item.total.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+                
+                <div class="po-total">
+                    <p>TOTAL: $${total.toFixed(2)}</p>
+                </div>
+                
+                <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd;">
+                    <p style="color: #666; font-size: 14px;">
+                        Please confirm receipt of this purchase order and provide expected delivery date.
+                    </p>
+                </div>
+            `;
+            
+            // Display printable PO
+            document.getElementById('printablePO').innerHTML = html;
+            document.getElementById('printablePOContainer').style.display = 'block';
+            document.getElementById('createPOForm').style.display = 'none';
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+        
+        function closePrintablePO() {
+            document.getElementById('printablePOContainer').style.display = 'none';
+            document.getElementById('createPOForm').style.display = 'block';
+        }
+        
+        function clearCreatePOForm() {
+            document.getElementById('createPOSupplier').value = '';
+            document.getElementById('createPODate').value = new Date().toISOString().split('T')[0];
+            
+            // Clear all line items except the first one
+            const container = document.getElementById('createPOLineItems');
+            const rows = container.querySelectorAll('.line-item-row');
+            rows.forEach((row, index) => {
+                if (index === 0) {
+                    row.querySelector('.createpo-item').value = '';
+                    row.querySelector('.createpo-qty').value = '';
+                    row.querySelector('.createpo-units').value = '';
+                    row.querySelector('.createpo-totalunits').value = '';
+                    row.querySelector('.createpo-cost').value = '';
+                } else {
+                    row.remove();
+                }
+            });
+            
+            calculateCreatePOTotal();
         }
     </script>
     
