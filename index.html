@@ -1260,9 +1260,9 @@
                 
                 <!-- Wrapper for horizontal scroll on mobile -->
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; width: 100%; position: relative;">
-                    <div style="min-width: 900px; width: max-content;">
+                    <div style="min-width: 750px; width: max-content;">
                         <!-- Header Row -->
-                        <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; padding: 15px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0;">
+                        <div style="display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 0.9fr 1fr 70px; gap: 5px; padding: 12px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0;">
                             <div>Item</div>
                             <div style="text-align: center;">Cases</div>
                             <div style="text-align: center;">Units/Case</div>
@@ -1273,17 +1273,17 @@
                         </div>
                         
                         <!-- Line Items Container -->
-                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 10px;">
-                            <div class="line-item-row" style="display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; margin-bottom: 10px; align-items: center;">
-                                <select class="createpo-item" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 8px;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 0.9fr 1fr 70px; gap: 5px; margin-bottom: 8px; align-items: center;">
+                                <select class="createpo-item" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                                     <option value="">Select item...</option>
                                 </select>
-                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
-                                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666;">-</div>
-                                <div class="createpo-totalunits" style="text-align: center; font-size: 18px; font-weight: bold; color: #1565C0;">-</div>
-                                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666;">-</div>
-                                <div class="createpo-linetotal" style="text-align: right; font-size: 16px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 12px; border-radius: 4px;">$0.00</div>
-                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 12px; font-size: 18px;">🗑️</button>
+                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
+                                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 5px;">-</div>
+                                <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: #1565C0; padding: 5px;">-</div>
+                                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666; padding: 5px;">-</div>
+                                <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 10px; border-radius: 4px;">$0.00</div>
+                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 10px; font-size: 16px;">🗑️</button>
                             </div>
                         </div>
                     </div>
@@ -1718,6 +1718,12 @@
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
+            
+            // AUTO-LOAD ALL DATA ON PAGE LOAD
+            console.log('🚀 Auto-loading all data from Google Sheets...');
+            loadSuppliers();
+            loadItems();
+            loadCustomers();
             
             // Attach event listeners to the first Create PO line item
             const firstCreatePORow = document.querySelector('#createPOLineItems div.line-item-row');
@@ -3549,6 +3555,43 @@
             const price = parseFloat(row.querySelector('.edit-price').value) || 0;
             const total = qty * price;
             row.querySelector('.edit-total').value = '$' + total.toFixed(2);
+            
+            // Update payment info if this is a sales order
+            if (row.getAttribute('data-type') === 'SO') {
+                updateEditPaymentInfo();
+            }
+        }
+        
+        function updateEditPaymentInfo() {
+            // Calculate new total from all line items
+            let newTotal = 0;
+            document.querySelectorAll('#editSOLineItems .edit-line-item').forEach(row => {
+                const qty = parseFloat(row.querySelector('.edit-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.edit-price').value) || 0;
+                newTotal += qty * price;
+            });
+            
+            // Get previously paid amount
+            const previouslyPaid = parseFloat(document.getElementById('editSOAmountPaid')?.value) || 0;
+            
+            // Calculate balance due
+            const balanceDue = newTotal - previouslyPaid;
+            
+            // Find and update the payment info display divs
+            const paymentInfoDiv = document.querySelector('#modalContent .form-grid > div:nth-child(2)');
+            if (paymentInfoDiv) {
+                // Update the display values
+                const currentTotalDiv = paymentInfoDiv.querySelector('div > div:nth-child(1)');
+                const previouslyPaidDiv = paymentInfoDiv.querySelector('div > div:nth-child(2)');
+                const balanceDueDiv = paymentInfoDiv.querySelector('div > div:nth-child(3)');
+                
+                if (currentTotalDiv) {
+                    currentTotalDiv.innerHTML = `<strong>Current Total:</strong> $${newTotal.toFixed(2)}`;
+                }
+                if (balanceDueDiv) {
+                    balanceDueDiv.innerHTML = `<strong>Balance Due:</strong> <span style="color: #e74c3c;">$${balanceDue.toFixed(2)}</span>`;
+                }
+            }
         }
         
         function attachEditLineItemListeners(row) {
@@ -3587,6 +3630,10 @@
             removeBtn.addEventListener('click', function() {
                 if (confirm('Remove this line item?')) {
                     row.remove();
+                    // Update payment info if this is a sales order
+                    if (type === 'SO') {
+                        updateEditPaymentInfo();
+                    }
                 }
             });
             
@@ -6502,17 +6549,17 @@
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
-            newRow.style.cssText = 'display: grid; grid-template-columns: 3fr 1fr 1fr 1.2fr 1fr 1fr 80px; gap: 10px; margin-bottom: 10px; align-items: center;';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 0.9fr 1fr 70px; gap: 5px; margin-bottom: 8px; align-items: center;';
             newRow.innerHTML = `
-                <select class="createpo-item" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" onchange="updateCreatePOItemCost(this)">
+                <select class="createpo-item" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" onchange="updateCreatePOItemCost(this)">
                     <option value="">Select item...</option>
                 </select>
-                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
-                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666;">-</div>
-                <div class="createpo-totalunits" style="text-align: center; font-size: 18px; font-weight: bold; color: #1565C0;">-</div>
-                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666;">-</div>
-                <div class="createpo-linetotal" style="text-align: right; font-size: 16px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 12px; border-radius: 4px;">$0.00</div>
-                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 12px; font-size: 18px;">🗑️</button>
+                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
+                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 5px;">-</div>
+                <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: #1565C0; padding: 5px;">-</div>
+                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666; padding: 5px;">-</div>
+                <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 10px; border-radius: 4px;">$0.00</div>
+                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 16px;">🗑️</button>
             `;
             
             container.appendChild(newRow);
