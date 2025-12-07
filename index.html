@@ -1594,7 +1594,7 @@
     </div>
 
     <script>
-        let API_URL = localStorage.getItem('apiUrl') || '';
+        let API_URL = localStorage.getItem('apiUrl') || 'https://script.google.com/macros/s/AKfycbwUYTRxFdSS78WZ8gK44580wLDO_C7uUozj_3ruyiNbJHZi_pH7tUDC-ojszeddEwX8Dg/exec';
         let cachedSuppliers = [];
         let cachedItems = [];
         let cachedCustomers = [];
@@ -3823,15 +3823,22 @@
                 const result = await apiCall('getItems');
                 if (result && result.status === 'success') {
                     cachedItems = result.data;
+                    console.log('loadSaleDropdowns: Loaded items, first item Unit_Sell_Price:', cachedItems[0]?.Unit_Sell_Price); // DEBUG
                 }
             }
 
+            console.log('loadSaleDropdowns: Populating dropdowns with', cachedItems.length, 'items'); // DEBUG
+            console.log('loadSaleDropdowns: First item Unit_Sell_Price:', cachedItems[0]?.Unit_Sell_Price); // DEBUG
+            
             document.querySelectorAll('.so-item').forEach(select => {
                 select.innerHTML = '<option value="">Select Item</option>';
                 cachedItems.forEach(item => {
+                    console.log(`Adding option: ${item.Item_Description}, Unit_Sell_Price: ${item.Unit_Sell_Price}`); // DEBUG
                     select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}">${item.Item_Description}</option>`;
                 });
             });
+            
+            console.log('loadSaleDropdowns: Dropdown populated!'); // DEBUG
         }
 
         function addSOLineItem() {
