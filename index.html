@@ -3698,11 +3698,21 @@
             const option = selectElement.options[selectElement.selectedIndex];
             const price = option.getAttribute('data-price');
             
+            console.log('updateSOItemInfo called');
+            console.log('Selected option:', option.text);
+            console.log('data-price attribute:', price);
+            
             const row = selectElement.parentElement;
             const priceInput = row.querySelector('.so-price');
             
-            if (price) {
-                priceInput.value = price;
+            console.log('Price input found:', priceInput);
+            console.log('Setting price to:', price);
+            
+            if (price && price !== 'undefined' && price !== 'null') {
+                priceInput.value = parseFloat(price).toFixed(2);
+                console.log('Price set successfully to:', priceInput.value);
+            } else {
+                console.warn('No valid price found for this item');
             }
             
             calculateSOTotal();
