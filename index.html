@@ -1290,9 +1290,19 @@
                 
                 <button class="btn btn-secondary" onclick="addCreatePOLineItem()">➕ Add Line Item</button>
                 
-                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                    <h3>Total</h3>
-                    <p style="font-size: 24px; font-weight: bold; color: #667eea;" id="createPOTotal">$0.00</p>
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cases</h3>
+                        <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotalCases">0</p>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Units</h3>
+                        <p style="font-size: 28px; font-weight: bold; color: #1565C0; margin: 0;" id="createPOTotalUnits">0</p>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cost</h3>
+                        <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotal">$0.00</p>
+                    </div>
                 </div>
                 
                 <div style="margin-top: 20px;">
@@ -1303,8 +1313,10 @@
             
             <!-- Printable PO Document (Hidden initially) -->
             <div id="printablePOContainer" style="display: none; margin-top: 30px;">
-                <div style="text-align: right; margin-bottom: 20px;">
+                <div style="text-align: right; margin-bottom: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                     <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn btn-success" onclick="downloadPOAsPDF()">📥 Download PDF</button>
+                    <button class="btn btn-success" onclick="emailPO()">📧 Email PO</button>
                     <button class="btn btn-secondary" onclick="closePrintablePO()">❌ Close</button>
                 </div>
                 <div id="printablePO" style="background: white; padding: 40px; border: 1px solid #ddd; max-width: 800px; margin: 0 auto;">
@@ -6542,7 +6554,9 @@
         }
         
         function calculateCreatePOTotal() {
-            let total = 0;
+            let totalCost = 0;
+            let totalCases = 0;
+            let totalUnits = 0;
             const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
             
             rows.forEach(row => {
@@ -6560,9 +6574,11 @@
                 const unitsText = unitsDiv.textContent;
                 const unitsPerCase = unitsText === '-' ? 0 : parseFloat(unitsText);
                 
-                // Update total units
+                // Update total units for this line
                 if (unitsPerCase > 0 && qty > 0) {
-                    totalUnitsDiv.textContent = qty * unitsPerCase;
+                    const lineUnits = qty * unitsPerCase;
+                    totalUnitsDiv.textContent = lineUnits;
+                    totalUnits += lineUnits;
                 } else {
                     totalUnitsDiv.textContent = '-';
                 }
@@ -6575,11 +6591,15 @@
                     lineTotalDiv.textContent = '$0.00';
                 }
                 
-                total += lineTotal;
+                totalCost += lineTotal;
+                totalCases += qty;
             });
             
-            document.getElementById('createPOTotal').textContent = '$' + total.toFixed(2);
-            return total;
+            // Update all totals
+            document.getElementById('createPOTotalCases').textContent = totalCases;
+            document.getElementById('createPOTotalUnits').textContent = totalUnits;
+            document.getElementById('createPOTotal').textContent = '$' + totalCost.toFixed(2);
+            return totalCost;
         }
         
         function generatePrintablePO() {
@@ -6751,6 +6771,92 @@
         function closePrintablePO() {
             document.getElementById('printablePOContainer').style.display = 'none';
             document.getElementById('createPOForm').style.display = 'block';
+        }
+        
+        function downloadPOAsPDF() {
+            // Get PO details
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
+            const poDate = document.getElementById('createPODate').value;
+            
+            if (!supplier) {
+                alert('Supplier not found');
+                return;
+            }
+            
+            // Create a clean filename
+            const fileName = `PO_${supplier.Supplier_Name.replace(/[^a-z0-9]/gi, '_')}_${poDate}.pdf`;
+            
+            // For now, trigger print dialog with instruction
+            alert('PDF Download:\n\n1. Click OK\n2. In the print dialog, select "Save as PDF"\n3. Click Save\n\nNote: Full automated PDF generation requires a backend service.');
+            window.print();
+        }
+        
+        function emailPO() {
+            // Get supplier email
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
+            const poDate = document.getElementById('createPODate').value;
+            
+            if (!supplier) {
+                alert('Supplier not found');
+                return;
+            }
+            
+            const supplierEmail = supplier.Email || '';
+            
+            if (!supplierEmail) {
+                alert('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
+                return;
+            }
+            
+            // Get company info
+            const companyName = localStorage.getItem('invoiceCompanyName') || 'Nowak Distributing';
+            
+            // Get line items for email body
+            const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
+            let itemsList = '';
+            rows.forEach(row => {
+                const itemId = row.querySelector('.createpo-item').value;
+                const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
+                if (itemId && qty > 0) {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    if (item) {
+                        itemsList += `• ${item.Item_Description} - ${qty} cases\n`;
+                    }
+                }
+            });
+            
+            const totalCases = document.getElementById('createPOTotalCases').textContent;
+            const totalCost = document.getElementById('createPOTotal').textContent;
+            
+            // Create email subject and body
+            const subject = `Purchase Order from ${companyName} - ${poDate}`;
+            const body = `Dear ${supplier.Supplier_Name},
+
+Please find our purchase order for ${poDate}:
+
+${itemsList}
+---
+Total Cases: ${totalCases}
+Total: ${totalCost}
+
+Please confirm receipt and expected delivery date.
+
+Best regards,
+${companyName}
+
+---
+NOTE: Please print the attached PO document for full details.`;
+            
+            // Create mailto link
+            const mailtoLink = `mailto:${supplierEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Inform user to attach the PO
+            alert('Email Instructions:\n\n1. Your email client will open with the supplier\'s email pre-filled\n2. IMPORTANT: Print or save this PO as PDF first (use Print button)\n3. Attach the PDF to the email before sending\n\nClick OK to open your email client.');
+            
+            // Open email client
+            window.location.href = mailtoLink;
         }
         
         function clearCreatePOForm() {
