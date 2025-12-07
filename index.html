@@ -6662,13 +6662,14 @@
                 return;
             }
             
-            // Get invoice settings
-            const companyName = localStorage.getItem('invoiceCompanyName') || 'Nowak Distributing';
-            const companyPhone = localStorage.getItem('invoicePhone') || '(920) 634-4351';
-            const companyEmail = localStorage.getItem('invoiceEmail') || 'jnowaksnfoodistributors@gmail.com';
-            const companyAddress1 = localStorage.getItem('invoiceAddress1') || '520 Proulx Street';
-            const companyAddress2 = localStorage.getItem('invoiceAddress2') || '';
-            const companyCityStateZip = localStorage.getItem('invoiceCityStateZip') || 'Green Bay, WI 54302';
+            // Get invoice settings - USE THE SAME METHOD AS SALES INVOICES
+            const settings = getInvoiceSettings();
+            const companyName = settings.companyName;
+            const companyPhone = settings.phone;
+            const companyEmail = settings.email;
+            const companyAddress1 = settings.address1;
+            const companyAddress2 = settings.address2;
+            const companyCityStateZip = settings.cityStateZip;
             
             const total = lineItems.reduce((sum, item) => sum + item.total, 0);
             
@@ -6810,8 +6811,9 @@
                 return;
             }
             
-            // Get company info
-            const companyName = localStorage.getItem('invoiceCompanyName') || 'Nowak Distributing';
+            // Get company info - USE THE SAME METHOD AS SALES INVOICES
+            const settings = getInvoiceSettings();
+            const companyName = settings.companyName;
             
             // Get line items for email body
             const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
