@@ -1260,30 +1260,30 @@
                 
                 <!-- Wrapper for horizontal scroll on mobile -->
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; width: 100%; position: relative;">
-                    <div style="min-width: 750px; width: max-content;">
+                    <div style="min-width: 650px; width: 100%; max-width: 100%;">
                         <!-- Header Row -->
-                        <div style="display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 0.9fr 1fr 70px; gap: 5px; padding: 12px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0;">
+                        <div style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.7fr 0.8fr 60px; gap: 4px; padding: 10px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 13px;">
                             <div>Item</div>
                             <div style="text-align: center;">Cases</div>
                             <div style="text-align: center;">Units/Case</div>
                             <div style="text-align: center;">Total Units</div>
                             <div style="text-align: right;">Cost/Case</div>
                             <div style="text-align: right;">Line Total</div>
-                            <div style="text-align: center;">Action</div>
+                            <div style="text-align: center;">Del</div>
                         </div>
                         
                         <!-- Line Items Container -->
-                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 8px;">
-                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 0.9fr 1fr 70px; gap: 5px; margin-bottom: 8px; align-items: center;">
-                                <select class="createpo-item" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 6px;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.7fr 0.8fr 60px; gap: 4px; margin-bottom: 6px; align-items: center;">
+                                <select class="createpo-item" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                                     <option value="">Select item...</option>
                                 </select>
-                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
-                                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 5px;">-</div>
-                                <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: #1565C0; padding: 5px;">-</div>
-                                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666; padding: 5px;">-</div>
-                                <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 10px; border-radius: 4px;">$0.00</div>
-                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 10px; font-size: 16px;">🗑️</button>
+                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px;">
+                                <div class="createpo-units" style="text-align: center; font-size: 13px; color: #666; padding: 4px;">-</div>
+                                <div class="createpo-totalunits" style="text-align: center; font-size: 15px; font-weight: bold; color: #1565C0; padding: 4px;">-</div>
+                                <div class="createpo-cost" style="text-align: right; font-size: 13px; color: #666; padding: 4px;">-</div>
+                                <div class="createpo-linetotal" style="text-align: right; font-size: 13px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 8px; border-radius: 4px;">$0.00</div>
+                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 8px; font-size: 14px;">🗑️</button>
                             </div>
                         </div>
                     </div>
@@ -1577,8 +1577,20 @@
             <h2>Inventory Report</h2>
             <div class="status" id="inventoryStatus"></div>
             
-            <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
-            <button class="btn" onclick="showAdjustInventoryForm()" style="background: #f39c12;">📝 Adjust Inventory</button>
+            <div style="margin-bottom: 15px;">
+                <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
+                <button class="btn" onclick="showAdjustInventoryForm()" style="background: #f39c12;">📝 Adjust Inventory</button>
+                <button class="btn" onclick="goToAddItem()" style="background: #9c27b0;">➕ Add New Item</button>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
+                <strong>Quick Guide:</strong>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    <li><strong>➕ Add New Item</strong> - Add items you already have in stock (no purchase order needed)</li>
+                    <li><strong>📝 Adjust Inventory</strong> - Fix counts, record damage, shrinkage, or physical inventory counts</li>
+                    <li><strong>📥 Purchases tab</strong> - Record new inventory from suppliers (creates purchase orders)</li>
+                </ul>
+            </div>
             
             <!-- Manual Adjustment Form -->
             <div id="adjustInventoryForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px; background: #fff8e1;">
@@ -1725,6 +1737,8 @@
             loadSuppliers();
             loadItems();
             loadCustomers();
+            loadPurchases();
+            loadSales();
             
             // Attach event listeners to the first Create PO line item
             const firstCreatePORow = document.querySelector('#createPOLineItems div.line-item-row');
@@ -1851,6 +1865,25 @@
             
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
+        }
+        
+        function goToAddItem() {
+            // Switch to Items tab
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.textContent.includes('Items')) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById('items').classList.add('active');
+            
+            // Open the Add Item form
+            showAddItemForm();
+            
+            // Scroll to top of page
+            window.scrollTo(0, 0);
         }
 
         function updateConfigStatus() {
@@ -5052,6 +5085,14 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
+                        const packageCost = parseFloat(item?.Package_Cost) || 0;
+                        const unitCost = packageCost / unitsPerPackage;
+                        const quantity = parseInt(line.Quantity || 0);
+                        const unitPrice = parseFloat(line.Unit_Price || 0);
+                        const lineTotal = parseFloat(line.Line_Total || 0);
+                        const lineCost = quantity * unitCost;
+                        
                         allDetails.push({
                             soId: so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
@@ -5059,9 +5100,13 @@
                             customerName: getCustomerName(so.Customer_ID),
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
-                            quantity: parseInt(line.Quantity || 0),
-                            unitPrice: parseFloat(line.Unit_Price || 0),
-                            lineTotal: parseFloat(line.Line_Total || 0),
+                            quantity: quantity,
+                            unitsPerPackage: unitsPerPackage,
+                            unitPrice: unitPrice,
+                            unitCost: unitCost,
+                            lineTotal: lineTotal,
+                            lineCost: lineCost,
+                            lineProfit: lineTotal - lineCost,
                             paymentStatus: so.Payment_Status || 'Unknown'
                         });
                     });
@@ -5089,16 +5134,47 @@
                 filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
             }
             
-            // Sort by date (newest first), then by SO ID
-            filtered.sort((a, b) => {
-                const dateCompare = new Date(b.soDate) - new Date(a.soDate);
-                if (dateCompare !== 0) return dateCompare;
-                return b.soId.localeCompare(a.soId);
+            // GROUP BY CUSTOMER and calculate totals
+            const customerSummary = {};
+            filtered.forEach(detail => {
+                if (!customerSummary[detail.customerId]) {
+                    customerSummary[detail.customerId] = {
+                        customerId: detail.customerId,
+                        customerName: detail.customerName,
+                        totalCases: 0,
+                        totalUnits: 0,
+                        totalRevenue: 0,
+                        totalCost: 0,
+                        totalProfit: 0
+                    };
+                }
+                
+                const summary = customerSummary[detail.customerId];
+                // Calculate cases (divide units by units per package)
+                const cases = detail.quantity / detail.unitsPerPackage;
+                summary.totalCases += cases;
+                summary.totalUnits += detail.quantity;
+                summary.totalRevenue += detail.lineTotal;
+                summary.totalCost += detail.lineCost;
+                summary.totalProfit += detail.lineProfit;
             });
             
-            // Calculate totals
-            const totalSales = filtered.reduce((sum, d) => sum + d.lineTotal, 0);
-            const totalOrders = new Set(filtered.map(d => d.soId)).size;
+            // Convert to array and calculate margin %
+            const summaryArray = Object.values(customerSummary).map(s => ({
+                ...s,
+                marginPercent: s.totalRevenue > 0 ? (s.totalProfit / s.totalRevenue) * 100 : 0
+            }));
+            
+            // Sort by total revenue (highest first)
+            summaryArray.sort((a, b) => b.totalRevenue - a.totalRevenue);
+            
+            // Calculate grand totals
+            const grandTotalRevenue = summaryArray.reduce((sum, s) => sum + s.totalRevenue, 0);
+            const grandTotalCost = summaryArray.reduce((sum, s) => sum + s.totalCost, 0);
+            const grandTotalProfit = summaryArray.reduce((sum, s) => sum + s.totalProfit, 0);
+            const grandTotalCases = summaryArray.reduce((sum, s) => sum + s.totalCases, 0);
+            const grandTotalUnits = summaryArray.reduce((sum, s) => sum + s.totalUnits, 0);
+            const grandMargin = grandTotalRevenue > 0 ? (grandTotalProfit / grandTotalRevenue) * 100 : 0;
             
             // Build customer list for filter
             const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
@@ -5114,46 +5190,56 @@
             
             html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📊 Sales by Customer Report</h3>
-                    <p style="color: #666;">Total Customers: ${new Set(filtered.map(d => d.customerId)).size} | Total Sales: $${totalSales.toFixed(2)}</p>
+                    <h3>📊 Sales by Customer Summary</h3>
+                    <p style="color: #666;">Total Customers: ${summaryArray.length} | Total Revenue: $${grandTotalRevenue.toFixed(2)} | Total Profit: $${grandTotalProfit.toFixed(2)} | Gross Margin: ${grandMargin.toFixed(1)}%</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('sales-by-customer')">📥 Export to CSV</button>
                 </div>`;
             
-            if (filtered.length === 0) {
+            if (summaryArray.length === 0) {
                 html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
             } else {
                 html += `<table class="data-table" id="salesByCustomerTable">
                     <thead>
                         <tr>
-                            <th>SO #</th>
-                            <th>Date</th>
                             <th>Customer</th>
-                            <th>Item Description</th>
-                            <th>Qty</th>
-                            <th>Unit Price</th>
-                            <th>Line Total</th>
-                            <th>Payment Status</th>
+                            <th>Total Cases</th>
+                            <th>Total Units</th>
+                            <th>Total Revenue</th>
+                            <th>Total Cost</th>
+                            <th>Total Profit</th>
+                            <th>Gross Margin %</th>
                         </tr>
                     </thead>
                     <tbody>`;
             
-                filtered.forEach(detail => {
+                summaryArray.forEach(summary => {
+                    const marginColor = summary.marginPercent >= 30 ? '#2e7d32' : summary.marginPercent >= 20 ? '#f57c00' : '#c62828';
                     html += `<tr>
-                        <td><strong><a href="javascript:void(0)" onclick="openSalesOrder('${detail.soId}')" style="color: #667eea; text-decoration: none;">${detail.soId}</a></strong></td>
-                        <td>${new Date(detail.soDate).toLocaleDateString()}</td>
-                        <td><a href="javascript:void(0)" onclick="openCustomer('${detail.customerId}')" style="color: #667eea; text-decoration: none;">${detail.customerName}</a></td>
-                        <td><a href="javascript:void(0)" onclick="openItem('${detail.itemId}')" style="color: #667eea; text-decoration: none;">${detail.itemDescription}</a></td>
-                        <td>${detail.quantity}</td>
-                        <td>$${detail.unitPrice.toFixed(2)}</td>
-                        <td>$${detail.lineTotal.toFixed(2)}</td>
-                        <td><span style="color: ${detail.paymentStatus === 'Paid' ? 'green' : detail.paymentStatus === 'Partial' ? 'orange' : 'red'};">${detail.paymentStatus}</span></td>
+                        <td><strong><a href="javascript:void(0)" onclick="openCustomer('${summary.customerId}')" style="color: #667eea; text-decoration: none;">${summary.customerName}</a></strong></td>
+                        <td>${summary.totalCases.toFixed(1)}</td>
+                        <td>${Math.round(summary.totalUnits).toLocaleString()}</td>
+                        <td><strong>$${summary.totalRevenue.toFixed(2)}</strong></td>
+                        <td>$${summary.totalCost.toFixed(2)}</td>
+                        <td style="color: ${summary.totalProfit >= 0 ? 'green' : 'red'};"><strong>$${summary.totalProfit.toFixed(2)}</strong></td>
+                        <td style="color: ${marginColor}; font-weight: bold;">${summary.marginPercent.toFixed(1)}%</td>
                     </tr>`;
                 });
+                
+                // Add totals row
+                html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
+                    <td style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                    <td>${grandTotalCases.toFixed(1)}</td>
+                    <td>${Math.round(grandTotalUnits).toLocaleString()}</td>
+                    <td><strong>$${grandTotalRevenue.toFixed(2)}</strong></td>
+                    <td>$${grandTotalCost.toFixed(2)}</td>
+                    <td style="color: ${grandTotalProfit >= 0 ? 'green' : 'red'};"><strong>$${grandTotalProfit.toFixed(2)}</strong></td>
+                    <td style="color: ${grandMargin >= 30 ? '#2e7d32' : grandMargin >= 20 ? '#f57c00' : '#c62828'}; font-weight: bold;">${grandMargin.toFixed(1)}%</td>
+                </tr>`;
             
                 html += '</tbody></table>';
             }
             
-            reportData['sales-by-customer'] = filtered;
+            reportData['sales-by-customer'] = summaryArray;
             document.getElementById('reportContainer').innerHTML = html;
             setTimeout(() => makeSortable('salesByCustomerTable'), 0);
         }
@@ -6517,29 +6603,8 @@
         }
         
         async function openItem(itemId) {
-            // Remember current tab to return to later
-            const currentTab = document.querySelector('.card.active');
-            if (currentTab && currentTab.id === 'reports') {
-                returnToTab = 'reports';
-            } else {
-                returnToTab = null;
-            }
-            
-            // Load item and open edit modal
-            const result = await apiCall('getItems');
-            const item = result.data.find(i => i.Item_ID === itemId);
-            if (item) {
-                // Switch to Items tab
-                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-                document.querySelector('.tab[onclick*="items"]').classList.add('active');
-                document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-                document.getElementById('items').classList.add('active');
-                
-                // Show edit form
-                showEditItemForm(item);
-            } else {
-                alert('Item not found: ' + itemId);
-            }
+            // Just call editItemById which handles everything
+            editItemById(itemId);
         }
         
         // Export to CSV function
@@ -6615,17 +6680,17 @@
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
-            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 1fr 0.9fr 1fr 70px; gap: 5px; margin-bottom: 8px; align-items: center;';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.7fr 0.8fr 60px; gap: 4px; margin-bottom: 6px; align-items: center;';
             newRow.innerHTML = `
-                <select class="createpo-item" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;" onchange="updateCreatePOItemCost(this)">
+                <select class="createpo-item" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" onchange="updateCreatePOItemCost(this)">
                     <option value="">Select item...</option>
                 </select>
-                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 14px;">
-                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 5px;">-</div>
-                <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: #1565C0; padding: 5px;">-</div>
-                <div class="createpo-cost" style="text-align: right; font-size: 14px; color: #666; padding: 5px;">-</div>
-                <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 10px; border-radius: 4px;">$0.00</div>
-                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 16px;">🗑️</button>
+                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px;">
+                <div class="createpo-units" style="text-align: center; font-size: 13px; color: #666; padding: 4px;">-</div>
+                <div class="createpo-totalunits" style="text-align: center; font-size: 15px; font-weight: bold; color: #1565C0; padding: 4px;">-</div>
+                <div class="createpo-cost" style="text-align: right; font-size: 13px; color: #666; padding: 4px;">-</div>
+                <div class="createpo-linetotal" style="text-align: right; font-size: 13px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 8px; border-radius: 4px;">$0.00</div>
+                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 8px; font-size: 14px;">🗑️</button>
             `;
             
             container.appendChild(newRow);
