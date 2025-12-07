@@ -5389,19 +5389,19 @@
         
         // 2. SALES BY PRODUCT REPORT
         async function generateSalesByProduct() {
-            const salesResult = await apiCall('getSalesOrders');
             const itemsResult = await apiCall('getItems');
             const suppliersResult = await apiCall('getSuppliers');
+            const salesResult = await apiCall('getSalesOrders');
             
-            if (!salesResult?.data || !itemsResult?.data || !suppliersResult?.data) {
+            if (!itemsResult?.data || !suppliersResult?.data) {
                 throw new Error('Failed to load data');
             }
             
             const items = itemsResult.data;
             const suppliers = suppliersResult.data;
-            let sales = salesResult.data;
+            let sales = salesResult?.data || [];
             
-            // Fetch ALL sales order lines
+            // Fetch ALL sales order lines to get units sold
             const allLines = [];
             for (const so of sales) {
                 const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
@@ -5413,10 +5413,7 @@
                 }
             }
             
-            // Store raw data
-            rawReportData['sales-by-product'] = { sales, items, suppliers, allLines };
-            
-            // APPLY DATE FILTERS to lines
+            // APPLY DATE FILTERS to sales lines
             let filteredLines = allLines;
             if (reportFilters.fromDate) {
                 const fromDate = new Date(reportFilters.fromDate);
@@ -5428,40 +5425,43 @@
                 filteredLines = filteredLines.filter(line => new Date(line.SO_Date) <= toDate);
             }
             
-            // Build product sales summary
-            const productSales = {};
-            
+            // Calculate units sold per item
+            const unitsSoldByItem = {};
             filteredLines.forEach(line => {
                 const itemId = line.Item_ID;
-                if (!productSales[itemId]) {
-                    const item = items.find(i => i.Item_ID === itemId);
-                    productSales[itemId] = {
-                        id: itemId,
-                        description: item?.Item_Description || itemId,
-                        sku: item?.SKU || '',
-                        supplierId: item?.Supplier_ID || '',
-                        unitsSold: 0,
-                        revenue: 0,
-                        avgPrice: 0
-                    };
-                }
-                
-                const qty = parseInt(line.Quantity || 0);
-                const price = parseFloat(line.Unit_Price || 0);
-                
-                productSales[itemId].unitsSold += qty;
-                productSales[itemId].revenue += qty * price;
+                unitsSoldByItem[itemId] = (unitsSoldByItem[itemId] || 0) + parseInt(line.Quantity || 0);
             });
             
-            // Calculate average prices
-            Object.values(productSales).forEach(p => {
-                if (p.unitsSold > 0) {
-                    p.avgPrice = p.revenue / p.unitsSold;
-                }
+            // Build product list with margins - INCLUDE ALL ITEMS
+            const productData = items.map(item => {
+                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitCost = packageCost / unitsPerPackage;
+                const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const margin = unitSellPrice - unitCost;
+                const marginPercent = unitSellPrice > 0 ? (margin / unitSellPrice) * 100 : 0;
+                const unitsSold = unitsSoldByItem[item.Item_ID] || 0;
+                const totalProfit = unitsSold * margin;
+                
+                return {
+                    id: item.Item_ID,
+                    description: item.Item_Description || '',
+                    sku: item.SKU || '',
+                    supplierId: item.Supplier_ID || '',
+                    unitCost: unitCost,
+                    unitSellPrice: unitSellPrice,
+                    margin: margin,
+                    marginPercent: marginPercent,
+                    unitsSold: unitsSold,
+                    totalProfit: totalProfit
+                };
             });
+            
+            // Store raw data
+            rawReportData['sales-by-product'] = { items, suppliers, productData };
             
             // APPLY FILTERS
-            let filtered = Object.values(productSales);
+            let filtered = productData;
             
             if (reportFilters.item) {
                 filtered = filtered.filter(p => p.id === reportFilters.item);
@@ -5470,11 +5470,11 @@
                 filtered = filtered.filter(p => p.supplierId === reportFilters.supplier);
             }
             if (reportFilters.minAmount) {
-                filtered = filtered.filter(p => p.revenue >= reportFilters.minAmount);
+                filtered = filtered.filter(p => p.margin >= reportFilters.minAmount);
             }
             
-            // Sort by revenue
-            const sorted = filtered.sort((a, b) => b.revenue - a.revenue);
+            // Sort by margin % (highest first)
+            const sorted = filtered.sort((a, b) => b.marginPercent - a.marginPercent);
             
             // Build filter lists
             const itemList = items.map(i => ({ id: i.Item_ID, name: `${i.Item_Description} (${i.SKU})` }));
@@ -5482,59 +5482,59 @@
             
             // Build HTML with filters
             let html = buildFilterUI('sales-by-product', {
-                dateRange: true,
-                dateLabel: 'Sale Date',
+                dateRange: false, // Remove date filter - this is about pricing, not sales history
                 item: true,
                 itemList: itemList,
                 supplier: true,
                 supplierList: supplierList,
-                minAmount: true
+                minAmount: true,
+                amountLabel: 'Min Margin ($)'
             });
+            
+            // Calculate totals
+            const avgMarginPercent = sorted.length > 0 
+                ? sorted.reduce((sum, p) => sum + p.marginPercent, 0) / sorted.length 
+                : 0;
+            const totalPotentialProfit = sorted.reduce((sum, p) => sum + p.totalProfit, 0);
             
             html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📦 Sales by Product Report</h3>
-                    <p style="color: #666;">Products Sold: ${sorted.length} | Total Revenue: $${sorted.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}</p>
+                    <h3>📦 Product Pricing & Margin Analysis</h3>
+                    <p style="color: #666;">Total Products: ${sorted.length} | Average Margin: ${avgMarginPercent.toFixed(1)}% | Total Profit (from sales): $${totalPotentialProfit.toFixed(2)}</p>
                     <button class="btn btn-secondary" onclick="exportToCSV('sales-by-product')">📥 Export to CSV</button>
                 </div>`;
             
             if (sorted.length === 0) {
                 html += '<p style="text-align: center; padding: 40px; color: #666;">No data matches your filters</p>';
             } else {
-                // Calculate totals
-                const totalUnits = sorted.reduce((sum, p) => sum + p.unitsSold, 0);
-                const totalRevenue = sorted.reduce((sum, p) => sum + p.revenue, 0);
-                const avgPrice = totalRevenue / totalUnits;
-                
                 html += `<table class="data-table" id="salesByProductTable">
                     <thead>
                         <tr>
                             <th>Product</th>
                             <th>SKU</th>
+                            <th>Cost</th>
+                            <th>Sell</th>
+                            <th>Margin</th>
+                            <th>Margin %</th>
                             <th>Units Sold</th>
-                            <th>Revenue</th>
-                            <th>Avg Price</th>
+                            <th>Total Profit</th>
                         </tr>
                     </thead>
                     <tbody>`;
             
-                sorted.forEach(prod => {
+                sorted.forEach(product => {
+                    const marginColor = product.marginPercent >= 30 ? '#2e7d32' : product.marginPercent >= 20 ? '#f57c00' : '#c62828';
                     html += `<tr>
-                        <td><a href="javascript:void(0)" onclick="openItem('${prod.id}')" style="color: #667eea; text-decoration: none;"><strong>${prod.description}</strong></a></td>
-                        <td>${prod.sku}</td>
-                        <td>${prod.unitsSold}</td>
-                        <td>$${prod.revenue.toFixed(2)}</td>
-                        <td>$${prod.avgPrice.toFixed(2)}</td>
+                        <td><strong><a href="javascript:void(0)" onclick="openItem('${product.id}')" style="color: #667eea; text-decoration: none;">${product.description}</a></strong></td>
+                        <td>${product.sku}</td>
+                        <td>$${product.unitCost.toFixed(2)}</td>
+                        <td>$${product.unitSellPrice.toFixed(2)}</td>
+                        <td style="color: ${product.margin >= 0 ? 'green' : 'red'};">$${product.margin.toFixed(2)}</td>
+                        <td style="color: ${marginColor}; font-weight: bold;">${product.marginPercent.toFixed(1)}%</td>
+                        <td>${product.unitsSold.toLocaleString()}</td>
+                        <td style="color: ${product.totalProfit >= 0 ? 'green' : 'red'};"><strong>$${product.totalProfit.toFixed(2)}</strong></td>
                     </tr>`;
                 });
-                
-                // Add totals row
-                html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                    <td colspan="2" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                    <td>${totalUnits.toLocaleString()}</td>
-                    <td>$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>$${avgPrice.toFixed(2)}</td>
-                </tr>`;
             
                 html += '</tbody></table>';
             }
