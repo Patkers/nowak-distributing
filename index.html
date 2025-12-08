@@ -3817,13 +3817,14 @@
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
                     <td>${getSupplierName(po.Supplier_ID)}</td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
-                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status || 'Received'}</span></td>
+                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : po.Status === 'Void' || po.Status === 'Cancelled' ? '#dc3545' : po.Status === 'Partial' ? '#17a2b8' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status === 'Void' ? '⛔ VOID' : po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status || 'Received'}</span></td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
                         ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
+                        ${po.Status === 'Void' || po.Status === 'Cancelled' ? `<button class="btn-small" onclick="duplicatePO('${po.PO_ID}')" style="background: #17a2b8; color: white;">📋 Copy to New PO</button>` : ''}
                         <button class="btn-small" onclick="viewPurchaseOrder('${po.PO_ID}')" style="background: #17a2b8; color: white; padding: 6px 12px;">View/Print</button>
                     </td>
                 </tr>`;
@@ -3887,6 +3888,14 @@
             const dueDate = po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-';
             const billDate = po.Bill_Date ? new Date(po.Bill_Date).toLocaleDateString() : '-';
             
+            // Status color logic
+            const statusColor = po.Status === 'Void' || po.Status === 'Cancelled' ? '#dc3545' : 
+                               po.Status === 'Ordered' ? '#ffc107' : 
+                               po.Status === 'Partial' ? '#17a2b8' : '#28a745';
+            const statusTextColor = po.Status === 'Ordered' ? '#000' : '#fff';
+            const statusText = po.Status === 'Void' ? '⛔ VOID' : 
+                              po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status;
+            
             document.getElementById('modalTitle').textContent = `Purchase Order: ${po.PO_ID}`;
             
             let html = `
@@ -3899,8 +3908,26 @@
                             <tr><td style="padding: 8px 0; font-weight: bold;">PO Date:</td><td>${new Date(po.PO_Date).toLocaleDateString()}</td></tr>
                             <tr><td style="padding: 8px 0; font-weight: bold;">Bill Date:</td><td>${billDate}</td></tr>
                             <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${po.Status}</span></td></tr>
+                            <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${statusText}</span></td></tr>
                         </table>
+                        ${po.Status === 'Ordered' ? `
+                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                            <strong>⚠️ Prices Changed?</strong>
+                            <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">If supplier prices have changed, void this PO and create a new one with updated prices.</p>
+                            <button class="btn" onclick="voidPurchaseOrder('${po.PO_ID}')" style="background: #dc3545; padding: 6px 12px; font-size: 13px;">
+                                ⛔ Void This PO
+                            </button>
+                        </div>
+                        ` : ''}
+                        ${po.Status === 'Void' || po.Status === 'Cancelled' ? `
+                        <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+                            <strong>📋 Need to Reorder?</strong>
+                            <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">Copy this PO's items to create a new order with current prices.</p>
+                            <button class="btn" onclick="duplicatePO('${po.PO_ID}'); closeModal();" style="background: #17a2b8; padding: 6px 12px; font-size: 13px;">
+                                📋 Copy to New PO
+                            </button>
+                        </div>
+                        ` : ''}
                     </div>
                     <div>
                         <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
@@ -3910,7 +3937,7 @@
                             <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</td></tr>
                             <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${po.Payment_Status}</span></td></tr>
                         </table>
-                        ${po.Payment_Status !== 'Paid' ? `
+                        ${po.Payment_Status !== 'Paid' && po.Status !== 'Void' && po.Status !== 'Cancelled' ? `
                         <div style="margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
                             <div style="margin-bottom: 10px;"><strong>💵 Quick Payment</strong></div>
                             <div style="display: flex; gap: 10px; align-items: center;">
@@ -4572,10 +4599,13 @@
                         <div class="form-group">
                             <label>Status</label>
                             <select id="editPOStatus">
-                                <option value="Pending" ${po.Status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Ordered" ${po.Status === 'Ordered' ? 'selected' : ''}>Ordered (Pending Delivery)</option>
                                 <option value="Received" ${po.Status === 'Received' ? 'selected' : ''}>Received</option>
-                                <option value="Cancelled" ${po.Status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                <option value="Partial" ${po.Status === 'Partial' ? 'selected' : ''}>Partially Received</option>
+                                <option value="Void" ${po.Status === 'Void' ? 'selected' : ''}>⛔ Void (Prices Changed)</option>
+                                <option value="Cancelled" ${po.Status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
                             </select>
+                            <small style="color: #666; display: block; margin-top: 5px;">Use "Void" if supplier prices changed and you need to create a new PO</small>
                         </div>
                     </div>
                     <div>
@@ -8510,6 +8540,108 @@
         }
         
         // ==================== OUTBOUND PO FUNCTIONS ====================
+        
+        // Void a PO (when supplier prices changed)
+        async function voidPurchaseOrder(poId) {
+            if (!confirm(`⛔ VOID Purchase Order ${poId}?\n\nThis will mark the PO as invalid. Use this when:\n• Supplier prices have changed\n• Order was entered incorrectly\n• Order is no longer needed\n\nThe PO will remain in your records but won't affect inventory.`)) {
+                return;
+            }
+            
+            const reason = prompt('Optional: Enter reason for voiding (e.g., "Prices increased 10%"):', 'Supplier prices changed');
+            
+            try {
+                const result = await apiCall('updatePurchaseOrder', {
+                    poId: poId,
+                    status: 'Void',
+                    notes: `VOIDED: ${reason || 'No reason provided'} - ${new Date().toLocaleDateString()}`
+                });
+                
+                if (result && result.status === 'success') {
+                    showStatus('purchasesStatus', `⛔ PO ${poId} has been voided. You can copy it to create a new PO with updated prices.`, 'success');
+                    closeModal();
+                    loadPurchases();
+                } else {
+                    alert('Error voiding PO: ' + (result?.message || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        // Duplicate a PO (useful when original was voided due to price changes)
+        async function duplicatePO(poId) {
+            try {
+                // Load the original PO
+                const result = await apiCall('getPurchaseOrders');
+                if (!result || result.status !== 'success') {
+                    alert('Error loading purchase order');
+                    return;
+                }
+                
+                const originalPO = result.data.find(p => p.PO_ID === poId);
+                if (!originalPO) {
+                    alert('Purchase order not found');
+                    return;
+                }
+                
+                // Get original line items
+                const linesResult = await apiCall('getPurchaseOrderLines', { poId: poId });
+                const originalLines = linesResult?.data || [];
+                
+                if (originalLines.length === 0) {
+                    alert('No line items found in original PO');
+                    return;
+                }
+                
+                // Confirm with user
+                const itemCount = originalLines.length;
+                if (!confirm(`Create a NEW Purchase Order with ${itemCount} item(s) from ${poId}?\n\n⚠️ You'll need to update prices in the new PO if they've changed.`)) {
+                    return;
+                }
+                
+                // Switch to Create PO tab
+                switchTab('createpo');
+                
+                // Pre-select the supplier
+                const supplierSelect = document.getElementById('poSupplier');
+                if (supplierSelect) {
+                    supplierSelect.value = originalPO.Supplier_ID;
+                    await loadSupplierItems(); // Load items for this supplier
+                }
+                
+                // Wait a moment for items to load
+                setTimeout(async () => {
+                    // Add each line item to the new PO
+                    for (const line of originalLines) {
+                        // Find the item in the dropdown and select it
+                        const itemSelect = document.getElementById('poItemSelect');
+                        if (itemSelect) {
+                            itemSelect.value = line.Item_ID;
+                            
+                            // Set quantity
+                            const qtyInput = document.getElementById('poItemQty');
+                            if (qtyInput) {
+                                qtyInput.value = line.Quantity || 1;
+                            }
+                            
+                            // Add to PO
+                            addItemToPO();
+                        }
+                    }
+                    
+                    showStatus('poStatus', `✅ Copied ${itemCount} items from ${poId}. Review prices and quantities, then save!`, 'success');
+                    
+                    // Scroll to the line items
+                    const poTable = document.getElementById('poLineItemsTable');
+                    if (poTable) {
+                        poTable.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 500);
+                
+            } catch (e) {
+                alert('Error duplicating PO: ' + e.message);
+            }
+        }
         
         async function receiveOutboundPO(poId) {
             // Load the OUTBOUND PO
