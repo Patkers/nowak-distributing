@@ -149,7 +149,7 @@
             background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
             color: white;
             border: none;
-            border-left: 4px solid rgba(0, 0, 0, 0.2);
+            border-left: 4px solid rgba(255, 255, 255, 0.4);
             padding: 12px 28px;
             border-radius: 8px;
             font-size: 16px;
@@ -164,7 +164,7 @@
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-            border-left-color: rgba(0, 0, 0, 0.3);
+            border-left-color: rgba(255, 255, 255, 0.6);
         }
 
         .btn-success {
@@ -172,23 +172,21 @@
         }
 
         .btn-secondary {
-            background: #e0e0e0 !important;
-            background-image: none !important;
-            color: #333 !important;
-            border-left: 4px solid #c0c0c0 !important;
+            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%) !important;
+            color: white !important;
+            border-left: 4px solid rgba(255, 255, 255, 0.4) !important;
+            opacity: 0.85;
         }
         
         .btn-secondary:hover {
-            background: #d0d0d0 !important;
-            background-image: none !important;
-            border-left-color: #aaa !important;
+            opacity: 1;
         }
         
         .btn-small {
             background: var(--primary, #667eea);
             color: white;
             border: none;
-            border-left: 3px solid rgba(0, 0, 0, 0.2);
+            border-left: 3px solid rgba(255, 255, 255, 0.4);
             padding: 6px 12px;
             border-radius: 4px;
             font-size: 13px;
@@ -201,7 +199,7 @@
         .btn-small:hover {
             filter: brightness(0.9);
             transform: translateY(-1px);
-            border-left-color: rgba(0, 0, 0, 0.3);
+            border-left-color: rgba(255, 255, 255, 0.6);
         }
         
         .btn-danger {
@@ -1008,7 +1006,7 @@
         </button>
         
         <!-- Back Button - Bottom -->
-        <button id="backBtn" onclick="goBack()" style="display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; background: #e0e0e0; color: #333; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Go back to previous tab">
+        <button id="backBtn" onclick="goBack()" style="display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; background: var(--primary, #667eea); color: white; border: none; border-left: 4px solid rgba(255,255,255,0.4); border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Go back to previous tab">
             ⬅️
         </button>
 
@@ -1021,7 +1019,7 @@
             <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0;">🎨 Theme</h3>
-                    <button class="btn-small" onclick="toggleSettingsSection('themeSection')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleSettingsSection('themeSection')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="themeSection-toggle">▼ Hide</span>
                     </button>
                 </div>
@@ -1402,7 +1400,7 @@
             <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0;">💾 Backup Data</h3>
-                    <button class="btn-small" onclick="toggleSettingsSection('backupSection')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleSettingsSection('backupSection')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="backupSection-toggle">▼ Hide</span>
                     </button>
                 </div>
@@ -1418,7 +1416,7 @@
             <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0;">📄 Invoice Settings</h3>
-                    <button class="btn-small" onclick="toggleSettingsSection('invoiceSection')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleSettingsSection('invoiceSection')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="invoiceSection-toggle">▼ Hide</span>
                     </button>
                 </div>
@@ -1484,7 +1482,7 @@
             <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0;">📊 Current Status</h3>
-                    <button class="btn-small" onclick="toggleSettingsSection('statusSection')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleSettingsSection('statusSection')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="statusSection-toggle">▼ Hide</span>
                     </button>
                 </div>
@@ -1497,7 +1495,7 @@
             <div style="margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #999;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; color: #666;">🔧 Backend API URL</h3>
-                    <button class="btn-small" onclick="toggleSettingsSection('apiSection')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleSettingsSection('apiSection')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="apiSection-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -1524,7 +1522,7 @@
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Suppliers</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-suppliers')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-suppliers')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="filter-panel-suppliers-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -1678,7 +1676,7 @@
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Items</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-items')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-items')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="filter-panel-items-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -1860,7 +1858,7 @@
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Customers</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-customers')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-customers')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="filter-panel-customers-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2142,7 +2140,7 @@
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Purchases</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-purchases')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-purchases')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="filter-panel-purchases-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2280,7 +2278,7 @@
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Sales</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-sales')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-sales')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="filter-panel-sales-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2467,7 +2465,7 @@
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Inventory</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-inventory')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-inventory')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="filter-panel-inventory-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2763,7 +2761,7 @@
                     <input type="checkbox" id="pricesimSelectAll" onchange="toggleAllPriceSimItems()" style="width: 18px; height: 18px;">
                     <strong>Select All Visible Items</strong>
                 </label>
-                <button class="btn" onclick="loadPriceSimItems()" style="background: #e0e0e0; color: #333;">🔄 Refresh Items</button>
+                <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">🔄 Refresh Items</button>
             </div>
             
             <div id="pricesimTable" style="overflow-x: auto;"></div>
@@ -5123,7 +5121,7 @@
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
         <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
-        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #e0e0e0; color: #333; border: none; border-radius: 5px;">✕ Close</button>
+        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: var(--primary, #667eea); color: white; border: none; border-left: 4px solid rgba(255,255,255,0.4); border-radius: 5px;">✕ Close</button>
     </div>
 
 </body>
@@ -5385,7 +5383,7 @@
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
         <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
-        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #e0e0e0; color: #333; border: none; border-radius: 5px;">✕ Close</button>
+        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: var(--primary, #667eea); color: white; border: none; border-left: 4px solid rgba(255,255,255,0.4); border-radius: 5px;">✕ Close</button>
     </div>
 
 </body>
@@ -7529,7 +7527,7 @@
             html += `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filters</h4>
-                    <button class="btn-small" onclick="toggleFilters('${filterId}')" style="background: #e0e0e0; color: #333;">
+                    <button class="btn-small" onclick="toggleFilters('${filterId}')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="${filterId}-toggle">▼ Hide</span>
                     </button>
                 </div>`;
@@ -7983,12 +7981,12 @@
                 filterHtml += `
                     <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
                         <span style="color: #666; font-size: 13px; margin-right: 5px;">Quick:</span>
-                        <button type="button" class="btn-small" onclick="setDatePreset('today')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">Today</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('week')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Week</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('month')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Month</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('quarter')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Quarter</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('year')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Year</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('all')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">All Time</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('today')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">Today</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('week')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Week</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('month')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Month</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('quarter')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Quarter</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('year')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Year</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('all')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">All Time</button>
                     </div>`;
             }
             
