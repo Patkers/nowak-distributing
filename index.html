@@ -9978,6 +9978,38 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- SUPPLIER PICKER MODAL -->
+    <div id="supplierPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container">
+            <div class="item-picker-header" style="background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);">
+                <h3>🏭 Select Supplier</h3>
+                <button class="item-picker-close" onclick="closeSupplierPicker()">&times;</button>
+            </div>
+            <div class="item-picker-search">
+                <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers..." oninput="filterSupplierPicker()">
+            </div>
+            <div id="supplierPickerList" class="item-picker-list">
+                <!-- Suppliers will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOMER PICKER MODAL -->
+    <div id="customerPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container">
+            <div class="item-picker-header" style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">
+                <h3>👤 Select Customer</h3>
+                <button class="item-picker-close" onclick="closeCustomerPicker()">&times;</button>
+            </div>
+            <div class="item-picker-search">
+                <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers..." oninput="filterCustomerPicker()">
+            </div>
+            <div id="customerPickerList" class="item-picker-list">
+                <!-- Customers will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <style>
         /* Mobile-Friendly Item Picker Styles */
         .item-picker-overlay {
@@ -10195,6 +10227,34 @@ NOTE: Please print the attached PO document for full details.`;
             margin-bottom: 15px;
         }
         
+        /* Supplier card specific styling */
+        .supplier-card:hover,
+        .supplier-card:active {
+            border-color: #2e7d32 !important;
+        }
+        
+        /* Customer card specific styling */
+        .customer-card:hover,
+        .customer-card:active {
+            border-color: #1565c0 !important;
+        }
+        
+        /* Make ALL select elements more tappable on mobile */
+        @media (max-width: 768px) {
+            select {
+                min-height: 48px;
+                font-size: 16px !important;
+                padding: 12px !important;
+            }
+            
+            #poSupplier, #soCustomer, #editPOSupplier, #editSOCustomer {
+                background: linear-gradient(to right, #f8f9fa, #ffffff);
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+        }
+        
         /* Make select elements more tappable on mobile */
         .po-item, .so-item, .createpo-item, .edit-item {
             min-height: 44px;
@@ -10367,13 +10427,6 @@ NOTE: Please print the attached PO document for full details.`;
         const originalAddSORow = typeof addSaleLineItem === 'function' ? addSaleLineItem : null;
         const originalAddCreatePORow = typeof addCreatePOLine === 'function' ? addCreatePOLine : null;
         
-        // Attach on page load and periodically check for new selects
-        document.addEventListener('DOMContentLoaded', function() {
-            attachItemPickerToSelects();
-            // Check for new selects every second (for dynamically added rows)
-            setInterval(attachItemPickerToSelects, 1000);
-        });
-        
         // Also attach when switching tabs
         const originalSwitchTab = typeof switchTab === 'function' ? switchTab : null;
         if (originalSwitchTab) {
@@ -10381,8 +10434,212 @@ NOTE: Please print the attached PO document for full details.`;
             window.switchTab = function(tab) {
                 switchTabOriginal(tab);
                 setTimeout(attachItemPickerToSelects, 100);
+                setTimeout(attachSupplierPickerToSelects, 100);
+                setTimeout(attachCustomerPickerToSelects, 100);
             };
         }
+        
+        // ==================== SUPPLIER PICKER ====================
+        
+        let supplierPickerCallback = null;
+        
+        function openSupplierPicker(selectElement) {
+            supplierPickerCallback = selectElement;
+            document.getElementById('supplierPickerSearch').value = '';
+            renderSupplierPickerList();
+            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('supplierPickerSearch').focus();
+            }, 100);
+        }
+        
+        function closeSupplierPicker() {
+            document.getElementById('supplierPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            supplierPickerCallback = null;
+        }
+        
+        function filterSupplierPicker() {
+            renderSupplierPickerList();
+        }
+        
+        function renderSupplierPickerList() {
+            const search = document.getElementById('supplierPickerSearch').value.toLowerCase().trim();
+            const listContainer = document.getElementById('supplierPickerList');
+            
+            let suppliers = cachedSuppliers || [];
+            
+            let filtered = suppliers.filter(s => {
+                return !search || 
+                    (s.Supplier_Name && s.Supplier_Name.toLowerCase().includes(search)) ||
+                    (s.Supplier_ID && s.Supplier_ID.toLowerCase().includes(search)) ||
+                    (s.Contact_Name && s.Contact_Name.toLowerCase().includes(search));
+            });
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">🏭</div>
+                        <div>No suppliers found</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(s => {
+                html += `
+                    <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid #2e7d32;">
+                        <div class="item-picker-card-header">
+                            <span class="item-picker-sku" style="background: #e8f5e9; color: #2e7d32;">${s.Supplier_ID}</span>
+                        </div>
+                        <div class="item-picker-desc">${s.Supplier_Name || 'Unnamed Supplier'}</div>
+                        <div class="item-picker-details" style="flex-wrap: wrap;">
+                            ${s.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Contact</span><span class="item-picker-detail-value">${s.Contact_Name}</span></div>` : ''}
+                            ${s.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Phone</span><span class="item-picker-detail-value">${s.Phone}</span></div>` : ''}
+                            ${s.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Email</span><span class="item-picker-detail-value" style="font-size: 12px;">${s.Email}</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectSupplierFromPicker(supplierId) {
+            if (supplierPickerCallback) {
+                supplierPickerCallback.value = supplierId;
+                supplierPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            closeSupplierPicker();
+        }
+        
+        function attachSupplierPickerToSelects() {
+            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            
+            if (isMobile) {
+                // Attach to supplier selects
+                document.querySelectorAll('#poSupplier, #editPOSupplier, .supplier-select').forEach(select => {
+                    if (!select.dataset.supplierPickerAttached) {
+                        select.dataset.supplierPickerAttached = 'true';
+                        select.addEventListener('focus', function(e) {
+                            e.preventDefault();
+                            this.blur();
+                            openSupplierPicker(this);
+                        });
+                    }
+                });
+            }
+        }
+        
+        // ==================== CUSTOMER PICKER ====================
+        
+        let customerPickerCallback = null;
+        
+        function openCustomerPicker(selectElement) {
+            customerPickerCallback = selectElement;
+            document.getElementById('customerPickerSearch').value = '';
+            renderCustomerPickerList();
+            document.getElementById('customerPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('customerPickerSearch').focus();
+            }, 100);
+        }
+        
+        function closeCustomerPicker() {
+            document.getElementById('customerPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            customerPickerCallback = null;
+        }
+        
+        function filterCustomerPicker() {
+            renderCustomerPickerList();
+        }
+        
+        function renderCustomerPickerList() {
+            const search = document.getElementById('customerPickerSearch').value.toLowerCase().trim();
+            const listContainer = document.getElementById('customerPickerList');
+            
+            let customers = cachedCustomers || [];
+            
+            let filtered = customers.filter(c => {
+                return !search || 
+                    (c.Customer_Name && c.Customer_Name.toLowerCase().includes(search)) ||
+                    (c.Customer_ID && c.Customer_ID.toLowerCase().includes(search)) ||
+                    (c.Contact_Name && c.Contact_Name.toLowerCase().includes(search)) ||
+                    (c.Route && c.Route.toLowerCase().includes(search));
+            });
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">👤</div>
+                        <div>No customers found</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(c => {
+                html += `
+                    <div class="item-picker-card customer-card" onclick="selectCustomerFromPicker('${c.Customer_ID}')" style="border-left: 4px solid #1565c0;">
+                        <div class="item-picker-card-header">
+                            <span class="item-picker-sku" style="background: #e3f2fd; color: #1565c0;">${c.Customer_ID}</span>
+                            ${c.Route ? `<span class="item-picker-stock" style="background: #f3e5f5; color: #7b1fa2;">Route: ${c.Route}</span>` : ''}
+                        </div>
+                        <div class="item-picker-desc">${c.Customer_Name || 'Unnamed Customer'}</div>
+                        <div class="item-picker-details" style="flex-wrap: wrap;">
+                            ${c.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Contact</span><span class="item-picker-detail-value">${c.Contact_Name}</span></div>` : ''}
+                            ${c.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Phone</span><span class="item-picker-detail-value">${c.Phone}</span></div>` : ''}
+                            ${c.Address ? `<div class="item-picker-detail" style="flex: 1 1 100%;"><span class="item-picker-detail-label">Address</span><span class="item-picker-detail-value" style="font-size: 13px;">${c.Address}</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectCustomerFromPicker(customerId) {
+            if (customerPickerCallback) {
+                customerPickerCallback.value = customerId;
+                customerPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            closeCustomerPicker();
+        }
+        
+        function attachCustomerPickerToSelects() {
+            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            
+            if (isMobile) {
+                // Attach to customer selects
+                document.querySelectorAll('#soCustomer, #editSOCustomer, .customer-select').forEach(select => {
+                    if (!select.dataset.customerPickerAttached) {
+                        select.dataset.customerPickerAttached = 'true';
+                        select.addEventListener('focus', function(e) {
+                            e.preventDefault();
+                            this.blur();
+                            openCustomerPicker(this);
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Attach all pickers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            attachItemPickerToSelects();
+            attachSupplierPickerToSelects();
+            attachCustomerPickerToSelects();
+            setInterval(() => {
+                attachItemPickerToSelects();
+                attachSupplierPickerToSelects();
+                attachCustomerPickerToSelects();
+            }, 1000);
+        });
     </script>
 </body>
 </html>
