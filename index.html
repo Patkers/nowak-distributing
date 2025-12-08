@@ -148,11 +148,31 @@
         }
         
         .btn-danger {
-            background: #dc3545;
+            background: transparent;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 4px 8px;
+            font-size: 12px;
         }
         
         .btn-danger:hover {
-            background: #c82333;
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-delete-icon {
+            background: transparent;
+            color: #999;
+            border: none;
+            padding: 4px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .btn-delete-icon:hover {
+            background: #ffebee;
+            color: #dc3545;
         }
 
         .form-group {
@@ -2353,7 +2373,7 @@
                     <td>${s.Payment_Terms || '-'}</td>
                     <td>
                         <button class="btn-small" onclick='editSupplier(${JSON.stringify(s)})'>✏️ Edit</button>
-                        <button class="btn-small btn-danger" onclick="deleteSupplier('${s.Supplier_ID}', '${s.Supplier_Name}')">🗑️ Delete</button>
+                        <button class="btn-delete-icon" onclick="deleteSupplier('${s.Supplier_ID}', '${s.Supplier_Name}')">🗑️</button>
                     </td>
                 </tr>`;
             });
@@ -2610,7 +2630,7 @@
                     <td>${item.Reorder_Point || 0}</td>
                     <td>
                         <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
-                        <button class="btn-small btn-danger" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+                        <button class="btn-delete-icon" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️</button>
                     </td>
                 </tr>`;
             });
@@ -2868,7 +2888,7 @@
                     <td>$${parseFloat(c.Credit_Limit).toFixed(2)}</td>
                     <td>
                         <button class="btn-small" onclick='editCustomer(${JSON.stringify(c)})'>✏️ Edit</button>
-                        <button class="btn-small btn-danger" onclick="deleteCustomer('${c.Customer_ID}', '${c.Customer_Name}')">🗑️ Delete</button>
+                        <button class="btn-delete-icon" onclick="deleteCustomer('${c.Customer_ID}', '${c.Customer_Name}')">🗑️</button>
                     </td>
                 </tr>`;
             });
@@ -4961,50 +4981,100 @@
                 return;
             }
 
-            // Calculate totals
+            // Calculate totals FIRST for summary
             let totalQty = 0;
-            let totalValue = 0;
+            let totalCostValue = 0;
+            let totalSellValue = 0;
+            let negativeCount = 0;
+            let outOfStockCount = 0;
+            let lowStockCount = 0;
+            let inStockCount = 0;
             
-            let html = '<table class="data-table" id="inventoryDataTable"><thead><tr>';
-            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Total Value</th><th>Last Updated</th><th>Status</th>';
-            html += '</tr></thead><tbody>';
-
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
                 const reorderPoint = parseFloat(item.Reorder_Point) || 0;
-                const value = parseFloat(item.Total_Value) || 0;
-                const lastUpdated = item.Last_Updated ? new Date(item.Last_Updated).toLocaleDateString() : '-';
-                
-                // Determine status with color coding
-                let status = '';
-                let statusColor = '';
-                let rowStyle = '';
-                
-                if (qty < 0) {
-                    status = '🚨 NEGATIVE';
-                    statusColor = 'color: #fff; background: #b71c1c; padding: 4px 8px; border-radius: 4px; font-weight: bold; animation: pulse 1s infinite;';
-                    rowStyle = 'background: #ffcdd2;';
-                } else if (qty === 0) {
-                    status = '🔴 OUT OF STOCK';
-                    statusColor = 'color: #fff; background: #c62828; padding: 4px 8px; border-radius: 4px; font-weight: bold;';
-                    rowStyle = 'background: #ffebee;';
-                } else if (qty <= reorderPoint) {
-                    status = '🟡 LOW STOCK';
-                    statusColor = 'color: #fff; background: #ef6c00; padding: 4px 8px; border-radius: 4px; font-weight: bold;';
-                    rowStyle = 'background: #fff3e0;';
-                } else {
-                    status = '🟢 IN STOCK';
-                    statusColor = 'color: #fff; background: #2e7d32; padding: 4px 8px; border-radius: 4px;';
-                }
-                
-                // Calculate unit cost from package cost
                 const packageCost = parseFloat(item.Package_Cost) || 0;
                 const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
                 const unitCost = packageCost / unitsPerPackage;
                 const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
                 
                 totalQty += qty;
-                totalValue += value;
+                totalCostValue += qty * unitCost;
+                totalSellValue += qty * unitSellPrice;
+                
+                if (qty < 0) negativeCount++;
+                else if (qty === 0) outOfStockCount++;
+                else if (qty <= reorderPoint) lowStockCount++;
+                else inStockCount++;
+            });
+            
+            // BUILD SUMMARY ON TOP
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold;">${items.length}</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Total Items</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold;">${totalQty.toLocaleString()}</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Total Units</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #ee0979, #ff6a00); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Cost Value</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #56ab2f, #a8e063); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Sell Value</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    ${negativeCount > 0 ? `<span style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🚨 ${negativeCount} Negative</span>` : ''}
+                    ${outOfStockCount > 0 ? `<span style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
+                    ${lowStockCount > 0 ? `<span style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🟡 ${lowStockCount} Low Stock</span>` : ''}
+                    <span style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🟢 ${inStockCount} In Stock</span>
+                </div>
+            `;
+            
+            // BUILD TABLE
+            html += '<table class="data-table" id="inventoryDataTable"><thead><tr>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>Sell Value</th><th>Updated</th><th>Status</th>';
+            html += '</tr></thead><tbody>';
+
+            items.forEach(item => {
+                const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const reorderPoint = parseFloat(item.Reorder_Point) || 0;
+                const lastUpdated = item.Last_Updated ? new Date(item.Last_Updated).toLocaleDateString() : '-';
+                
+                // Calculate values
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                const unitCost = packageCost / unitsPerPackage;
+                const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const costValue = qty * unitCost;
+                const sellValue = qty * unitSellPrice;
+                
+                // Determine status with color coding
+                let status = '';
+                let statusStyle = '';
+                let rowStyle = '';
+                
+                if (qty < 0) {
+                    status = 'NEGATIVE';
+                    statusStyle = 'background: #b71c1c; color: white;';
+                    rowStyle = 'background: #ffcdd2;';
+                } else if (qty === 0) {
+                    status = 'OUT OF STOCK';
+                    statusStyle = 'background: #c62828; color: white;';
+                    rowStyle = 'background: #ffebee;';
+                } else if (qty <= reorderPoint) {
+                    status = 'LOW STOCK';
+                    statusStyle = 'background: #ef6c00; color: white;';
+                    rowStyle = 'background: #fff3e0;';
+                } else {
+                    status = 'IN STOCK';
+                    statusStyle = 'background: #2e7d32; color: white;';
+                }
                 
                 html += `<tr style="${rowStyle}">
                     <td><strong>${item.SKU || '-'}</strong></td>
@@ -5014,21 +5084,12 @@
                     <td>${reorderPoint}</td>
                     <td>$${unitCost.toFixed(2)}</td>
                     <td>$${unitSellPrice.toFixed(2)}</td>
-                    <td>$${value.toFixed(2)}</td>
-                    <td style="font-size: 12px; color: #666;">${lastUpdated}</td>
-                    <td><span style="${statusColor}">${status}</span></td>
+                    <td>$${costValue.toFixed(2)}</td>
+                    <td style="color: #2e7d32; font-weight: bold;">$${sellValue.toFixed(2)}</td>
+                    <td style="font-size: 11px; color: #666;">${lastUpdated}</td>
+                    <td><span style="${statusStyle} padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap;">${status}</span></td>
                 </tr>`;
             });
-
-            // Add totals row
-            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>${totalQty.toLocaleString()}</td>
-                <td></td>
-                <td colspan="2"></td>
-                <td>$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td colspan="2"></td>
-            </tr>`;
 
             html += '</tbody></table>';
             document.getElementById('inventoryTable').innerHTML = html;
