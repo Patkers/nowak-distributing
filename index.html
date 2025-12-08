@@ -2084,6 +2084,70 @@
                 </div>
             </div>
             
+            <!-- Revenue Impact Calculator -->
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('revenueCalcContent')">
+                    <h3 style="margin: 0; color: #1565c0;">💰 Revenue Impact Calculator</h3>
+                    <span id="revenueCalcContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
+                </div>
+                <div id="revenueCalcContent" style="margin-top: 15px;">
+                    <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">See how a price increase affects your profit on a sample sale amount.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: bold;">📦 Sample Sale Amount</label>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span style="font-size: 20px; font-weight: bold;">$</span>
+                                <input type="number" id="revCalcSaleAmount" value="100" min="0" step="10" style="width: 120px; font-size: 18px; padding: 10px;" oninput="calculateRevenueImpact()">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: bold;">📈 Price Increase %</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="revCalcPercent" min="0" max="50" value="10" style="flex: 1; height: 30px;" oninput="calculateRevenueImpact()">
+                                <span id="revCalcPercentLabel" style="font-size: 24px; font-weight: bold; color: #1565c0; min-width: 60px;">10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 5px;">BEFORE Increase</div>
+                            <div id="revCalcBefore" style="font-size: 32px; font-weight: bold; color: #666;">$100.00</div>
+                            <div style="font-size: 12px; color: #999;">Your Sale</div>
+                        </div>
+                        <div style="background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 5px;">AFTER Increase</div>
+                            <div id="revCalcAfter" style="font-size: 32px; font-weight: bold; color: #2e7d32;">$110.00</div>
+                            <div style="font-size: 12px; color: #999;">New Sale Value</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #4caf50, #2e7d32); padding: 20px; border-radius: 12px; text-align: center; color: white;">
+                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">EXTRA PROFIT</div>
+                            <div id="revCalcProfit" style="font-size: 32px; font-weight: bold;">+$10.00</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Per Sale</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <h4 style="margin: 0 0 10px 0; color: #1565c0;">📊 Projected Impact</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                            <div>
+                                <div style="color: #666; font-size: 13px;">10 Sales/Week</div>
+                                <div id="revCalc10Sales" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$100/week</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 13px;">Monthly (40 sales)</div>
+                                <div id="revCalcMonthly" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$400/month</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 13px;">Yearly (520 sales)</div>
+                                <div id="revCalcYearly" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$5,200/year</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Price Adjustment Controls -->
             <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Bulk Price Adjustment (Existing Items)</h3>
@@ -2584,6 +2648,27 @@
             // Save preference
             localStorage.setItem('theme', theme);
             showStatus('configStatus', `✅ Theme changed to ${theme}!`, 'success');
+        }
+        
+        // Get theme colors for print templates
+        function getThemeColors() {
+            const theme = localStorage.getItem('theme') || 'purple';
+            const themes = {
+                purple: { primary: '#667eea', accent: '#764ba2', text: '#667eea' },
+                ocean: { primary: '#0077b6', accent: '#00b4d8', text: '#0077b6' },
+                forest: { primary: '#2d6a4f', accent: '#40916c', text: '#2d6a4f' },
+                sunset: { primary: '#e85d04', accent: '#f48c06', text: '#e85d04' },
+                dark: { primary: '#1e293b', accent: '#334155', text: '#1e293b' },
+                crimson: { primary: '#be123c', accent: '#e11d48', text: '#be123c' },
+                slate: { primary: '#475569', accent: '#64748b', text: '#475569' },
+                teal: { primary: '#0d9488', accent: '#14b8a6', text: '#0d9488' },
+                bears: { primary: '#0B162A', accent: '#C83803', text: '#C83803' },
+                cubs: { primary: '#0E3386', accent: '#CC3433', text: '#CC3433' },
+                bulls: { primary: '#121212', accent: '#CE1141', text: '#CE1141' },
+                blackhawks: { primary: '#002F6C', accent: '#CF0A2C', text: '#CF0A2C' },
+                packers: { primary: '#203731', accent: '#FFB612', text: '#FFB612' }
+            };
+            return themes[theme] || themes.purple;
         }
         
         function openBackup() {
@@ -3958,6 +4043,9 @@
             const paid = parseFloat(po.Amount_Paid || 0);
             const balance = total - paid;
             
+            // Get theme colors for print
+            const themeColors = getThemeColors();
+            
             let poHTML = `
 <!DOCTYPE html>
 <html>
@@ -3981,11 +4069,11 @@
         .po-header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 3px solid #28a745;
+            border-bottom: 3px solid ${themeColors.primary};
             padding-bottom: 20px;
         }
         .po-header h1 {
-            color: #28a745;
+            color: ${themeColors.text};
             margin: 0 0 10px 0;
             font-size: 28pt;
         }
@@ -4003,8 +4091,8 @@
             width: 45%;
         }
         .info-box h3 {
-            color: #28a745;
-            border-bottom: 2px solid #28a745;
+            color: ${themeColors.text};
+            border-bottom: 2px solid ${themeColors.primary};
             padding-bottom: 5px;
             margin-bottom: 10px;
         }
@@ -4017,7 +4105,7 @@
             margin-bottom: 30px;
         }
         table.items th {
-            background: #28a745;
+            background: ${themeColors.primary};
             color: white;
             padding: 12px 10px;
             text-align: left;
@@ -4035,12 +4123,12 @@
         .totals td { padding: 8px 10px; border-bottom: 1px solid #eee; }
         .totals .label { text-align: right; font-weight: bold; }
         .totals .value { text-align: right; width: 40%; }
-        .total-line { border-top: 2px solid #28a745 !important; font-size: 14pt; font-weight: bold; }
+        .total-line { border-top: 2px solid ${themeColors.primary} !important; font-size: 14pt; font-weight: bold; }
         .footer {
             clear: both;
             margin-top: 60px;
             padding-top: 20px;
-            border-top: 2px solid #28a745;
+            border-top: 2px solid ${themeColors.primary};
             text-align: center;
             font-style: italic;
             color: #666;
@@ -4132,7 +4220,7 @@
     </div>
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
-        <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
+        <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
         <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #9e9e9e; color: white; border: none; border-radius: 5px;">✕ Close</button>
     </div>
 
@@ -4180,6 +4268,9 @@
             const paid = parseFloat(so.Amount_Paid || 0);
             const balance = total - paid;
             
+            // Get theme colors for print
+            const themeColors = getThemeColors();
+            
             // Build invoice HTML with PO-style layout
             let invoiceHTML = `
 <!DOCTYPE html>
@@ -4204,11 +4295,11 @@
         .invoice-header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid ${themeColors.primary};
             padding-bottom: 20px;
         }
         .invoice-header h1 {
-            color: #667eea;
+            color: ${themeColors.text};
             margin: 0 0 10px 0;
             font-size: 28pt;
         }
@@ -4227,7 +4318,7 @@
         }
         .info-box h3 {
             margin: 0 0 10px 0;
-            color: #667eea;
+            color: ${themeColors.text};
         }
         .info-box p {
             margin: 2px 0;
@@ -4238,7 +4329,7 @@
             margin: 20px 0;
         }
         table.items th {
-            background: #667eea;
+            background: ${themeColors.primary};
             color: white;
             padding: 12px;
             text-align: left;
@@ -4273,8 +4364,8 @@
             width: 40%;
         }
         .total-line {
-            border-top: 2px solid #667eea !important;
-            border-bottom: 3px double #667eea !important;
+            border-top: 2px solid ${themeColors.primary} !important;
+            border-bottom: 3px double ${themeColors.primary} !important;
             font-size: 14pt;
             font-weight: bold;
         }
@@ -4282,7 +4373,7 @@
             clear: both;
             margin-top: 60px;
             padding-top: 20px;
-            border-top: 2px solid #667eea;
+            border-top: 2px solid ${themeColors.primary};
             text-align: center;
             font-style: italic;
             color: #666;
@@ -4391,7 +4482,7 @@
     </p>
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
-        <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #667eea; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
+        <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
         <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #9e9e9e; color: white; border: none; border-radius: 5px;">✕ Close</button>
     </div>
 
@@ -5531,6 +5622,8 @@
             document.getElementById('modalContent').innerHTML = html;
             document.getElementById('modalEditBtn').style.display = 'inline-block';
             document.getElementById('modalPrintBtn').style.display = 'inline-block';
+            document.getElementById('modalPrintBtn').textContent = '🖨️ Print Invoice';
+            document.getElementById('modalPrintBtn').onclick = () => printInvoice();
             document.getElementById('modalSaveBtn').style.display = 'none';
             document.getElementById('orderModal').style.display = 'block';
         }
@@ -6136,6 +6229,40 @@
             
             updatePriceSimSummary();
         }
+        
+        // Revenue Impact Calculator
+        function calculateRevenueImpact() {
+            const saleAmount = parseFloat(document.getElementById('revCalcSaleAmount').value) || 100;
+            const percent = parseFloat(document.getElementById('revCalcPercent').value) || 0;
+            
+            // Update percent label
+            document.getElementById('revCalcPercentLabel').textContent = percent + '%';
+            
+            // Calculate values
+            const afterAmount = saleAmount * (1 + percent / 100);
+            const extraProfit = afterAmount - saleAmount;
+            
+            // Update display
+            document.getElementById('revCalcBefore').textContent = '$' + saleAmount.toFixed(2);
+            document.getElementById('revCalcAfter').textContent = '$' + afterAmount.toFixed(2);
+            document.getElementById('revCalcProfit').textContent = '+$' + extraProfit.toFixed(2);
+            
+            // Projected impact (assuming 10 sales per week)
+            const weekly = extraProfit * 10;
+            const monthly = extraProfit * 40;
+            const yearly = extraProfit * 520;
+            
+            document.getElementById('revCalc10Sales').textContent = '+$' + weekly.toFixed(0) + '/week';
+            document.getElementById('revCalcMonthly').textContent = '+$' + monthly.toFixed(0) + '/month';
+            document.getElementById('revCalcYearly').textContent = '+$' + yearly.toLocaleString() + '/year';
+        }
+        
+        // Initialize revenue calculator on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('revCalcSaleAmount')) {
+                calculateRevenueImpact();
+            }
+        });
         
         function previewPriceChanges() {
             // Clear the other input when one is used
