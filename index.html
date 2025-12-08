@@ -149,19 +149,22 @@
             background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
             color: white;
             border: none;
+            border-left: 4px solid rgba(0, 0, 0, 0.2);
             padding: 12px 28px;
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
             font-weight: 600;
             margin-right: 10px;
             margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            border-left-color: rgba(0, 0, 0, 0.3);
         }
 
         .btn-success {
@@ -172,28 +175,33 @@
             background: #e0e0e0 !important;
             background-image: none !important;
             color: #333 !important;
+            border-left: 4px solid #c0c0c0 !important;
         }
         
         .btn-secondary:hover {
             background: #d0d0d0 !important;
             background-image: none !important;
+            border-left-color: #aaa !important;
         }
         
         .btn-small {
             background: var(--primary, #667eea);
             color: white;
             border: none;
+            border-left: 3px solid rgba(0, 0, 0, 0.2);
             padding: 6px 12px;
             border-radius: 4px;
             font-size: 13px;
             cursor: pointer;
             margin-right: 5px;
             transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .btn-small:hover {
             filter: brightness(0.9);
             transform: translateY(-1px);
+            border-left-color: rgba(0, 0, 0, 0.3);
         }
         
         .btn-danger {
@@ -1009,22 +1017,19 @@
             <h2>System Configuration</h2>
             <div class="status" id="configStatus"></div>
             
-            <div class="config-box">
-                <h3>Backend API URL</h3>
-                <p style="margin-bottom: 10px; color: #666;">
-                    Enter your Google Apps Script Web App URL
-                </p>
-                <input type="text" id="apiUrl" class="form-group" style="width: 100%; padding: 10px; margin-bottom: 15px;" 
-                       placeholder="https://script.google.com/macros/s/.../exec">
-                <button class="btn" onclick="saveConfig()">💾 Save Configuration</button>
-            </div>
-            
-            <div class="config-box">
-                <h3>Theme</h3>
-                <p style="margin-bottom: 10px; color: #666;">
-                    Choose your color scheme
-                </p>
-                <select id="themeSelector" onchange="changeTheme()" style="width: 100%; padding: 10px; margin-bottom: 15px;">
+            <!-- Theme Selection - First and prominent -->
+            <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">🎨 Theme</h3>
+                    <button class="btn-small" onclick="toggleSettingsSection('themeSection')" style="background: #e0e0e0; color: #333;">
+                        <span id="themeSection-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="themeSection">
+                    <p style="margin-bottom: 10px; color: #666;">
+                        Choose your color scheme (280+ options!)
+                    </p>
+                    <select id="themeSelector" onchange="changeTheme()" style="width: 100%; padding: 10px; margin-bottom: 15px;">
                     <optgroup label="🎨 Classic Themes">
                         <option value="purple">🟣 Royal Purple (Default)</option>
                         <option value="ocean">🌊 Ocean Blue</option>
@@ -1390,75 +1395,120 @@
                         <option value="cyberpunklogo">💛 Cyberpunk Logo</option>
                     </optgroup>
                 </select>
+                </div>
             </div>
             
-            <div class="config-box">
-                <h3>Backup Data</h3>
-                <p style="margin-bottom: 10px; color: #666;">
-                    Download a copy of your database
-                </p>
-                <button class="btn btn-secondary" onclick="openBackup()">📥 Open Google Sheet</button>
+            <!-- Backup Data Section -->
+            <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">💾 Backup Data</h3>
+                    <button class="btn-small" onclick="toggleSettingsSection('backupSection')" style="background: #e0e0e0; color: #333;">
+                        <span id="backupSection-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="backupSection">
+                    <p style="margin-bottom: 10px; color: #666;">
+                        Access your Google Sheet database directly
+                    </p>
+                    <button class="btn btn-secondary" onclick="openBackup()">📥 Open Google Sheet</button>
+                </div>
             </div>
             
-            <div class="config-box">
-                <h3>📄 Invoice Settings</h3>
-                <p style="margin-bottom: 15px; color: #666;">
-                    Customize your printed invoices
-                </p>
-                
-                <div class="form-group">
-                    <label>Company Name *</label>
-                    <input type="text" id="invoiceCompanyName" placeholder="Nowak Distributing">
+            <!-- Invoice Settings Section -->
+            <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">📄 Invoice Settings</h3>
+                    <button class="btn-small" onclick="toggleSettingsSection('invoiceSection')" style="background: #e0e0e0; color: #333;">
+                        <span id="invoiceSection-toggle">▼ Hide</span>
+                    </button>
                 </div>
-                
-                <div class="form-group">
-                    <label>Contact Name</label>
-                    <input type="text" id="invoiceContactName" placeholder="Joe Nowak">
+                <div id="invoiceSection">
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Customize your printed invoices
+                    </p>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Company Name *</label>
+                            <input type="text" id="invoiceCompanyName" placeholder="Nowak Distributing">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Contact Name</label>
+                            <input type="text" id="invoiceContactName" placeholder="Joe Nowak">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" id="invoicePhone" placeholder="(920)634-4351">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="invoiceEmail" placeholder="jnowaksnfoodistributors@gmail.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Address Line 1</label>
+                            <input type="text" id="invoiceAddress1" placeholder="123 Business Street">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Address Line 2</label>
+                            <input type="text" id="invoiceAddress2" placeholder="Suite 100 (optional)">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>City, State, ZIP</label>
+                            <input type="text" id="invoiceCityStateZip" placeholder="Milwaukee, WI 53201">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Footer Message</label>
+                            <textarea id="invoiceFooter" rows="2" placeholder="Thank you for doing business with us!"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>
+                            <input type="checkbox" id="invoiceSignatureLine" checked>
+                            Include signature line on invoices
+                        </label>
+                    </div>
+                    
+                    <button class="btn" onclick="saveInvoiceSettings()">💾 Save Invoice Settings</button>
                 </div>
-                
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="text" id="invoicePhone" placeholder="(920)634-4351">
-                </div>
-                
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="invoiceEmail" placeholder="jnowaksnfoodistributors@gmail.com">
-                </div>
-                
-                <div class="form-group">
-                    <label>Address Line 1</label>
-                    <input type="text" id="invoiceAddress1" placeholder="123 Business Street">
-                </div>
-                
-                <div class="form-group">
-                    <label>Address Line 2</label>
-                    <input type="text" id="invoiceAddress2" placeholder="Suite 100 (optional)">
-                </div>
-                
-                <div class="form-group">
-                    <label>City, State, ZIP</label>
-                    <input type="text" id="invoiceCityStateZip" placeholder="Milwaukee, WI 53201">
-                </div>
-                
-                <div class="form-group">
-                    <label>Footer Message</label>
-                    <textarea id="invoiceFooter" rows="2" placeholder="Thank you for doing business with us!"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="invoiceSignatureLine" checked>
-                        Include signature line on invoices
-                    </label>
-                </div>
-                
-                <button class="btn" onclick="saveInvoiceSettings()">💾 Save Invoice Settings</button>
             </div>
-
-            <div class="config-box">
-                <h3>Current Status</h3>
-                <p id="configStatusText">⚠️ Not configured</p>
+            
+            <!-- Current Status Section -->
+            <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">📊 Current Status</h3>
+                    <button class="btn-small" onclick="toggleSettingsSection('statusSection')" style="background: #e0e0e0; color: #333;">
+                        <span id="statusSection-toggle">▼ Hide</span>
+                    </button>
+                </div>
+                <div id="statusSection">
+                    <p id="configStatusText">⚠️ Not configured</p>
+                </div>
+            </div>
+            
+            <!-- Backend API URL - At bottom, collapsed by default -->
+            <div style="margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #999;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; color: #666;">🔧 Backend API URL</h3>
+                    <button class="btn-small" onclick="toggleSettingsSection('apiSection')" style="background: #e0e0e0; color: #333;">
+                        <span id="apiSection-toggle">▶ Show</span>
+                    </button>
+                </div>
+                <div id="apiSection" style="display: none; margin-top: 15px;">
+                    <p style="margin-bottom: 10px; color: #888; font-size: 13px;">
+                        ⚠️ Advanced setting - only change if instructed
+                    </p>
+                    <input type="text" id="apiUrl" class="form-group" style="width: 100%; padding: 10px; margin-bottom: 15px;" 
+                           placeholder="https://script.google.com/macros/s/.../exec">
+                    <button class="btn" onclick="saveConfig()">💾 Save Configuration</button>
+                </div>
             </div>
         </div>
 
@@ -2813,6 +2863,9 @@
             // Restore report section visibility preferences
             restoreReportSections();
             
+            // Restore settings section visibility preferences
+            restoreSettingsSections();
+            
             // AUTO-LOAD ALL DATA ON PAGE LOAD
             console.log('🚀 Auto-loading all data from Google Sheets...');
             loadSuppliers();
@@ -3109,6 +3162,48 @@
                         section.classList.add('collapsed');
                         if (category) category.classList.add('collapsed');
                         if (toggle) toggle.textContent = '▶';
+                    }
+                }
+            });
+        }
+        
+        // Toggle settings page sections with localStorage persistence
+        function toggleSettingsSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId + '-toggle');
+            
+            if (section.style.display === 'none') {
+                // Show
+                section.style.display = 'block';
+                if (toggle) toggle.textContent = '▼ Hide';
+                localStorage.setItem('settings_' + sectionId, 'visible');
+            } else {
+                // Hide
+                section.style.display = 'none';
+                if (toggle) toggle.textContent = '▶ Show';
+                localStorage.setItem('settings_' + sectionId, 'hidden');
+            }
+        }
+        
+        // Restore settings section visibility on page load
+        function restoreSettingsSections() {
+            const sections = ['themeSection', 'backupSection', 'invoiceSection', 'statusSection', 'apiSection'];
+            sections.forEach(sectionId => {
+                const state = localStorage.getItem('settings_' + sectionId);
+                const section = document.getElementById(sectionId);
+                const toggle = document.getElementById(sectionId + '-toggle');
+                
+                if (sectionId === 'apiSection') {
+                    // API section hidden by default unless explicitly shown
+                    if (state === 'visible') {
+                        if (section) section.style.display = 'block';
+                        if (toggle) toggle.textContent = '▼ Hide';
+                    }
+                } else {
+                    // Other sections shown by default unless explicitly hidden
+                    if (state === 'hidden') {
+                        if (section) section.style.display = 'none';
+                        if (toggle) toggle.textContent = '▶ Show';
                     }
                 }
             });
