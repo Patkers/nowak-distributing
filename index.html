@@ -2991,9 +2991,11 @@
             const theme = document.getElementById('themeSelector').value;
             const body = document.body;
             
-            // Remove all existing theme classes (all 70+ themes)
+            // Remove all existing theme classes (ALL themes)
             body.classList.remove(
+                // Classic themes
                 'theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark', 'theme-crimson', 'theme-slate', 'theme-teal',
+                // NFL Teams
                 'theme-bills', 'theme-dolphins', 'theme-patriots', 'theme-jets',
                 'theme-ravens', 'theme-bengals', 'theme-browns', 'theme-steelers',
                 'theme-texans', 'theme-colts', 'theme-jaguars', 'theme-titans',
@@ -3002,13 +3004,75 @@
                 'theme-bears', 'theme-lions', 'theme-packers', 'theme-vikings',
                 'theme-falcons', 'theme-panthers', 'theme-saints', 'theme-bucs',
                 'theme-azcardinals', 'theme-rams', 'theme-niners', 'theme-seahawks',
+                // MLB Teams
                 'theme-orioles', 'theme-redsox', 'theme-yankees', 'theme-rays', 'theme-bluejays',
                 'theme-whitesox', 'theme-guardians', 'theme-tigers', 'theme-royals', 'theme-twins',
                 'theme-astros', 'theme-angels', 'theme-athletics', 'theme-mariners', 'theme-rangers',
                 'theme-braves', 'theme-marlins', 'theme-mets', 'theme-phillies', 'theme-nationals',
                 'theme-cubs', 'theme-reds', 'theme-brewers', 'theme-pirates', 'theme-stlcardinals',
                 'theme-dbacks', 'theme-rockies', 'theme-dodgers', 'theme-padres', 'theme-sfgiants',
-                'theme-bulls', 'theme-blackhawks'
+                // Chicago extras
+                'theme-bulls', 'theme-blackhawks',
+                // NHL Teams
+                'theme-ducks', 'theme-coyotes', 'theme-bruins', 'theme-sabres', 'theme-flames',
+                'theme-hurricanes', 'theme-avalanche', 'theme-bluejackets', 'theme-stars', 'theme-redwings',
+                'theme-oilers', 'theme-flapanthers', 'theme-kings', 'theme-wild', 'theme-canadiens',
+                'theme-predators', 'theme-devils', 'theme-islanders', 'theme-nhlrangers', 'theme-senators',
+                'theme-flyers', 'theme-penguins', 'theme-sharks', 'theme-kraken', 'theme-stlblues',
+                'theme-lightning', 'theme-mapleleafs', 'theme-canucks', 'theme-goldenknights',
+                'theme-capitals', 'theme-nhljets',
+                // NBA Teams
+                'theme-hawks', 'theme-celtics', 'theme-nets', 'theme-hornets', 'theme-cavs',
+                'theme-mavs', 'theme-nuggets', 'theme-pistons', 'theme-warriors', 'theme-rockets',
+                'theme-pacers', 'theme-clippers', 'theme-lakers', 'theme-grizzlies', 'theme-heat',
+                'theme-bucks', 'theme-twolves', 'theme-pelicans', 'theme-knicks', 'theme-thunder',
+                'theme-magic', 'theme-sixers', 'theme-suns', 'theme-blazers', 'theme-nbakings',
+                'theme-spurs', 'theme-raptors', 'theme-jazz', 'theme-wizards',
+                // College Teams
+                'theme-alabama', 'theme-arkansas', 'theme-auburn', 'theme-clemson', 'theme-florida',
+                'theme-fsu', 'theme-georgia', 'theme-lsu', 'theme-michigan', 'theme-michiganst',
+                'theme-ohiostate', 'theme-oklahoma', 'theme-okstate', 'theme-oregon', 'theme-oregonst',
+                'theme-pennstate', 'theme-tennessee', 'theme-texas', 'theme-texasam', 'theme-usc',
+                'theme-ucla', 'theme-notredame', 'theme-wisconsin', 'theme-nebraska', 'theme-miami', 'theme-byu',
+                // Fast Food
+                'theme-mcdonalds', 'theme-burgerking', 'theme-wendys', 'theme-tacobell', 'theme-kfc',
+                'theme-subway', 'theme-pizzahut', 'theme-chickfila', 'theme-dunkin', 'theme-dominos',
+                'theme-sonic', 'theme-arbys', 'theme-dairyqueen', 'theme-jackinthebox', 'theme-popeyes',
+                'theme-chipotle', 'theme-fiveguys', 'theme-innout', 'theme-culvers', 'theme-timhortons',
+                // Wisconsin Local
+                'theme-kwiktrip', 'theme-rutters', 'theme-cenex', 'theme-cenexcoop', 'theme-fleetfarm',
+                'theme-woodmans', 'theme-picknsave', 'theme-sentry', 'theme-festival', 'theme-pigglywiggly',
+                'theme-holiday', 'theme-bp', 'theme-caseys', 'theme-shell', 'theme-mobil',
+                // Retro Gaming
+                'theme-nes', 'theme-snes', 'theme-genesis', 'theme-gameboy', 'theme-n64',
+                'theme-ps1', 'theme-windows95', 'theme-windowsxp', 'theme-macos9', 'theme-amiga', 'theme-c64',
+                // Cars
+                'theme-camaro', 'theme-challenger', 'theme-bullitt', 'theme-supra', 'theme-skyline', 'theme-typer',
+                // Sneakers
+                'theme-jordan1', 'theme-yeezy', 'theme-pigeon', 'theme-wotherspoon',
+                // National Parks
+                'theme-yellowstone', 'theme-grandcanyon', 'theme-yosemite',
+                // Lo-Fi / Vaporwave / Synthwave
+                'theme-lofi', 'theme-chillhop', 'theme-vaporwave', 'theme-mallsoft', 'theme-miamivice', 'theme-outrun',
+                // Airlines
+                'theme-panam', 'theme-braniff', 'theme-southwest', 'theme-pokemon',
+                // NFL Throwbacks
+                'theme-bucscreamsicle', 'theme-steelersbee', 'theme-oilersthrow', 'theme-patpatriot',
+                'theme-chargerspowder', 'theme-orangecrush', 'theme-kellygreen', 'theme-niners94',
+                'theme-rams99', 'theme-seahawkslime', 'theme-falcons66', 'theme-jets98',
+                'theme-bears36', 'theme-acme', 'theme-cards47',
+                // NFL Alternates
+                'theme-billsred', 'theme-chiefsred', 'theme-raidersblack', 'theme-whitetiger',
+                'theme-brownsrush', 'theme-eaglesblack', 'theme-titansoilers', 'theme-actiongreen',
+                'theme-jagsteal', 'theme-purplepeople',
+                // Superheroes
+                'theme-reaper', 'theme-spiderman', 'theme-symbiote', 'theme-batman', 'theme-superman',
+                'theme-wonderwoman', 'theme-ironman', 'theme-captainamerica', 'theme-hulk', 'theme-thor',
+                'theme-harleyquinn', 'theme-starlord', 'theme-groot', 'theme-marvelrivals',
+                'theme-flash', 'theme-greenlantern',
+                // Cyberpunk
+                'theme-nightcity', 'theme-arasaka', 'theme-militech', 'theme-moxes', 'theme-valentinos',
+                'theme-vjacket', 'theme-silverhand', 'theme-cyberpunkui', 'theme-phantomliberty', 'theme-cyberpunklogo'
             );
             
             // Add new theme class
