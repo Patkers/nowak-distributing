@@ -162,7 +162,7 @@
         }
 
         .btn-success {
-            background: #28a745;
+            background: var(--secondary, #28a745);
         }
 
         .btn-secondary {
@@ -170,7 +170,7 @@
         }
         
         .btn-small {
-            background: #667eea;
+            background: var(--primary, #667eea);
             color: white;
             border: none;
             padding: 6px 12px;
@@ -7575,6 +7575,12 @@
                         await generateSimpleInventory();
                         break;
                 }
+                
+                // Auto-scroll to report after generation
+                setTimeout(() => {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+                
             } catch (error) {
                 container.innerHTML = `<div class="loading" style="color: red;">Error generating report: ${error.message}</div>`;
             }
