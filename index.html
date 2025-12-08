@@ -924,8 +924,11 @@
                         <label>Stock Status</label>
                         <select id="filterItemStock" onchange="filterItems()">
                             <option value="">All Items</option>
-                            <option value="low">Low Stock Only</option>
-                            <option value="ok">Normal Stock</option>
+                            <option value="negative">🚨 Negative Inventory</option>
+                            <option value="low">⚠️ Low Stock (Below Reorder)</option>
+                            <option value="onorder">📦 On Order (Pending Delivery)</option>
+                            <option value="reorder">🛒 Needs Reorder (Low + No Order)</option>
+                            <option value="ok">✅ Normal Stock</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -2576,13 +2579,23 @@
                 const packageCost = parseFloat(item.Package_Cost) || 0;
                 const unitCost = packageCost / unitsPerPkg;
                 const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const reorderPoint = parseFloat(item.Reorder_Point) || 0;
                 const packages = (qty / unitsPerPkg).toFixed(1);
                 const packagesOnOrder = (qtyOnOrder / unitsPerPkg).toFixed(1);
                 
-                const lowStock = qty < (item.Reorder_Point || 0) ? 'style="background:#fff3cd;"' : '';
+                // Determine row styling based on stock status
+                let rowStyle = '';
+                let qtyStyle = '';
+                if (qty < 0) {
+                    rowStyle = 'style="background:#ffcdd2;"';  // Red for negative
+                    qtyStyle = 'color: #b71c1c; font-weight: bold;';
+                } else if (qty <= reorderPoint) {
+                    rowStyle = 'style="background:#fff3cd;"';  // Yellow for low stock
+                }
+                
                 totalQty += qty;
                 
-                html += `<tr ${lowStock}>
+                html += `<tr ${rowStyle}>
                     <td>${item.Item_ID}</td>
                     <td><strong>${item.SKU || '-'}</strong></td>
                     <td>${item.Item_Description}</td>
@@ -2592,9 +2605,9 @@
                     <td>$${packageCost.toFixed(2)}</td>
                     <td>$${unitCost.toFixed(2)}</td>
                     <td>$${unitSellPrice.toFixed(2)}</td>
-                    <td>${packages} (${qty.toFixed(0)} Case)</td>
+                    <td style="${qtyStyle}">${packages} (${qty.toFixed(0)} ${item.Purchase_UOM || 'Case'})</td>
                     <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${packagesOnOrder}</span></td>
-                    <td>${item.Reorder_Point}</td>
+                    <td>${item.Reorder_Point || 0}</td>
                     <td>
                         <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
                         <button class="btn-small btn-danger" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️ Delete</button>
@@ -2606,7 +2619,7 @@
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
                 <td colspan="9" style="text-align: right; padding-right: 20px;">TOTALS:</td>
                 <td>${totalQty.toLocaleString()} units</td>
-                <td colspan="2"></td>
+                <td colspan="3"></td>
             </tr>`;
 
             html += '</tbody></table>';
@@ -2631,10 +2644,29 @@
                     (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
                 const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
-                const lowStock = item.Qty_On_Hand < item.Reorder_Point;
-                const matchesStock = !stockFilter || 
-                    (stockFilter === 'low' && lowStock) ||
-                    (stockFilter === 'ok' && !lowStock);
+                
+                // Stock status calculations
+                const qtyOnHand = parseFloat(item.Qty_On_Hand) || 0;
+                const qtyOnOrder = parseFloat(item.Qty_On_Order) || 0;
+                const reorderPoint = parseFloat(item.Reorder_Point) || 0;
+                const negativeStock = qtyOnHand < 0;
+                const lowStock = qtyOnHand <= reorderPoint && qtyOnHand >= 0;
+                const hasOnOrder = qtyOnOrder > 0;
+                const needsReorder = (lowStock || negativeStock) && !hasOnOrder;
+                
+                let matchesStock = true;
+                if (stockFilter === 'negative') {
+                    matchesStock = negativeStock;
+                } else if (stockFilter === 'low') {
+                    matchesStock = lowStock || negativeStock;
+                } else if (stockFilter === 'onorder') {
+                    matchesStock = hasOnOrder;
+                } else if (stockFilter === 'reorder') {
+                    matchesStock = needsReorder;
+                } else if (stockFilter === 'ok') {
+                    matchesStock = qtyOnHand > reorderPoint;
+                }
+                
                 return matchesSearch && matchesSupplier && matchesStock;
             });
             
@@ -4934,24 +4966,29 @@
             let totalValue = 0;
             
             let html = '<table class="data-table" id="inventoryDataTable"><thead><tr>';
-            html += '<th>Item ID</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Total Value</th><th>Status</th>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Total Value</th><th>Last Updated</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
                 const reorderPoint = parseFloat(item.Reorder_Point) || 0;
                 const value = parseFloat(item.Total_Value) || 0;
+                const lastUpdated = item.Last_Updated ? new Date(item.Last_Updated).toLocaleDateString() : '-';
                 
                 // Determine status with color coding
                 let status = '';
                 let statusColor = '';
                 let rowStyle = '';
                 
-                if (qty <= 0) {
+                if (qty < 0) {
+                    status = '🚨 NEGATIVE';
+                    statusColor = 'color: #fff; background: #b71c1c; padding: 4px 8px; border-radius: 4px; font-weight: bold; animation: pulse 1s infinite;';
+                    rowStyle = 'background: #ffcdd2;';
+                } else if (qty === 0) {
                     status = '🔴 OUT OF STOCK';
                     statusColor = 'color: #fff; background: #c62828; padding: 4px 8px; border-radius: 4px; font-weight: bold;';
                     rowStyle = 'background: #ffebee;';
-                } else if (qty < reorderPoint) {
+                } else if (qty <= reorderPoint) {
                     status = '🟡 LOW STOCK';
                     statusColor = 'color: #fff; background: #ef6c00; padding: 4px 8px; border-radius: 4px; font-weight: bold;';
                     rowStyle = 'background: #fff3e0;';
@@ -4970,13 +5007,15 @@
                 totalValue += value;
                 
                 html += `<tr style="${rowStyle}">
-                    <td>${item.Item_ID}</td>
+                    <td><strong>${item.SKU || '-'}</strong></td>
                     <td><a href="javascript:void(0)" onclick="openItem('${item.Item_ID}')" style="color: #667eea; text-decoration: none;"><strong>${item.Item_Description}</strong></a></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
-                    <td><strong>${qty}</strong></td>
+                    <td><strong style="${qty < 0 ? 'color: #b71c1c;' : ''}">${qty}</strong></td>
+                    <td>${reorderPoint}</td>
                     <td>$${unitCost.toFixed(2)}</td>
                     <td>$${unitSellPrice.toFixed(2)}</td>
                     <td>$${value.toFixed(2)}</td>
+                    <td style="font-size: 12px; color: #666;">${lastUpdated}</td>
                     <td><span style="${statusColor}">${status}</span></td>
                 </tr>`;
             });
@@ -4985,9 +5024,10 @@
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
                 <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
                 <td>${totalQty.toLocaleString()}</td>
+                <td></td>
                 <td colspan="2"></td>
                 <td>$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td></td>
+                <td colspan="2"></td>
             </tr>`;
 
             html += '</tbody></table>';
@@ -5189,8 +5229,10 @@
                         <label>Stock Status</label>
                         <select id="filter_stockStatus">
                             <option value="">All Items</option>
-                            <option value="low">Low Stock</option>
-                            <option value="ok">Normal Stock</option>
+                            <option value="negative">🚨 Negative Inventory</option>
+                            <option value="out">🔴 Out of Stock</option>
+                            <option value="low">🟡 Low Stock</option>
+                            <option value="ok">🟢 In Stock</option>
                         </select>
                     </div>`;
             }
@@ -6754,10 +6796,22 @@
                 inventory = inventory.filter(item => item.Item_ID === reportFilters.item);
             }
             if (reportFilters.stockStatus) {
-                if (reportFilters.stockStatus === 'low') {
-                    inventory = inventory.filter(item => item.Low_Stock);
+                if (reportFilters.stockStatus === 'negative') {
+                    inventory = inventory.filter(item => parseFloat(item.Qty_On_Hand || 0) < 0);
+                } else if (reportFilters.stockStatus === 'out') {
+                    inventory = inventory.filter(item => parseFloat(item.Qty_On_Hand || 0) === 0);
+                } else if (reportFilters.stockStatus === 'low') {
+                    inventory = inventory.filter(item => {
+                        const qty = parseFloat(item.Qty_On_Hand || 0);
+                        const reorder = parseFloat(item.Reorder_Point || 0);
+                        return qty > 0 && qty <= reorder;
+                    });
                 } else if (reportFilters.stockStatus === 'ok') {
-                    inventory = inventory.filter(item => !item.Low_Stock);
+                    inventory = inventory.filter(item => {
+                        const qty = parseFloat(item.Qty_On_Hand || 0);
+                        const reorder = parseFloat(item.Reorder_Point || 0);
+                        return qty > reorder;
+                    });
                 }
             }
             if (reportFilters.minAmount) {
