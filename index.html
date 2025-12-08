@@ -1405,7 +1405,7 @@
                 <div id="filter-panel-suppliers" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search Name</label>
-                        <input type="text" id="filterSupplierName" placeholder="Type to filter..." onkeyup="filterSuppliers()">
+                        <input type="text" id="filterSupplierName" placeholder="🔍 Click to search..." onkeyup="filterSuppliers()" onclick="openSupplierPickerForFilter(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
                         <label>City</label>
@@ -1559,7 +1559,7 @@
                 <div id="filter-panel-items" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search SKU/Description</label>
-                        <input type="text" id="filterItemSearch" placeholder="Type to filter..." onkeyup="filterItems()">
+                        <input type="text" id="filterItemSearch" placeholder="🔍 Click to search..." onkeyup="filterItems()" onclick="openItemPickerForFilter(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
                         <label>Supplier</label>
@@ -1741,7 +1741,7 @@
                 <div id="filter-panel-customers" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search Name</label>
-                        <input type="text" id="filterCustomerName" placeholder="Customer name..." onkeyup="filterCustomers()">
+                        <input type="text" id="filterCustomerName" placeholder="🔍 Click to search..." onkeyup="filterCustomers()" onclick="openCustomerPickerForFilter(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
                         <label>Contact Name</label>
@@ -2023,7 +2023,7 @@
                 <div id="filter-panel-purchases" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Invoice # / PO</label>
-                        <input type="text" id="filterPurchasePO" placeholder="Search..." onchange="filterPurchases()">
+                        <input type="text" id="filterPurchasePO" placeholder="🔍 Click to search..." onclick="openPOPicker(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
                         <label>Supplier</label>
@@ -2167,7 +2167,7 @@
                     </div>
                     <div class="form-group">
                         <label>Invoice #</label>
-                        <input type="text" id="filterInvoiceNumber" placeholder="INV-120725-001" oninput="filterSales()">
+                        <input type="text" id="filterInvoiceNumber" placeholder="🔍 Click to search..." onclick="openInvoicePicker(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
                         <label>Date From</label>
@@ -2348,7 +2348,7 @@
                 <div id="filter-panel-inventory" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search SKU/Description</label>
-                        <input type="text" id="filterInventorySearch" placeholder="Type to filter..." onkeyup="filterInventory()">
+                        <input type="text" id="filterInventorySearch" placeholder="🔍 Click to search..." onkeyup="filterInventory()" onclick="openItemPickerForFilter(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
                         <label>Supplier</label>
@@ -2381,7 +2381,7 @@
             <div class="status" id="pricesimStatus"></div>
             
             <!-- Revenue Impact Calculator - MOVED TO TOP -->
-            <div class="section-card accent-blue" style="background: #e3f2fd;">
+            <div class="section-card accent-theme" style="background: #e3f2fd;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('revenueCalcContent')">
                     <h3 style="margin: 0; color: #1565c0;">💰 Revenue Impact Calculator</h3>
                     <span id="revenueCalcContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
@@ -2444,7 +2444,7 @@
                 </div>
             </div>
             
-            <div class="section-card accent-purple" style="background: linear-gradient(135deg, #667eea15, #764ba215);">
+            <div class="section-card accent-theme" style="background: linear-gradient(135deg, #667eea15, #764ba215);">
                 <h3 style="margin: 0 0 10px 0; color: #667eea;">💡 What You Can Do Here</h3>
                 <p style="margin: 0; color: #555;">
                     <strong>📦 Existing Items:</strong> Adjust sell prices by % or flat amount, preview impact, then apply<br>
@@ -2453,7 +2453,7 @@
             </div>
             
             <!-- ADD NEW ITEM SECTION -->
-            <div class="section-card accent-orange" style="background: #fff3e0;">
+            <div class="section-card accent-theme" style="background: #fff3e0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('addNewItemContent')">
                     <h3 style="margin: 0; color: #e65100;">➕ Add New Item from Supplier Catalog</h3>
                     <span id="addNewItemContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
@@ -2519,12 +2519,12 @@
             </div>
             
             <!-- Filters -->
-            <div class="section-card accent-teal" style="background: #f8f9fa;">
+            <div class="section-card accent-theme" style="background: #f8f9fa;">
                 <h3 style="margin: 0 0 15px 0;">🔍 Filter Existing Items</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                     <div class="form-group" style="margin: 0;">
                         <label>Search SKU/Description</label>
-                        <input type="text" id="pricesimSearch" placeholder="Type to filter..." onkeyup="filterPriceSimItems()">
+                        <input type="text" id="pricesimSearch" placeholder="🔍 Click to search..." onkeyup="filterPriceSimItems()" onclick="openItemPickerForFilter(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label>Supplier</label>
@@ -2546,7 +2546,7 @@
             </div>
             
             <!-- Price Adjustment Controls -->
-            <div class="section-card accent-green" style="background: #e8f5e9;">
+            <div class="section-card accent-theme" style="background: #e8f5e9;">
                 <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Bulk Price Adjustment (Existing Items)</h3>
                 <div style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap;">
                     <div class="form-group" style="margin: 0;">
@@ -2592,27 +2592,34 @@
                 </div>
             </div>
             
-            <!-- INVENTORY IMPACT - Issue #7 -->
-            <div id="pricesimInventoryImpact" class="section-card accent-indigo" style="display: none; background: linear-gradient(135deg, #1a237e, #283593); color: white;">
-                <h4 style="margin: 0 0 10px 0; font-size: 14px;">📦 Real Inventory Impact (Selected Items with Stock)</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
-                        <div style="font-size: 11px; opacity: 0.8;">Current Value</div>
-                        <div id="simCurrentInvValue" style="font-size: 18px; font-weight: bold; word-break: break-all;">$0.00</div>
+            <!-- INVENTORY IMPACT - Simple info strip style -->
+            <div id="pricesimInventoryImpact" style="display: none; margin-bottom: 20px; padding: 15px 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 18px;">📦</span>
+                        <span style="font-weight: 600; color: #495057;">Inventory Impact:</span>
                     </div>
-                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
-                        <div style="font-size: 11px; opacity: 0.8;">New Value</div>
-                        <div id="simNewInvValue" style="font-size: 18px; font-weight: bold; word-break: break-all;">$0.00</div>
-                    </div>
-                    <div style="background: rgba(46,125,50,0.5); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
-                        <div style="font-size: 11px; opacity: 0.8;">Profit Potential</div>
-                        <div id="simInvProfit" style="font-size: 18px; font-weight: bold; word-break: break-all;">+$0.00</div>
+                    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 11px; color: #6c757d; text-transform: uppercase;">Current Value</div>
+                            <div id="simCurrentInvValue" style="font-size: 16px; font-weight: bold; color: #495057;">$0.00</div>
+                        </div>
+                        <div style="font-size: 20px; color: #adb5bd;">→</div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 11px; color: #6c757d; text-transform: uppercase;">New Value</div>
+                            <div id="simNewInvValue" style="font-size: 16px; font-weight: bold; color: #495057;">$0.00</div>
+                        </div>
+                        <div style="font-size: 20px; color: #adb5bd;">=</div>
+                        <div style="text-align: center; background: #d4edda; padding: 8px 15px; border-radius: 6px;">
+                            <div style="font-size: 11px; color: #155724; text-transform: uppercase;">Extra Profit</div>
+                            <div id="simInvProfit" style="font-size: 18px; font-weight: bold; color: #155724;">+$0.00</div>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <!-- Apply Button - MOVED BEFORE TABLE (#5) -->
-            <div id="pricesimApplySection" class="section-card accent-amber" style="display: none; background: #fff3cd;">
+            <div id="pricesimApplySection" class="section-card accent-theme" style="display: none; background: #fff3cd;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <div>
                         <strong style="font-size: 18px;">⚠️ Ready to Apply Changes?</strong>
@@ -3142,6 +3149,11 @@
             // Add new theme class
             body.classList.add('theme-' + theme);
             
+            // Set --primary CSS variable based on theme
+            const themeColors = getThemeColors();
+            document.documentElement.style.setProperty('--primary', themeColors.primary);
+            document.documentElement.style.setProperty('--secondary', themeColors.accent);
+            
             // Save preference
             localStorage.setItem('theme', theme);
             showStatus('configStatus', `✅ Theme changed to ${theme}!`, 'success');
@@ -3275,6 +3287,13 @@
                 'theme-bulls', 'theme-blackhawks'
             );
             document.body.classList.add('theme-' + savedTheme);
+            
+            // Set --primary CSS variable based on saved theme
+            setTimeout(() => {
+                const themeColors = getThemeColors();
+                document.documentElement.style.setProperty('--primary', themeColors.primary);
+                document.documentElement.style.setProperty('--secondary', themeColors.accent);
+            }, 100);
         });
         
         function saveConfig() {
@@ -10174,10 +10193,10 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description...">
+                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="filterItemPicker()" onkeyup="filterItemPicker()">
             </div>
             <div class="item-picker-filter">
-                <select id="itemPickerSupplier">
+                <select id="itemPickerSupplier" onchange="filterItemPicker()">
                     <option value="">All Suppliers</option>
                 </select>
             </div>
@@ -10195,7 +10214,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeSupplierPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers...">
+                <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers..." oninput="filterSupplierPicker()" onkeyup="filterSupplierPicker()">
             </div>
             <div id="supplierPickerList" class="item-picker-list">
                 <!-- Suppliers will be populated by JavaScript -->
@@ -10211,10 +10230,55 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeCustomerPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers...">
+                <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers..." oninput="filterCustomerPicker()" onkeyup="filterCustomerPicker()">
             </div>
             <div id="customerPickerList" class="item-picker-list">
                 <!-- Customers will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS PICKER MODAL -->
+    <div id="statusPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
+            <div class="item-picker-header" id="statusPickerHeader" style="background: linear-gradient(135deg, #7b1fa2 0%, #512da8 100%); border-radius: 16px 16px 0 0;">
+                <h3 id="statusPickerTitle">📋 Select Status</h3>
+                <button class="item-picker-close" onclick="closeStatusPicker()">&times;</button>
+            </div>
+            <div id="statusPickerList" class="item-picker-list" style="padding: 15px;">
+                <!-- Status options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PO PICKER MODAL -->
+    <div id="poPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container">
+            <div class="item-picker-header" style="background: linear-gradient(135deg, #e65100 0%, #bf360c 100%);">
+                <h3>📋 Select Purchase Order</h3>
+                <button class="item-picker-close" onclick="closePOPicker()">&times;</button>
+            </div>
+            <div class="item-picker-search">
+                <input type="text" id="poPickerSearch" placeholder="🔍 Search by PO number..." oninput="filterPOPicker()" onkeyup="filterPOPicker()">
+            </div>
+            <div id="poPickerList" class="item-picker-list">
+                <!-- POs will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- INVOICE PICKER MODAL -->
+    <div id="invoicePickerModal" class="item-picker-overlay">
+        <div class="item-picker-container">
+            <div class="item-picker-header" style="background: linear-gradient(135deg, #00796b 0%, #004d40 100%);">
+                <h3>🧾 Select Invoice</h3>
+                <button class="item-picker-close" onclick="closeInvoicePicker()">&times;</button>
+            </div>
+            <div class="item-picker-search">
+                <input type="text" id="invoicePickerSearch" placeholder="🔍 Search by invoice number..." oninput="filterInvoicePicker()" onkeyup="filterInvoicePicker()">
+            </div>
+            <div id="invoicePickerList" class="item-picker-list">
+                <!-- Invoices will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -10569,8 +10633,25 @@ NOTE: Please print the attached PO document for full details.`;
                 return matchesSearch && matchesSupplier;
             });
             
+            // Check if this is a filter text input (needs "Clear" option)
+            const isFilterInput = window.itemPickerIsFilter;
+            
+            let html = '';
+            
+            // Add "Clear Filter" option for filter text inputs
+            if (isFilterInput && !search && !supplier) {
+                html += `
+                    <div class="item-picker-card" onclick="clearItemFilter()" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                            <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d;">Remove item filter and show all items</div>
+                    </div>
+                `;
+            }
+            
             if (filtered.length === 0) {
-                listContainer.innerHTML = `
+                listContainer.innerHTML = html + `
                     <div class="item-picker-empty">
                         <div class="item-picker-empty-icon">📦</div>
                         <div>No items found</div>
@@ -10580,7 +10661,6 @@ NOTE: Please print the attached PO document for full details.`;
                 return;
             }
             
-            let html = '';
             filtered.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
                 const reorder = parseInt(item.Reorder_Point) || 0;
@@ -10632,37 +10712,89 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectItemFromPicker(itemId) {
             if (itemPickerCallback) {
-                // Set the select value
-                itemPickerCallback.value = itemId;
+                // Check if this is a filter text input or a select element
+                const isTextInput = itemPickerCallback.tagName === 'INPUT' && itemPickerCallback.type === 'text';
                 
-                // Trigger change event to update any dependent fields
-                itemPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                if (isTextInput && window.itemPickerIsFilter) {
+                    // For filter inputs, set the item description/SKU as value
+                    const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+                    if (item) {
+                        itemPickerCallback.value = item.SKU || item.Item_Description || itemId;
+                    }
+                    // Trigger the appropriate filter function based on input ID
+                    const id = itemPickerCallback.id;
+                    if (id === 'filterItemSearch') {
+                        if (typeof filterItems === 'function') filterItems();
+                    } else if (id === 'filterInventorySearch') {
+                        if (typeof filterInventory === 'function') filterInventory();
+                    } else if (id === 'pricesimSearch') {
+                        if (typeof filterPriceSimItems === 'function') filterPriceSimItems();
+                    }
+                } else {
+                    // Set the select value
+                    itemPickerCallback.value = itemId;
+                    
+                    // Trigger change event to update any dependent fields
+                    itemPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    // Explicitly call update functions for mobile compatibility
+                    if (itemPickerCallback.classList.contains('createpo-item')) {
+                        updateCreatePOItemCost(itemPickerCallback);
+                    } else if (itemPickerCallback.classList.contains('po-item')) {
+                        updatePOItemInfo(itemPickerCallback);
+                    } else if (itemPickerCallback.classList.contains('so-item')) {
+                        if (typeof updateSOItemInfo === 'function') updateSOItemInfo(itemPickerCallback);
+                    }
+                    
+                    // Recalculate totals after a brief delay to ensure DOM updates
+                    setTimeout(() => {
+                        if (typeof calculateCreatePOTotal === 'function') calculateCreatePOTotal();
+                        if (typeof calculatePOTotal === 'function') calculatePOTotal();
+                        if (typeof calculateSOTotal === 'function') calculateSOTotal();
+                    }, 50);
+                }
             }
+            window.itemPickerIsFilter = false;
             closeItemPicker();
         }
         
-        // Auto-attach to item selects on mobile
-        function attachItemPickerToSelects() {
-            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
-            
-            if (isMobile) {
-                document.querySelectorAll('.po-item, .so-item, .createpo-item, .edit-item').forEach(select => {
-                    if (!select.dataset.pickerAttached) {
-                        select.dataset.pickerAttached = 'true';
-                        // Use mousedown to intercept BEFORE the dropdown opens
-                        select.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openItemPicker(this);
-                        });
-                        select.addEventListener('touchstart', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openItemPicker(this);
-                        });
-                    }
-                });
+        // Clear item filter and close picker
+        function clearItemFilter() {
+            if (itemPickerCallback) {
+                itemPickerCallback.value = '';
+                // Trigger the appropriate filter function
+                const id = itemPickerCallback.id;
+                if (id === 'filterItemSearch') {
+                    if (typeof filterItems === 'function') filterItems();
+                } else if (id === 'filterInventorySearch') {
+                    if (typeof filterInventory === 'function') filterInventory();
+                } else if (id === 'pricesimSearch') {
+                    if (typeof filterPriceSimItems === 'function') filterPriceSimItems();
+                }
             }
+            window.itemPickerIsFilter = false;
+            closeItemPicker();
+        }
+        
+        // Auto-attach to item selects on ALL devices (not just mobile)
+        function attachItemPickerToSelects() {
+            // Attach to ALL item selects (forms + reports)
+            document.querySelectorAll('.po-item, .so-item, .createpo-item, .edit-item, #filter_item').forEach(select => {
+                if (!select.dataset.pickerAttached) {
+                    select.dataset.pickerAttached = 'true';
+                    // Use mousedown to intercept BEFORE the dropdown opens
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openItemPicker(this);
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openItemPicker(this);
+                    });
+                }
+            });
         }
         
         // Re-attach when new rows are added
@@ -10679,12 +10811,74 @@ NOTE: Please print the attached PO document for full details.`;
                 setTimeout(attachItemPickerToSelects, 100);
                 setTimeout(attachSupplierPickerToSelects, 100);
                 setTimeout(attachCustomerPickerToSelects, 100);
+                setTimeout(attachStatusPickerToSelects, 100);
             };
         }
         
         // ==================== SUPPLIER PICKER ====================
         
         let supplierPickerCallback = null;
+        let supplierPickerIsFilter = false;  // Track if this is for a filter input
+        
+        // Open supplier picker for filter text inputs
+        function openSupplierPickerForFilter(inputElement) {
+            supplierPickerCallback = inputElement;
+            supplierPickerIsFilter = true;
+            document.getElementById('supplierPickerSearch').value = '';
+            renderSupplierPickerList();
+            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('supplierPickerSearch').focus();
+            }, 100);
+        }
+        
+        // Open item picker for filter text inputs
+        function openItemPickerForFilter(inputElement) {
+            itemPickerCallback = inputElement;
+            window.itemPickerIsFilter = true;
+            
+            // Populate supplier filter
+            const supplierSelect = document.getElementById('itemPickerSupplier');
+            supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+            if (cachedSuppliers && cachedSuppliers.length > 0) {
+                cachedSuppliers.forEach(s => {
+                    supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                });
+            }
+            
+            // Get items from cache
+            itemPickerItems = cachedItems || [];
+            
+            // Clear search
+            document.getElementById('itemPickerSearch').value = '';
+            document.getElementById('itemPickerSupplier').value = '';
+            
+            // Render items
+            renderItemPickerList();
+            
+            // Show modal
+            document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Focus search after a moment
+            setTimeout(() => {
+                document.getElementById('itemPickerSearch').focus();
+            }, 100);
+        }
+        
+        // Open customer picker for filter text inputs
+        function openCustomerPickerForFilter(inputElement) {
+            customerPickerCallback = inputElement;
+            window.customerPickerIsFilter = true;
+            document.getElementById('customerPickerSearch').value = '';
+            renderCustomerPickerList();
+            document.getElementById('customerPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('customerPickerSearch').focus();
+            }, 100);
+        }
         
         function openSupplierPicker(selectElement) {
             supplierPickerCallback = selectElement;
@@ -10720,7 +10914,27 @@ NOTE: Please print the attached PO document for full details.`;
                     (s.Contact_Name && s.Contact_Name.toLowerCase().includes(search));
             });
             
-            if (filtered.length === 0) {
+            // Check if this is a filter dropdown or filter text input (needs "All/Clear" option)
+            const isFilter = supplierPickerIsFilter || (supplierPickerCallback && 
+                (supplierPickerCallback.id.startsWith('filter') || supplierPickerCallback.id === 'pricesimSupplier'));
+            
+            let html = '';
+            
+            // Add "All Suppliers" or "Clear Filter" option for filters
+            if (isFilter && !search) {
+                const clearText = supplierPickerIsFilter ? 'Clear Filter' : 'All Suppliers';
+                const clearDesc = supplierPickerIsFilter ? 'Remove supplier filter' : 'Show items from all suppliers';
+                html += `
+                    <div class="item-picker-card" onclick="selectSupplierFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                            <span style="font-size: 18px; margin-right: 8px;">📋</span> ${clearText}
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d;">${clearDesc}</div>
+                    </div>
+                `;
+            }
+            
+            if (filtered.length === 0 && !isFilter) {
                 listContainer.innerHTML = `
                     <div class="item-picker-empty">
                         <div class="item-picker-empty-icon">🏭</div>
@@ -10730,7 +10944,6 @@ NOTE: Please print the attached PO document for full details.`;
                 return;
             }
             
-            let html = '';
             filtered.forEach(s => {
                 html += `
                     <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid #2e7d32;">
@@ -10752,33 +10965,75 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectSupplierFromPicker(supplierId) {
             if (supplierPickerCallback) {
-                supplierPickerCallback.value = supplierId;
-                supplierPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                // Check if this is a filter text input or a select element
+                const isTextInput = supplierPickerCallback.tagName === 'INPUT' && supplierPickerCallback.type === 'text';
+                
+                if (isTextInput && supplierPickerIsFilter) {
+                    // For filter inputs, set the supplier name as value
+                    if (supplierId === '') {
+                        supplierPickerCallback.value = '';
+                    } else {
+                        const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+                        supplierPickerCallback.value = supplier ? supplier.Supplier_Name : supplierId;
+                    }
+                    // Trigger the filter function
+                    if (typeof filterSuppliers === 'function') filterSuppliers();
+                } else {
+                    // For select elements, set the ID
+                    supplierPickerCallback.value = supplierId;
+                    supplierPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    // Explicitly call update functions for specific selects
+                    const id = supplierPickerCallback.id;
+                    if (id === 'createPOSupplier') {
+                        if (typeof filterItemsBySupplier === 'function') filterItemsBySupplier();
+                    } else if (id === 'poSupplier') {
+                        if (typeof loadSupplierItems === 'function') loadSupplierItems();
+                    } else if (id === 'filterItemSupplier') {
+                        if (typeof filterItems === 'function') filterItems();
+                    } else if (id === 'filterPurchaseSupplier') {
+                        if (typeof filterPurchases === 'function') filterPurchases();
+                    } else if (id === 'filterInventorySupplier') {
+                        if (typeof filterInventory === 'function') filterInventory();
+                    } else if (id === 'pricesimSupplier') {
+                        if (typeof filterPriceSimItems === 'function') filterPriceSimItems();
+                    }
+                }
             }
+            supplierPickerIsFilter = false;
             closeSupplierPicker();
         }
         
         function attachSupplierPickerToSelects() {
-            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            // Attach to ALL supplier selects on ALL devices (forms + filters + reports)
+            const supplierSelects = [
+                // Form selects
+                '#poSupplier', '#editPOSupplier', '#createPOSupplier', 
+                '#newItemSupplier', '#editItemSupplier', '#newSimSupplier',
+                // Filter selects
+                '#filterItemSupplier', '#filterPurchaseSupplier', 
+                '#filterInventorySupplier', '#pricesimSupplier',
+                // Report filters
+                '#filter_supplier',
+                // Class-based
+                '.supplier-select'
+            ].join(', ');
             
-            if (isMobile) {
-                // Attach to supplier selects
-                document.querySelectorAll('#poSupplier, #editPOSupplier, .supplier-select').forEach(select => {
-                    if (!select.dataset.supplierPickerAttached) {
-                        select.dataset.supplierPickerAttached = 'true';
-                        select.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openSupplierPicker(this);
-                        });
-                        select.addEventListener('touchstart', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openSupplierPicker(this);
-                        });
-                    }
-                });
-            }
+            document.querySelectorAll(supplierSelects).forEach(select => {
+                if (!select.dataset.supplierPickerAttached) {
+                    select.dataset.supplierPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openSupplierPicker(this);
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openSupplierPicker(this);
+                    });
+                }
+            });
         }
         
         // ==================== CUSTOMER PICKER ====================
@@ -10820,7 +11075,27 @@ NOTE: Please print the attached PO document for full details.`;
                     (c.Route && c.Route.toLowerCase().includes(search));
             });
             
-            if (filtered.length === 0) {
+            // Check if this is a filter dropdown or filter text input (needs "All/Clear" option)
+            const isFilter = window.customerPickerIsFilter || (customerPickerCallback && 
+                customerPickerCallback.id.startsWith('filter'));
+            
+            let html = '';
+            
+            // Add "All Customers" or "Clear Filter" option for filters
+            if (isFilter && !search) {
+                const clearText = window.customerPickerIsFilter ? 'Clear Filter' : 'All Customers';
+                const clearDesc = window.customerPickerIsFilter ? 'Remove customer filter' : 'Show sales from all customers';
+                html += `
+                    <div class="item-picker-card" onclick="selectCustomerFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                            <span style="font-size: 18px; margin-right: 8px;">📋</span> ${clearText}
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d;">${clearDesc}</div>
+                    </div>
+                `;
+            }
+            
+            if (filtered.length === 0 && !isFilter) {
                 listContainer.innerHTML = `
                     <div class="item-picker-empty">
                         <div class="item-picker-empty-icon">👤</div>
@@ -10830,7 +11105,6 @@ NOTE: Please print the attached PO document for full details.`;
                 return;
             }
             
-            let html = '';
             filtered.forEach(c => {
                 html += `
                     <div class="item-picker-card customer-card" onclick="selectCustomerFromPicker('${c.Customer_ID}')" style="border-left: 4px solid #1565c0;">
@@ -10853,33 +11127,401 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectCustomerFromPicker(customerId) {
             if (customerPickerCallback) {
-                customerPickerCallback.value = customerId;
-                customerPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                // Check if this is a filter text input or a select element
+                const isTextInput = customerPickerCallback.tagName === 'INPUT' && customerPickerCallback.type === 'text';
+                
+                if (isTextInput && window.customerPickerIsFilter) {
+                    // For filter inputs, set the customer name as value
+                    if (customerId === '') {
+                        customerPickerCallback.value = '';
+                    } else {
+                        const customer = (cachedCustomers || []).find(c => c.Customer_ID === customerId);
+                        customerPickerCallback.value = customer ? customer.Customer_Name : customerId;
+                    }
+                    // Trigger the filter function
+                    if (typeof filterCustomers === 'function') filterCustomers();
+                } else {
+                    customerPickerCallback.value = customerId;
+                    customerPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    // Explicitly call filter function if it's a filter select
+                    const id = customerPickerCallback.id;
+                    if (id === 'filterSaleCustomer') {
+                        if (typeof filterSales === 'function') filterSales();
+                    }
+                }
             }
+            window.customerPickerIsFilter = false;
             closeCustomerPicker();
         }
         
         function attachCustomerPickerToSelects() {
-            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            // Attach to ALL customer selects on ALL devices (forms + filters + reports)
+            const customerSelects = [
+                // Form selects
+                '#soCustomer', '#editSOCustomer',
+                // Filter selects
+                '#filterSaleCustomer',
+                // Report filters
+                '#filter_customer',
+                // Class-based
+                '.customer-select'
+            ].join(', ');
             
-            if (isMobile) {
-                // Attach to customer selects
-                document.querySelectorAll('#soCustomer, #editSOCustomer, .customer-select').forEach(select => {
-                    if (!select.dataset.customerPickerAttached) {
-                        select.dataset.customerPickerAttached = 'true';
-                        select.addEventListener('mousedown', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openCustomerPicker(this);
-                        });
-                        select.addEventListener('touchstart', function(e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openCustomerPicker(this);
-                        });
-                    }
+            document.querySelectorAll(customerSelects).forEach(select => {
+                if (!select.dataset.customerPickerAttached) {
+                    select.dataset.customerPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openCustomerPicker(this);
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openCustomerPicker(this);
+                    });
+                }
+            });
+        }
+        
+        // ==================== STATUS PICKER ====================
+        
+        let statusPickerCallback = null;
+        let statusPickerOptions = [];
+        
+        function openStatusPicker(selectElement, title, color) {
+            statusPickerCallback = selectElement;
+            
+            // Get options from the select element
+            statusPickerOptions = [];
+            Array.from(selectElement.options).forEach(opt => {
+                statusPickerOptions.push({
+                    value: opt.value,
+                    text: opt.textContent,
+                    selected: opt.selected
                 });
+            });
+            
+            // Set title
+            document.getElementById('statusPickerTitle').textContent = title || '📋 Select Status';
+            
+            // Set header color
+            const headerColors = {
+                stock: 'linear-gradient(135deg, #f57c00 0%, #e65100 100%)',
+                order: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                payment: 'linear-gradient(135deg, #388e3c 0%, #2e7d32 100%)'
+            };
+            document.getElementById('statusPickerHeader').style.background = headerColors[color] || headerColors.stock;
+            
+            // Render options
+            renderStatusPickerList();
+            
+            // Show modal
+            document.getElementById('statusPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeStatusPicker() {
+            document.getElementById('statusPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            statusPickerCallback = null;
+        }
+        
+        function renderStatusPickerList() {
+            const listContainer = document.getElementById('statusPickerList');
+            
+            let html = '';
+            statusPickerOptions.forEach((opt, index) => {
+                const isAll = opt.value === '';
+                const icon = isAll ? '📋' : (opt.text.match(/^[^\w\s]/) ? opt.text.charAt(0) : '•');
+                const text = opt.text.replace(/^[^\w\s]\s*/, '');
+                
+                html += `
+                    <div class="item-picker-card" onclick="selectStatusFromPicker('${opt.value}')" 
+                         style="border-left: 4px solid ${isAll ? '#6c757d' : 'var(--primary, #667eea)'}; 
+                                ${isAll ? 'background: #f8f9fa;' : ''}
+                                ${opt.selected ? 'background: #e3f2fd; border-left-color: #1976d2;' : ''}">
+                        <div class="item-picker-desc" style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">${icon}</span>
+                            <span style="font-weight: ${opt.selected ? 'bold' : 'normal'};">${text}</span>
+                            ${opt.selected ? '<span style="margin-left: auto; color: #1976d2;">✓</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectStatusFromPicker(value) {
+            if (statusPickerCallback) {
+                statusPickerCallback.value = value;
+                statusPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
             }
+            closeStatusPicker();
+        }
+        
+        // ==================== PO PICKER ====================
+        
+        let poPickerCallback = null;
+        
+        function openPOPicker(inputElement) {
+            poPickerCallback = inputElement;
+            document.getElementById('poPickerSearch').value = '';
+            renderPOPickerList();
+            document.getElementById('poPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('poPickerSearch').focus();
+            }, 100);
+        }
+        
+        function closePOPicker() {
+            document.getElementById('poPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            poPickerCallback = null;
+        }
+        
+        function filterPOPicker() {
+            renderPOPickerList();
+        }
+        
+        function renderPOPickerList() {
+            const search = document.getElementById('poPickerSearch').value.toLowerCase().trim();
+            const listContainer = document.getElementById('poPickerList');
+            
+            // Get POs from cache
+            let pos = cachedPurchases || [];
+            
+            let filtered = pos.filter(po => {
+                return !search || 
+                    (po.PO_Number && po.PO_Number.toLowerCase().includes(search)) ||
+                    (po.Supplier_Invoice && po.Supplier_Invoice.toLowerCase().includes(search));
+            });
+            
+            let html = '';
+            
+            // Add "Clear Filter" option
+            if (!search) {
+                html += `
+                    <div class="item-picker-card" onclick="selectPOFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                            <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d;">Show all purchase orders</div>
+                    </div>
+                `;
+            }
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = html + `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">📋</div>
+                        <div>No purchase orders found</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by date descending
+            filtered.sort((a, b) => new Date(b.PO_Date || 0) - new Date(a.PO_Date || 0));
+            
+            // Limit to 50
+            filtered.slice(0, 50).forEach(po => {
+                const status = po.Status || 'Ordered';
+                const statusColor = status === 'Received' ? '#4caf50' : '#ff9800';
+                const supplierName = getSupplierName(po.Supplier_ID);
+                const total = parseFloat(po.Total_Amount) || 0;
+                const date = po.PO_Date ? new Date(po.PO_Date).toLocaleDateString() : '';
+                
+                html += `
+                    <div class="item-picker-card" onclick="selectPOFromPicker('${po.PO_Number}')" style="border-left: 4px solid ${statusColor};">
+                        <div class="item-picker-card-header">
+                            <span class="item-picker-sku" style="background: #fff3e0; color: #e65100;">${po.PO_Number || 'No PO#'}</span>
+                            <span class="item-picker-stock" style="background: ${status === 'Received' ? '#e8f5e9' : '#fff3e0'}; color: ${statusColor};">${status}</span>
+                        </div>
+                        <div class="item-picker-desc">${supplierName}</div>
+                        <div class="item-picker-details">
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Date</span>
+                                <span class="item-picker-detail-value">${date}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Total</span>
+                                <span class="item-picker-detail-value item-picker-price">$${total.toFixed(2)}</span>
+                            </div>
+                            ${po.Supplier_Invoice ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Invoice</span><span class="item-picker-detail-value">${po.Supplier_Invoice}</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectPOFromPicker(poNumber) {
+            if (poPickerCallback) {
+                poPickerCallback.value = poNumber;
+                if (typeof filterPurchases === 'function') filterPurchases();
+            }
+            closePOPicker();
+        }
+        
+        // ==================== INVOICE PICKER ====================
+        
+        let invoicePickerCallback = null;
+        
+        function openInvoicePicker(inputElement) {
+            invoicePickerCallback = inputElement;
+            document.getElementById('invoicePickerSearch').value = '';
+            renderInvoicePickerList();
+            document.getElementById('invoicePickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('invoicePickerSearch').focus();
+            }, 100);
+        }
+        
+        function closeInvoicePicker() {
+            document.getElementById('invoicePickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            invoicePickerCallback = null;
+        }
+        
+        function filterInvoicePicker() {
+            renderInvoicePickerList();
+        }
+        
+        function renderInvoicePickerList() {
+            const search = document.getElementById('invoicePickerSearch').value.toLowerCase().trim();
+            const listContainer = document.getElementById('invoicePickerList');
+            
+            // Get Sales from cache
+            let sales = cachedSales || [];
+            
+            let filtered = sales.filter(sale => {
+                return !search || 
+                    (sale.Invoice_Number && sale.Invoice_Number.toLowerCase().includes(search)) ||
+                    (sale.SO_Number && sale.SO_Number.toLowerCase().includes(search));
+            });
+            
+            let html = '';
+            
+            // Add "Clear Filter" option
+            if (!search) {
+                html += `
+                    <div class="item-picker-card" onclick="selectInvoiceFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                            <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d;">Show all invoices</div>
+                    </div>
+                `;
+            }
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = html + `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">🧾</div>
+                        <div>No invoices found</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by date descending
+            filtered.sort((a, b) => new Date(b.Sale_Date || 0) - new Date(a.Sale_Date || 0));
+            
+            // Limit to 50
+            filtered.slice(0, 50).forEach(sale => {
+                const customerName = getCustomerName(sale.Customer_ID);
+                const total = parseFloat(sale.Total_Amount) || 0;
+                const date = sale.Sale_Date ? new Date(sale.Sale_Date).toLocaleDateString() : '';
+                const invoiceNum = sale.Invoice_Number || sale.SO_Number || 'No Invoice#';
+                
+                html += `
+                    <div class="item-picker-card" onclick="selectInvoiceFromPicker('${invoiceNum}')" style="border-left: 4px solid #00796b;">
+                        <div class="item-picker-card-header">
+                            <span class="item-picker-sku" style="background: #e0f2f1; color: #00796b;">${invoiceNum}</span>
+                        </div>
+                        <div class="item-picker-desc">${customerName}</div>
+                        <div class="item-picker-details">
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Date</span>
+                                <span class="item-picker-detail-value">${date}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Total</span>
+                                <span class="item-picker-detail-value item-picker-price">$${total.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectInvoiceFromPicker(invoiceNumber) {
+            if (invoicePickerCallback) {
+                invoicePickerCallback.value = invoiceNumber;
+                if (typeof filterSales === 'function') filterSales();
+            }
+            closeInvoicePicker();
+        }
+        
+        function attachStatusPickerToSelects() {
+            // Stock Status selects
+            document.querySelectorAll('#filterItemStock, #filterInventoryStock, #pricesimStock').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📦 Stock Status', 'stock');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📦 Stock Status', 'stock');
+                    });
+                }
+            });
+            
+            // Order Status selects
+            document.querySelectorAll('#filterPurchaseStatus').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📤 Order Status', 'order');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📤 Order Status', 'order');
+                    });
+                }
+            });
+            
+            // Payment Status selects
+            document.querySelectorAll('#filterPurchasePaymentStatus').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '💵 Payment Status', 'payment');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '💵 Payment Status', 'payment');
+                    });
+                }
+            });
         }
         
         // Attach all pickers on page load
@@ -10887,10 +11529,12 @@ NOTE: Please print the attached PO document for full details.`;
             attachItemPickerToSelects();
             attachSupplierPickerToSelects();
             attachCustomerPickerToSelects();
+            attachStatusPickerToSelects();
             setInterval(() => {
                 attachItemPickerToSelects();
                 attachSupplierPickerToSelects();
                 attachCustomerPickerToSelects();
+                attachStatusPickerToSelects();
             }, 1000);
         });
     </script>
