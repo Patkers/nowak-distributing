@@ -2429,17 +2429,12 @@
                 <p style="color: #666; margin-bottom: 15px;">Use this for physical counts, damaged goods, shrinkage, etc.</p>
                 <form onsubmit="submitInventoryAdjustment(event)">
                     <div class="form-grid">
-                        <div class="form-group" style="position: relative;">
-                            <label>Item * <small style="color: #888;">(type SKU or description to search)</small></label>
-                            <input type="text" id="adjustItemSearch" placeholder="🔍 Type SKU or description..." 
-                                   oninput="filterAdjustItemDropdown()" 
-                                   onfocus="showAdjustItemDropdown()"
-                                   autocomplete="off"
-                                   style="margin-bottom: 5px;">
-                            <select id="adjustItem" required onchange="onAdjustItemSelected()" size="1">
-                                <option value="">Select Item</option>
-                            </select>
-                            <div id="adjustItemResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 2px solid #c0c0c0; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                        <div class="form-group">
+                            <label>Item * <small style="color: #888;">(click to search)</small></label>
+                            <input type="text" id="adjustItemDisplay" placeholder="🔍 Click to select item..." 
+                                   onclick="openItemPickerForAdjustment()" readonly
+                                   style="cursor: pointer; background: #fff;">
+                            <input type="hidden" id="adjustItem" required>
                         </div>
                         <div class="form-group">
                             <label>Current Quantity</label>
@@ -2457,16 +2452,10 @@
                     </div>
                     <div class="form-group">
                         <label>Reason *</label>
-                        <select id="adjustReason" required>
-                            <option value="">Select Reason</option>
-                            <option value="Physical Count">Physical Count</option>
-                            <option value="Damaged Goods">Damaged Goods</option>
-                            <option value="Expired Products">Expired Products</option>
-                            <option value="Shrinkage/Theft">Shrinkage/Theft</option>
-                            <option value="Found Inventory">Found Inventory</option>
-                            <option value="Data Correction">Data Correction</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <input type="text" id="adjustReasonDisplay" placeholder="🔍 Click to select reason..." 
+                               onclick="openReasonPicker()" readonly
+                               style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="adjustReason" required>
                     </div>
                     <div class="form-group">
                         <label>Notes</label>
@@ -7373,15 +7362,12 @@
             if (result && result.status === 'success') {
                 cachedItems = result.data;
                 
-                // Populate the select dropdown
-                const select = document.getElementById('adjustItem');
-                select.innerHTML = '<option value="">Select Item</option>';
-                cachedItems.forEach(item => {
-                    select.innerHTML += `<option value="${item.Item_ID}">${item.SKU} - ${item.Item_Description} (Qty: ${item.Qty_On_Hand})</option>`;
-                });
-                
-                // Clear search field
-                document.getElementById('adjustItemSearch').value = '';
+                // Clear fields
+                document.getElementById('adjustItemDisplay').value = '';
+                document.getElementById('adjustItem').value = '';
+                document.getElementById('adjustCurrentQty').value = '';
+                document.getElementById('adjustNewQty').value = '';
+                document.getElementById('adjustQuantity').value = '';
                 
                 document.getElementById('adjustInventoryForm').style.display = 'block';
                 showStatus('inventoryStatus', '', '');
@@ -7390,66 +7376,47 @@
             }
         }
         
-        function filterAdjustItemDropdown() {
-            const search = document.getElementById('adjustItemSearch').value.toLowerCase().trim();
-            const resultsDiv = document.getElementById('adjustItemResults');
+        // Open item picker for inventory adjustment
+        function openItemPickerForAdjustment() {
+            window.adjustmentPickerActive = true;
+            itemPickerCallback = {
+                tagName: 'ADJUSTMENT_FORM',
+                value: document.getElementById('adjustItem').value
+            };
             
-            if (!search || search.length < 1) {
-                resultsDiv.style.display = 'none';
-                return;
+            // Show supplier filter
+            const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
+            if (supplierFilterDiv) {
+                supplierFilterDiv.style.display = 'block';
             }
             
-            const filtered = cachedItems.filter(item => {
-                return (item.SKU && item.SKU.toLowerCase().includes(search)) ||
-                       (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
-            }).slice(0, 15); // Limit to 15 results
-            
-            if (filtered.length === 0) {
-                resultsDiv.innerHTML = '<div style="padding: 15px; color: #999; text-align: center;">No items found</div>';
-                resultsDiv.style.display = 'block';
-                return;
+            // Populate supplier filter
+            const supplierSelect = document.getElementById('itemPickerSupplier');
+            supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+            if (cachedSuppliers && cachedSuppliers.length > 0) {
+                cachedSuppliers.forEach(s => {
+                    supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                });
             }
             
-            let html = '';
-            filtered.forEach(item => {
-                const qty = parseInt(item.Qty_On_Hand) || 0;
-                const qtyColor = qty <= 0 ? '#c62828' : qty <= (item.Reorder_Point || 0) ? '#ef6c00' : '#2e7d32';
-                html += `
-                    <div onclick="selectAdjustItem('${item.Item_ID}')" 
-                         style="padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;"
-                         onmouseover="this.style.background='#f0f4ff'" 
-                         onmouseout="this.style.background='white'">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${item.SKU || 'No SKU'}</span>
-                            <span style="color: ${qtyColor}; font-weight: bold; font-size: 13px;">Qty: ${qty}</span>
-                        </div>
-                        <div style="margin-top: 5px; font-weight: 500; color: #333;">${item.Item_Description}</div>
-                    </div>
-                `;
-            });
+            // Get items from cache
+            itemPickerItems = cachedItems || [];
             
-            resultsDiv.innerHTML = html;
-            resultsDiv.style.display = 'block';
-        }
-        
-        function showAdjustItemDropdown() {
-            const search = document.getElementById('adjustItemSearch').value.trim();
-            if (search.length >= 1) {
-                filterAdjustItemDropdown();
-            }
-        }
-        
-        function selectAdjustItem(itemId) {
-            const select = document.getElementById('adjustItem');
-            select.value = itemId;
+            // Clear search
+            document.getElementById('itemPickerSearch').value = '';
+            document.getElementById('itemPickerSupplier').value = '';
             
-            const item = cachedItems.find(i => i.Item_ID === itemId);
-            if (item) {
-                document.getElementById('adjustItemSearch').value = `${item.SKU} - ${item.Item_Description}`;
-                onAdjustItemSelected();
-            }
+            // Render items
+            renderItemPickerList();
             
-            document.getElementById('adjustItemResults').style.display = 'none';
+            // Show modal
+            document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Focus search
+            setTimeout(() => {
+                document.getElementById('itemPickerSearch').focus();
+            }, 100);
         }
         
         function onAdjustItemSelected() {
@@ -7459,7 +7426,7 @@
                 if (item) {
                     const currentQty = parseInt(item.Qty_On_Hand) || 0;
                     document.getElementById('adjustCurrentQty').value = currentQty;
-                    document.getElementById('adjustItemSearch').value = `${item.SKU} - ${item.Item_Description}`;
+                    document.getElementById('adjustItemDisplay').value = `${item.SKU} - ${item.Item_Description}`;
                     updateAdjustNewQty();
                 }
             }
@@ -7486,30 +7453,24 @@
             }
         }
         
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const resultsDiv = document.getElementById('adjustItemResults');
-            const searchInput = document.getElementById('adjustItemSearch');
-            if (resultsDiv && searchInput && !resultsDiv.contains(e.target) && e.target !== searchInput) {
-                resultsDiv.style.display = 'none';
-            }
-        });
+        // (Removed old adjustItemResults click handler - now uses card picker)
         
         function hideAdjustInventoryForm() {
             document.getElementById('adjustInventoryForm').style.display = 'none';
             document.querySelector('#adjustInventoryForm form').reset();
             document.getElementById('adjustCurrentQty').value = '';
             document.getElementById('adjustNewQty').value = '';
-            document.getElementById('adjustItemSearch').value = '';
-            document.getElementById('adjustItemResults').style.display = 'none';
+            document.getElementById('adjustItemDisplay').value = '';
+            document.getElementById('adjustItem').value = '';
+            document.getElementById('adjustReasonDisplay').value = '';
+            document.getElementById('adjustReason').value = '';
         }
         
         function updateAdjustmentCalc() {
-            const itemSelect = document.getElementById('adjustItem');
-            const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+            const itemId = document.getElementById('adjustItem').value;
             
-            if (selectedOption && selectedOption.value) {
-                const item = cachedItems.find(i => i.Item_ID === selectedOption.value);
+            if (itemId) {
+                const item = cachedItems.find(i => i.Item_ID === itemId);
                 const currentQty = item ? parseInt(item.Qty_On_Hand) : 0;
                 const adjustment = parseInt(document.getElementById('adjustQuantity').value) || 0;
                 const newQty = currentQty + adjustment;
@@ -7930,27 +7891,27 @@
                     </div>`;
             }
             
-            // Customer dropdown
+            // Customer dropdown - use card picker
             if (config.filters.includes('customer')) {
                 filterHtml += `
                     <div class="form-group">
                         <label>👤 Customer</label>
-                        <select id="rptFilter_customer">
-                            <option value="">All Customers</option>
-                            ${cachedCustomers.map(c => `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`).join('')}
-                        </select>
+                        <input type="text" id="rptFilter_customer_display" placeholder="🔍 Click to select customer..." 
+                            onclick="openCustomerPickerForReport()" readonly 
+                            style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_customer" value="">
                     </div>`;
             }
             
-            // Supplier dropdown
+            // Supplier dropdown - use card picker
             if (config.filters.includes('supplier')) {
                 filterHtml += `
                     <div class="form-group">
                         <label>🏭 Supplier</label>
-                        <select id="rptFilter_supplier">
-                            <option value="">All Suppliers</option>
-                            ${cachedSuppliers.map(s => `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`).join('')}
-                        </select>
+                        <input type="text" id="rptFilter_supplier_display" placeholder="🔍 Click to select supplier..." 
+                            onclick="openSupplierPickerForReport()" readonly 
+                            style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_supplier" value="">
                     </div>`;
             }
             
@@ -11318,6 +11279,19 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- REASON PICKER MODAL -->
+    <div id="reasonPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+                <h3>📝 Select Reason</h3>
+                <button class="item-picker-close" onclick="closeReasonPicker()">&times;</button>
+            </div>
+            <div id="reasonPickerList" class="item-picker-list" style="padding: 15px;">
+                <!-- Reason options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- STATUS PICKER MODAL -->
     <div id="statusPickerModal" class="item-picker-overlay">
         <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
@@ -11748,9 +11722,6 @@ NOTE: Please print the attached PO document for full details.`;
                 return matchesSearch && matchesSupplier && matchesActive;
             });
             
-            // Check if this is a filter text input (needs "Clear" option)
-            const isFilterInput = window.itemPickerIsFilter;
-            
             let html = '';
             
             // Add "Clear Filter" option for filter text inputs
@@ -11827,6 +11798,20 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectItemFromPicker(itemId) {
             if (itemPickerCallback) {
+                // Check if this is for inventory adjustment form
+                if (itemPickerCallback.tagName === 'ADJUSTMENT_FORM') {
+                    document.getElementById('adjustItem').value = itemId;
+                    const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+                    if (item) {
+                        document.getElementById('adjustItemDisplay').value = `${item.SKU} - ${item.Item_Description}`;
+                        document.getElementById('adjustCurrentQty').value = parseInt(item.Qty_On_Hand) || 0;
+                        updateAdjustNewQty();
+                    }
+                    window.adjustmentPickerActive = false;
+                    closeItemPicker();
+                    return;
+                }
+                
                 // Check if this is a filter text input or a select element
                 const isTextInput = itemPickerCallback.tagName === 'INPUT' && itemPickerCallback.type === 'text';
                 
@@ -11953,6 +11938,12 @@ NOTE: Please print the attached PO document for full details.`;
             itemPickerCallback = inputElement;
             window.itemPickerIsFilter = true;
             
+            // Show supplier filter for filter context
+            const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
+            if (supplierFilterDiv) {
+                supplierFilterDiv.style.display = 'block';
+            }
+            
             // Populate supplier filter
             const supplierSelect = document.getElementById('itemPickerSupplier');
             supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
@@ -11995,6 +11986,40 @@ NOTE: Please print the attached PO document for full details.`;
             }, 100);
         }
         
+        // Customer picker for report filters
+        function openCustomerPickerForReport() {
+            window.reportPickerType = 'customer';
+            window.customerPickerIsFilter = true; // Allow "All Customers" option
+            customerPickerCallback = {
+                tagName: 'REPORT_FILTER',
+                value: document.getElementById('rptFilter_customer').value
+            };
+            document.getElementById('customerPickerSearch').value = '';
+            renderCustomerPickerList();
+            document.getElementById('customerPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('customerPickerSearch').focus();
+            }, 100);
+        }
+        
+        // Supplier picker for report filters
+        function openSupplierPickerForReport() {
+            window.reportPickerType = 'supplier';
+            window.supplierPickerIsFilter = true; // Allow "All Suppliers" option
+            supplierPickerCallback = {
+                tagName: 'REPORT_FILTER',
+                value: document.getElementById('rptFilter_supplier').value
+            };
+            document.getElementById('supplierPickerSearch').value = '';
+            renderSupplierPickerList();
+            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('supplierPickerSearch').focus();
+            }, 100);
+        }
+        
         function openSupplierPicker(selectElement) {
             supplierPickerCallback = selectElement;
             document.getElementById('supplierPickerSearch').value = '';
@@ -12029,9 +12054,10 @@ NOTE: Please print the attached PO document for full details.`;
                     (s.Contact_Name && s.Contact_Name.toLowerCase().includes(search));
             });
             
-            // Check if this is a filter dropdown or filter text input (needs "All/Clear" option)
-            const isFilter = supplierPickerIsFilter || (supplierPickerCallback && 
-                (supplierPickerCallback.id.startsWith('filter') || supplierPickerCallback.id === 'pricesimSupplier'));
+            // Check if this is a filter dropdown, filter text input, or report filter (needs "All/Clear" option)
+            const isFilter = supplierPickerIsFilter || window.supplierPickerIsFilter || 
+                (supplierPickerCallback && supplierPickerCallback.tagName === 'REPORT_FILTER') ||
+                (supplierPickerCallback && (supplierPickerCallback.id.startsWith('filter') || supplierPickerCallback.id === 'pricesimSupplier'));
             
             let html = '';
             
@@ -12080,6 +12106,23 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectSupplierFromPicker(supplierId) {
             if (supplierPickerCallback) {
+                // Check if this is a report filter
+                if (supplierPickerCallback.tagName === 'REPORT_FILTER') {
+                    const displayInput = document.getElementById('rptFilter_supplier_display');
+                    const hiddenInput = document.getElementById('rptFilter_supplier');
+                    if (supplierId === '') {
+                        displayInput.value = '';
+                        hiddenInput.value = '';
+                    } else {
+                        const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+                        displayInput.value = supplier ? supplier.Supplier_Name : supplierId;
+                        hiddenInput.value = supplierId;
+                    }
+                    window.supplierPickerIsFilter = false;
+                    closeSupplierPicker();
+                    return;
+                }
+                
                 // Check if this is a filter text input or a select element
                 const isTextInput = supplierPickerCallback.tagName === 'INPUT' && supplierPickerCallback.type === 'text';
                 
@@ -12172,6 +12215,59 @@ NOTE: Please print the attached PO document for full details.`;
             customerPickerCallback = null;
         }
         
+        // ==================== REASON PICKER ====================
+        const adjustmentReasons = [
+            { value: 'Physical Count', icon: '📊', desc: 'Adjust to match physical inventory count' },
+            { value: 'Damaged Goods', icon: '💔', desc: 'Items damaged and cannot be sold' },
+            { value: 'Expired Products', icon: '📅', desc: 'Products past expiration date' },
+            { value: 'Shrinkage/Theft', icon: '🔍', desc: 'Missing inventory, possible theft' },
+            { value: 'Found Inventory', icon: '✨', desc: 'Located misplaced items' },
+            { value: 'Data Correction', icon: '✏️', desc: 'Fix data entry error' },
+            { value: 'Returned Goods', icon: '↩️', desc: 'Customer returned products' },
+            { value: 'Sample/Promo', icon: '🎁', desc: 'Given as sample or promotion' },
+            { value: 'Transfer Out', icon: '📤', desc: 'Moved to another location' },
+            { value: 'Transfer In', icon: '📥', desc: 'Received from another location' },
+            { value: 'Other', icon: '📝', desc: 'Other reason (add notes)' }
+        ];
+        
+        function openReasonPicker() {
+            const listContainer = document.getElementById('reasonPickerList');
+            
+            let html = '';
+            adjustmentReasons.forEach(reason => {
+                html += `
+                    <div class="item-picker-card" onclick="selectReason('${reason.value}')" 
+                         style="border-left: 4px solid #c0c0c0; margin-bottom: 10px; padding: 15px; cursor: pointer; transition: all 0.2s;"
+                         onmouseover="this.style.background='#f0f4ff'; this.style.borderLeftColor='var(--primary, #667eea)'"
+                         onmouseout="this.style.background='white'; this.style.borderLeftColor='#c0c0c0'">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 24px;">${reason.icon}</span>
+                            <div>
+                                <div style="font-weight: 600; color: #333;">${reason.value}</div>
+                                <div style="font-size: 12px; color: #666;">${reason.desc}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+            
+            document.getElementById('reasonPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function selectReason(reason) {
+            document.getElementById('adjustReason').value = reason;
+            document.getElementById('adjustReasonDisplay').value = reason;
+            closeReasonPicker();
+        }
+        
+        function closeReasonPicker() {
+            document.getElementById('reasonPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
         function filterCustomerPicker() {
             renderCustomerPickerList();
         }
@@ -12190,9 +12286,10 @@ NOTE: Please print the attached PO document for full details.`;
                     (c.Route && c.Route.toLowerCase().includes(search));
             });
             
-            // Check if this is a filter dropdown or filter text input (needs "All/Clear" option)
-            const isFilter = window.customerPickerIsFilter || (customerPickerCallback && 
-                customerPickerCallback.id.startsWith('filter'));
+            // Check if this is a filter dropdown, filter text input, or report filter (needs "All/Clear" option)
+            const isFilter = window.customerPickerIsFilter || 
+                (customerPickerCallback && customerPickerCallback.tagName === 'REPORT_FILTER') ||
+                (customerPickerCallback && customerPickerCallback.id && customerPickerCallback.id.startsWith('filter'));
             
             let html = '';
             
@@ -12242,6 +12339,23 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectCustomerFromPicker(customerId) {
             if (customerPickerCallback) {
+                // Check if this is a report filter
+                if (customerPickerCallback.tagName === 'REPORT_FILTER') {
+                    const displayInput = document.getElementById('rptFilter_customer_display');
+                    const hiddenInput = document.getElementById('rptFilter_customer');
+                    if (customerId === '') {
+                        displayInput.value = '';
+                        hiddenInput.value = '';
+                    } else {
+                        const customer = (cachedCustomers || []).find(c => c.Customer_ID === customerId);
+                        displayInput.value = customer ? customer.Customer_Name : customerId;
+                        hiddenInput.value = customerId;
+                    }
+                    window.customerPickerIsFilter = false;
+                    closeCustomerPicker();
+                    return;
+                }
+                
                 // Check if this is a filter text input or a select element
                 const isTextInput = customerPickerCallback.tagName === 'INPUT' && customerPickerCallback.type === 'text';
                 
