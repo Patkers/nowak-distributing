@@ -2250,11 +2250,17 @@
                 <p style="color: #666; margin-bottom: 15px;">Use this for physical counts, damaged goods, shrinkage, etc.</p>
                 <form onsubmit="submitInventoryAdjustment(event)">
                     <div class="form-grid">
-                        <div class="form-group">
-                            <label>Item *</label>
-                            <select id="adjustItem" required>
+                        <div class="form-group" style="position: relative;">
+                            <label>Item * <small style="color: #888;">(type SKU or description to search)</small></label>
+                            <input type="text" id="adjustItemSearch" placeholder="🔍 Type SKU or description..." 
+                                   oninput="filterAdjustItemDropdown()" 
+                                   onfocus="showAdjustItemDropdown()"
+                                   autocomplete="off"
+                                   style="margin-bottom: 5px;">
+                            <select id="adjustItem" required onchange="onAdjustItemSelected()" size="1">
                                 <option value="">Select Item</option>
                             </select>
+                            <div id="adjustItemResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 2px solid #667eea; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
                         </div>
                         <div class="form-group">
                             <label>Current Quantity</label>
@@ -2262,7 +2268,7 @@
                         </div>
                         <div class="form-group">
                             <label>Adjustment (+/-) *</label>
-                            <input type="number" id="adjustQuantity" placeholder="e.g., -5 or +10" required>
+                            <input type="number" id="adjustQuantity" placeholder="e.g., -5 or +10" required oninput="updateAdjustNewQty()">
                             <small style="color: #666;">Use negative for decrease, positive for increase</small>
                         </div>
                         <div class="form-group">
@@ -2334,6 +2340,70 @@
         <div id="pricesim" class="card">
             <h2>🎯 Pricing Workbench</h2>
             <div class="status" id="pricesimStatus"></div>
+            
+            <!-- Revenue Impact Calculator - MOVED TO TOP -->
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('revenueCalcContent')">
+                    <h3 style="margin: 0; color: #1565c0;">💰 Revenue Impact Calculator</h3>
+                    <span id="revenueCalcContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
+                </div>
+                <div id="revenueCalcContent" style="margin-top: 15px;">
+                    <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">See how a price increase affects your profit on a sample sale amount.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group" style="margin: 0;">
+                            <label>🍕 Sample Sale Amount</label>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span style="font-size: 18px; font-weight: bold;">$</span>
+                                <input type="number" id="revCalcSaleAmount" value="100" min="1" step="1" style="width: 100px;" oninput="updateRevenueCalc()">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label>📈 Price Increase %</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="revCalcPercent" min="0" max="25" value="10" step="0.5" style="flex: 1;" oninput="updateRevenueCalc()">
+                                <span id="revCalcPercentLabel" style="font-weight: bold; color: #1565c0; min-width: 45px;">10%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 5px;">BEFORE Increase</div>
+                            <div id="revCalcBefore" style="font-size: 32px; font-weight: bold; color: #666;">$100.00</div>
+                            <div style="font-size: 12px; color: #999;">Your Sale</div>
+                        </div>
+                        <div style="background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 5px;">AFTER Increase</div>
+                            <div id="revCalcAfter" style="font-size: 32px; font-weight: bold; color: #2e7d32;">$110.00</div>
+                            <div style="font-size: 12px; color: #999;">New Sale Value</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #4caf50, #2e7d32); padding: 20px; border-radius: 12px; text-align: center; color: white;">
+                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">EXTRA PROFIT</div>
+                            <div id="revCalcProfit" style="font-size: 32px; font-weight: bold;">+$10.00</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Per Sale</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <h4 style="margin: 0 0 10px 0; color: #1565c0;">📊 Projected Impact</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                            <div>
+                                <div style="color: #666; font-size: 13px;">10 Sales/Week</div>
+                                <div id="revCalc10Sales" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$100/week</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 13px;">Monthly (40 sales)</div>
+                                <div id="revCalcMonthly" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$400/month</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 13px;">Yearly (520 sales)</div>
+                                <div id="revCalcYearly" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$5,200/year</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div style="background: linear-gradient(135deg, #667eea15, #764ba215); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
                 <h3 style="margin: 0 0 10px 0; color: #667eea;">💡 What You Can Do Here</h3>
@@ -2436,70 +2506,6 @@
                 </div>
             </div>
             
-            <!-- Revenue Impact Calculator -->
-            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #2196f3;">
-                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('revenueCalcContent')">
-                    <h3 style="margin: 0; color: #1565c0;">💰 Revenue Impact Calculator</h3>
-                    <span id="revenueCalcContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
-                </div>
-                <div id="revenueCalcContent" style="margin-top: 15px;">
-                    <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">See how a price increase affects your profit on a sample sale amount.</p>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-weight: bold;">📦 Sample Sale Amount</label>
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <span style="font-size: 20px; font-weight: bold;">$</span>
-                                <input type="number" id="revCalcSaleAmount" value="100" min="0" step="10" style="width: 120px; font-size: 18px; padding: 10px;" oninput="calculateRevenueImpact()">
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-weight: bold;">📈 Price Increase %</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="range" id="revCalcPercent" min="0" max="50" value="10" style="flex: 1; height: 30px;" oninput="calculateRevenueImpact()">
-                                <span id="revCalcPercentLabel" style="font-size: 24px; font-weight: bold; color: #1565c0; min-width: 60px;">10%</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                        <div style="background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
-                            <div style="font-size: 13px; color: #666; margin-bottom: 5px;">BEFORE Increase</div>
-                            <div id="revCalcBefore" style="font-size: 32px; font-weight: bold; color: #666;">$100.00</div>
-                            <div style="font-size: 12px; color: #999;">Your Sale</div>
-                        </div>
-                        <div style="background: #fff; padding: 20px; border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
-                            <div style="font-size: 13px; color: #666; margin-bottom: 5px;">AFTER Increase</div>
-                            <div id="revCalcAfter" style="font-size: 32px; font-weight: bold; color: #2e7d32;">$110.00</div>
-                            <div style="font-size: 12px; color: #999;">New Sale Value</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #4caf50, #2e7d32); padding: 20px; border-radius: 12px; text-align: center; color: white;">
-                            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 5px;">EXTRA PROFIT</div>
-                            <div id="revCalcProfit" style="font-size: 32px; font-weight: bold;">+$10.00</div>
-                            <div style="font-size: 12px; opacity: 0.9;">Per Sale</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <h4 style="margin: 0 0 10px 0; color: #1565c0;">📊 Projected Impact</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-                            <div>
-                                <div style="color: #666; font-size: 13px;">10 Sales/Week</div>
-                                <div id="revCalc10Sales" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$100/week</div>
-                            </div>
-                            <div>
-                                <div style="color: #666; font-size: 13px;">Monthly (40 sales)</div>
-                                <div id="revCalcMonthly" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$400/month</div>
-                            </div>
-                            <div>
-                                <div style="color: #666; font-size: 13px;">Yearly (520 sales)</div>
-                                <div id="revCalcYearly" style="font-size: 20px; font-weight: bold; color: #2e7d32;">+$5,200/year</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Price Adjustment Controls -->
             <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Bulk Price Adjustment (Existing Items)</h3>
@@ -2507,7 +2513,7 @@
                     <div class="form-group" style="margin: 0;">
                         <label>Increase by Percentage</label>
                         <div style="display: flex; align-items: center; gap: 5px;">
-                            <input type="number" id="pricesimPercent" value="5" min="0" max="100" step="0.5" style="width: 80px;" onchange="previewPriceChanges()">
+                            <input type="number" id="pricesimPercent" value="10" min="0" max="100" step="0.5" style="width: 80px;" oninput="clearFlatAmount()">
                             <span style="font-size: 18px; font-weight: bold;">%</span>
                         </div>
                     </div>
@@ -2516,7 +2522,7 @@
                         <label>Increase by Flat Amount</label>
                         <div style="display: flex; align-items: center; gap: 5px;">
                             <span style="font-size: 18px; font-weight: bold;">$</span>
-                            <input type="number" id="pricesimFlat" value="0" min="0" step="0.01" style="width: 80px;" onchange="previewPriceChanges()">
+                            <input type="number" id="pricesimFlat" value="0" min="0" step="0.01" style="width: 80px;" oninput="clearPercentAmount()">
                         </div>
                     </div>
                     <button class="btn btn-success" onclick="previewPriceChanges()" style="height: 42px;">
@@ -2527,23 +2533,55 @@
             
             <!-- Impact Summary Cards -->
             <div id="pricesimSummary" style="display: none; margin-bottom: 20px;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
-                    <div style="background: #667eea; color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 14px; opacity: 0.9;">Selected Items</div>
-                        <div id="simSelectedCount" style="font-size: 32px; font-weight: bold;">0</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                    <div style="background: #667eea; color: white; padding: 15px; border-radius: 12px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 12px; opacity: 0.9;">Selected Items</div>
+                        <div id="simSelectedCount" style="font-size: 28px; font-weight: bold;">0</div>
                     </div>
-                    <div style="background: #6c757d; color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 14px; opacity: 0.9;">Current Revenue</div>
-                        <div id="simCurrentRevenue" style="font-size: 28px; font-weight: bold;">$0.00</div>
+                    <div style="background: #6c757d; color: white; padding: 15px; border-radius: 12px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 12px; opacity: 0.9;">Current Revenue</div>
+                        <div id="simCurrentRevenue" style="font-size: 20px; font-weight: bold; word-break: break-all;">$0.00</div>
                     </div>
-                    <div style="background: #28a745; color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 14px; opacity: 0.9;">New Revenue</div>
-                        <div id="simNewRevenue" style="font-size: 28px; font-weight: bold;">$0.00</div>
+                    <div style="background: #28a745; color: white; padding: 15px; border-radius: 12px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 12px; opacity: 0.9;">New Revenue</div>
+                        <div id="simNewRevenue" style="font-size: 20px; font-weight: bold; word-break: break-all;">$0.00</div>
                     </div>
-                    <div style="background: #17a2b8; color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 14px; opacity: 0.9;">Revenue Increase</div>
-                        <div id="simIncrease" style="font-size: 28px; font-weight: bold;">+$0.00</div>
+                    <div style="background: #17a2b8; color: white; padding: 15px; border-radius: 12px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 12px; opacity: 0.9;">Revenue Increase</div>
+                        <div id="simIncrease" style="font-size: 20px; font-weight: bold; word-break: break-all;">+$0.00</div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- INVENTORY IMPACT - Issue #7 -->
+            <div id="pricesimInventoryImpact" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, #1a237e, #283593); padding: 15px; border-radius: 12px; color: white;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px;">📦 Real Inventory Impact (Selected Items with Stock)</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 11px; opacity: 0.8;">Current Value</div>
+                        <div id="simCurrentInvValue" style="font-size: 18px; font-weight: bold; word-break: break-all;">$0.00</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 11px; opacity: 0.8;">New Value</div>
+                        <div id="simNewInvValue" style="font-size: 18px; font-weight: bold; word-break: break-all;">$0.00</div>
+                    </div>
+                    <div style="background: rgba(46,125,50,0.5); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
+                        <div style="font-size: 11px; opacity: 0.8;">Profit Potential</div>
+                        <div id="simInvProfit" style="font-size: 18px; font-weight: bold; word-break: break-all;">+$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Apply Button - MOVED BEFORE TABLE (#5) -->
+            <div id="pricesimApplySection" style="display: none; margin-bottom: 20px; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <strong style="font-size: 18px;">⚠️ Ready to Apply Changes?</strong>
+                        <p style="margin: 5px 0 0 0; color: #666;">This will update the Unit Sell Price for all selected items in your database.</p>
+                    </div>
+                    <button class="btn btn-success" onclick="applyPriceChanges()" style="font-size: 16px; padding: 15px 30px;">
+                        ✅ APPLY CHANGES TO <span id="applyCount">0</span> ITEMS
+                    </button>
                 </div>
             </div>
             
@@ -2557,19 +2595,6 @@
             </div>
             
             <div id="pricesimTable" style="overflow-x: auto;"></div>
-            
-            <!-- Apply Button -->
-            <div id="pricesimApplySection" style="display: none; margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div>
-                        <strong style="font-size: 18px;">⚠️ Ready to Apply Changes?</strong>
-                        <p style="margin: 5px 0 0 0; color: #666;">This will update the Unit Sell Price for all selected items in your database.</p>
-                    </div>
-                    <button class="btn btn-success" onclick="applyPriceChanges()" style="font-size: 16px; padding: 15px 30px;">
-                        ✅ APPLY CHANGES TO <span id="applyCount">0</span> ITEMS
-                    </button>
-                </div>
-            </div>
         </div>
         
         <!-- REPORTS TAB -->
@@ -3603,6 +3628,14 @@
 
         async function loadItems() {
             document.getElementById('itemsTable').innerHTML = '<div class="loading">Loading items...</div>';
+            
+            // Ensure suppliers are loaded first so getSupplierName works
+            if (cachedSuppliers.length === 0) {
+                const suppResult = await apiCall('getSuppliers');
+                if (suppResult && suppResult.status === 'success') {
+                    cachedSuppliers = suppResult.data;
+                }
+            }
             
             const result = await apiCall('getItems');
             
@@ -6780,10 +6813,17 @@
             
             document.getElementById('pricesimTable').innerHTML = html;
             
+            // Make table sortable
+            setTimeout(() => makeSortable('pricesimDataTable'), 0);
+            
             updatePriceSimSummary();
         }
         
         // Revenue Impact Calculator
+        function updateRevenueCalc() {
+            calculateRevenueImpact();
+        }
+        
         function calculateRevenueImpact() {
             const saleAmount = parseFloat(document.getElementById('revCalcSaleAmount').value) || 100;
             const percent = parseFloat(document.getElementById('revCalcPercent').value) || 0;
@@ -6818,16 +6858,17 @@
         });
         
         function previewPriceChanges() {
-            // Clear the other input when one is used
-            const percent = parseFloat(document.getElementById('pricesimPercent').value) || 0;
-            const flat = parseFloat(document.getElementById('pricesimFlat').value) || 0;
-            
-            if (percent > 0) {
-                document.getElementById('pricesimFlat').value = '0';
-            }
-            
             displayPriceSimItems();
             document.getElementById('pricesimSummary').style.display = 'block';
+        }
+        
+        // Helper functions to clear one when the other is used
+        function clearFlatAmount() {
+            document.getElementById('pricesimFlat').value = '0';
+        }
+        
+        function clearPercentAmount() {
+            document.getElementById('pricesimPercent').value = '0';
         }
         
         function toggleAllPriceSimItems() {
@@ -6847,6 +6888,11 @@
             let currentRevenue = 0;
             let newRevenue = 0;
             
+            // For inventory impact calculation
+            let currentInvValue = 0;
+            let newInvValue = 0;
+            let itemsWithStock = 0;
+            
             checkboxes.forEach(cb => {
                 const idx = parseInt(cb.dataset.idx);
                 const item = pricesimFiltered[idx];
@@ -6865,25 +6911,42 @@
                 selectedCount++;
                 currentRevenue += qty * currentSell;
                 newRevenue += qty * newSell;
+                
+                // Calculate inventory impact for items with stock
+                if (qty > 0) {
+                    itemsWithStock++;
+                    currentInvValue += qty * currentSell;
+                    newInvValue += qty * newSell;
+                }
             });
             
             const increase = newRevenue - currentRevenue;
+            const invProfit = newInvValue - currentInvValue;
             
             document.getElementById('simSelectedCount').textContent = selectedCount;
-            document.getElementById('simCurrentRevenue').textContent = '$' + currentRevenue.toFixed(2);
-            document.getElementById('simNewRevenue').textContent = '$' + newRevenue.toFixed(2);
-            document.getElementById('simIncrease').textContent = '+$' + increase.toFixed(2);
+            document.getElementById('simCurrentRevenue').textContent = '$' + currentRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('simNewRevenue').textContent = '$' + newRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('simIncrease').textContent = '+$' + increase.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('applyCount').textContent = selectedCount;
             
-            // Show/hide apply section
+            // Update inventory impact section
+            document.getElementById('simCurrentInvValue').textContent = '$' + currentInvValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('simNewInvValue').textContent = '$' + newInvValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('simInvProfit').textContent = '+$' + invProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            // Show/hide sections
             const applySection = document.getElementById('pricesimApplySection');
             const summarySection = document.getElementById('pricesimSummary');
+            const invImpactSection = document.getElementById('pricesimInventoryImpact');
             
             if (selectedCount > 0 && (percent > 0 || flat > 0)) {
                 applySection.style.display = 'block';
                 summarySection.style.display = 'block';
+                // Show inventory impact if there are items with stock
+                invImpactSection.style.display = itemsWithStock > 0 ? 'block' : 'none';
             } else {
                 applySection.style.display = 'none';
+                invImpactSection.style.display = 'none';
             }
         }
         
@@ -6937,15 +7000,15 @@
             if (result && result.status === 'success') {
                 cachedItems = result.data;
                 
+                // Populate the select dropdown
                 const select = document.getElementById('adjustItem');
                 select.innerHTML = '<option value="">Select Item</option>';
                 cachedItems.forEach(item => {
-                    select.innerHTML += `<option value="${item.Item_ID}">${item.Item_Description} (SKU: ${item.SKU}) - Current: ${item.Qty_On_Hand}</option>`;
+                    select.innerHTML += `<option value="${item.Item_ID}">${item.SKU} - ${item.Item_Description} (Qty: ${item.Qty_On_Hand})</option>`;
                 });
                 
-                // Attach event listeners for live calculation
-                select.onchange = updateAdjustmentCalc;
-                document.getElementById('adjustQuantity').oninput = updateAdjustmentCalc;
+                // Clear search field
+                document.getElementById('adjustItemSearch').value = '';
                 
                 document.getElementById('adjustInventoryForm').style.display = 'block';
                 showStatus('inventoryStatus', '', '');
@@ -6954,11 +7017,118 @@
             }
         }
         
+        function filterAdjustItemDropdown() {
+            const search = document.getElementById('adjustItemSearch').value.toLowerCase().trim();
+            const resultsDiv = document.getElementById('adjustItemResults');
+            
+            if (!search || search.length < 1) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            const filtered = cachedItems.filter(item => {
+                return (item.SKU && item.SKU.toLowerCase().includes(search)) ||
+                       (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
+            }).slice(0, 15); // Limit to 15 results
+            
+            if (filtered.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding: 15px; color: #999; text-align: center;">No items found</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(item => {
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                const qtyColor = qty <= 0 ? '#c62828' : qty <= (item.Reorder_Point || 0) ? '#ef6c00' : '#2e7d32';
+                html += `
+                    <div onclick="selectAdjustItem('${item.Item_ID}')" 
+                         style="padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s;"
+                         onmouseover="this.style.background='#f0f4ff'" 
+                         onmouseout="this.style.background='white'">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${item.SKU || 'No SKU'}</span>
+                            <span style="color: ${qtyColor}; font-weight: bold; font-size: 13px;">Qty: ${qty}</span>
+                        </div>
+                        <div style="margin-top: 5px; font-weight: 500; color: #333;">${item.Item_Description}</div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+        
+        function showAdjustItemDropdown() {
+            const search = document.getElementById('adjustItemSearch').value.trim();
+            if (search.length >= 1) {
+                filterAdjustItemDropdown();
+            }
+        }
+        
+        function selectAdjustItem(itemId) {
+            const select = document.getElementById('adjustItem');
+            select.value = itemId;
+            
+            const item = cachedItems.find(i => i.Item_ID === itemId);
+            if (item) {
+                document.getElementById('adjustItemSearch').value = `${item.SKU} - ${item.Item_Description}`;
+                onAdjustItemSelected();
+            }
+            
+            document.getElementById('adjustItemResults').style.display = 'none';
+        }
+        
+        function onAdjustItemSelected() {
+            const itemId = document.getElementById('adjustItem').value;
+            if (itemId) {
+                const item = cachedItems.find(i => i.Item_ID === itemId);
+                if (item) {
+                    const currentQty = parseInt(item.Qty_On_Hand) || 0;
+                    document.getElementById('adjustCurrentQty').value = currentQty;
+                    document.getElementById('adjustItemSearch').value = `${item.SKU} - ${item.Item_Description}`;
+                    updateAdjustNewQty();
+                }
+            }
+        }
+        
+        function updateAdjustNewQty() {
+            const currentQty = parseInt(document.getElementById('adjustCurrentQty').value) || 0;
+            const adjustment = parseInt(document.getElementById('adjustQuantity').value) || 0;
+            const newQty = currentQty + adjustment;
+            
+            document.getElementById('adjustNewQty').value = newQty;
+            
+            // Color code the new quantity
+            const newQtyInput = document.getElementById('adjustNewQty');
+            if (newQty < 0) {
+                newQtyInput.style.background = '#ffebee';
+                newQtyInput.style.color = '#c62828';
+            } else if (adjustment < 0) {
+                newQtyInput.style.background = '#fff3e0';
+                newQtyInput.style.color = '#ef6c00';
+            } else {
+                newQtyInput.style.background = '#e8f5e9';
+                newQtyInput.style.color = '#2e7d32';
+            }
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const resultsDiv = document.getElementById('adjustItemResults');
+            const searchInput = document.getElementById('adjustItemSearch');
+            if (resultsDiv && searchInput && !resultsDiv.contains(e.target) && e.target !== searchInput) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+        
         function hideAdjustInventoryForm() {
             document.getElementById('adjustInventoryForm').style.display = 'none';
             document.querySelector('#adjustInventoryForm form').reset();
             document.getElementById('adjustCurrentQty').value = '';
             document.getElementById('adjustNewQty').value = '';
+            document.getElementById('adjustItemSearch').value = '';
+            document.getElementById('adjustItemResults').style.display = 'none';
         }
         
         function updateAdjustmentCalc() {
