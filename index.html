@@ -58,6 +58,7 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: none;
+            border-left: 4px solid rgba(255, 255, 255, 0.4);
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
@@ -67,12 +68,14 @@
 
         .tab:hover {
             background: rgba(255, 255, 255, 0.3);
+            border-left-color: rgba(255, 255, 255, 0.6);
         }
 
         .tab.active {
             background: white;
             color: #667eea;
             font-weight: 600;
+            border-left: 4px solid #c0c0c0;
         }
 
         .card {
@@ -166,7 +169,14 @@
         }
 
         .btn-secondary {
-            background: #6c757d;
+            background: #e0e0e0 !important;
+            background-image: none !important;
+            color: #333 !important;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0 !important;
+            background-image: none !important;
         }
         
         .btn-small {
@@ -182,7 +192,7 @@
         }
         
         .btn-small:hover {
-            background: #5568d3;
+            filter: brightness(0.9);
             transform: translateY(-1px);
         }
         
@@ -650,9 +660,6 @@
         body.theme-ocean .btn-success {
             background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
         }
-        body.theme-ocean .btn-secondary {
-            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
-        }
         body.theme-ocean .btn-danger {
             background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
         }
@@ -673,9 +680,6 @@
         }
         body.theme-forest .btn-success {
             background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
-        }
-        body.theme-forest .btn-secondary {
-            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%) !important;
         }
         body.theme-forest .btn-danger {
             background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
@@ -698,9 +702,6 @@
         body.theme-sunset .btn-success {
             background: linear-gradient(135deg, #ea580c 0%, #f97316 100%) !important;
         }
-        body.theme-sunset .btn-secondary {
-            background: linear-gradient(135deg, #9a3412 0%, #c2410c 100%) !important;
-        }
         body.theme-sunset .btn-danger {
             background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%) !important;
         }
@@ -722,9 +723,6 @@
         body.theme-dark .btn-success {
             background: linear-gradient(135deg, #4b5563 0%, #6b7280 100%) !important;
         }
-        body.theme-dark .btn-secondary {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
-        }
         body.theme-dark .btn-danger {
             background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%) !important;
         }
@@ -734,6 +732,7 @@
         body.theme-dark .tab.active {
             background: white !important;
             color: #1f2937 !important;
+            border-left: 4px solid #c0c0c0 !important;
         }
         body.theme-dark .tab:hover {
             background: rgba(255, 255, 255, 0.25) !important;
@@ -753,9 +752,6 @@
         body.theme-crimson .btn-success {
             background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
         }
-        body.theme-crimson .btn-secondary {
-            background: linear-gradient(135deg, #9f1239 0%, #be123c 100%) !important;
-        }
         body.theme-crimson .tab.active {
             color: #be123c !important;
         }
@@ -773,9 +769,6 @@
         }
         body.theme-slate .btn-success {
             background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
-        }
-        body.theme-slate .btn-secondary {
-            background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
         }
         body.theme-slate .tab.active {
             color: #475569 !important;
@@ -795,9 +788,6 @@
         body.theme-teal .btn-success {
             background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
         }
-        body.theme-teal .btn-secondary {
-            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
-        }
         body.theme-teal .tab.active {
             color: #0d9488 !important;
         }
@@ -815,9 +805,6 @@
         }
         body.theme-purple .btn-success {
             background: linear-gradient(135deg, #764ba2 0%, #9333ea 100%) !important;
-        }
-        body.theme-purple .btn-secondary {
-            background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%) !important;
         }
         body.theme-purple .btn-danger {
             background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
@@ -839,9 +826,6 @@
         }
         body.theme-bears .btn-success {
             background: linear-gradient(135deg, #C83803 0%, #E04A15 100%) !important;
-        }
-        body.theme-bears .btn-secondary {
-            background: linear-gradient(135deg, #0B162A 0%, #1C2B3A 100%) !important;
         }
         body.theme-bears .tab.active {
             color: #C83803 !important;
@@ -868,9 +852,6 @@
         body.theme-cubs .btn-success {
             background: linear-gradient(135deg, #0E3386 0%, #1A4AA8 100%) !important;
         }
-        body.theme-cubs .btn-secondary {
-            background: linear-gradient(135deg, #142C5C 0%, #1E3A6E 100%) !important;
-        }
         body.theme-cubs .tab.active {
             color: #CC3433 !important;
         }
@@ -895,9 +876,6 @@
         }
         body.theme-bulls .btn-success {
             background: linear-gradient(135deg, #A31D3A 0%, #CE1141 100%) !important;
-        }
-        body.theme-bulls .btn-secondary {
-            background: linear-gradient(135deg, #231F20 0%, #3A3535 100%) !important;
         }
         body.theme-bulls .tab.active {
             color: #CE1141 !important;
@@ -926,9 +904,6 @@
         }
         body.theme-blackhawks .btn-success {
             background: linear-gradient(135deg, #01583A 0%, #027A50 100%) !important;
-        }
-        body.theme-blackhawks .btn-secondary {
-            background: linear-gradient(135deg, #002F6C 0%, #003D8F 100%) !important;
         }
         body.theme-blackhawks .tab.active {
             color: #CF0A2C !important;
@@ -968,10 +943,6 @@
             background: linear-gradient(135deg, #FFB612 0%, #D4A017 100%) !important;
             color: #203731 !important;
             border: none !important;
-        }
-        body.theme-packers .btn-secondary {
-            background: linear-gradient(135deg, #2C4A42 0%, #3D5E54 100%) !important;
-            color: #FFB612 !important;
         }
         body.theme-packers .tab.active {
             color: #FFB612 !important;
@@ -1029,7 +1000,7 @@
         </button>
         
         <!-- Back Button - Bottom -->
-        <button id="backBtn" onclick="goBack()" style="display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; background: #9e9e9e; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Go back to previous tab">
+        <button id="backBtn" onclick="goBack()" style="display: none; position: fixed; bottom: 30px; left: 30px; z-index: 1000; background: #e0e0e0; color: #333; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Go back to previous tab">
             ⬅️
         </button>
 
@@ -1500,10 +1471,10 @@
             <button class="btn" onclick="showAddSupplierForm()">➕ Add Supplier</button>
             
             <!-- Filter Controls -->
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Suppliers</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-suppliers')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-suppliers')" style="background: #e0e0e0; color: #333;">
                         <span id="filter-panel-suppliers-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -1526,7 +1497,7 @@
                 </div>
             </div>
             
-            <div id="addSupplierForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
+            <div id="addSupplierForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Add New Supplier</h3>
                 <form onsubmit="addSupplier(event)">
                     <div class="form-grid">
@@ -1584,7 +1555,7 @@
             </div>
             
             <!-- Edit Supplier Form -->
-            <div id="editSupplierForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
+            <div id="editSupplierForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f39c12;">
                 <h3>✏️ Edit Supplier</h3>
                 <form onsubmit="updateSupplier(event)">
                     <input type="hidden" id="editSupplierId">
@@ -1654,10 +1625,10 @@
             <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
             
             <!-- Filter Controls -->
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Items</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-items')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-items')" style="background: #e0e0e0; color: #333;">
                         <span id="filter-panel-items-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -1689,7 +1660,7 @@
                 </div>
             </div>
             
-            <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
+            <div id="addItemForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Add New Item</h3>
                 <form onsubmit="addItem(event)">
                     <div class="form-grid">
@@ -1756,7 +1727,7 @@
             </div>
             
             <!-- Edit Item Form -->
-            <div id="editItemForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
+            <div id="editItemForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f39c12;">
                 <h3>✏️ Edit Item</h3>
                 <form onsubmit="updateItem(event)">
                     <input type="hidden" id="editItemId">
@@ -1836,10 +1807,10 @@
             <button class="btn" onclick="showAddCustomerForm()">➕ Add Customer</button>
             
             <!-- Filter Controls -->
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Customers</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-customers')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-customers')" style="background: #e0e0e0; color: #333;">
                         <span id="filter-panel-customers-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -1866,7 +1837,7 @@
                 </div>
             </div>
             
-            <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
+            <div id="addCustomerForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Add New Customer</h3>
                 <form onsubmit="addCustomer(event)">
                     <div class="form-grid">
@@ -1934,7 +1905,7 @@
             </div>
             
             <!-- Edit Customer Form -->
-            <div id="editCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
+            <div id="editCustomerForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f39c12;">
                 <h3>✏️ Edit Customer</h3>
                 <form onsubmit="updateCustomer(event)">
                     <input type="hidden" id="editCustomerId">
@@ -2118,10 +2089,10 @@
             <button class="btn" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
             
             <!-- Filter Controls -->
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Purchases</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-purchases')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-purchases')" style="background: #e0e0e0; color: #333;">
                         <span id="filter-panel-purchases-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2167,7 +2138,7 @@
                 </div>
             </div>
             
-            <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
+            <div id="addPurchaseForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Record New Purchase</h3>
                 <form onsubmit="addPurchase(event)">
                     <div class="form-grid">
@@ -2256,10 +2227,10 @@
             <button class="btn" onclick="showAddSaleForm()">➕ Record Sale</button>
             
             <!-- Filter Controls -->
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Sales</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-sales')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-sales')" style="background: #e0e0e0; color: #333;">
                         <span id="filter-panel-sales-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2288,7 +2259,7 @@
                 </div>
             </div>
             
-            <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
+            <div id="addSaleForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Record New Sale</h3>
                 <form onsubmit="addSale(event)">
                     <div class="form-grid">
@@ -2389,7 +2360,7 @@
             </div>
             
             <!-- Manual Adjustment Form -->
-            <div id="adjustInventoryForm" style="display: none; margin-top: 20px; border: 2px solid #f39c12; padding: 20px; border-radius: 8px; background: #fff8e1;">
+            <div id="adjustInventoryForm" style="display: none; margin-top: 20px; background: #fff8e1; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f39c12;">
                 <h3>📝 Manual Inventory Adjustment</h3>
                 <p style="color: #666; margin-bottom: 15px;">Use this for physical counts, damaged goods, shrinkage, etc.</p>
                 <form onsubmit="submitInventoryAdjustment(event)">
@@ -2443,10 +2414,10 @@
             </div>
             
             <!-- Filter Controls -->
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Inventory</h4>
-                    <button class="btn-small" onclick="toggleFilters('filter-panel-inventory')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('filter-panel-inventory')" style="background: #e0e0e0; color: #333;">
                         <span id="filter-panel-inventory-toggle">▶ Show</span>
                     </button>
                 </div>
@@ -2742,7 +2713,7 @@
                     <input type="checkbox" id="pricesimSelectAll" onchange="toggleAllPriceSimItems()" style="width: 18px; height: 18px;">
                     <strong>Select All Visible Items</strong>
                 </label>
-                <button class="btn" onclick="loadPriceSimItems()" style="background: #6c757d;">🔄 Refresh Items</button>
+                <button class="btn" onclick="loadPriceSimItems()" style="background: #e0e0e0; color: #333;">🔄 Refresh Items</button>
             </div>
             
             <div id="pricesimTable" style="overflow-x: auto;"></div>
@@ -5057,7 +5028,7 @@
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
         <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
-        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #9e9e9e; color: white; border: none; border-radius: 5px;">✕ Close</button>
+        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #e0e0e0; color: #333; border: none; border-radius: 5px;">✕ Close</button>
     </div>
 
 </body>
@@ -5319,7 +5290,7 @@
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
         <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
-        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #9e9e9e; color: white; border: none; border-radius: 5px;">✕ Close</button>
+        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #e0e0e0; color: #333; border: none; border-radius: 5px;">✕ Close</button>
     </div>
 
 </body>
@@ -7463,7 +7434,7 @@
             html += `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filters</h4>
-                    <button class="btn-small" onclick="toggleFilters('${filterId}')" style="background: #666;">
+                    <button class="btn-small" onclick="toggleFilters('${filterId}')" style="background: #e0e0e0; color: #333;">
                         <span id="${filterId}-toggle">▼ Hide</span>
                     </button>
                 </div>`;
@@ -7917,12 +7888,12 @@
                 filterHtml += `
                     <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
                         <span style="color: #666; font-size: 13px; margin-right: 5px;">Quick:</span>
-                        <button type="button" class="btn-small" onclick="setDatePreset('today')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">Today</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('week')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Week</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('month')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Month</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('quarter')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Quarter</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('year')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Year</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('all')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">All Time</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('today')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">Today</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('week')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Week</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('month')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Month</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('quarter')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Quarter</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('year')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">This Year</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('all')" style="background: #e0e0e0; color: #333; padding: 4px 10px; font-size: 12px;">All Time</button>
                     </div>`;
             }
             
