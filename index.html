@@ -752,10 +752,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Suppliers</h4>
                     <button class="btn-small" onclick="toggleFilters('filter-panel-suppliers')" style="background: #666;">
-                        <span id="filter-panel-suppliers-toggle">▼ Hide</span>
+                        <span id="filter-panel-suppliers-toggle">▶ Show</span>
                     </button>
                 </div>
-                <div id="filter-panel-suppliers" class="form-grid">
+                <div id="filter-panel-suppliers" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search Name</label>
                         <input type="text" id="filterSupplierName" placeholder="Type to filter..." onkeyup="filterSuppliers()">
@@ -906,10 +906,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Items</h4>
                     <button class="btn-small" onclick="toggleFilters('filter-panel-items')" style="background: #666;">
-                        <span id="filter-panel-items-toggle">▼ Hide</span>
+                        <span id="filter-panel-items-toggle">▶ Show</span>
                     </button>
                 </div>
-                <div id="filter-panel-items" class="form-grid">
+                <div id="filter-panel-items" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search SKU/Description</label>
                         <input type="text" id="filterItemSearch" placeholder="Type to filter..." onkeyup="filterItems()">
@@ -1085,10 +1085,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Customers</h4>
                     <button class="btn-small" onclick="toggleFilters('filter-panel-customers')" style="background: #666;">
-                        <span id="filter-panel-customers-toggle">▼ Hide</span>
+                        <span id="filter-panel-customers-toggle">▶ Show</span>
                     </button>
                 </div>
-                <div id="filter-panel-customers" class="form-grid">
+                <div id="filter-panel-customers" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search Name</label>
                         <input type="text" id="filterCustomerName" placeholder="Customer name..." onkeyup="filterCustomers()">
@@ -1270,6 +1270,14 @@
                             <label>PO Date *</label>
                             <input type="date" id="createPODate" required>
                         </div>
+                        <div class="form-group">
+                            <label>Expected Delivery Date</label>
+                            <input type="date" id="createPOExpectedDate">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Notes</label>
+                            <textarea id="createPONotes" rows="2" placeholder="Special instructions, delivery notes, etc."></textarea>
+                        </div>
                     </div>
                 
                 <h3>Line Items</h3>
@@ -1325,7 +1333,8 @@
                 </div>
                 
                 <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
-                    <button class="btn btn-success" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Generate Printable PO</button>
+                    <button class="btn" onclick="saveOutboundPO()" style="flex: 1; min-width: 200px; background: #28a745;">💾 Save as OUTBOUND PO</button>
+                    <button class="btn btn-success" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
                     <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                 </div>
             </div>
@@ -1358,10 +1367,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Purchases</h4>
                     <button class="btn-small" onclick="toggleFilters('filter-panel-purchases')" style="background: #666;">
-                        <span id="filter-panel-purchases-toggle">▼ Hide</span>
+                        <span id="filter-panel-purchases-toggle">▶ Show</span>
                     </button>
                 </div>
-                <div id="filter-panel-purchases" class="form-grid">
+                <div id="filter-panel-purchases" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>PO Number</label>
                         <input type="text" id="filterPurchasePO" placeholder="PO-001" onchange="filterPurchases()">
@@ -1370,6 +1379,14 @@
                         <label>Supplier</label>
                         <select id="filterPurchaseSupplier" onchange="filterPurchases()">
                             <option value="">All Suppliers</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>PO Status</label>
+                        <select id="filterPurchaseStatus" onchange="filterPurchases()">
+                            <option value="">All Statuses</option>
+                            <option value="Ordered">📤 OUTBOUND (Ordered)</option>
+                            <option value="Received">📥 INBOUND (Received)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1488,10 +1505,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Sales</h4>
                     <button class="btn-small" onclick="toggleFilters('filter-panel-sales')" style="background: #666;">
-                        <span id="filter-panel-sales-toggle">▼ Hide</span>
+                        <span id="filter-panel-sales-toggle">▶ Show</span>
                     </button>
                 </div>
-                <div id="filter-panel-sales" class="form-grid">
+                <div id="filter-panel-sales" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Customer</label>
                         <select id="filterSaleCustomer" onchange="filterSales()">
@@ -1668,10 +1685,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <h4 style="margin: 0;">🔍 Filter Inventory</h4>
                     <button class="btn-small" onclick="toggleFilters('filter-panel-inventory')" style="background: #666;">
-                        <span id="filter-panel-inventory-toggle">▼ Hide</span>
+                        <span id="filter-panel-inventory-toggle">▶ Show</span>
                     </button>
                 </div>
-                <div id="filter-panel-inventory" class="form-grid">
+                <div id="filter-panel-inventory" class="form-grid" style="display: none;">
                     <div class="form-group">
                         <label>Search SKU/Description</label>
                         <input type="text" id="filterInventorySearch" placeholder="Type to filter..." onkeyup="filterInventory()">
@@ -2553,16 +2570,18 @@
             let totalQty = 0;
             
             let html = '<table class="data-table" id="itemsDataTable"><thead><tr>';
-            html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>Purchase UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Unit Sell</th><th>Qty (Pkgs)</th><th>Reorder</th><th>Actions</th>';
+            html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>Purchase UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Unit Sell</th><th>Qty (Pkgs)</th><th>On Order</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const qtyOnOrder = parseFloat(item.Qty_On_Order) || 0;
                 const unitsPerPkg = parseFloat(item.Units_Per_Package) || 1;
                 const packageCost = parseFloat(item.Package_Cost) || 0;
                 const unitCost = packageCost / unitsPerPkg;
                 const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
                 const packages = (qty / unitsPerPkg).toFixed(1);
+                const packagesOnOrder = (qtyOnOrder / unitsPerPkg).toFixed(1);
                 
                 const lowStock = qty < (item.Reorder_Point || 0) ? 'style="background:#fff3cd;"' : '';
                 totalQty += qty;
@@ -2577,7 +2596,8 @@
                     <td>$${packageCost.toFixed(2)}</td>
                     <td>$${unitCost.toFixed(2)}</td>
                     <td>$${unitSellPrice.toFixed(2)}</td>
-                    <td><strong>${qty}</strong> <span style="color: #666; font-size: 11px;">(${packages} ${item.Purchase_UOM})</span></td>
+                    <td>${packages} (${qty.toFixed(0)} Case)</td>
+                    <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${packagesOnOrder}</span></td>
                     <td>${item.Reorder_Point}</td>
                     <td>
                         <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
@@ -3164,6 +3184,7 @@
         function filterPurchases() {
             const poFilter = document.getElementById('filterPurchasePO').value.toLowerCase();
             const supplierFilter = document.getElementById('filterPurchaseSupplier').value;
+            const statusFilter = document.getElementById('filterPurchaseStatus').value;
             const dateFrom = document.getElementById('filterPurchaseDateFrom').value;
             const dateTo = document.getElementById('filterPurchaseDateTo').value;
             const paymentStatusFilter = document.getElementById('filterPurchasePaymentStatus').value;
@@ -3171,11 +3192,12 @@
             const filtered = purchasesData.filter(po => {
                 const matchesPO = !poFilter || (po.PO_ID && po.PO_ID.toLowerCase().includes(poFilter));
                 const matchesSupplier = !supplierFilter || po.Supplier_ID === supplierFilter;
+                const matchesStatus = !statusFilter || po.Status === statusFilter;
                 const poDate = new Date(po.PO_Date);
                 const matchesDateFrom = !dateFrom || poDate >= new Date(dateFrom);
                 const matchesDateTo = !dateTo || poDate <= new Date(dateTo);
                 const matchesPaymentStatus = !paymentStatusFilter || (po.Payment_Status === paymentStatusFilter);
-                return matchesPO && matchesSupplier && matchesDateFrom && matchesDateTo && matchesPaymentStatus;
+                return matchesPO && matchesSupplier && matchesStatus && matchesDateFrom && matchesDateTo && matchesPaymentStatus;
             });
             
             displayPurchases(filtered);
@@ -3184,6 +3206,7 @@
         function clearPurchaseFilters() {
             document.getElementById('filterPurchasePO').value = '';
             document.getElementById('filterPurchaseSupplier').value = '';
+            document.getElementById('filterPurchaseStatus').value = '';
             document.getElementById('filterPurchaseDateFrom').value = '';
             document.getElementById('filterPurchaseDateTo').value = '';
             document.getElementById('filterPurchasePaymentStatus').value = '';
@@ -3224,12 +3247,13 @@
                     <td><strong>${getSupplierName(po.Supplier_ID)}</strong></td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
                     <td>${po.Invoice_Number || '-'}</td>
-                    <td>${po.Status || 'Received'}</td>
+                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : '#28a745'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${po.Status || 'Received'}</span></td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
                     <td ${statusColor}>${paymentStatus}</td>
                     <td>
+                        ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive Items</button>` : ''}
                         <button class="btn-small" onclick="editPurchaseOrder('${po.PO_ID}')">✏️ Edit</button>
                         ${paymentStatus === 'Paid' ? '<span style="color: green; margin-left: 10px;">✓ Paid</span>' : ''}
                     </td>
@@ -3620,7 +3644,8 @@
 </body>
 </html>`;
             
-            // Write to the already-opened window
+            // Clear the loading message and write the final invoice
+            printWindow.document.open();
             printWindow.document.write(invoiceHTML);
             printWindow.document.close();
         }
@@ -7008,6 +7033,341 @@
             document.getElementById('createPOTotalUnits').textContent = totalUnits;
             document.getElementById('createPOTotal').textContent = '$' + totalCost.toFixed(2);
             return totalCost;
+        }
+        
+        // ==================== OUTBOUND PO FUNCTIONS ====================
+        
+        async function receiveOutboundPO(poId) {
+            // Load the OUTBOUND PO
+            const result = await apiCall('getPurchaseOrders');
+            if (!result || result.status !== 'success') {
+                alert('Error loading purchase order');
+                return;
+            }
+            
+            const po = result.data.find(p => p.PO_ID === poId);
+            if (!po) {
+                alert('Purchase order not found');
+                return;
+            }
+            
+            if (po.Status !== 'Ordered') {
+                alert('This PO has already been received');
+                return;
+            }
+            
+            // Load line items
+            const linesResult = await apiCall('getPurchaseOrderLines', { poId: poId });
+            if (!linesResult || linesResult.status !== 'success') {
+                alert('Error loading PO line items');
+                return;
+            }
+            
+            const lines = linesResult.data || [];
+            
+            // Show receive modal
+            showReceiveModal(po, lines);
+        }
+        
+        function showReceiveModal(po, lines) {
+            let html = `
+                <div style="max-height: 70vh; overflow-y: auto;">
+                    <h2>📦 Receive OUTBOUND PO</h2>
+                    <p><strong>PO:</strong> ${po.PO_ID} | <strong>Supplier:</strong> ${getSupplierName(po.Supplier_ID)}</p>
+                    <p><strong>Order Date:</strong> ${new Date(po.PO_Date).toLocaleDateString()}</p>
+                    
+                    <h3>Items Ordered</h3>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0;"><strong>📋 Instructions:</strong></p>
+                        <ul style="margin: 10px 0 0 20px;">
+                            <li>Check off items you received</li>
+                            <li>Adjust quantities if you received less/more than ordered</li>
+                            <li>Click "✅ Commit to Inventory" to complete receipt</li>
+                        </ul>
+                    </div>
+                    
+                    <table class="data-table" id="receiveItemsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">✓</th>
+                                <th>Item</th>
+                                <th style="width: 100px;">Ordered</th>
+                                <th style="width: 100px;">Received</th>
+                                <th style="width: 100px;">Cost/Unit</th>
+                                <th style="width: 100px;">Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receiveItemsBody">
+            `;
+            
+            lines.forEach((line, index) => {
+                const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                const itemName = item ? item.Item_Description : line.Item_ID;
+                const unitCost = parseFloat(line.Unit_Cost) || 0;
+                const qtyOrdered = parseFloat(line.Quantity) || 0;
+                
+                html += `
+                    <tr id="receiveLine${index}">
+                        <td style="text-align: center;">
+                            <input type="checkbox" id="receiveCheck${index}" checked onchange="updateReceiveLine(${index})">
+                        </td>
+                        <td><strong>${itemName}</strong></td>
+                        <td style="text-align: center;">${qtyOrdered}</td>
+                        <td>
+                            <input type="number" 
+                                   id="receiveQty${index}" 
+                                   value="${qtyOrdered}" 
+                                   min="0" 
+                                   step="1"
+                                   data-item-id="${line.Item_ID}"
+                                   data-ordered="${qtyOrdered}"
+                                   data-cost="${unitCost}"
+                                   style="width: 80px; padding: 5px;"
+                                   oninput="updateReceiveLine(${index})">
+                        </td>
+                        <td style="text-align: right;">$${unitCost.toFixed(2)}</td>
+                        <td style="text-align: right;" id="receiveLineTotal${index}">$${(qtyOrdered * unitCost).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f0f0f0; font-weight: bold;">
+                                <td colspan="5" style="text-align: right; padding-right: 20px;">TOTAL:</td>
+                                <td style="text-align: right;" id="receiveGrandTotal">$0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Invoice Number (from supplier)</label>
+                        <input type="text" id="receiveInvoiceNumber" placeholder="Enter actual invoice #">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Received Date</label>
+                        <input type="date" id="receiveDate" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="receiveNotes" rows="2" placeholder="Any discrepancies, damage, or special notes..."></textarea>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('modalEditBtn').style.display = 'none';
+            document.getElementById('modalPrintBtn').style.display = 'none';
+            document.getElementById('modalSaveBtn').style.display = 'inline-block';
+            document.getElementById('modalSaveBtn').textContent = '✅ Commit to Inventory';
+            document.getElementById('modalSaveBtn').onclick = () => commitReceive(po.PO_ID, lines.length);
+            document.getElementById('orderModal').style.display = 'block';
+            
+            // Calculate initial total
+            setTimeout(() => {
+                for (let i = 0; i < lines.length; i++) {
+                    updateReceiveLine(i);
+                }
+            }, 100);
+        }
+        
+        function updateReceiveLine(index) {
+            const checkbox = document.getElementById(`receiveCheck${index}`);
+            const qtyInput = document.getElementById(`receiveQty${index}`);
+            const lineTotal = document.getElementById(`receiveLineTotal${index}`);
+            
+            if (!checkbox.checked) {
+                qtyInput.value = 0;
+                qtyInput.disabled = true;
+            } else {
+                qtyInput.disabled = false;
+            }
+            
+            const qty = parseFloat(qtyInput.value) || 0;
+            const cost = parseFloat(qtyInput.dataset.cost) || 0;
+            const total = qty * cost;
+            
+            lineTotal.textContent = '$' + total.toFixed(2);
+            
+            // Update grand total
+            let grandTotal = 0;
+            document.querySelectorAll('[id^="receiveLineTotal"]').forEach(td => {
+                const amount = parseFloat(td.textContent.replace('$', '')) || 0;
+                grandTotal += amount;
+            });
+            
+            const grandTotalEl = document.getElementById('receiveGrandTotal');
+            if (grandTotalEl) {
+                grandTotalEl.textContent = '$' + grandTotal.toFixed(2);
+            }
+        }
+        
+        async function commitReceive(poId, lineCount) {
+            const invoiceNumber = document.getElementById('receiveInvoiceNumber').value;
+            const receiveDate = document.getElementById('receiveDate').value;
+            const notes = document.getElementById('receiveNotes').value;
+            
+            if (!invoiceNumber) {
+                if (!confirm('No invoice number entered. Continue anyway?')) {
+                    return;
+                }
+            }
+            
+            // Collect received items
+            const receivedLines = [];
+            for (let i = 0; i < lineCount; i++) {
+                const checkbox = document.getElementById(`receiveCheck${i}`);
+                const qtyInput = document.getElementById(`receiveQty${i}`);
+                
+                if (checkbox && checkbox.checked) {
+                    const qty = parseFloat(qtyInput.value) || 0;
+                    if (qty > 0) {
+                        receivedLines.push({
+                            itemId: qtyInput.dataset.itemId,
+                            qtyOrdered: parseFloat(qtyInput.dataset.ordered),
+                            qtyReceived: qty,
+                            unitCost: parseFloat(qtyInput.dataset.cost)
+                        });
+                    }
+                }
+            }
+            
+            if (receivedLines.length === 0) {
+                alert('Please select at least one item to receive');
+                return;
+            }
+            
+            // Call API to convert OUTBOUND to INBOUND
+            const data = {
+                poId: poId,
+                invoiceNumber: invoiceNumber,
+                receiveDate: receiveDate,
+                notes: notes,
+                lines: receivedLines
+            };
+            
+            const result = await apiCall('receiveOutboundPO', data);
+            
+            if (result && result.status === 'success') {
+                alert('✅ Items received successfully! Inventory has been updated.');
+                document.getElementById('orderModal').style.display = 'none';
+                
+                // Reload purchases and items
+                await loadPurchases();
+                await loadItems();
+            } else {
+                alert('❌ Error receiving items: ' + (result?.message || 'Unknown error'));
+            }
+        }
+        
+        async function saveOutboundPO() {
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const poDate = document.getElementById('createPODate').value;
+            const notes = document.getElementById('createPONotes')?.value;
+            
+            if (!supplierId || !poDate) {
+                alert('Please select supplier and date');
+                return;
+            }
+            
+            // Get line items
+            const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
+            const lineItems = [];
+            
+            rows.forEach(row => {
+                const itemId = row.querySelector('.createpo-item').value;
+                const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
+                const costDiv = row.querySelector('.createpo-cost');
+                
+                // Parse cost from text
+                const costText = costDiv.textContent.replace('$', '');
+                const cost = costText === '-' ? 0 : parseFloat(costText);
+                
+                if (itemId && qty > 0) {
+                    lineItems.push({
+                        itemId: itemId,
+                        quantity: qty,
+                        unitCost: cost
+                    });
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                alert('Please add at least one line item');
+                return;
+            }
+            
+            // Calculate total
+            const total = lineItems.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+            
+            // AUTO-GENERATE PO NUMBER
+            // Format: PO-MMDDYY-XXX (e.g., PO-120725-001)
+            const dateObj = poDate ? new Date(poDate) : new Date();
+            
+            // Format date as MMDDYY
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const year = String(dateObj.getFullYear()).slice(-2); // Last 2 digits
+            const dateStr = `${month}${day}${year}`;
+            
+            // Get all existing POs to find the next number for this date
+            const existingPOs = await apiCall('getPurchaseOrders');
+            let nextNumber = 1;
+            
+            if (existingPOs && existingPOs.data && existingPOs.data.length > 0) {
+                // Find highest PO number for this date
+                const prefix = `PO-${dateStr}-`;
+                const todayPOs = existingPOs.data
+                    .filter(po => po.Invoice_Number && po.Invoice_Number.startsWith(prefix))
+                    .map(po => {
+                        const parts = po.Invoice_Number.split('-');
+                        return parseInt(parts[2]) || 0;
+                    });
+                
+                if (todayPOs.length > 0) {
+                    nextNumber = Math.max(...todayPOs) + 1;
+                }
+            }
+            
+            // Generate PO number: PO-120725-001
+            const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
+            
+            // Create OUTBOUND PO
+            const data = {
+                supplierId: supplierId,
+                invoiceNumber: poNumber,
+                purchaseDate: poDate,
+                dueDate: null,
+                paymentTerms: 'Net 30',
+                status: 'Ordered', // OUTBOUND status
+                totalAmount: total,
+                amountPaid: 0,
+                notes: notes || '',
+                lines: lineItems,
+                poType: 'OUTBOUND' // New field to distinguish
+            };
+            
+            const result = await apiCall('createPurchaseOrder', data);
+            
+            if (result && result.status === 'success') {
+                alert(`✅ OUTBOUND PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
+                clearCreatePOForm();
+                
+                // Refresh items to update Qty_On_Order
+                await loadItems();
+                
+                // Ask if they want to print
+                if (confirm('Would you like to print this PO?')) {
+                    // Need to reload the PO we just created to print it
+                    // For now, just tell them to go to Purchases tab
+                    alert('Go to Purchases tab to view and print your OUTBOUND PO');
+                }
+            } else {
+                alert('❌ Error creating OUTBOUND PO: ' + (result?.message || 'Unknown error'));
+            }
         }
         
         function generatePrintablePO() {
