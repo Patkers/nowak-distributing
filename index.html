@@ -598,6 +598,69 @@
             background: #f9fafb !important;
         }
         
+        /* Crimson Red Theme */
+        body.theme-crimson {
+            background: linear-gradient(135deg, #be123c 0%, #e11d48 100%) !important;
+        }
+        body.theme-crimson .btn,
+        body.theme-crimson .btn-small {
+            background: linear-gradient(135deg, #be123c 0%, #e11d48 100%) !important;
+        }
+        body.theme-crimson .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+        }
+        body.theme-crimson .btn-secondary {
+            background: linear-gradient(135deg, #9f1239 0%, #be123c 100%) !important;
+        }
+        body.theme-crimson .tab.active {
+            color: #be123c !important;
+        }
+        body.theme-crimson .tab:hover {
+            background: rgba(190, 18, 60, 0.3) !important;
+        }
+        
+        /* Slate Gray Theme */
+        body.theme-slate {
+            background: linear-gradient(135deg, #475569 0%, #64748b 100%) !important;
+        }
+        body.theme-slate .btn,
+        body.theme-slate .btn-small {
+            background: linear-gradient(135deg, #475569 0%, #64748b 100%) !important;
+        }
+        body.theme-slate .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+        }
+        body.theme-slate .btn-secondary {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
+        }
+        body.theme-slate .tab.active {
+            color: #475569 !important;
+        }
+        body.theme-slate .tab:hover {
+            background: rgba(71, 85, 105, 0.3) !important;
+        }
+        
+        /* Teal Theme */
+        body.theme-teal {
+            background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
+        }
+        body.theme-teal .btn,
+        body.theme-teal .btn-small {
+            background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
+        }
+        body.theme-teal .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        }
+        body.theme-teal .btn-secondary {
+            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+        }
+        body.theme-teal .tab.active {
+            color: #0d9488 !important;
+        }
+        body.theme-teal .tab:hover {
+            background: rgba(13, 148, 136, 0.3) !important;
+        }
+        
         /* Royal Purple Theme (Default) */
         body.theme-purple {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
@@ -645,6 +708,7 @@
             <button class="tab" onclick="switchTab('purchases')">📥 Purchases</button>
             <button class="tab" onclick="switchTab('sales')">💰 Sales</button>
             <button class="tab" onclick="switchTab('inventory')">📊 Inventory</button>
+            <button class="tab" onclick="switchTab('pricesim')">🎯 Price Sim</button>
             <button class="tab" onclick="switchTab('reports')">📈 Reports</button>
             <button class="tab" onclick="switchTab('config')">⚙️ Settings</button>
         </div>
@@ -685,6 +749,9 @@
                     <option value="ocean">🌊 Ocean Blue</option>
                     <option value="forest">🌲 Forest Green</option>
                     <option value="sunset">🌅 Sunset Orange</option>
+                    <option value="crimson">❤️ Crimson Red</option>
+                    <option value="slate">🔘 Slate Gray</option>
+                    <option value="teal">💎 Teal</option>
                     <option value="dark">🌙 Professional Dark</option>
                 </select>
             </div>
@@ -978,11 +1045,11 @@
                         <div class="form-group">
                             <label>Purchase UOM (What you buy)</label>
                             <select id="newItemPurchaseUOM">
+                                <option value="Each" selected>Each</option>
                                 <option value="Box">Box</option>
                                 <option value="Case">Case</option>
-                                <option value="Pallet">Pallet</option>
-                                <option value="Each">Each</option>
                                 <option value="Pack">Pack</option>
+                                <option value="Pallet">Pallet</option>
                             </select>
                         </div>
                     </div>
@@ -1720,10 +1787,12 @@
                     </div>
                     <div class="form-group">
                         <label>Stock Status</label>
-                        <select id="filterInventoryStock" onchange="filterInventory()">
+                        <select id="filterInventoryStock" onchange="filterInventoryByStatus(this.value)">
                             <option value="">All Items</option>
-                            <option value="low">Low Stock Only</option>
-                            <option value="ok">Normal Stock</option>
+                            <option value="negative">🚨 Negative</option>
+                            <option value="out">🔴 Out of Stock</option>
+                            <option value="low">🟡 Low Stock</option>
+                            <option value="ok">🟢 In Stock</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1733,6 +1802,120 @@
             </div>
             
             <div id="inventoryTable"></div>
+        </div>
+        
+        <!-- PRICE SIMULATOR TAB -->
+        <div id="pricesim" class="card" style="display: none;">
+            <h2>🎯 Sales Price Simulator</h2>
+            <div class="status" id="pricesimStatus"></div>
+            
+            <div style="background: linear-gradient(135deg, #667eea15, #764ba215); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                <h3 style="margin: 0 0 10px 0; color: #667eea;">💡 How It Works</h3>
+                <p style="margin: 0; color: #555;">
+                    1. <strong>Filter</strong> items by supplier, search, or stock status<br>
+                    2. <strong>Enter</strong> a percentage increase (e.g., 5% = prices go up 5%)<br>
+                    3. <strong>Preview</strong> the impact on your margins and revenue<br>
+                    4. <strong>Select</strong> which items to update using checkboxes<br>
+                    5. <strong>Apply</strong> changes to update sell prices in your database
+                </p>
+            </div>
+            
+            <!-- Filters -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px 0;">🔍 Filter Items</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Search SKU/Description</label>
+                        <input type="text" id="pricesimSearch" placeholder="Type to filter..." onkeyup="filterPriceSimItems()">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Supplier</label>
+                        <select id="pricesimSupplier" onchange="filterPriceSimItems()">
+                            <option value="">All Suppliers</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Stock Status</label>
+                        <select id="pricesimStock" onchange="filterPriceSimItems()">
+                            <option value="">All Items</option>
+                            <option value="instock">In Stock Only</option>
+                            <option value="low">Low Stock</option>
+                            <option value="out">Out of Stock</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Price Adjustment Controls -->
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Price Adjustment</h3>
+                <div style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Increase by Percentage</label>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <input type="number" id="pricesimPercent" value="5" min="0" max="100" step="0.5" style="width: 80px;" onchange="previewPriceChanges()">
+                            <span style="font-size: 18px; font-weight: bold;">%</span>
+                        </div>
+                    </div>
+                    <div style="color: #666; font-size: 14px; padding-bottom: 8px;">— OR —</div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Increase by Flat Amount</label>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 18px; font-weight: bold;">$</span>
+                            <input type="number" id="pricesimFlat" value="0" min="0" step="0.01" style="width: 80px;" onchange="previewPriceChanges()">
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="previewPriceChanges()" style="height: 42px;">
+                        📊 Preview Changes
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Impact Summary Cards -->
+            <div id="pricesimSummary" style="display: none; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                    <div style="background: #667eea; color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">Selected Items</div>
+                        <div id="simSelectedCount" style="font-size: 32px; font-weight: bold;">0</div>
+                    </div>
+                    <div style="background: #6c757d; color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">Current Revenue</div>
+                        <div id="simCurrentRevenue" style="font-size: 28px; font-weight: bold;">$0.00</div>
+                    </div>
+                    <div style="background: #28a745; color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">New Revenue</div>
+                        <div id="simNewRevenue" style="font-size: 28px; font-weight: bold;">$0.00</div>
+                    </div>
+                    <div style="background: #17a2b8; color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">Revenue Increase</div>
+                        <div id="simIncrease" style="font-size: 28px; font-weight: bold;">+$0.00</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Items Table -->
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="pricesimSelectAll" onchange="toggleAllPriceSimItems()" style="width: 18px; height: 18px;">
+                    <strong>Select All Visible Items</strong>
+                </label>
+                <button class="btn" onclick="loadPriceSimItems()" style="background: #6c757d;">🔄 Refresh Items</button>
+            </div>
+            
+            <div id="pricesimTable" style="overflow-x: auto;"></div>
+            
+            <!-- Apply Button -->
+            <div id="pricesimApplySection" style="display: none; margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <strong style="font-size: 18px;">⚠️ Ready to Apply Changes?</strong>
+                        <p style="margin: 5px 0 0 0; color: #666;">This will update the Unit Sell Price for all selected items in your database.</p>
+                    </div>
+                    <button class="btn btn-success" onclick="applyPriceChanges()" style="font-size: 16px; padding: 15px 30px;">
+                        ✅ APPLY CHANGES TO <span id="applyCount">0</span> ITEMS
+                    </button>
+                </div>
+            </div>
         </div>
         
         <!-- REPORTS TAB -->
@@ -1949,6 +2132,11 @@
             // Check if we need to restore PO form when switching to purchases
             if (tabName === 'purchases') {
                 checkAndRestorePOForm();
+            }
+            
+            // Load price sim items when switching to that tab
+            if (tabName === 'pricesim') {
+                loadPriceSimItems();
             }
             
             // Scroll to top when switching tabs
@@ -4956,7 +5144,7 @@
             
             const filtered = inventoryData.filter(item => {
                 const matchesSearch = !searchFilter || 
-                    (item.Item_ID && item.Item_ID.toLowerCase().includes(searchFilter)) ||
+                    (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
                 const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
                 const matchesStock = !stockFilter || 
@@ -4973,6 +5161,30 @@
             document.getElementById('filterInventorySupplier').value = '';
             document.getElementById('filterInventoryStock').value = '';
             displayInventory(inventoryData);
+        }
+        
+        function filterInventoryByStatus(status) {
+            // Set the dropdown to match
+            const stockDropdown = document.getElementById('filterInventoryStock');
+            if (stockDropdown) stockDropdown.value = status;
+            
+            if (!status) {
+                displayInventory(inventoryData);
+                return;
+            }
+            
+            const filtered = inventoryData.filter(item => {
+                const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const reorderPoint = parseFloat(item.Reorder_Point) || 0;
+                
+                if (status === 'negative') return qty < 0;
+                if (status === 'out') return qty === 0;
+                if (status === 'low') return qty > 0 && qty <= reorderPoint;
+                if (status === 'ok') return qty > reorderPoint;
+                return true;
+            });
+            
+            displayInventory(filtered);
         }
 
         function displayInventory(items) {
@@ -5008,31 +5220,32 @@
                 else inStockCount++;
             });
             
-            // BUILD SUMMARY ON TOP
+            // BUILD STATUS TAGS FIRST (clickable filters) - above summary boxes
             let html = `
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    ${negativeCount > 0 ? `<span onclick="filterInventoryByStatus('negative')" style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🚨 ${negativeCount} Negative</span>` : ''}
+                    ${outOfStockCount > 0 ? `<span onclick="filterInventoryByStatus('out')" style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
+                    ${lowStockCount > 0 ? `<span onclick="filterInventoryByStatus('low')" style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟡 ${lowStockCount} Low Stock</span>` : ''}
+                    <span onclick="filterInventoryByStatus('ok')" style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟢 ${inStockCount} In Stock</span>
+                    <span onclick="filterInventoryByStatus('')" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Show All</span>
+                </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="background: #667eea; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(102,126,234,0.3);">
                         <div style="font-size: 28px; font-weight: bold;">${items.length}</div>
                         <div style="font-size: 13px; opacity: 0.9;">Total Items</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="background: #17a2b8; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(23,162,184,0.3);">
                         <div style="font-size: 28px; font-weight: bold;">${totalQty.toLocaleString()}</div>
                         <div style="font-size: 13px; opacity: 0.9;">Total Units</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #ee0979, #ff6a00); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="background: #e83e8c; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(232,62,140,0.3);">
                         <div style="font-size: 28px; font-weight: bold;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; opacity: 0.9;">Cost Value</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #56ab2f, #a8e063); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                    <div style="background: #28a745; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(40,167,69,0.3);">
                         <div style="font-size: 28px; font-weight: bold;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; opacity: 0.9;">Sell Value</div>
                     </div>
-                </div>
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    ${negativeCount > 0 ? `<span style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🚨 ${negativeCount} Negative</span>` : ''}
-                    ${outOfStockCount > 0 ? `<span style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
-                    ${lowStockCount > 0 ? `<span style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🟡 ${lowStockCount} Low Stock</span>` : ''}
-                    <span style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">🟢 ${inStockCount} In Stock</span>
                 </div>
             `;
             
@@ -5076,9 +5289,9 @@
                     statusStyle = 'background: #2e7d32; color: white;';
                 }
                 
-                html += `<tr style="${rowStyle}">
+                html += `<tr style="${rowStyle} cursor: pointer;" onclick="openItem('${item.Item_ID}')" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                     <td><strong>${item.SKU || '-'}</strong></td>
-                    <td><a href="javascript:void(0)" onclick="openItem('${item.Item_ID}')" style="color: #667eea; text-decoration: none;"><strong>${item.Item_Description}</strong></a></td>
+                    <td style="color: #667eea;"><strong>${item.Item_Description}</strong></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td><strong style="${qty < 0 ? 'color: #b71c1c;' : ''}">${qty}</strong></td>
                     <td>${reorderPoint}</td>
@@ -5094,6 +5307,243 @@
             html += '</tbody></table>';
             document.getElementById('inventoryTable').innerHTML = html;
             setTimeout(() => makeSortable('inventoryDataTable'), 0);
+        }
+        
+        // ==================== PRICE SIMULATOR ====================
+        
+        let pricesimItems = [];
+        let pricesimFiltered = [];
+        
+        async function loadPriceSimItems() {
+            showStatus('pricesimStatus', '⏳ Loading items...', 'info');
+            
+            // Load suppliers for filter
+            if (cachedSuppliers.length === 0) {
+                const suppResult = await apiCall('getSuppliers');
+                if (suppResult?.status === 'success') cachedSuppliers = suppResult.data;
+            }
+            
+            const supplierSelect = document.getElementById('pricesimSupplier');
+            supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+            cachedSuppliers.forEach(s => {
+                supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+            });
+            
+            // Load items
+            const result = await apiCall('getItems');
+            if (result?.status === 'success') {
+                pricesimItems = result.data;
+                pricesimFiltered = [...pricesimItems];
+                displayPriceSimItems();
+                showStatus('pricesimStatus', `✅ Loaded ${pricesimItems.length} items`, 'success');
+            } else {
+                showStatus('pricesimStatus', '❌ Failed to load items', 'error');
+            }
+        }
+        
+        function filterPriceSimItems() {
+            const search = document.getElementById('pricesimSearch').value.toLowerCase();
+            const supplier = document.getElementById('pricesimSupplier').value;
+            const stock = document.getElementById('pricesimStock').value;
+            
+            pricesimFiltered = pricesimItems.filter(item => {
+                const matchSearch = !search || 
+                    (item.SKU && item.SKU.toString().toLowerCase().includes(search)) ||
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
+                const matchSupplier = !supplier || item.Supplier_ID === supplier;
+                
+                const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const reorder = parseFloat(item.Reorder_Point) || 0;
+                let matchStock = true;
+                if (stock === 'instock') matchStock = qty > 0;
+                else if (stock === 'low') matchStock = qty > 0 && qty <= reorder;
+                else if (stock === 'out') matchStock = qty <= 0;
+                
+                return matchSearch && matchSupplier && matchStock;
+            });
+            
+            displayPriceSimItems();
+        }
+        
+        function displayPriceSimItems() {
+            const percent = parseFloat(document.getElementById('pricesimPercent').value) || 0;
+            const flat = parseFloat(document.getElementById('pricesimFlat').value) || 0;
+            
+            if (pricesimFiltered.length === 0) {
+                document.getElementById('pricesimTable').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No items match your filters</p>';
+                return;
+            }
+            
+            let html = `
+                <table class="data-table" id="pricesimDataTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">✓</th>
+                            <th>SKU</th>
+                            <th>Description</th>
+                            <th>Supplier</th>
+                            <th>Unit Cost</th>
+                            <th>Current Sell</th>
+                            <th>NEW Sell</th>
+                            <th>Change</th>
+                            <th>Current Margin</th>
+                            <th>NEW Margin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            pricesimFiltered.forEach((item, idx) => {
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPerPkg = parseFloat(item.Units_Per_Package) || 1;
+                const unitCost = packageCost / unitsPerPkg;
+                const currentSell = parseFloat(item.Unit_Sell_Price) || 0;
+                
+                // Calculate new price
+                let newSell = currentSell;
+                if (percent > 0) {
+                    newSell = currentSell * (1 + percent / 100);
+                } else if (flat > 0) {
+                    newSell = currentSell + flat;
+                }
+                newSell = Math.round(newSell * 100) / 100; // Round to cents
+                
+                const change = newSell - currentSell;
+                const currentMargin = currentSell > 0 ? ((currentSell - unitCost) / currentSell * 100) : 0;
+                const newMargin = newSell > 0 ? ((newSell - unitCost) / newSell * 100) : 0;
+                
+                const hasChange = change > 0;
+                
+                html += `
+                    <tr>
+                        <td><input type="checkbox" class="pricesim-check" data-idx="${idx}" data-itemid="${item.Item_ID}" data-newprice="${newSell}" onchange="updatePriceSimSummary()" ${hasChange ? 'checked' : ''}></td>
+                        <td><strong>${item.SKU || '-'}</strong></td>
+                        <td>${item.Item_Description}</td>
+                        <td>${getSupplierName(item.Supplier_ID)}</td>
+                        <td>$${unitCost.toFixed(2)}</td>
+                        <td>$${currentSell.toFixed(2)}</td>
+                        <td style="color: ${hasChange ? '#28a745' : '#666'}; font-weight: bold;">$${newSell.toFixed(2)}</td>
+                        <td style="color: ${hasChange ? '#28a745' : '#666'};">${hasChange ? '+$' + change.toFixed(2) : '-'}</td>
+                        <td>${currentMargin.toFixed(1)}%</td>
+                        <td style="color: ${newMargin > currentMargin ? '#28a745' : '#666'}; font-weight: bold;">${newMargin.toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('pricesimTable').innerHTML = html;
+            
+            updatePriceSimSummary();
+        }
+        
+        function previewPriceChanges() {
+            // Clear the other input when one is used
+            const percent = parseFloat(document.getElementById('pricesimPercent').value) || 0;
+            const flat = parseFloat(document.getElementById('pricesimFlat').value) || 0;
+            
+            if (percent > 0) {
+                document.getElementById('pricesimFlat').value = '0';
+            }
+            
+            displayPriceSimItems();
+            document.getElementById('pricesimSummary').style.display = 'block';
+        }
+        
+        function toggleAllPriceSimItems() {
+            const selectAll = document.getElementById('pricesimSelectAll').checked;
+            document.querySelectorAll('.pricesim-check').forEach(cb => {
+                cb.checked = selectAll;
+            });
+            updatePriceSimSummary();
+        }
+        
+        function updatePriceSimSummary() {
+            const checkboxes = document.querySelectorAll('.pricesim-check:checked');
+            const percent = parseFloat(document.getElementById('pricesimPercent').value) || 0;
+            const flat = parseFloat(document.getElementById('pricesimFlat').value) || 0;
+            
+            let selectedCount = 0;
+            let currentRevenue = 0;
+            let newRevenue = 0;
+            
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.dataset.idx);
+                const item = pricesimFiltered[idx];
+                if (!item) return;
+                
+                const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const currentSell = parseFloat(item.Unit_Sell_Price) || 0;
+                
+                let newSell = currentSell;
+                if (percent > 0) {
+                    newSell = currentSell * (1 + percent / 100);
+                } else if (flat > 0) {
+                    newSell = currentSell + flat;
+                }
+                
+                selectedCount++;
+                currentRevenue += qty * currentSell;
+                newRevenue += qty * newSell;
+            });
+            
+            const increase = newRevenue - currentRevenue;
+            
+            document.getElementById('simSelectedCount').textContent = selectedCount;
+            document.getElementById('simCurrentRevenue').textContent = '$' + currentRevenue.toFixed(2);
+            document.getElementById('simNewRevenue').textContent = '$' + newRevenue.toFixed(2);
+            document.getElementById('simIncrease').textContent = '+$' + increase.toFixed(2);
+            document.getElementById('applyCount').textContent = selectedCount;
+            
+            // Show/hide apply section
+            const applySection = document.getElementById('pricesimApplySection');
+            const summarySection = document.getElementById('pricesimSummary');
+            
+            if (selectedCount > 0 && (percent > 0 || flat > 0)) {
+                applySection.style.display = 'block';
+                summarySection.style.display = 'block';
+            } else {
+                applySection.style.display = 'none';
+            }
+        }
+        
+        async function applyPriceChanges() {
+            const checkboxes = document.querySelectorAll('.pricesim-check:checked');
+            const count = checkboxes.length;
+            
+            if (count === 0) {
+                alert('No items selected!');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to update the sell price for ${count} items?\n\nThis will modify your database.`)) {
+                return;
+            }
+            
+            showStatus('pricesimStatus', `⏳ Updating ${count} items...`, 'info');
+            
+            // Collect updates
+            const updates = [];
+            checkboxes.forEach(cb => {
+                updates.push({
+                    itemId: cb.dataset.itemid,
+                    newPrice: parseFloat(cb.dataset.newprice)
+                });
+            });
+            
+            // Send to backend
+            const result = await apiCall('bulkUpdateSellPrices', { updates });
+            
+            if (result?.status === 'success') {
+                showStatus('pricesimStatus', `✅ Successfully updated ${count} items!`, 'success');
+                // Reload items to show new prices
+                await loadPriceSimItems();
+                // Reset adjustment
+                document.getElementById('pricesimPercent').value = '0';
+                document.getElementById('pricesimFlat').value = '0';
+                document.getElementById('pricesimApplySection').style.display = 'none';
+            } else {
+                showStatus('pricesimStatus', '❌ Error: ' + (result?.message || 'Failed to update'), 'error');
+            }
         }
         
         // ==================== MANUAL INVENTORY ADJUSTMENT ====================
