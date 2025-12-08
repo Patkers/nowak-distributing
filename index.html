@@ -1824,7 +1824,11 @@
             
             <!-- ADD NEW ITEM SECTION -->
             <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ff9800;">
-                <h3 style="margin: 0 0 15px 0; color: #e65100;">➕ Add New Item from Supplier Catalog</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('addNewItemContent')">
+                    <h3 style="margin: 0; color: #e65100;">➕ Add New Item from Supplier Catalog</h3>
+                    <span id="addNewItemContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
+                </div>
+                <div id="addNewItemContent" style="margin-top: 15px;">
                 <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Enter item details from your supplier's catalog. Set the markup % to calculate a sell price, then add to simulation to compare.</p>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
@@ -1874,12 +1878,13 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn" onclick="addNewItemToSimulation()" style="background: #ff9800;">
+                    <button type="button" class="btn" onclick="addNewItemToSimulation()" style="background: #ff9800;">
                         ➕ Add to Simulation
                     </button>
-                    <button class="btn btn-secondary" onclick="clearNewSimForm()">
+                    <button type="button" class="btn btn-secondary" onclick="clearNewSimForm()">
                         🗑️ Clear Form
                     </button>
+                </div>
                 </div>
             </div>
             
@@ -5479,13 +5484,21 @@
             displayInventory(inventoryData);
         }
         
-        function filterInventoryByStatus(status) {
+        function filterInventoryByStatus(status, event) {
+            // Prevent scroll jump
+            if (event) event.preventDefault();
+            
+            // Save scroll position
+            const scrollPos = window.scrollY;
+            
             // Set the dropdown to match
             const stockDropdown = document.getElementById('filterInventoryStock');
             if (stockDropdown) stockDropdown.value = status;
             
             if (!status) {
                 displayInventory(inventoryData);
+                // Restore scroll position after render
+                setTimeout(() => window.scrollTo(0, scrollPos), 0);
                 return;
             }
             
@@ -5501,6 +5514,8 @@
             });
             
             displayInventory(filtered);
+            // Restore scroll position after render
+            setTimeout(() => window.scrollTo(0, scrollPos), 0);
         }
 
         function displayInventory(items) {
@@ -5539,11 +5554,11 @@
             // BUILD STATUS TAGS FIRST (clickable filters) - above summary boxes
             let html = `
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                    ${negativeCount > 0 ? `<span onclick="filterInventoryByStatus('negative')" style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🚨 ${negativeCount} Negative</span>` : ''}
-                    ${outOfStockCount > 0 ? `<span onclick="filterInventoryByStatus('out')" style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
-                    ${lowStockCount > 0 ? `<span onclick="filterInventoryByStatus('low')" style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟡 ${lowStockCount} Low Stock</span>` : ''}
-                    <span onclick="filterInventoryByStatus('ok')" style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟢 ${inStockCount} In Stock</span>
-                    <span onclick="filterInventoryByStatus('')" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Show All</span>
+                    ${negativeCount > 0 ? `<span onclick="filterInventoryByStatus('negative', event)" style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🚨 ${negativeCount} Negative</span>` : ''}
+                    ${outOfStockCount > 0 ? `<span onclick="filterInventoryByStatus('out', event)" style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
+                    ${lowStockCount > 0 ? `<span onclick="filterInventoryByStatus('low', event)" style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟡 ${lowStockCount} Low Stock</span>` : ''}
+                    <span onclick="filterInventoryByStatus('ok', event)" style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟢 ${inStockCount} In Stock</span>
+                    <span onclick="filterInventoryByStatus('', event)" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Show All</span>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
@@ -5674,17 +5689,18 @@
             const unitsPerPkg = parseFloat(document.getElementById('newSimUnitsPerPkg').value) || 1;
             const markup = parseFloat(document.getElementById('newSimMarkup').value) || 0;
             
+            // Validation with alerts
             if (!supplierId) {
                 alert('Please select a supplier');
-                return;
+                return false;
             }
             if (!description) {
                 alert('Please enter a description');
-                return;
+                return false;
             }
             if (packageCost <= 0) {
-                alert('Please enter a package cost');
-                return;
+                alert('Please enter a package cost greater than 0');
+                return false;
             }
             
             const unitCost = packageCost / unitsPerPkg;
@@ -5705,6 +5721,11 @@
                 markup: markup
             };
             
+            // Initialize arrays if needed
+            if (!simulatedNewItems) simulatedNewItems = [];
+            if (!pricesimItems) pricesimItems = [];
+            if (!pricesimFiltered) pricesimFiltered = [];
+            
             simulatedNewItems.push(newItem);
             pricesimItems.push(newItem);
             pricesimFiltered = [...pricesimItems];
@@ -5713,6 +5734,11 @@
             clearNewSimForm();
             
             showStatus('pricesimStatus', `✅ Added "${description}" to simulation. ${simulatedNewItems.length} new item(s) pending.`, 'success');
+            
+            // Scroll to show the table
+            document.getElementById('pricesimTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            return false;
         }
         
         function removeSimulatedItem(tempId) {
