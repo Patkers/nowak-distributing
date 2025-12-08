@@ -2402,7 +2402,7 @@
             const body = document.body;
             
             // Remove all existing theme classes
-            body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark');
+            body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark', 'theme-crimson', 'theme-slate', 'theme-teal');
             
             // Add new theme class
             body.classList.add('theme-' + theme);
@@ -2425,7 +2425,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'purple';
             document.getElementById('themeSelector').value = savedTheme;
-            document.body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark');
+            document.body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark', 'theme-crimson', 'theme-slate', 'theme-teal');
             document.body.classList.add('theme-' + savedTheme);
         });
         
@@ -2624,20 +2624,19 @@
             }
 
             let html = '<table class="data-table" id="suppliersDataTable"><thead><tr>';
-            html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th><th>Actions</th>';
+            html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             suppliers.forEach(s => {
-                html += `<tr>
-                    <td>${s.Supplier_ID}</td>
+                html += `<tr style="cursor: pointer;" onclick='editSupplier(${JSON.stringify(s).replace(/'/g, "&#39;")})' onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${s.Supplier_Name}</strong></td>
                     <td>${s.Contact_Name || '-'}</td>
                     <td>${s.Phone || '-'}</td>
                     <td>${s.Email || '-'}</td>
                     <td>${s.City || '-'}, ${s.State || '-'}</td>
                     <td>${s.Payment_Terms || '-'}</td>
-                    <td>
-                        <button class="btn-small" onclick='editSupplier(${JSON.stringify(s)})'>✏️ Edit</button>
+                    <td onclick="event.stopPropagation();">
+                        <button class="btn-small" onclick='editSupplier(${JSON.stringify(s).replace(/'/g, "&#39;")})'>✏️</button>
                         <button class="btn-delete-icon" onclick="deleteSupplier('${s.Supplier_ID}', '${s.Supplier_Name}')">🗑️</button>
                     </td>
                 </tr>`;
@@ -2989,6 +2988,9 @@
         
         // Edit item
         async function editItem(item) {
+            // Hide add form first
+            document.getElementById('addItemForm').style.display = 'none';
+            
             // Load suppliers for dropdown
             if (cachedSuppliers.length === 0) {
                 const result = await apiCall('getSuppliers');
@@ -3019,7 +3021,9 @@
             calculateEditUnitCost();
             
             document.getElementById('editItemForm').style.display = 'block';
-            document.getElementById('addItemForm').style.display = 'none';
+            
+            // Scroll to the edit form
+            document.getElementById('editItemForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         function hideEditItemForm() {
@@ -3138,20 +3142,19 @@
             }
 
             let html = '<table class="data-table" id="customersDataTable"><thead><tr>';
-            html += '<th>ID</th><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th><th>Actions</th>';
+            html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             customers.forEach(c => {
-                html += `<tr>
-                    <td>${c.Customer_ID}</td>
+                html += `<tr style="cursor: pointer;" onclick='editCustomer(${JSON.stringify(c).replace(/'/g, "&#39;")})' onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${c.Customer_Name}</strong></td>
                     <td>${c.Contact_Name || '-'}</td>
                     <td>${c.Phone || '-'}</td>
                     <td>${c.Email || '-'}</td>
                     <td>${c.City || '-'}, ${c.State || '-'}</td>
-                    <td>$${parseFloat(c.Credit_Limit).toFixed(2)}</td>
-                    <td>
-                        <button class="btn-small" onclick='editCustomer(${JSON.stringify(c)})'>✏️ Edit</button>
+                    <td>$${parseFloat(c.Credit_Limit || 0).toFixed(2)}</td>
+                    <td onclick="event.stopPropagation();">
+                        <button class="btn-small" onclick='editCustomer(${JSON.stringify(c).replace(/'/g, "&#39;")})'>✏️</button>
                         <button class="btn-delete-icon" onclick="deleteCustomer('${c.Customer_ID}', '${c.Customer_Name}')">🗑️</button>
                     </td>
                 </tr>`;
@@ -3886,6 +3889,7 @@
             padding-top: 10px;
             border-top: 1px solid #000;
             width: 300px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -4985,7 +4989,7 @@
                     <td>${dueDate}</td>
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
-                        <button class="btn-small" onclick="viewSalesOrder('${so.SO_ID}')" style="background: #28a745; color: white;">🖨️</button>
+                        <button class="btn-small" onclick="viewSalesOrder('${so.SO_ID}')" style="background: #28a745; color: white; padding: 6px 12px;">View/Print</button>
                         <button class="btn-small" onclick="editSalesOrder('${so.SO_ID}')">✏️</button>
                     </td>
                 </tr>`;
@@ -5597,8 +5601,15 @@
             const percent = parseFloat(document.getElementById('pricesimPercent').value) || 0;
             const flat = parseFloat(document.getElementById('pricesimFlat').value) || 0;
             
-            if (pricesimFiltered.length === 0) {
-                document.getElementById('pricesimTable').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No items match your filters</p>';
+            // Debug info
+            console.log('Price Sim Display - pricesimFiltered:', pricesimFiltered?.length, 'pricesimItems:', pricesimItems?.length);
+            
+            if (!pricesimFiltered || pricesimFiltered.length === 0) {
+                if (!pricesimItems || pricesimItems.length === 0) {
+                    document.getElementById('pricesimTable').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No items loaded yet. Click 🔄 Refresh to load items.</p>';
+                } else {
+                    document.getElementById('pricesimTable').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No items match your current filters. Try clearing the filters.</p>';
+                }
                 return;
             }
             
