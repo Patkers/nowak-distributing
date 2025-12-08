@@ -2313,7 +2313,7 @@
                     </div>
                     <div class="form-group">
                         <label>Stock Status</label>
-                        <select id="filterInventoryStock" onchange="filterInventoryByStatus(this.value)">
+                        <select id="filterInventoryStock" onchange="filterInventory()">
                             <option value="">All Items</option>
                             <option value="negative">🚨 Negative</option>
                             <option value="out">🔴 Out of Stock</option>
@@ -6282,13 +6282,26 @@
             const stockFilter = document.getElementById('filterInventoryStock').value;
             
             const filtered = inventoryData.filter(item => {
+                // Search filter
                 const matchesSearch = !searchFilter || 
                     (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
+                
+                // Supplier filter
                 const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
-                const matchesStock = !stockFilter || 
-                    (stockFilter === 'low' && item.Low_Stock) ||
-                    (stockFilter === 'ok' && !item.Low_Stock);
+                
+                // Stock status filter - calculate dynamically based on qty vs reorder point
+                let matchesStock = true;
+                if (stockFilter) {
+                    const qty = parseFloat(item.Qty_On_Hand) || 0;
+                    const reorderPoint = parseFloat(item.Reorder_Point) || 0;
+                    
+                    if (stockFilter === 'negative') matchesStock = qty < 0;
+                    else if (stockFilter === 'out') matchesStock = qty === 0;
+                    else if (stockFilter === 'low') matchesStock = qty > 0 && qty <= reorderPoint;
+                    else if (stockFilter === 'ok') matchesStock = qty > reorderPoint;
+                }
+                
                 return matchesSearch && matchesSupplier && matchesStock;
             });
             
@@ -6313,25 +6326,9 @@
             const stockDropdown = document.getElementById('filterInventoryStock');
             if (stockDropdown) stockDropdown.value = status;
             
-            if (!status) {
-                displayInventory(inventoryData);
-                // Restore scroll position after render
-                setTimeout(() => window.scrollTo(0, scrollPos), 0);
-                return;
-            }
+            // Use the unified filter function that respects ALL filters
+            filterInventory();
             
-            const filtered = inventoryData.filter(item => {
-                const qty = parseFloat(item.Qty_On_Hand) || 0;
-                const reorderPoint = parseFloat(item.Reorder_Point) || 0;
-                
-                if (status === 'negative') return qty < 0;
-                if (status === 'out') return qty === 0;
-                if (status === 'low') return qty > 0 && qty <= reorderPoint;
-                if (status === 'ok') return qty > reorderPoint;
-                return true;
-            });
-            
-            displayInventory(filtered);
             // Restore scroll position after render
             setTimeout(() => window.scrollTo(0, scrollPos), 0);
         }
