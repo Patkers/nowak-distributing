@@ -1703,6 +1703,14 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Item Status</label>
+                        <select id="filterItemActive" onchange="filterItems()">
+                            <option value="active">✅ Active Items Only</option>
+                            <option value="archived">📦 Archived Items Only</option>
+                            <option value="">All Items</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <button class="btn btn-secondary" onclick="clearItemFilters()">Clear Filters</button>
                     </div>
                 </div>
@@ -1832,6 +1840,14 @@
                         <div class="form-group">
                             <label>Reorder Point <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
                             <input type="number" id="editReorderPoint">
+                        </div>
+                        <div class="form-group">
+                            <label>Item Status</label>
+                            <select id="editItemStatus">
+                                <option value="Active">✅ Active</option>
+                                <option value="Archived">📦 Archived</option>
+                            </select>
+                            <small style="color: #666;">Archived items won't appear in new PO/SO dropdowns</small>
                         </div>
                     </div>
                     <div class="form-group">
@@ -3395,14 +3411,15 @@
             // Add new theme class
             body.classList.add('theme-' + theme);
             
+            // Save preference FIRST (so getThemeColors reads the correct theme)
+            localStorage.setItem('theme', theme);
+            
             // Set --primary CSS variable based on theme
             const themeColors = getThemeColors();
             document.documentElement.style.setProperty('--primary', themeColors.primary);
             document.documentElement.style.setProperty('--secondary', themeColors.accent);
             document.documentElement.style.setProperty('--primary-light', hexToRgbaLight(themeColors.primary));
             
-            // Save preference
-            localStorage.setItem('theme', theme);
             showStatus('configStatus', `✅ Theme changed to ${theme}!`, 'success');
         }
         
@@ -3966,7 +3983,16 @@
                     console.log('=================================');
                 }
                 
-                displayItems(result.data);
+                // Apply active filter by default (show only active items)
+                const activeFilter = document.getElementById('filterItemActive')?.value || 'active';
+                let itemsToDisplay = result.data;
+                if (activeFilter === 'active') {
+                    itemsToDisplay = result.data.filter(item => item.Status !== 'Archived');
+                } else if (activeFilter === 'archived') {
+                    itemsToDisplay = result.data.filter(item => item.Status === 'Archived');
+                }
+                
+                displayItems(itemsToDisplay);
                 loadItemFilterSuppliers();
             } else {
                 document.getElementById('itemsTable').innerHTML = '<div class="loading">Error loading items</div>';
@@ -3996,11 +4022,14 @@
                 const reorderPoint = parseFloat(item.Reorder_Point) || 0;
                 const packages = (qty / unitsPerPkg).toFixed(1);
                 const packagesOnOrder = (qtyOnOrder / unitsPerPkg).toFixed(1);
+                const isArchived = item.Status === 'Archived';
                 
                 // Determine row styling based on stock status
                 let rowBg = '';
                 let qtyStyle = '';
-                if (qty < 0) {
+                if (isArchived) {
+                    rowBg = 'background:#f0f0f0; opacity: 0.7;';  // Grey for archived
+                } else if (qty < 0) {
                     rowBg = 'background:#ffcdd2;';  // Red for negative
                     qtyStyle = 'color: #b71c1c; font-weight: bold;';
                 } else if (qty <= reorderPoint) {
@@ -4010,7 +4039,7 @@
                 totalQty += qty;
                 
                 html += `<tr style="${rowBg} cursor: pointer;" onclick="editItemById('${item.Item_ID}')" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-                    <td><strong>${item.SKU || '-'}</strong></td>
+                    <td><strong>${item.SKU || '-'}</strong>${isArchived ? ' <span style="background: #9e9e9e; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">ARCHIVED</span>' : ''}</td>
                     <td>${item.Item_Description}</td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td>${item.Purchase_UOM}</td>
@@ -4022,7 +4051,7 @@
                     <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder > 0 ? qtyOnOrder : '-'}</span></td>
                     <td>${item.Reorder_Point || 0}</td>
                     <td onclick="event.stopPropagation();">
-                        <button class="btn-delete-icon" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️</button>
+                        <button class="btn-delete-icon" onclick="toggleArchiveItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}', ${isArchived})" title="${isArchived ? 'Reactivate Item' : 'Archive Item'}">${isArchived ? '♻️' : '📦'}</button>
                     </td>
                 </tr>`;
             });
@@ -4044,6 +4073,7 @@
             const searchFilter = document.getElementById('filterItemSearch').value.toLowerCase().trim();
             const supplierFilter = document.getElementById('filterItemSupplier').value;
             const stockFilter = document.getElementById('filterItemStock').value;
+            const activeFilter = document.getElementById('filterItemActive')?.value || 'active';
             
             // Ensure items are loaded
             if (cachedItems.length === 0) {
@@ -4056,6 +4086,15 @@
                     (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
                 const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
+                
+                // Active/Archived status filter
+                const isArchived = item.Status === 'Archived';
+                let matchesActive = true;
+                if (activeFilter === 'active') {
+                    matchesActive = !isArchived;
+                } else if (activeFilter === 'archived') {
+                    matchesActive = isArchived;
+                }
                 
                 // Stock status calculations
                 const qtyOnHand = parseFloat(item.Qty_On_Hand) || 0;
@@ -4079,7 +4118,7 @@
                     matchesStock = qtyOnHand > reorderPoint;
                 }
                 
-                return matchesSearch && matchesSupplier && matchesStock;
+                return matchesSearch && matchesSupplier && matchesStock && matchesActive;
             });
             
             displayItems(filtered);
@@ -4089,7 +4128,9 @@
             document.getElementById('filterItemSearch').value = '';
             document.getElementById('filterItemSupplier').value = '';
             document.getElementById('filterItemStock').value = '';
-            displayItems(cachedItems);
+            document.getElementById('filterItemActive').value = 'active';
+            // Show only active items by default after clearing
+            filterItems();
         }
         
         async function loadItemFilterSuppliers() {
@@ -4144,6 +4185,7 @@
             document.getElementById('editUnitSellPrice').value = item.Unit_Sell_Price || '';
             document.getElementById('editQtyOnHand').value = item.Qty_On_Hand || '';
             document.getElementById('editReorderPoint').value = item.Reorder_Point || '';
+            document.getElementById('editItemStatus').value = item.Status || 'Active';
             document.getElementById('editItemNotes').value = item.Notes || '';
             
             // Calculate unit cost for display
@@ -4182,6 +4224,7 @@
                 unitSellPrice: document.getElementById('editUnitSellPrice').value,
                 reorderPoint: document.getElementById('editReorderPoint').value,
                 sku: document.getElementById('editItemSKU').value,
+                status: document.getElementById('editItemStatus').value,
                 notes: document.getElementById('editItemNotes').value
             };
             
@@ -4196,15 +4239,25 @@
             }
         }
         
-        async function deleteItem(itemId, itemDesc) {
-            if (!confirm(`Are you sure you want to delete item "${itemDesc}"?\n\nThis cannot be undone!`)) {
+        async function toggleArchiveItem(itemId, itemDesc, isCurrentlyArchived) {
+            const action = isCurrentlyArchived ? 'reactivate' : 'archive';
+            const actionLabel = isCurrentlyArchived ? 'Reactivate' : 'Archive';
+            const confirmMsg = isCurrentlyArchived 
+                ? `Reactivate item "${itemDesc}"?\n\nThis will make it available in dropdowns again.`
+                : `Archive item "${itemDesc}"?\n\nThis will hide it from new PO/SO dropdowns but preserve all history.\n\nYou can reactivate it later if needed.`;
+            
+            if (!confirm(confirmMsg)) {
                 return;
             }
             
-            const result = await apiCall('deleteItem', { itemId });
+            const newStatus = isCurrentlyArchived ? 'Active' : 'Archived';
+            const result = await apiCall('updateItem', { 
+                itemId: itemId,
+                status: newStatus
+            });
             
             if (result && result.status === 'success') {
-                showStatus('itemsStatus', '✅ Item deleted successfully!', 'success');
+                showStatus('itemsStatus', `✅ Item ${action}d successfully!`, 'success');
                 loadItems();
             } else {
                 showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
@@ -6601,7 +6654,9 @@
             
             if (result && result.status === 'success') {
                 inventoryData = result.data;
-                displayInventory(result.data);
+                // Filter out archived items by default
+                const activeItems = result.data.filter(item => item.Status !== 'Archived');
+                displayInventory(activeItems);
                 loadInventoryFilterSuppliers(); // Populate filter dropdown
             } else {
                 document.getElementById('inventoryTable').innerHTML = '<div class="loading">Error loading inventory</div>';
@@ -6629,6 +6684,9 @@
             const stockFilter = document.getElementById('filterInventoryStock').value;
             
             const filtered = inventoryData.filter(item => {
+                // Hide archived items in inventory view
+                if (item.Status === 'Archived') return false;
+                
                 // Search filter
                 const matchesSearch = !searchFilter || 
                     (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
@@ -6659,7 +6717,8 @@
             document.getElementById('filterInventorySearch').value = '';
             document.getElementById('filterInventorySupplier').value = '';
             document.getElementById('filterInventoryStock').value = '';
-            displayInventory(inventoryData);
+            // Filter out archived items by default
+            displayInventory(inventoryData.filter(item => item.Status !== 'Archived'));
         }
         
         function filterInventoryByStatus(status, event) {
@@ -11216,7 +11275,7 @@ NOTE: Please print the attached PO document for full details.`;
             <div class="item-picker-search">
                 <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="filterItemPicker()" onkeyup="filterItemPicker()">
             </div>
-            <div class="item-picker-filter">
+            <div id="itemPickerSupplierFilter" class="item-picker-filter">
                 <select id="itemPickerSupplier" onchange="filterItemPicker()">
                     <option value="">All Suppliers</option>
                 </select>
@@ -11592,17 +11651,45 @@ NOTE: Please print the attached PO document for full details.`;
             }
         });
         
-        function openItemPicker(selectElement) {
+        function openItemPicker(selectElement, preSelectedSupplierId = null) {
             // Store callback to set value when item is selected
             itemPickerCallback = selectElement;
             
-            // Populate supplier filter
+            // Check if we're in a context where supplier is already selected (PO/SO forms)
+            let supplierContext = preSelectedSupplierId;
+            if (!supplierContext) {
+                // Try to detect from Create PO form
+                const createPOSupplier = document.getElementById('createPOSupplier');
+                if (createPOSupplier && createPOSupplier.value) {
+                    supplierContext = createPOSupplier.value;
+                }
+                // Try to detect from Purchase form 
+                const purchaseSupplier = document.getElementById('newPurchaseSupplier');
+                if (purchaseSupplier && purchaseSupplier.value) {
+                    supplierContext = purchaseSupplier.value;
+                }
+                // Try to detect from Sale form
+                const saleCustomer = document.getElementById('newSaleCustomer');
+                // For sales, we don't filter by supplier, so only hide if in PO context
+            }
+            
+            const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
             const supplierSelect = document.getElementById('itemPickerSupplier');
-            supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
-            if (cachedSuppliers && cachedSuppliers.length > 0) {
-                cachedSuppliers.forEach(s => {
-                    supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
-                });
+            
+            if (supplierContext) {
+                // Hide supplier filter - we already know which supplier
+                supplierFilterDiv.style.display = 'none';
+                supplierSelect.value = supplierContext;
+            } else {
+                // Show supplier filter - user can choose
+                supplierFilterDiv.style.display = 'block';
+                supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+                if (cachedSuppliers && cachedSuppliers.length > 0) {
+                    cachedSuppliers.forEach(s => {
+                        supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                    });
+                }
+                supplierSelect.value = '';
             }
             
             // Get items from cache or the select element options
@@ -11613,7 +11700,6 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Clear search
             document.getElementById('itemPickerSearch').value = '';
-            document.getElementById('itemPickerSupplier').value = '';
             
             // Render items
             renderItemPickerList();
@@ -11643,6 +11729,9 @@ NOTE: Please print the attached PO document for full details.`;
             const supplier = document.getElementById('itemPickerSupplier').value;
             const listContainer = document.getElementById('itemPickerList');
             
+            // Check if this is a filter text input (needs "Clear" option and shows archived items)
+            const isFilterInput = window.itemPickerIsFilter;
+            
             let filtered = itemPickerItems.filter(item => {
                 // Search filter
                 const matchesSearch = !search || 
@@ -11652,7 +11741,11 @@ NOTE: Please print the attached PO document for full details.`;
                 // Supplier filter
                 const matchesSupplier = !supplier || item.Supplier_ID === supplier;
                 
-                return matchesSearch && matchesSupplier;
+                // Hide archived items UNLESS this is a filter input (which can show all)
+                const isArchived = item.Status === 'Archived';
+                const matchesActive = isFilterInput || !isArchived;
+                
+                return matchesSearch && matchesSupplier && matchesActive;
             });
             
             // Check if this is a filter text input (needs "Clear" option)
