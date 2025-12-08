@@ -84,12 +84,51 @@
             /* Contain content in landscape mode */
             overflow-x: auto;
             max-width: 100%;
+            border-left: 5px solid var(--primary, #667eea);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .card.active {
             display: block;
             animation: fadeIn 0.3s;
         }
+        
+        .card.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+        
+        /* Section cards within main cards - rainbow effect */
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--primary, #667eea);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        /* Different accent colors for variety */
+        .section-card.accent-blue { border-left-color: #2196f3; }
+        .section-card.accent-green { border-left-color: #4caf50; }
+        .section-card.accent-orange { border-left-color: #ff9800; }
+        .section-card.accent-purple { border-left-color: #9c27b0; }
+        .section-card.accent-red { border-left-color: #f44336; }
+        .section-card.accent-teal { border-left-color: #009688; }
+        .section-card.accent-pink { border-left-color: #e91e63; }
+        .section-card.accent-indigo { border-left-color: #3f51b5; }
+        .section-card.accent-cyan { border-left-color: #00bcd4; }
+        .section-card.accent-amber { border-left-color: #ffc107; }
+        
+        /* Use theme primary color */
+        .section-card.accent-theme { border-left-color: var(--primary, #667eea); }
+        .section-card.accent-secondary { border-left-color: var(--secondary, #764ba2); }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -2342,7 +2381,7 @@
             <div class="status" id="pricesimStatus"></div>
             
             <!-- Revenue Impact Calculator - MOVED TO TOP -->
-            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #2196f3;">
+            <div class="section-card accent-blue" style="background: #e3f2fd;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('revenueCalcContent')">
                     <h3 style="margin: 0; color: #1565c0;">💰 Revenue Impact Calculator</h3>
                     <span id="revenueCalcContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
@@ -2405,7 +2444,7 @@
                 </div>
             </div>
             
-            <div style="background: linear-gradient(135deg, #667eea15, #764ba215); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+            <div class="section-card accent-purple" style="background: linear-gradient(135deg, #667eea15, #764ba215);">
                 <h3 style="margin: 0 0 10px 0; color: #667eea;">💡 What You Can Do Here</h3>
                 <p style="margin: 0; color: #555;">
                     <strong>📦 Existing Items:</strong> Adjust sell prices by % or flat amount, preview impact, then apply<br>
@@ -2414,7 +2453,7 @@
             </div>
             
             <!-- ADD NEW ITEM SECTION -->
-            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ff9800;">
+            <div class="section-card accent-orange" style="background: #fff3e0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('addNewItemContent')">
                     <h3 style="margin: 0; color: #e65100;">➕ Add New Item from Supplier Catalog</h3>
                     <span id="addNewItemContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
@@ -2480,7 +2519,7 @@
             </div>
             
             <!-- Filters -->
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <div class="section-card accent-teal" style="background: #f8f9fa;">
                 <h3 style="margin: 0 0 15px 0;">🔍 Filter Existing Items</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                     <div class="form-group" style="margin: 0;">
@@ -2507,7 +2546,7 @@
             </div>
             
             <!-- Price Adjustment Controls -->
-            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <div class="section-card accent-green" style="background: #e8f5e9;">
                 <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Bulk Price Adjustment (Existing Items)</h3>
                 <div style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap;">
                     <div class="form-group" style="margin: 0;">
@@ -2554,7 +2593,7 @@
             </div>
             
             <!-- INVENTORY IMPACT - Issue #7 -->
-            <div id="pricesimInventoryImpact" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, #1a237e, #283593); padding: 15px; border-radius: 12px; color: white;">
+            <div id="pricesimInventoryImpact" class="section-card accent-indigo" style="display: none; background: linear-gradient(135deg, #1a237e, #283593); color: white;">
                 <h4 style="margin: 0 0 10px 0; font-size: 14px;">📦 Real Inventory Impact (Selected Items with Stock)</h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
                     <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; text-align: center; overflow: hidden;">
@@ -2573,7 +2612,7 @@
             </div>
             
             <!-- Apply Button - MOVED BEFORE TABLE (#5) -->
-            <div id="pricesimApplySection" style="display: none; margin-bottom: 20px; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+            <div id="pricesimApplySection" class="section-card accent-amber" style="display: none; background: #fff3cd;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <div>
                         <strong style="font-size: 18px;">⚠️ Ready to Apply Changes?</strong>
@@ -10135,10 +10174,10 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="filterItemPicker()">
+                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description...">
             </div>
             <div class="item-picker-filter">
-                <select id="itemPickerSupplier" onchange="filterItemPicker()">
+                <select id="itemPickerSupplier">
                     <option value="">All Suppliers</option>
                 </select>
             </div>
@@ -10156,7 +10195,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeSupplierPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers..." oninput="filterSupplierPicker()">
+                <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers...">
             </div>
             <div id="supplierPickerList" class="item-picker-list">
                 <!-- Suppliers will be populated by JavaScript -->
@@ -10172,7 +10211,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeCustomerPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers..." oninput="filterCustomerPicker()">
+                <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers...">
             </div>
             <div id="customerPickerList" class="item-picker-list">
                 <!-- Customers will be populated by JavaScript -->
@@ -10439,6 +10478,34 @@ NOTE: Please print the attached PO document for full details.`;
         let itemPickerItems = [];
         let itemPickerSupplierFilter = '';
         
+        // Bind search event properly when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Item picker
+            const searchInput = document.getElementById('itemPickerSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', filterItemPicker);
+                searchInput.addEventListener('keyup', filterItemPicker);
+            }
+            const supplierFilter = document.getElementById('itemPickerSupplier');
+            if (supplierFilter) {
+                supplierFilter.addEventListener('change', filterItemPicker);
+            }
+            
+            // Supplier picker
+            const supplierSearchInput = document.getElementById('supplierPickerSearch');
+            if (supplierSearchInput) {
+                supplierSearchInput.addEventListener('input', filterSupplierPicker);
+                supplierSearchInput.addEventListener('keyup', filterSupplierPicker);
+            }
+            
+            // Customer picker
+            const customerSearchInput = document.getElementById('customerPickerSearch');
+            if (customerSearchInput) {
+                customerSearchInput.addEventListener('input', filterCustomerPicker);
+                customerSearchInput.addEventListener('keyup', filterCustomerPicker);
+            }
+        });
+        
         function openItemPicker(selectElement) {
             // Store callback to set value when item is selected
             itemPickerCallback = selectElement;
@@ -10582,9 +10649,15 @@ NOTE: Please print the attached PO document for full details.`;
                 document.querySelectorAll('.po-item, .so-item, .createpo-item, .edit-item').forEach(select => {
                     if (!select.dataset.pickerAttached) {
                         select.dataset.pickerAttached = 'true';
-                        select.addEventListener('focus', function(e) {
+                        // Use mousedown to intercept BEFORE the dropdown opens
+                        select.addEventListener('mousedown', function(e) {
                             e.preventDefault();
-                            this.blur();
+                            e.stopPropagation();
+                            openItemPicker(this);
+                        });
+                        select.addEventListener('touchstart', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             openItemPicker(this);
                         });
                     }
@@ -10693,9 +10766,14 @@ NOTE: Please print the attached PO document for full details.`;
                 document.querySelectorAll('#poSupplier, #editPOSupplier, .supplier-select').forEach(select => {
                     if (!select.dataset.supplierPickerAttached) {
                         select.dataset.supplierPickerAttached = 'true';
-                        select.addEventListener('focus', function(e) {
+                        select.addEventListener('mousedown', function(e) {
                             e.preventDefault();
-                            this.blur();
+                            e.stopPropagation();
+                            openSupplierPicker(this);
+                        });
+                        select.addEventListener('touchstart', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             openSupplierPicker(this);
                         });
                     }
@@ -10789,9 +10867,14 @@ NOTE: Please print the attached PO document for full details.`;
                 document.querySelectorAll('#soCustomer, #editSOCustomer, .customer-select').forEach(select => {
                     if (!select.dataset.customerPickerAttached) {
                         select.dataset.customerPickerAttached = 'true';
-                        select.addEventListener('focus', function(e) {
+                        select.addEventListener('mousedown', function(e) {
                             e.preventDefault();
-                            this.blur();
+                            e.stopPropagation();
+                            openCustomerPicker(this);
+                        });
+                        select.addEventListener('touchstart', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             openCustomerPicker(this);
                         });
                     }
