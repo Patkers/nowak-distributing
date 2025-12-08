@@ -2731,8 +2731,25 @@
             const theme = document.getElementById('themeSelector').value;
             const body = document.body;
             
-            // Remove all existing theme classes
-            body.classList.remove('theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark', 'theme-crimson', 'theme-slate', 'theme-teal', 'theme-bears', 'theme-cubs', 'theme-bulls', 'theme-blackhawks', 'theme-packers');
+            // Remove all existing theme classes (all 70+ themes)
+            body.classList.remove(
+                'theme-purple', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-dark', 'theme-crimson', 'theme-slate', 'theme-teal',
+                'theme-bills', 'theme-dolphins', 'theme-patriots', 'theme-jets',
+                'theme-ravens', 'theme-bengals', 'theme-browns', 'theme-steelers',
+                'theme-texans', 'theme-colts', 'theme-jaguars', 'theme-titans',
+                'theme-broncos', 'theme-chiefs', 'theme-raiders', 'theme-chargers',
+                'theme-cowboys', 'theme-giants', 'theme-eagles', 'theme-commanders',
+                'theme-bears', 'theme-lions', 'theme-packers', 'theme-vikings',
+                'theme-falcons', 'theme-panthers', 'theme-saints', 'theme-bucs',
+                'theme-azcardinals', 'theme-rams', 'theme-niners', 'theme-seahawks',
+                'theme-orioles', 'theme-redsox', 'theme-yankees', 'theme-rays', 'theme-bluejays',
+                'theme-whitesox', 'theme-guardians', 'theme-tigers', 'theme-royals', 'theme-twins',
+                'theme-astros', 'theme-angels', 'theme-athletics', 'theme-mariners', 'theme-rangers',
+                'theme-braves', 'theme-marlins', 'theme-mets', 'theme-phillies', 'theme-nationals',
+                'theme-cubs', 'theme-reds', 'theme-brewers', 'theme-pirates', 'theme-stlcardinals',
+                'theme-dbacks', 'theme-rockies', 'theme-dodgers', 'theme-padres', 'theme-sfgiants',
+                'theme-bulls', 'theme-blackhawks'
+            );
             
             // Add new theme class
             body.classList.add('theme-' + theme);
@@ -3882,7 +3899,8 @@
                 amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
                 status: document.getElementById('poStatus').value,
                 notes: document.getElementById('poNotes').value,
-                lines: lineItems
+                lineItems: lineItems,
+                poType: 'INBOUND'
             };
 
             const result = await apiCall('createPurchaseOrder', data);
@@ -9617,5 +9635,433 @@ NOTE: Please print the attached PO document for full details.`;
             </div>
         </div>
     </div>
+
+    <!-- Mobile-Friendly Item Picker Modal -->
+    <div id="itemPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
+                <h3>📦 Select Item</h3>
+                <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
+            </div>
+            <div class="item-picker-search">
+                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="filterItemPicker()">
+            </div>
+            <div class="item-picker-filter">
+                <select id="itemPickerSupplier" onchange="filterItemPicker()">
+                    <option value="">All Suppliers</option>
+                </select>
+            </div>
+            <div id="itemPickerList" class="item-picker-list">
+                <!-- Items will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Mobile-Friendly Item Picker Styles */
+        .item-picker-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 20000;
+            padding: 0;
+        }
+        
+        .item-picker-container {
+            background: #f5f5f5;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 768px) {
+            .item-picker-container {
+                margin: 40px auto;
+                height: calc(100% - 80px);
+                border-radius: 16px;
+                overflow: hidden;
+            }
+        }
+        
+        .item-picker-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .item-picker-header h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        .item-picker-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .item-picker-search {
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        
+        .item-picker-search input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            outline: none;
+        }
+        
+        .item-picker-search input:focus {
+            border-color: #667eea;
+        }
+        
+        .item-picker-filter {
+            padding: 10px 15px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        
+        .item-picker-filter select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .item-picker-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .item-picker-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            border: 2px solid transparent;
+        }
+        
+        .item-picker-card:hover,
+        .item-picker-card:active {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .item-picker-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .item-picker-sku {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .item-picker-stock {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .item-picker-stock.in-stock {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .item-picker-stock.low-stock {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .item-picker-stock.out-stock {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .item-picker-desc {
+            font-size: 17px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        
+        .item-picker-details {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .item-picker-detail {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .item-picker-detail-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+        }
+        
+        .item-picker-detail-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .item-picker-price {
+            color: #2e7d32 !important;
+            font-size: 18px !important;
+        }
+        
+        .item-picker-supplier {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+        
+        .item-picker-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .item-picker-empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        /* Make select elements more tappable on mobile */
+        .po-item, .so-item, .createpo-item, .edit-item {
+            min-height: 44px;
+            font-size: 16px !important;
+        }
+    </style>
+
+    <script>
+        // ==================== MOBILE ITEM PICKER ====================
+        
+        let itemPickerCallback = null;
+        let itemPickerItems = [];
+        let itemPickerSupplierFilter = '';
+        
+        function openItemPicker(selectElement) {
+            // Store callback to set value when item is selected
+            itemPickerCallback = selectElement;
+            
+            // Populate supplier filter
+            const supplierSelect = document.getElementById('itemPickerSupplier');
+            supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+            if (cachedSuppliers && cachedSuppliers.length > 0) {
+                cachedSuppliers.forEach(s => {
+                    supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                });
+            }
+            
+            // Get items from cache or the select element options
+            itemPickerItems = [];
+            if (cachedItems && cachedItems.length > 0) {
+                itemPickerItems = cachedItems;
+            }
+            
+            // Clear search
+            document.getElementById('itemPickerSearch').value = '';
+            document.getElementById('itemPickerSupplier').value = '';
+            
+            // Render items
+            renderItemPickerList();
+            
+            // Show modal
+            document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Focus search after a moment
+            setTimeout(() => {
+                document.getElementById('itemPickerSearch').focus();
+            }, 100);
+        }
+        
+        function closeItemPicker() {
+            document.getElementById('itemPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            itemPickerCallback = null;
+        }
+        
+        function filterItemPicker() {
+            renderItemPickerList();
+        }
+        
+        function renderItemPickerList() {
+            const search = document.getElementById('itemPickerSearch').value.toLowerCase().trim();
+            const supplier = document.getElementById('itemPickerSupplier').value;
+            const listContainer = document.getElementById('itemPickerList');
+            
+            let filtered = itemPickerItems.filter(item => {
+                // Search filter
+                const matchesSearch = !search || 
+                    (item.SKU && item.SKU.toLowerCase().includes(search)) ||
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
+                
+                // Supplier filter
+                const matchesSupplier = !supplier || item.Supplier_ID === supplier;
+                
+                return matchesSearch && matchesSupplier;
+            });
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">📦</div>
+                        <div>No items found</div>
+                        <div style="font-size: 14px; margin-top: 5px;">Try a different search term</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filtered.forEach(item => {
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                const reorder = parseInt(item.Reorder_Point) || 0;
+                const sellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const pkgCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPer = parseInt(item.Units_Per_Package) || 1;
+                const unitCost = pkgCost / unitsPer;
+                
+                let stockClass = 'in-stock';
+                let stockText = `${qty} in stock`;
+                if (qty <= 0) {
+                    stockClass = 'out-stock';
+                    stockText = 'Out of stock';
+                } else if (qty <= reorder) {
+                    stockClass = 'low-stock';
+                    stockText = `Low: ${qty}`;
+                }
+                
+                const supplierName = getSupplierName(item.Supplier_ID);
+                
+                html += `
+                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
+                        <div class="item-picker-card-header">
+                            <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
+                            <span class="item-picker-stock ${stockClass}">${stockText}</span>
+                        </div>
+                        <div class="item-picker-desc">${item.Item_Description || 'Unnamed Item'}</div>
+                        <div class="item-picker-details">
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Unit Cost</span>
+                                <span class="item-picker-detail-value">$${unitCost.toFixed(2)}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Sell Price</span>
+                                <span class="item-picker-detail-value item-picker-price">$${sellPrice.toFixed(2)}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Pkg</span>
+                                <span class="item-picker-detail-value">${unitsPer}/${item.Purchase_UOM || 'Case'}</span>
+                            </div>
+                        </div>
+                        <div class="item-picker-supplier">📦 ${supplierName}</div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectItemFromPicker(itemId) {
+            if (itemPickerCallback) {
+                // Set the select value
+                itemPickerCallback.value = itemId;
+                
+                // Trigger change event to update any dependent fields
+                itemPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            closeItemPicker();
+        }
+        
+        // Auto-attach to item selects on mobile
+        function attachItemPickerToSelects() {
+            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            
+            if (isMobile) {
+                document.querySelectorAll('.po-item, .so-item, .createpo-item, .edit-item').forEach(select => {
+                    if (!select.dataset.pickerAttached) {
+                        select.dataset.pickerAttached = 'true';
+                        select.addEventListener('focus', function(e) {
+                            e.preventDefault();
+                            this.blur();
+                            openItemPicker(this);
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Re-attach when new rows are added
+        const originalAddPORow = typeof addPurchaseLineItem === 'function' ? addPurchaseLineItem : null;
+        const originalAddSORow = typeof addSaleLineItem === 'function' ? addSaleLineItem : null;
+        const originalAddCreatePORow = typeof addCreatePOLine === 'function' ? addCreatePOLine : null;
+        
+        // Attach on page load and periodically check for new selects
+        document.addEventListener('DOMContentLoaded', function() {
+            attachItemPickerToSelects();
+            // Check for new selects every second (for dynamically added rows)
+            setInterval(attachItemPickerToSelects, 1000);
+        });
+        
+        // Also attach when switching tabs
+        const originalSwitchTab = typeof switchTab === 'function' ? switchTab : null;
+        if (originalSwitchTab) {
+            window.switchTabOriginal = switchTab;
+            window.switchTab = function(tab) {
+                switchTabOriginal(tab);
+                setTimeout(attachItemPickerToSelects, 100);
+            };
+        }
+    </script>
 </body>
 </html>
