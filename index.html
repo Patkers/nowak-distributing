@@ -1462,8 +1462,8 @@
                 </div>
                 <div id="filter-panel-purchases" class="form-grid" style="display: none;">
                     <div class="form-group">
-                        <label>PO Number</label>
-                        <input type="text" id="filterPurchasePO" placeholder="PO-001" onchange="filterPurchases()">
+                        <label>Invoice # / PO</label>
+                        <input type="text" id="filterPurchasePO" placeholder="Search..." onchange="filterPurchases()">
                     </div>
                     <div class="form-group">
                         <label>Supplier</label>
@@ -1472,29 +1472,29 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>PO Status</label>
+                        <label>Order Status</label>
                         <select id="filterPurchaseStatus" onchange="filterPurchases()">
-                            <option value="">All Statuses</option>
-                            <option value="Ordered">📤 OUTBOUND (Ordered)</option>
-                            <option value="Received">📥 INBOUND (Received)</option>
+                            <option value="">All</option>
+                            <option value="Ordered">📤 Ordered (Pending)</option>
+                            <option value="Received">📥 Received</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Date From</label>
+                        <label>💵 Payment Status</label>
+                        <select id="filterPurchasePaymentStatus" onchange="filterPurchases()">
+                            <option value="">All</option>
+                            <option value="Paid">✅ Paid</option>
+                            <option value="Partial">🟡 Partial</option>
+                            <option value="Unpaid">🔴 Unpaid</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📅 PO Date From</label>
                         <input type="date" id="filterPurchaseDateFrom" onchange="filterPurchases()">
                     </div>
                     <div class="form-group">
-                        <label>Date To</label>
+                        <label>📅 PO Date To</label>
                         <input type="date" id="filterPurchaseDateTo" onchange="filterPurchases()">
-                    </div>
-                    <div class="form-group">
-                        <label>Payment Status</label>
-                        <select id="filterPurchasePaymentStatus" onchange="filterPurchases()">
-                            <option value="">All</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Partial">Partial</option>
-                            <option value="Unpaid">Unpaid</option>
-                        </select>
                     </div>
                     <div class="form-group">
                         <button class="btn btn-secondary" onclick="clearPurchaseFilters()">Clear Filters</button>
@@ -1710,12 +1710,17 @@
             </div>
             
             <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
-                <strong>Quick Guide:</strong>
-                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                    <li><strong>➕ Add New Item</strong> - Add items you already have in stock (no purchase order needed)</li>
-                    <li><strong>📝 Adjust Inventory</strong> - Fix counts, record damage, shrinkage, or physical inventory counts</li>
-                    <li><strong>📥 Purchases tab</strong> - Record new inventory from suppliers (creates purchase orders)</li>
-                </ul>
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('inventoryGuide')">
+                    <strong>📖 Quick Guide</strong>
+                    <span id="inventoryGuide-toggle" style="color: #667eea;">▼ Hide</span>
+                </div>
+                <div id="inventoryGuide" style="margin-top: 10px;">
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>➕ Add New Item</strong> - Add items you already have in stock (no purchase order needed)</li>
+                        <li><strong>📝 Adjust Inventory</strong> - Fix counts, record damage, shrinkage, or physical inventory counts</li>
+                        <li><strong>📥 Purchases tab</strong> - Record new inventory from suppliers (creates purchase orders)</li>
+                    </ul>
+                </div>
             </div>
             
             <!-- Manual Adjustment Form -->
@@ -1806,23 +1811,81 @@
         
         <!-- PRICE SIMULATOR TAB -->
         <div id="pricesim" class="card" style="display: none;">
-            <h2>🎯 Sales Price Simulator</h2>
+            <h2>🎯 Pricing Workbench</h2>
             <div class="status" id="pricesimStatus"></div>
             
             <div style="background: linear-gradient(135deg, #667eea15, #764ba215); padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-                <h3 style="margin: 0 0 10px 0; color: #667eea;">💡 How It Works</h3>
+                <h3 style="margin: 0 0 10px 0; color: #667eea;">💡 What You Can Do Here</h3>
                 <p style="margin: 0; color: #555;">
-                    1. <strong>Filter</strong> items by supplier, search, or stock status<br>
-                    2. <strong>Enter</strong> a percentage increase (e.g., 5% = prices go up 5%)<br>
-                    3. <strong>Preview</strong> the impact on your margins and revenue<br>
-                    4. <strong>Select</strong> which items to update using checkboxes<br>
-                    5. <strong>Apply</strong> changes to update sell prices in your database
+                    <strong>📦 Existing Items:</strong> Adjust sell prices by % or flat amount, preview impact, then apply<br>
+                    <strong>➕ New Items:</strong> Add items from supplier catalog, enter cost, simulate different markups to find the right sell price
                 </p>
+            </div>
+            
+            <!-- ADD NEW ITEM SECTION -->
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ff9800;">
+                <h3 style="margin: 0 0 15px 0; color: #e65100;">➕ Add New Item from Supplier Catalog</h3>
+                <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Enter item details from your supplier's catalog. Set the markup % to calculate a sell price, then add to simulation to compare.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Supplier *</label>
+                        <select id="newSimSupplier" required>
+                            <option value="">Select Supplier</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>SKU / UPC</label>
+                        <input type="text" id="newSimSKU" placeholder="e.g., 41633009999">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Description *</label>
+                        <input type="text" id="newSimDescription" placeholder="e.g., Cheese Puffs, 12ct" required>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Package Cost *</label>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span>$</span>
+                            <input type="number" id="newSimPackageCost" step="0.01" min="0" placeholder="18.50" oninput="calcNewSimUnitCost()">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Units/Package *</label>
+                        <input type="number" id="newSimUnitsPerPkg" step="1" min="1" value="1" placeholder="12" oninput="calcNewSimUnitCost()">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Unit Cost</label>
+                        <input type="text" id="newSimUnitCost" readonly style="background: #e0e0e0; font-weight: bold;" value="$0.00">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Markup %</label>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <input type="number" id="newSimMarkup" value="30" min="0" max="500" step="1" style="width: 70px;" oninput="calcNewSimSellPrice()">
+                            <span>%</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>Sell Price</label>
+                        <input type="text" id="newSimSellPrice" readonly style="background: #c8e6c9; font-weight: bold; color: #2e7d32;" value="$0.00">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn" onclick="addNewItemToSimulation()" style="background: #ff9800;">
+                        ➕ Add to Simulation
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearNewSimForm()">
+                        🗑️ Clear Form
+                    </button>
+                </div>
             </div>
             
             <!-- Filters -->
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 15px 0;">🔍 Filter Items</h3>
+                <h3 style="margin: 0 0 15px 0;">🔍 Filter Existing Items</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                     <div class="form-group" style="margin: 0;">
                         <label>Search SKU/Description</label>
@@ -1841,6 +1904,7 @@
                             <option value="instock">In Stock Only</option>
                             <option value="low">Low Stock</option>
                             <option value="out">Out of Stock</option>
+                            <option value="new">🆕 New (Simulated Only)</option>
                         </select>
                     </div>
                 </div>
@@ -1848,7 +1912,7 @@
             
             <!-- Price Adjustment Controls -->
             <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Price Adjustment</h3>
+                <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Bulk Price Adjustment (Existing Items)</h3>
                 <div style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap;">
                     <div class="form-group" style="margin: 0;">
                         <label>Increase by Percentage</label>
@@ -2221,6 +2285,19 @@
                 top: 0,
                 behavior: 'smooth'
             });
+        }
+        
+        // Toggle collapsible sections (Quick Guides, Entry Forms)
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId + '-toggle');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                if (toggle) toggle.textContent = '▼ Hide';
+            } else {
+                section.style.display = 'none';
+                if (toggle) toggle.textContent = '▶ Show';
+            }
         }
         
         // Show/hide back to top button based on scroll position
@@ -2777,7 +2854,7 @@
             let totalQty = 0;
             
             let html = '<table class="data-table" id="itemsDataTable"><thead><tr>';
-            html += '<th>ID</th><th>SKU</th><th>Description</th><th>Supplier</th><th>Purchase UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Unit Sell</th><th>Qty (Pkgs)</th><th>On Order</th><th>Reorder</th><th>Actions</th>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Sell Price</th><th>Qty</th><th>On Order</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
@@ -2792,19 +2869,18 @@
                 const packagesOnOrder = (qtyOnOrder / unitsPerPkg).toFixed(1);
                 
                 // Determine row styling based on stock status
-                let rowStyle = '';
+                let rowBg = '';
                 let qtyStyle = '';
                 if (qty < 0) {
-                    rowStyle = 'style="background:#ffcdd2;"';  // Red for negative
+                    rowBg = 'background:#ffcdd2;';  // Red for negative
                     qtyStyle = 'color: #b71c1c; font-weight: bold;';
                 } else if (qty <= reorderPoint) {
-                    rowStyle = 'style="background:#fff3cd;"';  // Yellow for low stock
+                    rowBg = 'background:#fff3cd;';  // Yellow for low stock
                 }
                 
                 totalQty += qty;
                 
-                html += `<tr ${rowStyle}>
-                    <td>${item.Item_ID}</td>
+                html += `<tr style="${rowBg} cursor: pointer;" onclick="editItemById('${item.Item_ID}')" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
                     <td><strong>${item.SKU || '-'}</strong></td>
                     <td>${item.Item_Description}</td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
@@ -2812,12 +2888,12 @@
                     <td>${unitsPerPkg}</td>
                     <td>$${packageCost.toFixed(2)}</td>
                     <td>$${unitCost.toFixed(2)}</td>
-                    <td>$${unitSellPrice.toFixed(2)}</td>
-                    <td style="${qtyStyle}">${packages} (${qty.toFixed(0)} ${item.Purchase_UOM || 'Case'})</td>
-                    <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${packagesOnOrder}</span></td>
+                    <td style="color: #28a745; font-weight: bold;">$${unitSellPrice.toFixed(2)}</td>
+                    <td style="${qtyStyle}">${qty.toFixed(0)}</td>
+                    <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder > 0 ? qtyOnOrder : '-'}</span></td>
                     <td>${item.Reorder_Point || 0}</td>
-                    <td>
-                        <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️ Edit</button>
+                    <td onclick="event.stopPropagation();">
+                        <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️</button>
                         <button class="btn-delete-icon" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️</button>
                     </td>
                 </tr>`;
@@ -2825,8 +2901,8 @@
 
             // Add totals row
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="9" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>${totalQty.toLocaleString()} units</td>
+                <td colspan="8" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td>${totalQty.toLocaleString()}</td>
                 <td colspan="3"></td>
             </tr>`;
 
@@ -3460,7 +3536,7 @@
             let totalPaid = 0;
             
             let html = '<table class="data-table" id="purchasesDataTable"><thead><tr>';
-            html += '<th>PO ID</th><th>Supplier</th><th>Date</th><th>Invoice #</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
+            html += '<th>Invoice #</th><th>Supplier</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
@@ -3473,25 +3549,23 @@
                 totalPaid += amountPaid;
                 
                 // Color code payment status
-                let statusColor = '';
-                if (paymentStatus === 'Paid') statusColor = 'style="color: green; font-weight: bold;"';
-                else if (paymentStatus === 'Partial') statusColor = 'style="color: orange; font-weight: bold;"';
-                else if (paymentStatus === 'Overdue') statusColor = 'style="color: red; font-weight: bold;"';
+                let paymentBadge = '';
+                if (paymentStatus === 'Paid') paymentBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Paid</span>';
+                else if (paymentStatus === 'Partial') paymentBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Partial</span>';
+                else paymentBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Unpaid</span>';
                 
-                html += `<tr>
-                    <td>${po.PO_ID}</td>
-                    <td><strong>${getSupplierName(po.Supplier_ID)}</strong></td>
+                html += `<tr style="cursor: pointer;" onclick="showPurchaseOrderDetails(cachedPurchases.find(p => p.PO_ID === '${po.PO_ID}'))" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+                    <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
+                    <td>${getSupplierName(po.Supplier_ID)}</td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
-                    <td>${po.Invoice_Number || '-'}</td>
-                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : '#28a745'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${po.Status || 'Received'}</span></td>
+                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status || 'Received'}</span></td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
-                    <td ${statusColor}>${paymentStatus}</td>
-                    <td>
-                        ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive Items</button>` : ''}
-                        <button class="btn-small" onclick="editPurchaseOrder('${po.PO_ID}')">✏️ Edit</button>
-                        ${paymentStatus === 'Paid' ? '<span style="color: green; margin-left: 10px;">✓ Paid</span>' : ''}
+                    <td>${paymentBadge}</td>
+                    <td onclick="event.stopPropagation();">
+                        ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
+                        <button class="btn-small" onclick="editPurchaseOrder('${po.PO_ID}')">✏️</button>
                     </td>
                 </tr>`;
             });
@@ -3499,10 +3573,10 @@
             // Add totals row
             const balance = totalAmount - totalPaid;
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="5" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td colspan="4" style="text-align: right; padding-right: 20px;">TOTALS:</td>
                 <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td>$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td colspan="3" style="text-align: left;">Balance Due: <strong style="color: ${balance > 0 ? 'red' : 'green'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
             </tr>`;
 
             html += '</tbody></table>';
@@ -4879,8 +4953,11 @@
             let totalAmount = 0;
             let totalPaid = 0;
             
+            // Cache sales for row click
+            window.cachedSales = orders;
+            
             let html = '<table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Status</th><th>Payment Method</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment Status</th><th>Actions</th>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -4888,31 +4965,28 @@
                 const paymentStatus = so.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(so.Amount_Paid) || 0;
                 const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
-                const status = so.Status || 'Completed';
-                const invoiceNum = so.Invoice_Number || '-';
+                const invoiceNum = so.Invoice_Number || so.SO_ID;
                 
                 totalAmount += total;
                 totalPaid += amountPaid;
                 
-                // Color code payment status
-                let statusColor = '';
-                if (paymentStatus === 'Paid') statusColor = 'style="color: green; font-weight: bold;"';
-                else if (paymentStatus === 'Partial') statusColor = 'style="color: orange; font-weight: bold;"';
-                else if (paymentStatus === 'Overdue') statusColor = 'style="color: red; font-weight: bold;"';
+                // Color code payment status badge
+                let paymentBadge = '';
+                if (paymentStatus === 'Paid') paymentBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Paid</span>';
+                else if (paymentStatus === 'Partial') paymentBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Partial</span>';
+                else paymentBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Unpaid</span>';
                 
-                html += `<tr>
+                html += `<tr style="cursor: pointer;" onclick="viewSalesOrder('${so.SO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${invoiceNum}</strong></td>
-                    <td><strong>${getCustomerName(so.Customer_ID)}</strong></td>
+                    <td>${getCustomerName(so.Customer_ID)}</td>
                     <td>${new Date(so.Sale_Date || so.SO_Date).toLocaleDateString()}</td>
-                    <td>${status}</td>
-                    <td>${so.Payment_Method || '-'}</td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
-                    <td ${statusColor}>${paymentStatus}</td>
-                    <td>
-                        <button class="btn-small" onclick="editSalesOrder('${so.SO_ID}')">✏️ Edit</button>
-                        ${paymentStatus === 'Paid' ? '<span style="color: green; margin-left: 10px;">✓ Paid</span>' : ''}
+                    <td>${paymentBadge}</td>
+                    <td onclick="event.stopPropagation();">
+                        <button class="btn-small" onclick="viewSalesOrder('${so.SO_ID}')" style="background: #28a745; color: white;">🖨️</button>
+                        <button class="btn-small" onclick="editSalesOrder('${so.SO_ID}')">✏️</button>
                     </td>
                 </tr>`;
             });
@@ -4920,15 +4994,23 @@
             // Add totals row
             const balance = totalAmount - totalPaid;
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="5" style="text-align: right; padding-right: 20px;">TOTALS:</td>
+                <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
                 <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td>$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td colspan="3" style="text-align: left;">Balance Due: <strong style="color: ${balance > 0 ? 'red' : 'green'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
             </tr>`;
 
             html += '</tbody></table>';
             document.getElementById('salesTable').innerHTML = html;
             setTimeout(() => makeSortable('salesDataTable'), 0);
+        }
+        
+        // View Sales Order (opens modal with print option)
+        function viewSalesOrder(soId) {
+            const so = window.cachedSales?.find(s => s.SO_ID === soId);
+            if (so) {
+                showSalesOrderDetails(so);
+            }
         }
         
         // Edit Sales Order
@@ -5230,21 +5312,21 @@
                     <span onclick="filterInventoryByStatus('')" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Show All</span>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: #667eea; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(102,126,234,0.3);">
-                        <div style="font-size: 28px; font-weight: bold;">${items.length}</div>
-                        <div style="font-size: 13px; opacity: 0.9;">Total Items</div>
+                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold; color: #212529;">${items.length}</div>
+                        <div style="font-size: 13px; color: #6c757d;">Total Items</div>
                     </div>
-                    <div style="background: #17a2b8; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(23,162,184,0.3);">
-                        <div style="font-size: 28px; font-weight: bold;">${totalQty.toLocaleString()}</div>
-                        <div style="font-size: 13px; opacity: 0.9;">Total Units</div>
+                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold; color: #212529;">${totalQty.toLocaleString()}</div>
+                        <div style="font-size: 13px; color: #6c757d;">Total Units</div>
                     </div>
-                    <div style="background: #e83e8c; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(232,62,140,0.3);">
-                        <div style="font-size: 28px; font-weight: bold;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div style="font-size: 13px; opacity: 0.9;">Cost Value</div>
+                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold; color: #dc3545;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
                     </div>
-                    <div style="background: #28a745; color: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(40,167,69,0.3);">
-                        <div style="font-size: 28px; font-weight: bold;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div style="font-size: 13px; opacity: 0.9;">Sell Value</div>
+                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 28px; font-weight: bold; color: #28a745;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
                     </div>
                 </div>
             `;
@@ -5313,31 +5395,176 @@
         
         let pricesimItems = [];
         let pricesimFiltered = [];
+        let simulatedNewItems = []; // Track new items added for simulation
+        
+        // New Item Simulation Functions
+        function calcNewSimUnitCost() {
+            const packageCost = parseFloat(document.getElementById('newSimPackageCost').value) || 0;
+            const unitsPerPkg = parseFloat(document.getElementById('newSimUnitsPerPkg').value) || 1;
+            const unitCost = packageCost / unitsPerPkg;
+            document.getElementById('newSimUnitCost').value = '$' + unitCost.toFixed(2);
+            calcNewSimSellPrice();
+        }
+        
+        function calcNewSimSellPrice() {
+            const packageCost = parseFloat(document.getElementById('newSimPackageCost').value) || 0;
+            const unitsPerPkg = parseFloat(document.getElementById('newSimUnitsPerPkg').value) || 1;
+            const markup = parseFloat(document.getElementById('newSimMarkup').value) || 0;
+            const unitCost = packageCost / unitsPerPkg;
+            const sellPrice = unitCost * (1 + markup / 100);
+            document.getElementById('newSimSellPrice').value = '$' + sellPrice.toFixed(2);
+        }
+        
+        function clearNewSimForm() {
+            document.getElementById('newSimSupplier').value = '';
+            document.getElementById('newSimSKU').value = '';
+            document.getElementById('newSimDescription').value = '';
+            document.getElementById('newSimPackageCost').value = '';
+            document.getElementById('newSimUnitsPerPkg').value = '1';
+            document.getElementById('newSimMarkup').value = '30';
+            document.getElementById('newSimUnitCost').value = '$0.00';
+            document.getElementById('newSimSellPrice').value = '$0.00';
+        }
+        
+        function addNewItemToSimulation() {
+            const supplierId = document.getElementById('newSimSupplier').value;
+            const sku = document.getElementById('newSimSKU').value.trim();
+            const description = document.getElementById('newSimDescription').value.trim();
+            const packageCost = parseFloat(document.getElementById('newSimPackageCost').value) || 0;
+            const unitsPerPkg = parseFloat(document.getElementById('newSimUnitsPerPkg').value) || 1;
+            const markup = parseFloat(document.getElementById('newSimMarkup').value) || 0;
+            
+            if (!supplierId) {
+                alert('Please select a supplier');
+                return;
+            }
+            if (!description) {
+                alert('Please enter a description');
+                return;
+            }
+            if (packageCost <= 0) {
+                alert('Please enter a package cost');
+                return;
+            }
+            
+            const unitCost = packageCost / unitsPerPkg;
+            const sellPrice = unitCost * (1 + markup / 100);
+            
+            // Create a simulated item object
+            const newItem = {
+                Item_ID: 'NEW_' + Date.now(), // Temporary ID
+                Supplier_ID: supplierId,
+                SKU: sku || 'NEW',
+                Item_Description: description,
+                Package_Cost: packageCost,
+                Units_Per_Package: unitsPerPkg,
+                Unit_Sell_Price: sellPrice,
+                Qty_On_Hand: 0,
+                Reorder_Point: 0,
+                isNew: true, // Flag to identify new items
+                markup: markup
+            };
+            
+            simulatedNewItems.push(newItem);
+            pricesimItems.push(newItem);
+            pricesimFiltered = [...pricesimItems];
+            
+            displayPriceSimItems();
+            clearNewSimForm();
+            
+            showStatus('pricesimStatus', `✅ Added "${description}" to simulation. ${simulatedNewItems.length} new item(s) pending.`, 'success');
+        }
+        
+        function removeSimulatedItem(tempId) {
+            simulatedNewItems = simulatedNewItems.filter(item => item.Item_ID !== tempId);
+            pricesimItems = pricesimItems.filter(item => item.Item_ID !== tempId);
+            pricesimFiltered = pricesimFiltered.filter(item => item.Item_ID !== tempId);
+            displayPriceSimItems();
+            showStatus('pricesimStatus', `Removed item. ${simulatedNewItems.length} new item(s) pending.`, 'info');
+        }
+        
+        async function saveNewItemsToDatabase() {
+            if (simulatedNewItems.length === 0) {
+                alert('No new items to save!');
+                return;
+            }
+            
+            if (!confirm(`Save ${simulatedNewItems.length} new item(s) to your database?`)) {
+                return;
+            }
+            
+            showStatus('pricesimStatus', '⏳ Saving new items...', 'info');
+            
+            let savedCount = 0;
+            for (const item of simulatedNewItems) {
+                const result = await apiCall('addItem', {
+                    supplierId: item.Supplier_ID,
+                    sku: item.SKU,
+                    description: item.Item_Description,
+                    purchaseUOM: 'Each',
+                    unitsPerPackage: item.Units_Per_Package,
+                    packageCost: item.Package_Cost,
+                    unitSellPrice: item.Unit_Sell_Price,
+                    qtyOnHand: 0,
+                    reorderPoint: 0
+                });
+                if (result?.status === 'success') savedCount++;
+            }
+            
+            simulatedNewItems = [];
+            showStatus('pricesimStatus', `✅ Saved ${savedCount} new items to database!`, 'success');
+            
+            // Reload to get fresh data with real IDs
+            await loadPriceSimItems();
+        }
         
         async function loadPriceSimItems() {
             showStatus('pricesimStatus', '⏳ Loading items...', 'info');
+            document.getElementById('pricesimTable').innerHTML = '<div class="loading">Loading items...</div>';
             
-            // Load suppliers for filter
-            if (cachedSuppliers.length === 0) {
-                const suppResult = await apiCall('getSuppliers');
-                if (suppResult?.status === 'success') cachedSuppliers = suppResult.data;
-            }
-            
-            const supplierSelect = document.getElementById('pricesimSupplier');
-            supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
-            cachedSuppliers.forEach(s => {
-                supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
-            });
-            
-            // Load items
-            const result = await apiCall('getItems');
-            if (result?.status === 'success') {
-                pricesimItems = result.data;
-                pricesimFiltered = [...pricesimItems];
-                displayPriceSimItems();
-                showStatus('pricesimStatus', `✅ Loaded ${pricesimItems.length} items`, 'success');
-            } else {
-                showStatus('pricesimStatus', '❌ Failed to load items', 'error');
+            try {
+                // Load suppliers for filter
+                if (cachedSuppliers.length === 0) {
+                    const suppResult = await apiCall('getSuppliers');
+                    if (suppResult?.status === 'success') cachedSuppliers = suppResult.data;
+                }
+                
+                // Populate both supplier dropdowns
+                const supplierSelect = document.getElementById('pricesimSupplier');
+                const newSimSupplier = document.getElementById('newSimSupplier');
+                
+                if (supplierSelect) {
+                    supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+                    cachedSuppliers.forEach(s => {
+                        supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                    });
+                }
+                
+                if (newSimSupplier) {
+                    newSimSupplier.innerHTML = '<option value="">Select Supplier</option>';
+                    cachedSuppliers.forEach(s => {
+                        newSimSupplier.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                    });
+                }
+                
+                // Load items
+                const result = await apiCall('getItems');
+                if (result?.status === 'success' && result.data && result.data.length > 0) {
+                    pricesimItems = result.data;
+                    // Add any simulated new items back
+                    simulatedNewItems.forEach(item => {
+                        pricesimItems.push(item);
+                    });
+                    pricesimFiltered = [...pricesimItems];
+                    displayPriceSimItems();
+                    showStatus('pricesimStatus', `✅ Loaded ${pricesimItems.length} items (${simulatedNewItems.length} new)`, 'success');
+                } else {
+                    document.getElementById('pricesimTable').innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No items found. Add items in the Items tab first.</p>';
+                    showStatus('pricesimStatus', '⚠️ No items found in database', 'info');
+                }
+            } catch (error) {
+                console.error('Price Sim load error:', error);
+                showStatus('pricesimStatus', '❌ Error loading items: ' + error.message, 'error');
             }
         }
         
@@ -5355,9 +5582,10 @@
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
                 const reorder = parseFloat(item.Reorder_Point) || 0;
                 let matchStock = true;
-                if (stock === 'instock') matchStock = qty > 0;
-                else if (stock === 'low') matchStock = qty > 0 && qty <= reorder;
-                else if (stock === 'out') matchStock = qty <= 0;
+                if (stock === 'instock') matchStock = qty > 0 && !item.isNew;
+                else if (stock === 'low') matchStock = qty > 0 && qty <= reorder && !item.isNew;
+                else if (stock === 'out') matchStock = qty <= 0 && !item.isNew;
+                else if (stock === 'new') matchStock = item.isNew === true;
                 
                 return matchSearch && matchSupplier && matchStock;
             });
@@ -5401,10 +5629,13 @@
                 
                 // Calculate new price
                 let newSell = currentSell;
-                if (percent > 0) {
-                    newSell = currentSell * (1 + percent / 100);
-                } else if (flat > 0) {
-                    newSell = currentSell + flat;
+                if (!item.isNew) {
+                    // Only apply bulk adjustment to existing items
+                    if (percent > 0) {
+                        newSell = currentSell * (1 + percent / 100);
+                    } else if (flat > 0) {
+                        newSell = currentSell + flat;
+                    }
                 }
                 newSell = Math.round(newSell * 100) / 100; // Round to cents
                 
@@ -5412,25 +5643,53 @@
                 const currentMargin = currentSell > 0 ? ((currentSell - unitCost) / currentSell * 100) : 0;
                 const newMargin = newSell > 0 ? ((newSell - unitCost) / newSell * 100) : 0;
                 
-                const hasChange = change > 0;
+                const hasChange = change > 0 || item.isNew;
+                const isNew = item.isNew === true;
+                const rowStyle = isNew ? 'background: #fff3e0;' : '';
                 
                 html += `
-                    <tr>
-                        <td><input type="checkbox" class="pricesim-check" data-idx="${idx}" data-itemid="${item.Item_ID}" data-newprice="${newSell}" onchange="updatePriceSimSummary()" ${hasChange ? 'checked' : ''}></td>
-                        <td><strong>${item.SKU || '-'}</strong></td>
+                    <tr style="${rowStyle}">
+                        <td>
+                            ${isNew ? 
+                                `<button class="btn-delete-icon" onclick="removeSimulatedItem('${item.Item_ID}')" title="Remove">🗑️</button>` : 
+                                `<input type="checkbox" class="pricesim-check" data-idx="${idx}" data-itemid="${item.Item_ID}" data-newprice="${newSell}" data-isnew="${isNew}" onchange="updatePriceSimSummary()" ${hasChange ? 'checked' : ''}>`
+                            }
+                        </td>
+                        <td>
+                            ${isNew ? '<span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 5px;">NEW</span>' : ''}
+                            <strong>${item.SKU || '-'}</strong>
+                        </td>
                         <td>${item.Item_Description}</td>
                         <td>${getSupplierName(item.Supplier_ID)}</td>
                         <td>$${unitCost.toFixed(2)}</td>
-                        <td>$${currentSell.toFixed(2)}</td>
-                        <td style="color: ${hasChange ? '#28a745' : '#666'}; font-weight: bold;">$${newSell.toFixed(2)}</td>
-                        <td style="color: ${hasChange ? '#28a745' : '#666'};">${hasChange ? '+$' + change.toFixed(2) : '-'}</td>
-                        <td>${currentMargin.toFixed(1)}%</td>
-                        <td style="color: ${newMargin > currentMargin ? '#28a745' : '#666'}; font-weight: bold;">${newMargin.toFixed(1)}%</td>
+                        <td>${isNew ? '-' : '$' + currentSell.toFixed(2)}</td>
+                        <td style="color: #28a745; font-weight: bold;">$${newSell.toFixed(2)}</td>
+                        <td style="color: ${hasChange ? '#28a745' : '#666'};">${isNew ? `+${item.markup || 0}% markup` : (hasChange ? '+$' + change.toFixed(2) : '-')}</td>
+                        <td>${isNew ? '-' : currentMargin.toFixed(1) + '%'}</td>
+                        <td style="color: #28a745; font-weight: bold;">${newMargin.toFixed(1)}%</td>
                     </tr>
                 `;
             });
             
             html += '</tbody></table>';
+            
+            // Add save new items button if there are simulated items
+            if (simulatedNewItems.length > 0) {
+                html += `
+                    <div style="margin-top: 15px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 2px solid #ff9800;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <strong style="color: #e65100;">🆕 ${simulatedNewItems.length} New Item(s) Ready to Save</strong>
+                                <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">These items are only in simulation. Click to add them to your database.</p>
+                            </div>
+                            <button class="btn" onclick="saveNewItemsToDatabase()" style="background: #ff9800;">
+                                💾 Save ${simulatedNewItems.length} New Item(s) to Database
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
             document.getElementById('pricesimTable').innerHTML = html;
             
             updatePriceSimSummary();
