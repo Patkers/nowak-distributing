@@ -1810,7 +1810,7 @@
         </div>
         
         <!-- PRICE SIMULATOR TAB -->
-        <div id="pricesim" class="card" style="display: none;">
+        <div id="pricesim" class="card">
             <h2>🎯 Pricing Workbench</h2>
             <div class="status" id="pricesimStatus"></div>
             
@@ -2636,7 +2636,6 @@
                     <td>${s.City || '-'}, ${s.State || '-'}</td>
                     <td>${s.Payment_Terms || '-'}</td>
                     <td onclick="event.stopPropagation();">
-                        <button class="btn-small" onclick='editSupplier(${JSON.stringify(s).replace(/'/g, "&#39;")})'>✏️</button>
                         <button class="btn-delete-icon" onclick="deleteSupplier('${s.Supplier_ID}', '${s.Supplier_Name}')">🗑️</button>
                     </td>
                 </tr>`;
@@ -2892,7 +2891,6 @@
                     <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder > 0 ? qtyOnOrder : '-'}</span></td>
                     <td>${item.Reorder_Point || 0}</td>
                     <td onclick="event.stopPropagation();">
-                        <button class="btn-small" onclick="editItemById('${item.Item_ID}')">✏️</button>
                         <button class="btn-delete-icon" onclick="deleteItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}')">🗑️</button>
                     </td>
                 </tr>`;
@@ -3154,7 +3152,6 @@
                     <td>${c.City || '-'}, ${c.State || '-'}</td>
                     <td>$${parseFloat(c.Credit_Limit || 0).toFixed(2)}</td>
                     <td onclick="event.stopPropagation();">
-                        <button class="btn-small" onclick='editCustomer(${JSON.stringify(c).replace(/'/g, "&#39;")})'>✏️</button>
                         <button class="btn-delete-icon" onclick="deleteCustomer('${c.Customer_ID}', '${c.Customer_Name}')">🗑️</button>
                     </td>
                 </tr>`;
@@ -3557,7 +3554,7 @@
                 else if (paymentStatus === 'Partial') paymentBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Partial</span>';
                 else paymentBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Unpaid</span>';
                 
-                html += `<tr style="cursor: pointer;" onclick="showPurchaseOrderDetails(cachedPurchases.find(p => p.PO_ID === '${po.PO_ID}'))" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+                html += `<tr style="cursor: pointer;" onclick="viewPurchaseOrder('${po.PO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
                     <td>${getSupplierName(po.Supplier_ID)}</td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
@@ -3568,7 +3565,7 @@
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
                         ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
-                        <button class="btn-small" onclick="editPurchaseOrder('${po.PO_ID}')">✏️</button>
+                        <button class="btn-small" onclick="viewPurchaseOrder('${po.PO_ID}')" style="background: #17a2b8; color: white; padding: 6px 12px;">View/Print</button>
                     </td>
                 </tr>`;
             });
@@ -3591,6 +3588,14 @@
         let currentEditingOrder = null;
         let currentEditingType = null; // 'purchase' or 'sales'
         let returnToTab = null; // Track which tab to return to after closing modal
+        
+        // View Purchase Order (from row click or button)
+        function viewPurchaseOrder(poId) {
+            const po = purchasesData.find(p => p.PO_ID === poId);
+            if (po) {
+                showPurchaseOrderDetails(po);
+            }
+        }
         
         async function editPurchaseOrder(poId) {
             // Find the PO in cached data or fetch it
@@ -3666,15 +3671,16 @@
             
             if (lines.length > 0) {
                 html += `
-                    <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
-                    <table class="data-table" style="margin-bottom: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px; font-size: 18px;">📦 Line Items</h3>
+                    <div style="overflow-x: auto;">
+                    <table class="data-table" style="margin-bottom: 20px; font-size: 14px;">
                         <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Description</th>
-                                <th>Quantity</th>
-                                <th>Unit Cost</th>
-                                <th>Line Total</th>
+                            <tr style="background: #667eea; color: white;">
+                                <th style="padding: 12px 15px;">Item</th>
+                                <th style="padding: 12px 15px;">Description</th>
+                                <th style="padding: 12px 15px;">Qty</th>
+                                <th style="padding: 12px 15px;">Unit Cost</th>
+                                <th style="padding: 12px 15px;">Line Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -3684,12 +3690,12 @@
                     const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
                     const lineTotal = (parseFloat(line.Quantity) || 0) * (parseFloat(line.Unit_Cost) || 0);
                     html += `
-                        <tr>
-                            <td>${line.Item_ID}</td>
-                            <td>${item ? item.Item_Description : '-'}</td>
-                            <td>${line.Quantity}</td>
-                            <td>$${parseFloat(line.Unit_Cost || 0).toFixed(2)}</td>
-                            <td>$${lineTotal.toFixed(2)}</td>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 12px 15px;"><strong>${item?.SKU || line.Item_ID}</strong></td>
+                            <td style="padding: 12px 15px;">${item ? item.Item_Description : '-'}</td>
+                            <td style="padding: 12px 15px; text-align: center; font-weight: bold;">${line.Quantity}</td>
+                            <td style="padding: 12px 15px; text-align: right;">$${parseFloat(line.Unit_Cost || 0).toFixed(2)}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-weight: bold;">$${lineTotal.toFixed(2)}</td>
                         </tr>
                     `;
                 });
@@ -3697,6 +3703,7 @@
                 html += `
                         </tbody>
                     </table>
+                    </div>
                 `;
             }
             
@@ -4990,7 +4997,6 @@
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
                         <button class="btn-small" onclick="viewSalesOrder('${so.SO_ID}')" style="background: #28a745; color: white; padding: 6px 12px;">View/Print</button>
-                        <button class="btn-small" onclick="editSalesOrder('${so.SO_ID}')">✏️</button>
                     </td>
                 </tr>`;
             });
@@ -5079,15 +5085,16 @@
             
             if (lines.length > 0) {
                 html += `
-                    <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
-                    <table class="data-table" style="margin-bottom: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px; font-size: 18px;">📦 Line Items</h3>
+                    <div style="overflow-x: auto;">
+                    <table class="data-table" style="margin-bottom: 20px; font-size: 14px;">
                         <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Description</th>
-                                <th>Quantity</th>
-                                <th>Unit Price</th>
-                                <th>Line Total</th>
+                            <tr style="background: #667eea; color: white;">
+                                <th style="padding: 12px 15px;">Item</th>
+                                <th style="padding: 12px 15px;">Description</th>
+                                <th style="padding: 12px 15px;">Qty</th>
+                                <th style="padding: 12px 15px;">Unit Price</th>
+                                <th style="padding: 12px 15px;">Line Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -5097,12 +5104,12 @@
                     const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
                     const lineTotal = (parseFloat(line.Quantity) || 0) * (parseFloat(line.Unit_Price) || 0);
                     html += `
-                        <tr>
-                            <td>${line.Item_ID}</td>
-                            <td>${item ? item.Item_Description : '-'}</td>
-                            <td>${line.Quantity}</td>
-                            <td>$${parseFloat(line.Unit_Price || 0).toFixed(2)}</td>
-                            <td>$${lineTotal.toFixed(2)}</td>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 12px 15px;"><strong>${item?.SKU || line.Item_ID}</strong></td>
+                            <td style="padding: 12px 15px;">${item ? item.Item_Description : '-'}</td>
+                            <td style="padding: 12px 15px; text-align: center; font-weight: bold;">${line.Quantity}</td>
+                            <td style="padding: 12px 15px; text-align: right;">$${parseFloat(line.Unit_Price || 0).toFixed(2)}</td>
+                            <td style="padding: 12px 15px; text-align: right; font-weight: bold;">$${lineTotal.toFixed(2)}</td>
                         </tr>
                     `;
                 });
@@ -5110,6 +5117,7 @@
                 html += `
                         </tbody>
                     </table>
+                    </div>
                 `;
             }
             
@@ -7790,7 +7798,14 @@
         }
         
         async function openItem(itemId) {
-            // Just call editItemById which handles everything
+            // Load items if not cached
+            if (cachedItems.length === 0) {
+                const result = await apiCall('getItems');
+                if (result && result.status === 'success') {
+                    cachedItems = result.data;
+                }
+            }
+            // Call editItemById which handles everything
             editItemById(itemId);
         }
         
