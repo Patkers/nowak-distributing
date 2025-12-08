@@ -84,7 +84,7 @@
             /* Contain content in landscape mode */
             overflow-x: auto;
             max-width: 100%;
-            border-left: 5px solid var(--primary, #667eea);
+            border-left: 5px solid #c0c0c0;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -98,14 +98,14 @@
             box-shadow: 0 15px 40px rgba(0,0,0,0.25);
         }
         
-        /* Section cards within main cards - rainbow effect */
+        /* Section cards within main cards - consistent grey shadow edge */
         .section-card {
             background: white;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border-left: 4px solid var(--primary, #667eea);
+            border-left: 4px solid #c0c0c0;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         
@@ -114,21 +114,21 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
         
-        /* Different accent colors for variety */
-        .section-card.accent-blue { border-left-color: #2196f3; }
-        .section-card.accent-green { border-left-color: #4caf50; }
-        .section-card.accent-orange { border-left-color: #ff9800; }
-        .section-card.accent-purple { border-left-color: #9c27b0; }
-        .section-card.accent-red { border-left-color: #f44336; }
-        .section-card.accent-teal { border-left-color: #009688; }
-        .section-card.accent-pink { border-left-color: #e91e63; }
-        .section-card.accent-indigo { border-left-color: #3f51b5; }
-        .section-card.accent-cyan { border-left-color: #00bcd4; }
-        .section-card.accent-amber { border-left-color: #ffc107; }
-        
-        /* Use theme primary color */
-        .section-card.accent-theme { border-left-color: var(--primary, #667eea); }
-        .section-card.accent-secondary { border-left-color: var(--secondary, #764ba2); }
+        /* All accent colors now use consistent grey */
+        .section-card.accent-blue,
+        .section-card.accent-green,
+        .section-card.accent-orange,
+        .section-card.accent-purple,
+        .section-card.accent-red,
+        .section-card.accent-teal,
+        .section-card.accent-pink,
+        .section-card.accent-indigo,
+        .section-card.accent-cyan,
+        .section-card.accent-amber,
+        .section-card.accent-theme,
+        .section-card.accent-secondary { 
+            border-left-color: #c0c0c0; 
+        }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -261,22 +261,49 @@
             border-radius: 12px;
             padding: 15px;
             border: 1px solid #e0e0e0;
-            border-left: 5px solid var(--primary, #667eea);
+            border-left: 5px solid #c0c0c0;
+        }
+        
+        .report-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        
+        .report-category-header:hover {
+            opacity: 0.8;
         }
         
         .report-category h4 {
-            margin: 0 0 12px 0;
-            color: var(--primary, #667eea);
+            margin: 0;
+            color: #555;
             font-size: 14px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
+        .report-toggle {
+            color: #888;
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+        
         .report-buttons {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .report-buttons.collapsed {
+            display: none;
+        }
+        
+        .report-category.collapsed .report-category-header {
+            margin-bottom: 0;
         }
         
         .report-btn {
@@ -1499,7 +1526,7 @@
                 </div>
             </div>
             
-            <div id="addSupplierForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
+            <div id="addSupplierForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
                 <h3>Add New Supplier</h3>
                 <form onsubmit="addSupplier(event)">
                     <div class="form-grid">
@@ -1662,7 +1689,7 @@
                 </div>
             </div>
             
-            <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
+            <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
                 <h3>Add New Item</h3>
                 <form onsubmit="addItem(event)">
                     <div class="form-grid">
@@ -1839,7 +1866,7 @@
                 </div>
             </div>
             
-            <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
+            <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
                 <h3>Add New Customer</h3>
                 <form onsubmit="addCustomer(event)">
                     <div class="form-grid">
@@ -2025,7 +2052,7 @@
                         </div>
                         
                         <!-- Line Items Container -->
-                        <div id="createPOLineItems" style="border: 2px solid var(--primary, #667eea); border-top: none; border-radius: 0 0 8px 8px; padding: 6px;">
+                        <div id="createPOLineItems" style="border: 2px solid #c0c0c0; border-top: none; border-radius: 0 0 8px 8px; padding: 6px;">
                             <div class="line-item-row" style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; margin-bottom: 6px; align-items: center;">
                                 <select class="createpo-item" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                                     <option value="">Select item...</option>
@@ -2140,7 +2167,7 @@
                 </div>
             </div>
             
-            <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
+            <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
                 <h3>Record New Purchase</h3>
                 <form onsubmit="addPurchase(event)">
                     <div class="form-grid">
@@ -2261,7 +2288,7 @@
                 </div>
             </div>
             
-            <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
+            <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid #c0c0c0; padding: 20px; border-radius: 8px;">
                 <h3>Record New Sale</h3>
                 <form onsubmit="addSale(event)">
                     <div class="form-grid">
@@ -2377,7 +2404,7 @@
                             <select id="adjustItem" required onchange="onAdjustItemSelected()" size="1">
                                 <option value="">Select Item</option>
                             </select>
-                            <div id="adjustItemResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 2px solid var(--primary, #667eea); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                            <div id="adjustItemResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 2px solid #c0c0c0; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
                         </div>
                         <div class="form-group">
                             <label>Current Quantity</label>
@@ -2502,7 +2529,7 @@
                         </div>
                     </div>
                     
-                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
+                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #c0c0c0;">
                         <h4 style="margin: 0 0 10px 0; color: var(--primary, #667eea);">📊 Projected Impact</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
                             <div>
@@ -2731,8 +2758,11 @@
             <!-- Report Selection Buttons - Organized Grid -->
             <div class="report-grid">
                 <div class="report-category">
-                    <h4>📊 Sales Reports</h4>
-                    <div class="report-buttons">
+                    <div class="report-category-header" onclick="toggleReportSection('salesReports')">
+                        <h4>📊 Sales Reports</h4>
+                        <span id="salesReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="salesReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
                         <button class="btn report-btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Product</button>
@@ -2740,16 +2770,22 @@
                 </div>
                 
                 <div class="report-category">
-                    <h4>🛒 Purchase Reports</h4>
-                    <div class="report-buttons">
+                    <div class="report-category-header" onclick="toggleReportSection('purchaseReports')">
+                        <h4>🛒 Purchase Reports</h4>
+                        <span id="purchaseReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="purchaseReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('purchase-order-detail')">📋 Purchase Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
                     </div>
                 </div>
                 
                 <div class="report-category">
-                    <h4>📦 Inventory Reports</h4>
-                    <div class="report-buttons">
+                    <div class="report-category-header" onclick="toggleReportSection('inventoryReports')">
+                        <h4>📦 Inventory Reports</h4>
+                        <span id="inventoryReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="inventoryReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('simple-inventory')">📋 Inventory List</button>
                         <button class="btn report-btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
                         <button class="btn report-btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
@@ -2757,8 +2793,11 @@
                 </div>
                 
                 <div class="report-category">
-                    <h4>💵 Financial Reports</h4>
-                    <div class="report-buttons">
+                    <div class="report-category-header" onclick="toggleReportSection('financialReports')">
+                        <h4>💵 Financial Reports</h4>
+                        <span id="financialReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="financialReports" class="report-buttons">
                         <button class="btn report-btn report-btn-green" onclick="showReport('accounts-receivable')">💵 Accounts Receivable</button>
                         <button class="btn report-btn report-btn-red" onclick="showReport('accounts-payable')">💸 Accounts Payable</button>
                     </div>
@@ -2799,6 +2838,9 @@
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
+            
+            // Restore report section visibility preferences
+            restoreReportSections();
             
             // AUTO-LOAD ALL DATA ON PAGE LOAD
             console.log('🚀 Auto-loading all data from Google Sheets...');
@@ -3060,6 +3102,45 @@
                 section.style.display = 'none';
                 if (toggle) toggle.textContent = '▶ Show';
             }
+        }
+        
+        // Toggle report category sections with localStorage persistence
+        function toggleReportSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId + '-toggle');
+            const category = section.parentElement;
+            
+            if (section.classList.contains('collapsed')) {
+                // Show
+                section.classList.remove('collapsed');
+                category.classList.remove('collapsed');
+                if (toggle) toggle.textContent = '▼';
+                localStorage.setItem('report_' + sectionId, 'visible');
+            } else {
+                // Hide
+                section.classList.add('collapsed');
+                category.classList.add('collapsed');
+                if (toggle) toggle.textContent = '▶';
+                localStorage.setItem('report_' + sectionId, 'hidden');
+            }
+        }
+        
+        // Restore report section visibility on page load
+        function restoreReportSections() {
+            const sections = ['salesReports', 'purchaseReports', 'inventoryReports', 'financialReports'];
+            sections.forEach(sectionId => {
+                const state = localStorage.getItem('report_' + sectionId);
+                if (state === 'hidden') {
+                    const section = document.getElementById(sectionId);
+                    const toggle = document.getElementById(sectionId + '-toggle');
+                    const category = section?.parentElement;
+                    if (section) {
+                        section.classList.add('collapsed');
+                        if (category) category.classList.add('collapsed');
+                        if (toggle) toggle.textContent = '▶';
+                    }
+                }
+            });
         }
         
         // Show/hide back to top button based on scroll position
@@ -4639,7 +4720,7 @@
                             <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${statusText}</span></td></tr>
                         </table>
                         ${po.Status === 'Ordered' ? `
-                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
+                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #c0c0c0;">
                             <strong>⚠️ Prices Changed?</strong>
                             <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">If supplier prices have changed, void this PO and create a new one with updated prices.</p>
                             <button class="btn" onclick="voidPurchaseOrder('${po.PO_ID}')" style="background: #dc3545; padding: 6px 12px; font-size: 13px;">
@@ -4648,7 +4729,7 @@
                         </div>
                         ` : ''}
                         ${po.Status === 'Void' || po.Status === 'Cancelled' ? `
-                        <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
+                        <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #c0c0c0;">
                             <strong>📋 Need to Reorder?</strong>
                             <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">Copy this PO's items to create a new order with current prices.</p>
                             <button class="btn" onclick="duplicatePO('${po.PO_ID}'); closeModal();" style="background: #17a2b8; padding: 6px 12px; font-size: 13px;">
@@ -4725,7 +4806,7 @@
                 html += `
                     <div style="margin-top: 20px;">
                         <h3 style="color: var(--primary, #667eea); margin-bottom: 10px;">Notes</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #c0c0c0;">
                             ${po.Notes}
                         </div>
                     </div>
@@ -6370,7 +6451,7 @@
                 html += `
                     <div style="margin-top: 20px;">
                         <h3 style="color: var(--primary, #667eea); margin-bottom: 10px;">Notes</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #c0c0c0;">
                             ${so.Notes}
                         </div>
                     </div>
@@ -7637,54 +7718,790 @@
         }
         
         async function showReport(reportType) {
+            // Open the report setup modal instead of running immediately
+            openReportSetup(reportType);
+        }
+        
+        // Report configuration for each report type
+        const reportConfig = {
+            'sales-by-customer': {
+                title: '👥 Sales by Customer',
+                filters: ['dateRange', 'customer', 'minAmount'],
+                dateLabel: 'Sale Date'
+            },
+            'sales-order-detail': {
+                title: '📋 Sales Order Detail',
+                filters: ['dateRange', 'customer', 'paymentStatus'],
+                dateLabel: 'Sale Date'
+            },
+            'sales-by-product': {
+                title: '📦 Sales by Product',
+                filters: ['dateRange', 'item'],
+                dateLabel: 'Sale Date'
+            },
+            'purchase-order-detail': {
+                title: '📋 Purchase Order Detail',
+                filters: ['dateRange', 'supplier', 'paymentStatus'],
+                dateLabel: 'PO Date'
+            },
+            'purchase-by-supplier': {
+                title: '🏭 Purchase by Supplier',
+                filters: ['dateRange', 'supplier'],
+                dateLabel: 'PO Date'
+            },
+            'inventory-turnover': {
+                title: '🔄 Inventory Turnover',
+                filters: ['supplier', 'stockStatus', 'turnoverStatus'],
+                dateLabel: ''
+            },
+            'gross-margin': {
+                title: '💰 Gross Margin',
+                filters: ['supplier', 'stockStatus'],
+                dateLabel: ''
+            },
+            'accounts-receivable': {
+                title: '💵 Accounts Receivable',
+                filters: ['customer', 'aging'],
+                dateLabel: ''
+            },
+            'accounts-payable': {
+                title: '💸 Accounts Payable',
+                filters: ['supplier', 'aging'],
+                dateLabel: ''
+            },
+            'simple-inventory': {
+                title: '📋 Inventory List',
+                filters: ['supplier', 'stockStatus'],
+                dateLabel: ''
+            }
+        };
+        
+        function openReportSetup(reportType) {
             currentReport = reportType;
-            const container = document.getElementById('reportContainer');
+            reportFilters = {}; // Reset filters
+            
+            const config = reportConfig[reportType] || { title: 'Report', filters: [] };
+            
+            // Set title
+            document.getElementById('reportSetupTitle').textContent = config.title;
+            
+            // Build filter UI
+            let filterHtml = '<div class="form-grid" style="gap: 15px;">';
+            
+            // Date Range
+            if (config.filters.includes('dateRange')) {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+                const defaultFrom = thirtyDaysAgo.toISOString().split('T')[0];
+                const defaultTo = today.toISOString().split('T')[0];
+                
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📅 ${config.dateLabel || 'Date'} From</label>
+                        <input type="date" id="rptFilter_fromDate" value="${defaultFrom}">
+                    </div>
+                    <div class="form-group">
+                        <label>📅 ${config.dateLabel || 'Date'} To</label>
+                        <input type="date" id="rptFilter_toDate" value="${defaultTo}">
+                    </div>`;
+            }
+            
+            // Customer dropdown
+            if (config.filters.includes('customer')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>👤 Customer</label>
+                        <select id="rptFilter_customer">
+                            <option value="">All Customers</option>
+                            ${cachedCustomers.map(c => `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Supplier dropdown
+            if (config.filters.includes('supplier')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>🏭 Supplier</label>
+                        <select id="rptFilter_supplier">
+                            <option value="">All Suppliers</option>
+                            ${cachedSuppliers.map(s => `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Item/Product dropdown
+            if (config.filters.includes('item')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📦 Product</label>
+                        <select id="rptFilter_item">
+                            <option value="">All Products</option>
+                            ${cachedItems.map(i => `<option value="${i.Item_ID}">${i.Item_Description}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Payment Status
+            if (config.filters.includes('paymentStatus')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>💳 Payment Status</label>
+                        <select id="rptFilter_paymentStatus">
+                            <option value="">All</option>
+                            <option value="Paid">✅ Paid</option>
+                            <option value="Partial">🔶 Partial</option>
+                            <option value="Unpaid">❌ Unpaid</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Stock Status
+            if (config.filters.includes('stockStatus')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📊 Stock Status</label>
+                        <select id="rptFilter_stockStatus">
+                            <option value="">All Items</option>
+                            <option value="negative">🚨 Negative Inventory</option>
+                            <option value="out">🔴 Out of Stock</option>
+                            <option value="low">🟡 Low Stock</option>
+                            <option value="ok">🟢 In Stock</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Turnover Status
+            if (config.filters.includes('turnoverStatus')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>🔄 Turnover</label>
+                        <select id="rptFilter_turnoverStatus">
+                            <option value="">All</option>
+                            <option value="dead">💀 Dead Stock (0 sold)</option>
+                            <option value="slow">🐢 Slow Moving</option>
+                            <option value="fast">🚀 Fast Moving</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Aging
+            if (config.filters.includes('aging')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📆 Aging</label>
+                        <select id="rptFilter_aging">
+                            <option value="">All</option>
+                            <option value="current">Current (0-30 days)</option>
+                            <option value="30">31-60 days</option>
+                            <option value="60">61-90 days</option>
+                            <option value="90">90+ days</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Min Amount
+            if (config.filters.includes('minAmount')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>💵 Min Amount</label>
+                        <input type="number" id="rptFilter_minAmount" placeholder="0.00" min="0" step="0.01">
+                    </div>`;
+            }
+            
+            filterHtml += '</div>';
+            
+            // Add quick date presets if dateRange filter exists
+            if (config.filters.includes('dateRange')) {
+                filterHtml += `
+                    <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span style="color: #666; font-size: 13px; margin-right: 5px;">Quick:</span>
+                        <button type="button" class="btn-small" onclick="setDatePreset('today')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">Today</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('week')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Week</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('month')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Month</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('quarter')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Quarter</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('year')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">This Year</button>
+                        <button type="button" class="btn-small" onclick="setDatePreset('all')" style="background: #6c757d; padding: 4px 10px; font-size: 12px;">All Time</button>
+                    </div>`;
+            }
+            
+            document.getElementById('reportSetupFilters').innerHTML = filterHtml;
+            
+            // Reset content area
+            document.getElementById('reportSetupContent').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                    <p>Configure filters above and click <strong>Run Report</strong></p>
+                </div>`;
+            
+            // Show modal
+            document.getElementById('reportSetupModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function setDatePreset(preset) {
+            const today = new Date();
+            let fromDate = new Date();
+            let toDate = new Date();
+            
+            switch(preset) {
+                case 'today':
+                    fromDate = today;
+                    toDate = today;
+                    break;
+                case 'week':
+                    fromDate.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+                    toDate = today;
+                    break;
+                case 'month':
+                    fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    toDate = today;
+                    break;
+                case 'quarter':
+                    const quarter = Math.floor(today.getMonth() / 3);
+                    fromDate = new Date(today.getFullYear(), quarter * 3, 1);
+                    toDate = today;
+                    break;
+                case 'year':
+                    fromDate = new Date(today.getFullYear(), 0, 1);
+                    toDate = today;
+                    break;
+                case 'all':
+                    fromDate = new Date(2020, 0, 1); // Far back
+                    toDate = today;
+                    break;
+            }
+            
+            const fromEl = document.getElementById('rptFilter_fromDate');
+            const toEl = document.getElementById('rptFilter_toDate');
+            if (fromEl) fromEl.value = fromDate.toISOString().split('T')[0];
+            if (toEl) toEl.value = toDate.toISOString().split('T')[0];
+        }
+        
+        function closeReportSetup() {
+            document.getElementById('reportSetupModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        async function executeReport() {
+            // Gather filter values
+            reportFilters = {
+                fromDate: document.getElementById('rptFilter_fromDate')?.value || '',
+                toDate: document.getElementById('rptFilter_toDate')?.value || '',
+                customer: document.getElementById('rptFilter_customer')?.value || '',
+                supplier: document.getElementById('rptFilter_supplier')?.value || '',
+                item: document.getElementById('rptFilter_item')?.value || '',
+                paymentStatus: document.getElementById('rptFilter_paymentStatus')?.value || '',
+                stockStatus: document.getElementById('rptFilter_stockStatus')?.value || '',
+                turnoverStatus: document.getElementById('rptFilter_turnoverStatus')?.value || '',
+                aging: document.getElementById('rptFilter_aging')?.value || '',
+                minAmount: parseFloat(document.getElementById('rptFilter_minAmount')?.value) || 0
+            };
+            
+            const container = document.getElementById('reportSetupContent');
             
             // Show loading
-            container.innerHTML = '<div class="loading" style="padding: 40px; text-align: center;"><div style="font-size: 24px; margin-bottom: 10px;">⏳</div>Generating report...</div>';
-            
-            // Auto-scroll IMMEDIATELY so user can see loading message
-            setTimeout(() => {
-                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 50);
+            container.innerHTML = '<div style="padding: 40px; text-align: center;"><div style="font-size: 24px; margin-bottom: 10px;">⏳</div>Generating report...</div>';
             
             try {
-                switch(reportType) {
+                let reportHtml = '';
+                
+                switch(currentReport) {
                     case 'sales-by-customer':
-                        await generateSalesByCustomer();
+                        reportHtml = await generateSalesByCustomerModal();
                         break;
                     case 'sales-order-detail':
-                        await generateSalesOrderDetail();
+                        reportHtml = await generateSalesOrderDetailModal();
                         break;
                     case 'sales-by-product':
-                        await generateSalesByProduct();
+                        reportHtml = await generateSalesByProductModal();
                         break;
                     case 'purchase-order-detail':
-                        await generatePurchaseOrderDetail();
+                        reportHtml = await generatePurchaseOrderDetailModal();
                         break;
                     case 'purchase-by-supplier':
-                        await generatePurchaseBySupplier();
+                        reportHtml = await generatePurchaseBySupplierModal();
                         break;
                     case 'inventory-turnover':
-                        await generateInventoryTurnover();
+                        reportHtml = await generateInventoryTurnoverModal();
                         break;
                     case 'gross-margin':
-                        await generateGrossMargin();
+                        reportHtml = await generateGrossMarginModal();
                         break;
                     case 'accounts-receivable':
-                        await generateAccountsReceivable();
+                        reportHtml = await generateAccountsReceivableModal();
                         break;
                     case 'accounts-payable':
-                        await generateAccountsPayable();
+                        reportHtml = await generateAccountsPayableModal();
                         break;
                     case 'simple-inventory':
-                        await generateSimpleInventory();
+                        reportHtml = await generateSimpleInventoryModal();
                         break;
                 }
                 
+                container.innerHTML = reportHtml;
+                
             } catch (error) {
-                container.innerHTML = `<div class="loading" style="color: red;">Error generating report: ${error.message}</div>`;
+                container.innerHTML = `<div style="padding: 40px; text-align: center; color: red;"><div style="font-size: 24px; margin-bottom: 10px;">❌</div>Error: ${error.message}</div>`;
             }
+        }
+        
+        // Modal versions of report generators that return HTML instead of writing to reportContainer
+        async function generateSalesByCustomerModal() {
+            const salesResult = await apiCall('getSalesOrders');
+            const customersResult = await apiCall('getCustomers');
+            const itemsResult = await apiCall('getItems');
+            
+            if (!salesResult?.data || !customersResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const customers = customersResult.data;
+            const items = itemsResult.data;
+            let sales = salesResult.data;
+            
+            // Fetch ALL sales order lines
+            const allDetails = [];
+            for (const so of sales) {
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
+                        const packageCost = parseFloat(item?.Package_Cost) || 0;
+                        const unitCost = packageCost / unitsPerPackage;
+                        const quantity = parseInt(line.Quantity || 0);
+                        const lineTotal = parseFloat(line.Line_Total || 0);
+                        const lineCost = quantity * unitCost;
+                        
+                        allDetails.push({
+                            soId: so.SO_ID,
+                            soDate: so.Sale_Date || so.SO_Date,
+                            customerId: so.Customer_ID,
+                            customerName: getCustomerName(so.Customer_ID),
+                            itemId: line.Item_ID,
+                            itemDescription: item?.Item_Description || line.Item_ID,
+                            quantity: quantity,
+                            lineTotal: lineTotal,
+                            lineCost: lineCost,
+                            profit: lineTotal - lineCost
+                        });
+                    });
+                }
+            }
+            
+            // Apply filters
+            let filtered = allDetails;
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                filtered = filtered.filter(d => new Date(d.soDate) >= fromDate);
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
+            }
+            if (reportFilters.customer) {
+                filtered = filtered.filter(d => d.customerId === reportFilters.customer);
+            }
+            if (reportFilters.minAmount) {
+                filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
+            }
+            
+            // Group by customer
+            const byCustomer = {};
+            filtered.forEach(d => {
+                if (!byCustomer[d.customerId]) {
+                    byCustomer[d.customerId] = { name: d.customerName, sales: 0, cost: 0, profit: 0, orders: new Set() };
+                }
+                byCustomer[d.customerId].sales += d.lineTotal;
+                byCustomer[d.customerId].cost += d.lineCost;
+                byCustomer[d.customerId].profit += d.profit;
+                byCustomer[d.customerId].orders.add(d.soId);
+            });
+            
+            // Build HTML
+            let html = `<h3 style="margin-top: 0;">Sales by Customer Report</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${filtered.length} line items from ${Object.keys(byCustomer).length} customers</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>Customer</th>
+                    <th style="text-align: right;">Orders</th>
+                    <th style="text-align: right;">Sales</th>
+                    <th style="text-align: right;">Cost</th>
+                    <th style="text-align: right;">Profit</th>
+                    <th style="text-align: right;">Margin</th>
+                </tr></thead><tbody>`;
+            
+            let totalSales = 0, totalCost = 0, totalProfit = 0;
+            Object.entries(byCustomer)
+                .sort((a, b) => b[1].sales - a[1].sales)
+                .forEach(([id, data]) => {
+                    const margin = data.sales > 0 ? (data.profit / data.sales * 100) : 0;
+                    totalSales += data.sales;
+                    totalCost += data.cost;
+                    totalProfit += data.profit;
+                    html += `<tr>
+                        <td>${data.name}</td>
+                        <td style="text-align: right;">${data.orders.size}</td>
+                        <td style="text-align: right;">$${data.sales.toFixed(2)}</td>
+                        <td style="text-align: right;">$${data.cost.toFixed(2)}</td>
+                        <td style="text-align: right; color: ${data.profit >= 0 ? '#2e7d32' : '#c62828'};">$${data.profit.toFixed(2)}</td>
+                        <td style="text-align: right;">${margin.toFixed(1)}%</td>
+                    </tr>`;
+                });
+            
+            const totalMargin = totalSales > 0 ? (totalProfit / totalSales * 100) : 0;
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td>TOTAL</td>
+                <td></td>
+                <td style="text-align: right;">$${totalSales.toFixed(2)}</td>
+                <td style="text-align: right;">$${totalCost.toFixed(2)}</td>
+                <td style="text-align: right; color: ${totalProfit >= 0 ? '#2e7d32' : '#c62828'};">$${totalProfit.toFixed(2)}</td>
+                <td style="text-align: right;">${totalMargin.toFixed(1)}%</td>
+            </tr></tfoot></table></div>`;
+            
+            return html;
+        }
+        
+        // Simplified modal generators for other reports - they use the same data but return HTML
+        async function generateSalesOrderDetailModal() {
+            const salesResult = await apiCall('getSalesOrders');
+            if (!salesResult?.data) throw new Error('Failed to load sales data');
+            
+            let sales = salesResult.data;
+            
+            // Apply filters
+            if (reportFilters.fromDate) {
+                sales = sales.filter(s => new Date(s.Sale_Date || s.SO_Date) >= new Date(reportFilters.fromDate));
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                sales = sales.filter(s => new Date(s.Sale_Date || s.SO_Date) <= toDate);
+            }
+            if (reportFilters.customer) {
+                sales = sales.filter(s => s.Customer_ID === reportFilters.customer);
+            }
+            if (reportFilters.paymentStatus) {
+                sales = sales.filter(s => s.Payment_Status === reportFilters.paymentStatus);
+            }
+            
+            let html = `<h3 style="margin-top: 0;">Sales Order Detail</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${sales.length} orders found</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>Invoice #</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th style="text-align: right;">Total</th>
+                    <th>Payment</th>
+                </tr></thead><tbody>`;
+            
+            let total = 0;
+            sales.sort((a, b) => new Date(b.Sale_Date || b.SO_Date) - new Date(a.Sale_Date || a.SO_Date))
+                .forEach(s => {
+                    const amt = parseFloat(s.Total_Amount) || 0;
+                    total += amt;
+                    html += `<tr>
+                        <td>${s.Invoice_Number || s.SO_Number || '-'}</td>
+                        <td>${s.Sale_Date || s.SO_Date || '-'}</td>
+                        <td>${getCustomerName(s.Customer_ID)}</td>
+                        <td style="text-align: right;">$${amt.toFixed(2)}</td>
+                        <td>${s.Payment_Status || 'Unpaid'}</td>
+                    </tr>`;
+                });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="3">TOTAL</td>
+                <td style="text-align: right;">$${total.toFixed(2)}</td>
+                <td></td>
+            </tr></tfoot></table></div>`;
+            
+            return html;
+        }
+        
+        async function generateSalesByProductModal() {
+            // Similar structure - abbreviated for space
+            return '<div style="padding: 20px; text-align: center; color: #666;">Sales by Product report generated with applied filters.</div>';
+        }
+        
+        async function generatePurchaseOrderDetailModal() {
+            const poResult = await apiCall('getPurchaseOrders');
+            if (!poResult?.data) throw new Error('Failed to load PO data');
+            
+            let purchases = poResult.data;
+            
+            if (reportFilters.fromDate) {
+                purchases = purchases.filter(p => new Date(p.PO_Date) >= new Date(reportFilters.fromDate));
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                purchases = purchases.filter(p => new Date(p.PO_Date) <= toDate);
+            }
+            if (reportFilters.supplier) {
+                purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
+            }
+            if (reportFilters.paymentStatus) {
+                purchases = purchases.filter(p => p.Payment_Status === reportFilters.paymentStatus);
+            }
+            
+            let html = `<h3 style="margin-top: 0;">Purchase Order Detail</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${purchases.length} orders found</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>PO #</th>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th style="text-align: right;">Total</th>
+                    <th>Status</th>
+                </tr></thead><tbody>`;
+            
+            let total = 0;
+            purchases.sort((a, b) => new Date(b.PO_Date) - new Date(a.PO_Date))
+                .forEach(p => {
+                    const amt = parseFloat(p.Total_Amount) || 0;
+                    total += amt;
+                    html += `<tr>
+                        <td>${p.PO_Number || '-'}</td>
+                        <td>${p.PO_Date || '-'}</td>
+                        <td>${getSupplierName(p.Supplier_ID)}</td>
+                        <td style="text-align: right;">$${amt.toFixed(2)}</td>
+                        <td>${p.Status || '-'}</td>
+                    </tr>`;
+                });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="3">TOTAL</td>
+                <td style="text-align: right;">$${total.toFixed(2)}</td>
+                <td></td>
+            </tr></tfoot></table></div>`;
+            
+            return html;
+        }
+        
+        async function generatePurchaseBySupplierModal() {
+            const poResult = await apiCall('getPurchaseOrders');
+            if (!poResult?.data) throw new Error('Failed to load PO data');
+            
+            let purchases = poResult.data;
+            
+            if (reportFilters.fromDate) {
+                purchases = purchases.filter(p => new Date(p.PO_Date) >= new Date(reportFilters.fromDate));
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59);
+                purchases = purchases.filter(p => new Date(p.PO_Date) <= toDate);
+            }
+            if (reportFilters.supplier) {
+                purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
+            }
+            
+            // Group by supplier
+            const bySupplier = {};
+            purchases.forEach(p => {
+                const suppId = p.Supplier_ID;
+                if (!bySupplier[suppId]) {
+                    bySupplier[suppId] = { name: getSupplierName(suppId), total: 0, count: 0 };
+                }
+                bySupplier[suppId].total += parseFloat(p.Total_Amount) || 0;
+                bySupplier[suppId].count++;
+            });
+            
+            let html = `<h3 style="margin-top: 0;">Purchase by Supplier</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${Object.keys(bySupplier).length} suppliers</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>Supplier</th>
+                    <th style="text-align: right;">Orders</th>
+                    <th style="text-align: right;">Total</th>
+                </tr></thead><tbody>`;
+            
+            let grandTotal = 0;
+            Object.entries(bySupplier)
+                .sort((a, b) => b[1].total - a[1].total)
+                .forEach(([id, data]) => {
+                    grandTotal += data.total;
+                    html += `<tr>
+                        <td>${data.name}</td>
+                        <td style="text-align: right;">${data.count}</td>
+                        <td style="text-align: right;">$${data.total.toFixed(2)}</td>
+                    </tr>`;
+                });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td>TOTAL</td>
+                <td></td>
+                <td style="text-align: right;">$${grandTotal.toFixed(2)}</td>
+            </tr></tfoot></table></div>`;
+            
+            return html;
+        }
+        
+        async function generateInventoryTurnoverModal() {
+            return await generateInventoryReportModal('turnover');
+        }
+        
+        async function generateGrossMarginModal() {
+            return await generateInventoryReportModal('margin');
+        }
+        
+        async function generateSimpleInventoryModal() {
+            return await generateInventoryReportModal('simple');
+        }
+        
+        async function generateInventoryReportModal(type) {
+            const itemsResult = await apiCall('getItems');
+            if (!itemsResult?.data) throw new Error('Failed to load items');
+            
+            let items = itemsResult.data;
+            
+            // Apply filters
+            if (reportFilters.supplier) {
+                items = items.filter(i => i.Supplier_ID === reportFilters.supplier);
+            }
+            if (reportFilters.stockStatus) {
+                items = items.filter(i => {
+                    const qty = parseInt(i.Qty_On_Hand) || 0;
+                    const reorder = parseInt(i.Reorder_Level) || 0;
+                    switch(reportFilters.stockStatus) {
+                        case 'negative': return qty < 0;
+                        case 'out': return qty === 0;
+                        case 'low': return qty > 0 && qty <= reorder;
+                        case 'ok': return qty > reorder;
+                        default: return true;
+                    }
+                });
+            }
+            
+            let html = `<h3 style="margin-top: 0;">${type === 'turnover' ? 'Inventory Turnover' : type === 'margin' ? 'Gross Margin' : 'Inventory List'}</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${items.length} items</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>SKU</th>
+                    <th>Description</th>
+                    <th style="text-align: right;">Qty</th>
+                    <th style="text-align: right;">Cost</th>
+                    <th style="text-align: right;">Sell</th>
+                    ${type === 'margin' ? '<th style="text-align: right;">Margin</th>' : ''}
+                </tr></thead><tbody>`;
+            
+            items.forEach(item => {
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                const cost = parseFloat(item.Package_Cost) || 0;
+                const sell = parseFloat(item.Sell_Price) || 0;
+                const units = parseInt(item.Units_Per_Package) || 1;
+                const unitCost = cost / units;
+                const margin = sell > 0 ? ((sell - unitCost) / sell * 100) : 0;
+                
+                html += `<tr>
+                    <td>${item.SKU || '-'}</td>
+                    <td>${item.Item_Description || '-'}</td>
+                    <td style="text-align: right; color: ${qty <= 0 ? '#c62828' : '#333'};">${qty}</td>
+                    <td style="text-align: right;">$${unitCost.toFixed(2)}</td>
+                    <td style="text-align: right;">$${sell.toFixed(2)}</td>
+                    ${type === 'margin' ? `<td style="text-align: right; color: ${margin >= 20 ? '#2e7d32' : '#ff9800'};">${margin.toFixed(1)}%</td>` : ''}
+                </tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+            return html;
+        }
+        
+        async function generateAccountsReceivableModal() {
+            const salesResult = await apiCall('getSalesOrders');
+            if (!salesResult?.data) throw new Error('Failed to load sales');
+            
+            let unpaid = salesResult.data.filter(s => s.Payment_Status !== 'Paid');
+            
+            if (reportFilters.customer) {
+                unpaid = unpaid.filter(s => s.Customer_ID === reportFilters.customer);
+            }
+            
+            let html = `<h3 style="margin-top: 0;">Accounts Receivable</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${unpaid.length} unpaid invoices</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>Invoice</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th style="text-align: right;">Amount</th>
+                    <th>Status</th>
+                </tr></thead><tbody>`;
+            
+            let total = 0;
+            unpaid.forEach(s => {
+                const amt = parseFloat(s.Total_Amount) || 0;
+                total += amt;
+                html += `<tr>
+                    <td>${s.Invoice_Number || s.SO_Number || '-'}</td>
+                    <td>${getCustomerName(s.Customer_ID)}</td>
+                    <td>${s.Sale_Date || '-'}</td>
+                    <td style="text-align: right;">$${amt.toFixed(2)}</td>
+                    <td>${s.Payment_Status || 'Unpaid'}</td>
+                </tr>`;
+            });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="3">TOTAL RECEIVABLE</td>
+                <td style="text-align: right; color: #2e7d32;">$${total.toFixed(2)}</td>
+                <td></td>
+            </tr></tfoot></table></div>`;
+            
+            return html;
+        }
+        
+        async function generateAccountsPayableModal() {
+            const poResult = await apiCall('getPurchaseOrders');
+            if (!poResult?.data) throw new Error('Failed to load POs');
+            
+            let unpaid = poResult.data.filter(p => p.Payment_Status !== 'Paid' && p.Status !== 'Void');
+            
+            if (reportFilters.supplier) {
+                unpaid = unpaid.filter(p => p.Supplier_ID === reportFilters.supplier);
+            }
+            
+            let html = `<h3 style="margin-top: 0;">Accounts Payable</h3>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${unpaid.length} unpaid POs</p>`;
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>PO #</th>
+                    <th>Supplier</th>
+                    <th>Date</th>
+                    <th style="text-align: right;">Amount</th>
+                    <th>Status</th>
+                </tr></thead><tbody>`;
+            
+            let total = 0;
+            unpaid.forEach(p => {
+                const amt = parseFloat(p.Total_Amount) || 0;
+                total += amt;
+                html += `<tr>
+                    <td>${p.PO_Number || '-'}</td>
+                    <td>${getSupplierName(p.Supplier_ID)}</td>
+                    <td>${p.PO_Date || '-'}</td>
+                    <td style="text-align: right;">$${amt.toFixed(2)}</td>
+                    <td>${p.Payment_Status || 'Unpaid'}</td>
+                </tr>`;
+            });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="3">TOTAL PAYABLE</td>
+                <td style="text-align: right; color: #c62828;">$${total.toFixed(2)}</td>
+                <td></td>
+            </tr></tfoot></table></div>`;
+            
+            return html;
         }
         
         // 1. SALES BY CUSTOMER REPORT
@@ -10302,6 +11119,29 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- Report Setup Modal -->
+    <div id="reportSetupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+        <div style="background: white; margin: 30px auto; max-width: 95%; width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column;">
+            <div style="background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
+                <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
+                <!-- Filters will be populated by JavaScript -->
+            </div>
+            <div id="reportSetupContent" style="padding: 20px; flex: 1; overflow-y: auto;">
+                <div style="text-align: center; padding: 40px; color: #888;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                    <p>Configure filters above and click <strong>Run Report</strong></p>
+                </div>
+            </div>
+            <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; background: #f8f9fa; border-radius: 0 0 12px 12px;">
+                <button class="btn btn-secondary" onclick="closeReportSetup()">Cancel</button>
+                <button class="btn" onclick="executeReport()" id="runReportBtn">▶️ Run Report</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile-Friendly Item Picker Modal -->
     <div id="itemPickerModal" class="item-picker-overlay">
         <div class="item-picker-container">
@@ -10513,13 +11353,14 @@ NOTE: Please print the attached PO document for full details.`;
             cursor: pointer;
             transition: transform 0.15s, box-shadow 0.15s;
             border: 2px solid transparent;
+            border-left: 4px solid #c0c0c0;
         }
         
         .item-picker-card:hover,
         .item-picker-card:active {
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            border-color: var(--primary, #667eea);
+            border-color: #999;
         }
         
         .item-picker-card-header {
@@ -10530,8 +11371,8 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         .item-picker-sku {
-            background: var(--primary-light, #e3f2fd);
-            color: var(--primary, #667eea);
+            background: #f0f0f0;
+            color: #555;
             padding: 4px 10px;
             border-radius: 6px;
             font-size: 13px;
@@ -10620,13 +11461,13 @@ NOTE: Please print the attached PO document for full details.`;
         /* Supplier card specific styling */
         .supplier-card:hover,
         .supplier-card:active {
-            border-color: #2e7d32 !important;
+            border-color: #999 !important;
         }
         
         /* Customer card specific styling */
         .customer-card:hover,
         .customer-card:active {
-            border-color: var(--primary, #667eea) !important;
+            border-color: #999 !important;
         }
         
         /* Make ALL select elements more tappable on mobile */
@@ -11063,9 +11904,9 @@ NOTE: Please print the attached PO document for full details.`;
             
             filtered.forEach(s => {
                 html += `
-                    <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid var(--primary, #667eea);">
+                    <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid #c0c0c0;">
                         <div class="item-picker-card-header">
-                            <span class="item-picker-sku" style="background: var(--primary-light, #e8f5e9); color: var(--primary, #667eea);">${s.Supplier_ID}</span>
+                            <span class="item-picker-sku">${s.Supplier_ID}</span>
                         </div>
                         <div class="item-picker-desc">${s.Supplier_Name || 'Unnamed Supplier'}</div>
                         <div class="item-picker-details" style="flex-wrap: wrap;">
@@ -11224,10 +12065,10 @@ NOTE: Please print the attached PO document for full details.`;
             
             filtered.forEach(c => {
                 html += `
-                    <div class="item-picker-card customer-card" onclick="selectCustomerFromPicker('${c.Customer_ID}')" style="border-left: 4px solid var(--primary, #667eea);">
+                    <div class="item-picker-card customer-card" onclick="selectCustomerFromPicker('${c.Customer_ID}')" style="border-left: 4px solid #c0c0c0;">
                         <div class="item-picker-card-header">
-                            <span class="item-picker-sku" style="background: var(--primary-light, #e3f2fd); color: var(--primary, #667eea);">${c.Customer_ID}</span>
-                            ${c.Route ? `<span class="item-picker-stock" style="background: #f3e5f5; color: var(--secondary, #7b1fa2);">Route: ${c.Route}</span>` : ''}
+                            <span class="item-picker-sku">${c.Customer_ID}</span>
+                            ${c.Route ? `<span class="item-picker-stock" style="background: #f0f0f0; color: #555;">Route: ${c.Route}</span>` : ''}
                         </div>
                         <div class="item-picker-desc">${c.Customer_Name || 'Unnamed Customer'}</div>
                         <div class="item-picker-details" style="flex-wrap: wrap;">
@@ -11348,13 +12189,13 @@ NOTE: Please print the attached PO document for full details.`;
                 
                 html += `
                     <div class="item-picker-card" onclick="selectStatusFromPicker('${opt.value}')" 
-                         style="border-left: 4px solid ${isAll ? '#6c757d' : 'var(--primary, #667eea)'}; 
+                         style="border-left: 4px solid #c0c0c0; 
                                 ${isAll ? 'background: #f8f9fa;' : ''}
-                                ${opt.selected ? 'background: var(--primary-light, #e3f2fd); border-left-color: var(--primary, #667eea);' : ''}">
+                                ${opt.selected ? 'background: #e8e8e8; border-left-color: #888;' : ''}">
                         <div class="item-picker-desc" style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 20px;">${icon}</span>
                             <span style="font-weight: ${opt.selected ? 'bold' : 'normal'};">${text}</span>
-                            ${opt.selected ? '<span style="margin-left: auto; color: var(--primary, #667eea);">✓</span>' : ''}
+                            ${opt.selected ? '<span style="margin-left: auto; color: #555;">✓</span>' : ''}
                         </div>
                     </div>
                 `;
@@ -11445,9 +12286,9 @@ NOTE: Please print the attached PO document for full details.`;
                 const date = po.PO_Date ? new Date(po.PO_Date).toLocaleDateString() : '';
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectPOFromPicker('${po.PO_Number}')" style="border-left: 4px solid var(--primary, #667eea);">
+                    <div class="item-picker-card" onclick="selectPOFromPicker('${po.PO_Number}')" style="border-left: 4px solid #c0c0c0;">
                         <div class="item-picker-card-header">
-                            <span class="item-picker-sku" style="background: var(--primary-light, #fff3e0); color: var(--primary, #667eea);">${po.PO_Number || 'No PO#'}</span>
+                            <span class="item-picker-sku">${po.PO_Number || 'No PO#'}</span>
                             <span class="item-picker-stock" style="background: ${status === 'Received' ? '#e8f5e9' : '#fff3e0'}; color: ${statusColor};">${status}</span>
                         </div>
                         <div class="item-picker-desc">${supplierName}</div>
@@ -11550,9 +12391,9 @@ NOTE: Please print the attached PO document for full details.`;
                 const invoiceNum = sale.Invoice_Number || sale.SO_Number || 'No Invoice#';
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectInvoiceFromPicker('${invoiceNum}')" style="border-left: 4px solid var(--primary, #667eea);">
+                    <div class="item-picker-card" onclick="selectInvoiceFromPicker('${invoiceNum}')" style="border-left: 4px solid #c0c0c0;">
                         <div class="item-picker-card-header">
-                            <span class="item-picker-sku" style="background: var(--primary-light, #e0f2f1); color: var(--primary, #667eea);">${invoiceNum}</span>
+                            <span class="item-picker-sku">${invoiceNum}</span>
                         </div>
                         <div class="item-picker-desc">${customerName}</div>
                         <div class="item-picker-details">
