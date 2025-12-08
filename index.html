@@ -15,7 +15,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
             background-attachment: fixed;
             min-height: 100vh;
             padding: 20px;
@@ -143,7 +143,7 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
             color: white;
             border: none;
             padding: 12px 28px;
@@ -162,7 +162,7 @@
         }
 
         .btn-success {
-            background: var(--primary, #667eea);
+            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
         }
 
         .btn-secondary {
@@ -997,7 +997,7 @@
         
         <!-- Floating Navigation Buttons - Bottom Left Corner -->
         <!-- Back to Top Button - Top -->
-        <button id="backToTopBtn" onclick="scrollToTop()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" style="display: none; position: fixed; bottom: 100px; left: 30px; z-index: 1000; background: #667eea; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" title="Back to top">
+        <button id="backToTopBtn" onclick="scrollToTop()" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" style="display: none; position: fixed; bottom: 100px; left: 30px; z-index: 1000; background: var(--primary, #667eea); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" title="Back to top">
             ⬆️
         </button>
         
@@ -1470,7 +1470,7 @@
             <div class="status" id="suppliersStatus"></div>
             
             <button class="btn" onclick="loadSuppliers()">🔄 Refresh</button>
-            <button class="btn btn-success" onclick="showAddSupplierForm()">➕ Add Supplier</button>
+            <button class="btn" onclick="showAddSupplierForm()">➕ Add Supplier</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
@@ -1499,7 +1499,7 @@
                 </div>
             </div>
             
-            <div id="addSupplierForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+            <div id="addSupplierForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
                 <h3>Add New Supplier</h3>
                 <form onsubmit="addSupplier(event)">
                     <div class="form-grid">
@@ -1624,7 +1624,7 @@
             <div class="status" id="itemsStatus"></div>
             
             <button class="btn" onclick="loadItems()">🔄 Refresh</button>
-            <button class="btn btn-success" onclick="showAddItemForm()">➕ Add Item</button>
+            <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
@@ -1662,7 +1662,7 @@
                 </div>
             </div>
             
-            <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+            <div id="addItemForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
                 <h3>Add New Item</h3>
                 <form onsubmit="addItem(event)">
                     <div class="form-grid">
@@ -1806,7 +1806,7 @@
             <div class="status" id="customersStatus"></div>
             
             <button class="btn" onclick="loadCustomers()">🔄 Refresh</button>
-            <button class="btn btn-success" onclick="showAddCustomerForm()">➕ Add Customer</button>
+            <button class="btn" onclick="showAddCustomerForm()">➕ Add Customer</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
@@ -1839,7 +1839,7 @@
                 </div>
             </div>
             
-            <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+            <div id="addCustomerForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
                 <h3>Add New Customer</h3>
                 <form onsubmit="addCustomer(event)">
                     <div class="form-grid">
@@ -2014,7 +2014,7 @@
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; width: 100%; position: relative;">
                     <div style="min-width: 650px; width: 100%; max-width: 100%;">
                         <!-- Header Row -->
-                        <div style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; padding: 10px; background: #667eea; color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 13px;">
+                        <div style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; padding: 10px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 13px;">
                             <div>Item</div>
                             <div style="text-align: center;">Cases</div>
                             <div style="text-align: center;">Units/Case</div>
@@ -2025,16 +2025,16 @@
                         </div>
                         
                         <!-- Line Items Container -->
-                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 6px;">
+                        <div id="createPOLineItems" style="border: 2px solid var(--primary, #667eea); border-top: none; border-radius: 0 0 8px 8px; padding: 6px;">
                             <div class="line-item-row" style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; margin-bottom: 6px; align-items: center;">
                                 <select class="createpo-item" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                                     <option value="">Select item...</option>
                                 </select>
                                 <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px;">
                                 <div class="createpo-units" style="text-align: center; font-size: 13px; color: #666; padding: 4px;">-</div>
-                                <div class="createpo-totalunits" style="text-align: center; font-size: 15px; font-weight: bold; color: #1565C0; padding: 4px;">-</div>
+                                <div class="createpo-totalunits" style="text-align: center; font-size: 15px; font-weight: bold; color: var(--primary, #667eea); padding: 4px;">-</div>
                                 <div class="createpo-cost" style="text-align: center; font-size: 13px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 8px; border-radius: 4px;">-</div>
-                                <div class="createpo-linetotal" style="text-align: right; font-size: 13px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 8px; border-radius: 4px;">$0.00</div>
+                                <div class="createpo-linetotal" style="text-align: right; font-size: 13px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 8px; border-radius: 4px;">$0.00</div>
                                 <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 8px; font-size: 14px;">🗑️</button>
                             </div>
                         </div>
@@ -2047,22 +2047,22 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                         <div style="text-align: center;">
                             <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cases</h3>
-                            <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotalCases">0</p>
+                            <p style="font-size: 28px; font-weight: bold; color: var(--primary, #667eea); margin: 0;" id="createPOTotalCases">0</p>
                         </div>
                         <div style="text-align: center;">
                             <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Units</h3>
-                            <p style="font-size: 28px; font-weight: bold; color: #1565C0; margin: 0;" id="createPOTotalUnits">0</p>
+                            <p style="font-size: 28px; font-weight: bold; color: var(--primary, #667eea); margin: 0;" id="createPOTotalUnits">0</p>
                         </div>
                         <div style="text-align: center;">
                             <h3 style="margin: 0 0 10px 0; color: #666; font-size: 16px;">Total Cost</h3>
-                            <p style="font-size: 28px; font-weight: bold; color: #667eea; margin: 0;" id="createPOTotal">$0.00</p>
+                            <p style="font-size: 28px; font-weight: bold; color: var(--primary, #667eea); margin: 0;" id="createPOTotal">$0.00</p>
                         </div>
                     </div>
                 </div>
                 
                 <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
-                    <button class="btn" onclick="saveOutboundPO()" style="flex: 1; min-width: 200px; background: #28a745;">💾 Save as OUTBOUND PO</button>
-                    <button class="btn btn-success" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
+                    <button class="btn" onclick="saveOutboundPO()" style="flex: 1; min-width: 200px;">💾 Save as OUTBOUND PO</button>
+                    <button class="btn" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
                     <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                 </div>
             </div>
@@ -2071,9 +2071,9 @@
             <!-- Printable PO Document (Hidden initially) -->
             <div id="printablePOContainer" style="display: none; margin-top: 30px;">
                 <div style="text-align: right; margin-bottom: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                    <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
-                    <button class="btn btn-success" onclick="downloadPOAsPDF()">📥 Download PDF</button>
-                    <button class="btn btn-success" onclick="emailPO()">📧 Email PO</button>
+                    <button class="btn" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn" onclick="downloadPOAsPDF()">📥 Download PDF</button>
+                    <button class="btn" onclick="emailPO()">📧 Email PO</button>
                     <button class="btn btn-secondary" onclick="closePrintablePO()">❌ Close</button>
                 </div>
                 <div id="printablePO" style="background: white; padding: 40px; border: 1px solid #ddd; max-width: 800px; margin: 0 auto;">
@@ -2088,7 +2088,7 @@
             <div class="status" id="purchasesStatus"></div>
             
             <button class="btn" onclick="loadPurchases()">🔄 Refresh</button>
-            <button class="btn btn-success" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
+            <button class="btn" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
@@ -2140,7 +2140,7 @@
                 </div>
             </div>
             
-            <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+            <div id="addPurchaseForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
                 <h3>Record New Purchase</h3>
                 <form onsubmit="addPurchase(event)">
                     <div class="form-grid">
@@ -2226,7 +2226,7 @@
             <div class="status" id="salesStatus"></div>
             
             <button class="btn" onclick="loadSales()">🔄 Refresh</button>
-            <button class="btn btn-success" onclick="showAddSaleForm()">➕ Record Sale</button>
+            <button class="btn" onclick="showAddSaleForm()">➕ Record Sale</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
@@ -2261,7 +2261,7 @@
                 </div>
             </div>
             
-            <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid #667eea; padding: 20px; border-radius: 8px;">
+            <div id="addSaleForm" style="display: none; margin-top: 20px; border: 2px solid var(--primary, #667eea); padding: 20px; border-radius: 8px;">
                 <h3>Record New Sale</h3>
                 <form onsubmit="addSale(event)">
                     <div class="form-grid">
@@ -2350,7 +2350,7 @@
             <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('inventoryGuide')">
                     <strong>📖 Quick Guide</strong>
-                    <span id="inventoryGuide-toggle" style="color: #667eea;">▼ Hide</span>
+                    <span id="inventoryGuide-toggle" style="color: var(--primary, #667eea);">▼ Hide</span>
                 </div>
                 <div id="inventoryGuide" style="margin-top: 10px;">
                     <ul style="margin: 0; padding-left: 20px;">
@@ -2377,7 +2377,7 @@
                             <select id="adjustItem" required onchange="onAdjustItemSelected()" size="1">
                                 <option value="">Select Item</option>
                             </select>
-                            <div id="adjustItemResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 2px solid #667eea; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                            <div id="adjustItemResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 2px solid var(--primary, #667eea); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
                         </div>
                         <div class="form-group">
                             <label>Current Quantity</label>
@@ -2459,9 +2459,9 @@
             <div class="status" id="pricesimStatus"></div>
             
             <!-- Revenue Impact Calculator - MOVED TO TOP -->
-            <div class="section-card accent-theme" style="background: #e3f2fd;">
+            <div class="section-card accent-theme" style="background: var(--primary-light, #e3f2fd);">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('revenueCalcContent')">
-                    <h3 style="margin: 0; color: #1565c0;">💰 Revenue Impact Calculator</h3>
+                    <h3 style="margin: 0; color: var(--primary, #667eea);">💰 Revenue Impact Calculator</h3>
                     <span id="revenueCalcContent-toggle" style="font-size: 14px; color: #666;">▼ Hide</span>
                 </div>
                 <div id="revenueCalcContent" style="margin-top: 15px;">
@@ -2479,7 +2479,7 @@
                             <label>📈 Price Increase %</label>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <input type="range" id="revCalcPercent" min="0" max="25" value="10" step="0.5" style="flex: 1;" oninput="updateRevenueCalc()">
-                                <span id="revCalcPercentLabel" style="font-weight: bold; color: #1565c0; min-width: 45px;">10%</span>
+                                <span id="revCalcPercentLabel" style="font-weight: bold; color: var(--primary, #667eea); min-width: 45px;">10%</span>
                             </div>
                         </div>
                     </div>
@@ -2502,8 +2502,8 @@
                         </div>
                     </div>
                     
-                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <h4 style="margin: 0 0 10px 0; color: #1565c0;">📊 Projected Impact</h4>
+                    <div style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
+                        <h4 style="margin: 0 0 10px 0; color: var(--primary, #667eea);">📊 Projected Impact</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
                             <div>
                                 <div style="color: #666; font-size: 13px;">10 Sales/Week</div>
@@ -2642,7 +2642,7 @@
                             <input type="number" id="pricesimFlat" value="0" min="0" step="0.01" style="width: 80px;" oninput="clearPercentAmount()">
                         </div>
                     </div>
-                    <button class="btn btn-success" onclick="previewPriceChanges()" style="height: 42px;">
+                    <button class="btn" onclick="previewPriceChanges()" style="height: 42px;">
                         📊 Preview Changes
                     </button>
                 </div>
@@ -2703,7 +2703,7 @@
                         <strong style="font-size: 18px;">⚠️ Ready to Apply Changes?</strong>
                         <p style="margin: 5px 0 0 0; color: #666;">This will update the Unit Sell Price for all selected items in your database.</p>
                     </div>
-                    <button class="btn btn-success" onclick="applyPriceChanges()" style="font-size: 16px; padding: 15px 30px;">
+                    <button class="btn" onclick="applyPriceChanges()" style="font-size: 16px; padding: 15px 30px;">
                         ✅ APPLY CHANGES TO <span id="applyCount">0</span> ITEMS
                     </button>
                 </div>
@@ -4639,7 +4639,7 @@
                             <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${statusText}</span></td></tr>
                         </table>
                         ${po.Status === 'Ordered' ? `
-                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
                             <strong>⚠️ Prices Changed?</strong>
                             <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">If supplier prices have changed, void this PO and create a new one with updated prices.</p>
                             <button class="btn" onclick="voidPurchaseOrder('${po.PO_ID}')" style="background: #dc3545; padding: 6px 12px; font-size: 13px;">
@@ -4648,7 +4648,7 @@
                         </div>
                         ` : ''}
                         ${po.Status === 'Void' || po.Status === 'Cancelled' ? `
-                        <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
                             <strong>📋 Need to Reorder?</strong>
                             <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">Copy this PO's items to create a new order with current prices.</p>
                             <button class="btn" onclick="duplicatePO('${po.PO_ID}'); closeModal();" style="background: #17a2b8; padding: 6px 12px; font-size: 13px;">
@@ -4724,8 +4724,8 @@
             if (po.Notes) {
                 html += `
                     <div style="margin-top: 20px;">
-                        <h3 style="color: #667eea; margin-bottom: 10px;">Notes</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h3 style="color: var(--primary, #667eea); margin-bottom: 10px;">Notes</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
                             ${po.Notes}
                         </div>
                     </div>
@@ -6369,8 +6369,8 @@
             if (so.Notes) {
                 html += `
                     <div style="margin-top: 20px;">
-                        <h3 style="color: #667eea; margin-bottom: 10px;">Notes</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <h3 style="color: var(--primary, #667eea); margin-bottom: 10px;">Notes</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary, #667eea);">
                             ${so.Notes}
                         </div>
                     </div>
@@ -7641,7 +7641,12 @@
             const container = document.getElementById('reportContainer');
             
             // Show loading
-            container.innerHTML = '<div class="loading">Generating report...</div>';
+            container.innerHTML = '<div class="loading" style="padding: 40px; text-align: center;"><div style="font-size: 24px; margin-bottom: 10px;">⏳</div>Generating report...</div>';
+            
+            // Auto-scroll IMMEDIATELY so user can see loading message
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
             
             try {
                 switch(reportType) {
@@ -7676,11 +7681,6 @@
                         await generateSimpleInventory();
                         break;
                 }
-                
-                // Auto-scroll to report after generation
-                setTimeout(() => {
-                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
                 
             } catch (error) {
                 container.innerHTML = `<div class="loading" style="color: red;">Error generating report: ${error.message}</div>`;
@@ -10286,7 +10286,7 @@ NOTE: Please print the attached PO document for full details.`;
     <!-- Order View/Edit Modal -->
     <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
         <div style="background: white; margin: 50px auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <div id="orderModalHeader" style="background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
                 <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
                 <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
             </div>
@@ -10295,7 +10295,7 @@ NOTE: Please print the attached PO document for full details.`;
             </div>
             <div id="modalFooter" style="padding: 20px 30px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
-                <button id="modalPrintBtn" class="btn" onclick="printInvoice()" style="display: none; background: #28a745;">🖨️ Print Invoice</button>
+                <button id="modalPrintBtn" class="btn" onclick="printInvoice()" style="display: none;">🖨️ Print Invoice</button>
                 <button id="modalEditBtn" class="btn" onclick="enableEditMode()" style="display: none;">✏️ Edit Order</button>
                 <button id="modalSaveBtn" class="btn" onclick="saveOrderChanges()" style="display: none;">💾 Save Changes</button>
             </div>
@@ -10626,7 +10626,7 @@ NOTE: Please print the attached PO document for full details.`;
         /* Customer card specific styling */
         .customer-card:hover,
         .customer-card:active {
-            border-color: #1565c0 !important;
+            border-color: var(--primary, #667eea) !important;
         }
         
         /* Make ALL select elements more tappable on mobile */
@@ -11350,11 +11350,11 @@ NOTE: Please print the attached PO document for full details.`;
                     <div class="item-picker-card" onclick="selectStatusFromPicker('${opt.value}')" 
                          style="border-left: 4px solid ${isAll ? '#6c757d' : 'var(--primary, #667eea)'}; 
                                 ${isAll ? 'background: #f8f9fa;' : ''}
-                                ${opt.selected ? 'background: #e3f2fd; border-left-color: #1976d2;' : ''}">
+                                ${opt.selected ? 'background: var(--primary-light, #e3f2fd); border-left-color: var(--primary, #667eea);' : ''}">
                         <div class="item-picker-desc" style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 20px;">${icon}</span>
                             <span style="font-weight: ${opt.selected ? 'bold' : 'normal'};">${text}</span>
-                            ${opt.selected ? '<span style="margin-left: auto; color: #1976d2;">✓</span>' : ''}
+                            ${opt.selected ? '<span style="margin-left: auto; color: var(--primary, #667eea);">✓</span>' : ''}
                         </div>
                     </div>
                 `;
