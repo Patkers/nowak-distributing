@@ -7138,7 +7138,7 @@
         function openItemPickerForAdjustment() {
             window.adjustmentPickerActive = true;
             window.itemPickerIsFilter = false; // Reset filter mode
-            itemPickerCallback = {
+            window.itemPickerCallback = {
                 tagName: 'ADJUSTMENT_FORM',
                 value: document.getElementById('adjustItem').value
             };
@@ -10994,6 +10994,118 @@ NOTE: Please print the attached PO document for full details.`;
             
             calculateCreatePOTotal();
         }
+        
+        // ===== ITEM PICKER FUNCTIONS (must be here so inline handlers work) =====
+        window.itemPickerItems = window.itemPickerItems || [];
+        window.itemPickerIsFilter = false;
+        window.itemPickerCallback = null;
+        
+        // Define globally immediately so inline handlers can find it
+        window.filterItemPicker = function() {
+            window.renderItemPickerList();
+        };
+        
+        window.renderItemPickerList = function() {
+            const searchEl = document.getElementById('itemPickerSearch');
+            const supplierEl = document.getElementById('itemPickerSupplier');
+            const listContainer = document.getElementById('itemPickerList');
+            
+            if (!listContainer) return;
+            
+            const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
+            const supplier = supplierEl ? supplierEl.value : '';
+            
+            const isFilterInput = window.itemPickerIsFilter;
+            
+            let filtered = (window.itemPickerItems || []).filter(item => {
+                // Search filter - check SKU and Description
+                const matchesSearch = !search || 
+                    (item.SKU && item.SKU.toLowerCase().includes(search)) ||
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
+                
+                // Supplier filter
+                const matchesSupplier = !supplier || item.Supplier_ID === supplier;
+                
+                // Hide archived items UNLESS this is a filter input
+                const isArchived = item.Status === 'Archived';
+                const matchesActive = isFilterInput || !isArchived;
+                
+                return matchesSearch && matchesSupplier && matchesActive;
+            });
+            
+            let html = '';
+            
+            // Add "Clear Filter" option for filter text inputs
+            if (isFilterInput && !search && !supplier) {
+                html += `
+                    <div class="item-picker-card" onclick="clearItemFilter()" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                            <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
+                        </div>
+                        <div style="font-size: 12px; color: #6c757d;">Remove item filter and show all items</div>
+                    </div>
+                `;
+            }
+            
+            if (filtered.length === 0) {
+                listContainer.innerHTML = html + `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">📦</div>
+                        <div>No items found</div>
+                        <div style="font-size: 14px; margin-top: 5px;">Try a different search term</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            filtered.forEach(item => {
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                const reorder = parseInt(item.Reorder_Point) || 0;
+                const sellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const pkgCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPer = parseInt(item.Units_Per_Package) || 1;
+                const unitCost = pkgCost / unitsPer;
+                
+                let stockClass = 'in-stock';
+                let stockText = `${qty} in stock`;
+                if (qty <= 0) {
+                    stockClass = 'out-of-stock';
+                    stockText = 'Out of stock';
+                } else if (qty <= reorder) {
+                    stockClass = 'low-stock';
+                    stockText = `Low: ${qty}`;
+                }
+                
+                const supplierName = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown';
+                
+                html += `
+                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
+                        <div class="item-picker-header-row">
+                            <span class="item-picker-sku">${item.SKU || ''}</span>
+                            <span class="item-picker-stock ${stockClass}">${stockText}</span>
+                        </div>
+                        <div class="item-picker-desc">${item.Item_Description || ''}</div>
+                        <div class="item-picker-details">
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Unit Cost</span>
+                                <span class="item-picker-detail-value">$${unitCost.toFixed(2)}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Sell Price</span>
+                                <span class="item-picker-detail-value item-picker-price">$${sellPrice.toFixed(2)}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Pkg</span>
+                                <span class="item-picker-detail-value">${unitsPer}/${item.Purchase_UOM || 'Case'}</span>
+                            </div>
+                        </div>
+                        <div class="item-picker-supplier">📦 ${supplierName}</div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        };
     </script>
     
     <!-- Order View/Edit Modal -->
@@ -11046,10 +11158,10 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="filterItemPicker()" onkeyup="filterItemPicker()">
+                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="window.filterItemPicker()" onkeyup="window.filterItemPicker()">
             </div>
             <div id="itemPickerSupplierFilter" class="item-picker-filter">
-                <select id="itemPickerSupplier" onchange="filterItemPicker()">
+                <select id="itemPickerSupplier" onchange="window.filterItemPicker()">
                     <option value="">All Suppliers</option>
                 </select>
             </div>
@@ -11434,8 +11546,7 @@ NOTE: Please print the attached PO document for full details.`;
     <script>
         // ==================== MOBILE ITEM PICKER ====================
         
-        let itemPickerCallback = null;
-        window.itemPickerItems = [];  // Make global so all script blocks can access
+        // itemPickerCallback declared in earlier script block
         let itemPickerSupplierFilter = '';
         
         // Bind search event properly when DOM is ready
@@ -11468,7 +11579,7 @@ NOTE: Please print the attached PO document for full details.`;
         
         function openItemPicker(selectElement, preSelectedSupplierId = null) {
             // Store callback to set value when item is selected
-            itemPickerCallback = selectElement;
+            window.itemPickerCallback = selectElement;
             
             // Reset filter mode flag
             window.itemPickerIsFilter = false;
@@ -11545,127 +11656,13 @@ NOTE: Please print the attached PO document for full details.`;
         function closeItemPicker() {
             document.getElementById('itemPickerModal').style.display = 'none';
             document.body.style.overflow = '';
-            itemPickerCallback = null;
+            window.itemPickerCallback = null;
         }
-        
-        function filterItemPicker() {
-            // Force get fresh search value and re-render
-            const searchEl = document.getElementById('itemPickerSearch');
-            const searchValue = searchEl ? searchEl.value : '';
-            renderItemPickerList();
-        }
-        // Make globally accessible for inline handlers
-        window.filterItemPicker = filterItemPicker;
-        
-        function renderItemPickerList() {
-            const searchEl = document.getElementById('itemPickerSearch');
-            const supplierEl = document.getElementById('itemPickerSupplier');
-            const listContainer = document.getElementById('itemPickerList');
-            
-            // Get fresh values directly
-            const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
-            const supplier = supplierEl ? supplierEl.value : '';
-            
-            
-            // Check if this is a filter text input (needs "Clear" option and shows archived items)
-            const isFilterInput = window.itemPickerIsFilter;
-            
-            let filtered = window.itemPickerItems.filter(item => {
-                // Search filter
-                const matchesSearch = !search || 
-                    (item.SKU && item.SKU.toLowerCase().includes(search)) ||
-                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
-                
-                // Supplier filter
-                const matchesSupplier = !supplier || item.Supplier_ID === supplier;
-                
-                // Hide archived items UNLESS this is a filter input (which can show all)
-                const isArchived = item.Status === 'Archived';
-                const matchesActive = isFilterInput || !isArchived;
-                
-                return matchesSearch && matchesSupplier && matchesActive;
-            });
-            
-            let html = '';
-            
-            // Add "Clear Filter" option for filter text inputs
-            if (isFilterInput && !search && !supplier) {
-                html += `
-                    <div class="item-picker-card" onclick="clearItemFilter()" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
-                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
-                            <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
-                        </div>
-                        <div style="font-size: 12px; color: #6c757d;">Remove item filter and show all items</div>
-                    </div>
-                `;
-            }
-            
-            if (filtered.length === 0) {
-                listContainer.innerHTML = html + `
-                    <div class="item-picker-empty">
-                        <div class="item-picker-empty-icon">📦</div>
-                        <div>No items found</div>
-                        <div style="font-size: 14px; margin-top: 5px;">Try a different search term</div>
-                    </div>
-                `;
-                return;
-            }
-            
-            filtered.forEach(item => {
-                const qty = parseInt(item.Qty_On_Hand) || 0;
-                const reorder = parseInt(item.Reorder_Point) || 0;
-                const sellPrice = parseFloat(item.Unit_Sell_Price) || 0;
-                const pkgCost = parseFloat(item.Package_Cost) || 0;
-                const unitsPer = parseInt(item.Units_Per_Package) || 1;
-                const unitCost = pkgCost / unitsPer;
-                
-                let stockClass = 'in-stock';
-                let stockText = `${qty} in stock`;
-                if (qty <= 0) {
-                    stockClass = 'out-stock';
-                    stockText = 'Out of stock';
-                } else if (qty <= reorder) {
-                    stockClass = 'low-stock';
-                    stockText = `Low: ${qty}`;
-                }
-                
-                const supplierName = getSupplierName(item.Supplier_ID);
-                
-                html += `
-                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
-                        <div class="item-picker-card-header">
-                            <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
-                            <span class="item-picker-stock ${stockClass}">${stockText}</span>
-                        </div>
-                        <div class="item-picker-desc">${item.Item_Description || 'Unnamed Item'}</div>
-                        <div class="item-picker-details">
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Unit Cost</span>
-                                <span class="item-picker-detail-value">$${unitCost.toFixed(2)}</span>
-                            </div>
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Sell Price</span>
-                                <span class="item-picker-detail-value item-picker-price">$${sellPrice.toFixed(2)}</span>
-                            </div>
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Pkg</span>
-                                <span class="item-picker-detail-value">${unitsPer}/${item.Purchase_UOM || 'Case'}</span>
-                            </div>
-                        </div>
-                        <div class="item-picker-supplier">📦 ${supplierName}</div>
-                    </div>
-                `;
-            });
-            
-            listContainer.innerHTML = html;
-        }
-        // Make globally accessible
-        window.renderItemPickerList = renderItemPickerList;
         
         function selectItemFromPicker(itemId) {
-            if (itemPickerCallback) {
+            if (window.itemPickerCallback) {
                 // Check if this is for inventory adjustment form
-                if (itemPickerCallback.tagName === 'ADJUSTMENT_FORM') {
+                if (window.itemPickerCallback.tagName === 'ADJUSTMENT_FORM') {
                     document.getElementById('adjustItem').value = itemId;
                     const item = (cachedItems || []).find(i => i.Item_ID === itemId);
                     if (item) {
@@ -11679,16 +11676,16 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 
                 // Check if this is a filter text input or a select element
-                const isTextInput = itemPickerCallback.tagName === 'INPUT' && itemPickerCallback.type === 'text';
+                const isTextInput = window.itemPickerCallback.tagName === 'INPUT' && window.itemPickerCallback.type === 'text';
                 
                 if (isTextInput && window.itemPickerIsFilter) {
                     // For filter inputs, set the item description/SKU as value
                     const item = (cachedItems || []).find(i => i.Item_ID === itemId);
                     if (item) {
-                        itemPickerCallback.value = item.SKU || item.Item_Description || itemId;
+                        window.itemPickerCallback.value = item.SKU || item.Item_Description || itemId;
                     }
                     // Trigger the appropriate filter function based on input ID
-                    const id = itemPickerCallback.id;
+                    const id = window.itemPickerCallback.id;
                     if (id === 'filterItemSearch') {
                         if (typeof filterItems === 'function') filterItems();
                     } else if (id === 'filterInventorySearch') {
@@ -11698,18 +11695,18 @@ NOTE: Please print the attached PO document for full details.`;
                     }
                 } else {
                     // Set the select value
-                    itemPickerCallback.value = itemId;
+                    window.itemPickerCallback.value = itemId;
                     
                     // Trigger change event to update any dependent fields
-                    itemPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
+                    window.itemPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
                     
                     // Explicitly call update functions for mobile compatibility
-                    if (itemPickerCallback.classList.contains('createpo-item')) {
-                        updateCreatePOItemCost(itemPickerCallback);
-                    } else if (itemPickerCallback.classList.contains('po-item')) {
-                        updatePOItemInfo(itemPickerCallback);
-                    } else if (itemPickerCallback.classList.contains('so-item')) {
-                        if (typeof updateSOItemInfo === 'function') updateSOItemInfo(itemPickerCallback);
+                    if (window.itemPickerCallback.classList.contains('createpo-item')) {
+                        updateCreatePOItemCost(window.itemPickerCallback);
+                    } else if (window.itemPickerCallback.classList.contains('po-item')) {
+                        updatePOItemInfo(window.itemPickerCallback);
+                    } else if (window.itemPickerCallback.classList.contains('so-item')) {
+                        if (typeof updateSOItemInfo === 'function') updateSOItemInfo(window.itemPickerCallback);
                     }
                     
                     // Recalculate totals after a brief delay to ensure DOM updates
@@ -11726,10 +11723,10 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Clear item filter and close picker
         function clearItemFilter() {
-            if (itemPickerCallback) {
-                itemPickerCallback.value = '';
+            if (window.itemPickerCallback) {
+                window.itemPickerCallback.value = '';
                 // Trigger the appropriate filter function
-                const id = itemPickerCallback.id;
+                const id = window.itemPickerCallback.id;
                 if (id === 'filterItemSearch') {
                     if (typeof filterItems === 'function') filterItems();
                 } else if (id === 'filterInventorySearch') {
@@ -11801,7 +11798,7 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Open item picker for filter text inputs
         function openItemPickerForFilter(inputElement) {
-            itemPickerCallback = inputElement;
+            window.itemPickerCallback = inputElement;
             window.itemPickerIsFilter = true;
             
             // Show supplier filter for filter context
