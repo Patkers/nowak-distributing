@@ -11015,6 +11015,12 @@ NOTE: Please print the attached PO document for full details.`;
             const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
             const supplier = supplierEl ? supplierEl.value : '';
             
+            // DEBUG - remove after testing
+            console.log('Render - supplier filter:', supplier, 'Total items:', (window.itemPickerItems || []).length);
+            if (window.itemPickerItems && window.itemPickerItems.length > 0) {
+                console.log('First item Supplier_ID:', window.itemPickerItems[0].Supplier_ID, 'Type:', typeof window.itemPickerItems[0].Supplier_ID);
+            }
+            
             const isFilterInput = window.itemPickerIsFilter;
             
             let filtered = (window.itemPickerItems || []).filter(item => {
@@ -11613,6 +11619,9 @@ NOTE: Please print the attached PO document for full details.`;
             
             const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
             const supplierSelect = document.getElementById('itemPickerSupplier');
+            
+            // DEBUG - remove after testing
+            alert('Supplier Context: ' + supplierContext + '\nisSalesContext: ' + isSalesContext);
             
             if (isSalesContext) {
                 // SALES MODE: Hide supplier filter - show ALL items from all suppliers
