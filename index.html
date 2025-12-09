@@ -425,6 +425,89 @@
             margin-bottom: 10px;
             align-items: end;
         }
+        
+        /* Make line item selects and inputs MUCH larger and more visible */
+        .line-item-row select,
+        .line-item-row input[type="number"],
+        .line-items-container select,
+        .line-items-container input[type="number"],
+        #createPOLineItems select,
+        #createPOLineItems input[type="number"],
+        #poLineItems select,
+        #poLineItems input[type="number"],
+        #soLineItems select,
+        #soLineItems input[type="number"],
+        .edit-line-item select,
+        .edit-line-item input[type="number"] {
+            padding: 14px 12px !important;
+            font-size: 16px !important;
+            min-height: 52px;
+            border: 2px solid #667eea !important;
+            border-radius: 8px !important;
+            background: white !important;
+        }
+        
+        /* Item dropdown - make extra wide and prominent */
+        .line-item-row select,
+        .line-items-container select,
+        #createPOLineItems select,
+        #poLineItems select,
+        #soLineItems select,
+        .edit-line-item select {
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            color: #333 !important;
+            cursor: pointer;
+        }
+        
+        /* Cases/Qty input - make VERY prominent */
+        .line-item-row input[type="number"],
+        .line-items-container input[type="number"],
+        #createPOLineItems input[type="number"],
+        #poLineItems input[type="number"],
+        #soLineItems input[type="number"],
+        .edit-line-item input[type="number"] {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            background: #fffde7 !important;
+            border: 2px solid #f9a825 !important;
+            min-width: 80px;
+        }
+        
+        .line-item-row select:focus,
+        .line-items-container select:focus,
+        #createPOLineItems select:focus,
+        #poLineItems select:focus,
+        #soLineItems select:focus,
+        .edit-line-item select:focus,
+        .line-item-row input:focus,
+        .line-items-container input:focus,
+        #createPOLineItems input:focus,
+        #poLineItems input:focus,
+        #soLineItems input:focus,
+        .edit-line-item input:focus {
+            border-color: var(--primary, #667eea) !important;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25);
+        }
+        
+        /* Item dropdown should be wider */
+        .createpo-item,
+        .so-item,
+        .po-item,
+        .edit-item {
+            min-width: 250px;
+        }
+        
+        /* Quantity/Cases input highlight on focus */
+        .createpo-qty:focus,
+        .so-qty:focus,
+        .po-qty:focus,
+        .edit-qty:focus {
+            background: #fff59d !important;
+            border-color: #f57f17 !important;
+        }
 
         .remove-btn {
             background: #dc3545;
@@ -1711,9 +1794,9 @@
                 
                 <!-- Wrapper for horizontal scroll on mobile -->
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; width: 100%; position: relative;">
-                    <div style="min-width: 650px; width: 100%; max-width: 100%;">
+                    <div style="min-width: 700px; width: 100%; max-width: 100%;">
                         <!-- Header Row -->
-                        <div style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; padding: 10px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 13px;">
+                        <div style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 14px;">
                             <div>Item</div>
                             <div style="text-align: center;">Cases</div>
                             <div style="text-align: center;">Units/Case</div>
@@ -1724,17 +1807,17 @@
                         </div>
                         
                         <!-- Line Items Container -->
-                        <div id="createPOLineItems" style="border: 2px solid #c0c0c0; border-top: none; border-radius: 0 0 8px 8px; padding: 6px;">
-                            <div class="line-item-row" style="display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; margin-bottom: 6px; align-items: center;">
-                                <select class="createpo-item" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <div id="createPOLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 10px; background: #fafafa;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: center;">
+                                <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
                                     <option value="">Select item...</option>
                                 </select>
-                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px;">
-                                <div class="createpo-units" style="text-align: center; font-size: 13px; color: #666; padding: 4px;">-</div>
-                                <div class="createpo-totalunits" style="text-align: center; font-size: 15px; font-weight: bold; color: var(--primary, #667eea); padding: 4px;">-</div>
-                                <div class="createpo-cost" style="text-align: center; font-size: 13px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 8px; border-radius: 4px;">-</div>
-                                <div class="createpo-linetotal" style="text-align: right; font-size: 13px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 8px; border-radius: 4px;">$0.00</div>
-                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 8px; font-size: 14px;">🗑️</button>
+                                <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
+                                <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                                <div class="createpo-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">-</div>
+                                <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                                <button type="button" class="btn-danger" onclick="removeLineItem(this)" style="width: 100%; padding: 10px; font-size: 14px;">🗑️</button>
                             </div>
                         </div>
                     </div>
@@ -2024,14 +2107,14 @@
                     </div>
                     
                     <h4 style="margin-top: 20px; margin-bottom: 10px;">Items Sold</h4>
-                    <div class="line-items-container" id="soLineItems">
-                        <div class="line-item-row">
-                            <select class="so-item" required>
+                    <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
+                        <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center;">
+                            <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
                                 <option value="">Select Item</option>
                             </select>
-                            <input type="number" class="so-qty" placeholder="Quantity" min="1" required>
-                            <input type="number" class="so-price" placeholder="Unit Price" step="0.01" min="0" required>
-                            <button type="button" class="remove-btn">✕</button>
+                            <input type="number" class="so-qty" placeholder="Qty" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                            <input type="number" class="so-price" placeholder="Price" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white;">
+                            <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px;">✕</button>
                             <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
                         </div>
                     </div>
@@ -4105,7 +4188,7 @@
             }
 
             let html = '<table class="data-table" id="customersDataTable"><thead><tr>';
-            html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th><th>Actions</th>';
+            html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th>';
             html += '</tr></thead><tbody>';
 
             customers.forEach(c => {
@@ -4116,9 +4199,6 @@
                     <td>${c.Email || '-'}</td>
                     <td>${c.City || '-'}, ${c.State || '-'}</td>
                     <td>$${parseFloat(c.Credit_Limit || 0).toFixed(2)}</td>
-                    <td onclick="event.stopPropagation();">
-                        <button class="btn-delete-icon" onclick="deleteCustomer('${c.Customer_ID}', '${c.Customer_Name}')">🗑️</button>
-                    </td>
                 </tr>`;
             });
 
@@ -8109,6 +8189,105 @@
             document.body.classList.remove('modal-open');
         }
         
+        // Sort report table by column
+        function sortReportTable(headerEl, colIndex) {
+            const table = headerEl.closest('table');
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            const tfoot = table.querySelector('tfoot');
+            if (!tbody) return;
+            
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Determine sort direction
+            const currentDir = headerEl.dataset.sortDir || 'none';
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+            
+            // Reset all headers
+            table.querySelectorAll('th').forEach(th => {
+                th.dataset.sortDir = 'none';
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Set new direction
+            headerEl.dataset.sortDir = newDir;
+            headerEl.classList.add(newDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aCell = a.cells[colIndex];
+                const bCell = b.cells[colIndex];
+                if (!aCell || !bCell) return 0;
+                
+                let aVal = aCell.textContent.trim();
+                let bVal = bCell.textContent.trim();
+                
+                // Remove $ and , for numeric comparison
+                const aNum = parseFloat(aVal.replace(/[$,%]/g, '').replace(/,/g, ''));
+                const bNum = parseFloat(bVal.replace(/[$,%]/g, '').replace(/,/g, ''));
+                
+                // Check if both are numbers
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+                
+                // String comparison
+                return newDir === 'asc' 
+                    ? aVal.localeCompare(bVal) 
+                    : bVal.localeCompare(aVal);
+            });
+            
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Add sort styles to document
+        (function addSortStyles() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .sortable-header {
+                    cursor: pointer;
+                    user-select: none;
+                    position: relative;
+                    padding-right: 20px !important;
+                }
+                .sortable-header:hover {
+                    background: rgba(0,0,0,0.1) !important;
+                }
+                .sortable-header::after {
+                    content: '⇅';
+                    position: absolute;
+                    right: 5px;
+                    opacity: 0.4;
+                    font-size: 12px;
+                }
+                .sortable-header.sort-asc::after {
+                    content: '▲';
+                    opacity: 1;
+                }
+                .sortable-header.sort-desc::after {
+                    content: '▼';
+                    opacity: 1;
+                }
+            `;
+            document.head.appendChild(style);
+        })();
+        
+        // Make all tables in report content sortable
+        function makeReportTablesSortable() {
+            const content = document.getElementById('reportSetupContent');
+            if (!content) return;
+            
+            content.querySelectorAll('table.data-table thead th').forEach((th, idx) => {
+                // Skip if already sortable
+                if (th.classList.contains('sortable-header')) return;
+                
+                th.classList.add('sortable-header');
+                th.onclick = function() { sortReportTable(this, idx); };
+            });
+        }
+        
         // Print report with professional invoice-style formatting
         function printReport() {
             const content = document.getElementById('reportSetupContent');
@@ -8140,13 +8319,78 @@
                 <html>
                 <head>
                     <title>${title} - ${settings.companyName}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
                         * { box-sizing: border-box; }
                         body { 
                             font-family: Arial, sans-serif; 
-                            padding: 0.5in;
+                            padding: 15px;
+                            padding-top: 70px;
                             margin: 0;
                             color: #333;
+                            width: 100%;
+                            max-width: 100%;
+                            overflow-x: visible;
+                        }
+                        
+                        /* Fixed toolbar at top */
+                        .print-toolbar {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            background: #333;
+                            color: white;
+                            padding: 10px 15px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            flex-wrap: wrap;
+                            gap: 10px;
+                            z-index: 9999;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                        }
+                        .print-toolbar .toolbar-title {
+                            font-size: 12px;
+                            flex: 1;
+                            min-width: 150px;
+                        }
+                        .print-toolbar .toolbar-buttons {
+                            display: flex;
+                            gap: 8px;
+                        }
+                        .print-toolbar button {
+                            padding: 12px 20px;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: bold;
+                            white-space: nowrap;
+                        }
+                        .print-toolbar .btn-print {
+                            background: #4CAF50;
+                            color: white;
+                        }
+                        .print-toolbar .btn-close {
+                            background: #f44336;
+                            color: white;
+                        }
+                        @media (max-width: 500px) {
+                            .print-toolbar {
+                                flex-direction: column;
+                                text-align: center;
+                            }
+                            .print-toolbar .toolbar-title {
+                                font-size: 11px;
+                            }
+                            .print-toolbar .toolbar-buttons {
+                                width: 100%;
+                                justify-content: center;
+                            }
+                            body {
+                                padding-top: 100px;
+                            }
                         }
                         
                         /* Header - matches invoice style */
@@ -8171,26 +8415,30 @@
                             font-size: 11pt;
                         }
                         
-                        /* Company Info Box */
+                        /* Company Info Box - mobile friendly */
                         .company-info {
                             background: ${themeColors.primary}10;
                             border: 1px solid ${themeColors.primary}30;
                             border-radius: 8px;
                             padding: 15px;
                             margin-bottom: 25px;
-                            display: flex;
-                            justify-content: space-between;
-                            flex-wrap: wrap;
-                            gap: 20px;
+                            display: block;
+                            width: 100%;
+                            max-width: 100%;
+                            overflow: visible;
+                            box-sizing: border-box;
                         }
-                        .company-info .left {
-                            flex: 1;
-                            min-width: 200px;
+                        .company-info .left,
+                        .company-info .right {
+                            display: block;
+                            width: 100%;
+                            max-width: 100%;
+                            margin-bottom: 15px;
+                            overflow: visible;
                         }
                         .company-info .right {
-                            text-align: right;
-                            flex: 1;
-                            min-width: 200px;
+                            text-align: left;
+                            margin-bottom: 0;
                         }
                         .company-info h3 {
                             margin: 0 0 8px 0;
@@ -8200,6 +8448,28 @@
                         .company-info p {
                             margin: 2px 0;
                             font-size: 10pt;
+                            word-wrap: break-word;
+                            overflow-wrap: break-word;
+                        }
+                        
+                        /* Desktop: side by side */
+                        @media (min-width: 600px) {
+                            body { padding: 0.5in; }
+                            .company-info {
+                                display: flex;
+                                justify-content: space-between;
+                                flex-wrap: wrap;
+                                gap: 20px;
+                            }
+                            .company-info .left,
+                            .company-info .right {
+                                flex: 1;
+                                min-width: 200px;
+                                margin-bottom: 0;
+                            }
+                            .company-info .right {
+                                text-align: right;
+                            }
                         }
                         
                         /* Tables */
@@ -8282,9 +8552,11 @@
                         @media print { 
                             body { 
                                 print-color-adjust: exact; 
-                                -webkit-print-color-adjust: exact; 
+                                -webkit-print-color-adjust: exact;
+                                padding: 0.5in;
+                                padding-top: 0.5in;
                             }
-                            .no-print { display: none; }
+                            .no-print, .print-toolbar { display: none !important; }
                         }
                         
                         /* General content */
@@ -8293,6 +8565,14 @@
                     </style>
                 </head>
                 <body>
+                    <div class="print-toolbar no-print">
+                        <span class="toolbar-title">📄 Report Preview - Click Print or Save as PDF, then Close</span>
+                        <div class="toolbar-buttons">
+                            <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+                            <button class="btn-close" onclick="window.close()">✕ Close</button>
+                        </div>
+                    </div>
+                    
                     <div class="report-header">
                         <h1>${title.replace(/^[^\w]+/, '')}</h1>
                         <div class="company-name">${settings.companyName}</div>
@@ -8321,10 +8601,8 @@
             `);
             printWindow.document.close();
             
-            // Small delay to ensure styles load
-            setTimeout(() => {
-                printWindow.print();
-            }, 250);
+            // Don't auto-print - let user review first, then click Print button
+            // This avoids the browser's PDF viewer taking over with no escape
         }
         
         // Helper to get current theme colors for printing
@@ -8499,6 +8777,9 @@
                 }
                 
                 container.innerHTML = reportHtml;
+                
+                // Make tables sortable
+                makeReportTablesSortable();
                 
             } catch (error) {
                 container.innerHTML = `<div style="padding: 40px; text-align: center; color: red;"><div style="font-size: 24px; margin-bottom: 10px;">❌</div>Error: ${error.message}</div>`;
@@ -10080,6 +10361,22 @@
             // Build dashboard HTML with card styling
             let html = `
                 <style>
+                    .dash-header {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        color: white;
+                        border-radius: 12px;
+                        margin-bottom: 25px;
+                    }
+                    .dash-header h2 {
+                        margin: 0;
+                        font-size: 28px;
+                    }
+                    .dash-header p {
+                        margin: 8px 0 0 0;
+                        opacity: 0.9;
+                    }
                     .dash-card-grid {
                         display: grid;
                         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -10154,9 +10451,9 @@
                     .rank-other { background: #f0f0f0; color: #666; }
                 </style>
                 
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: #333;">🎯 Sales Dashboard</h3>
-                    <p style="margin: 5px 0 0 0; color: #666;">${dateLabel}${reportFilters.customer ? ' • ' + getCustomerName(reportFilters.customer) : ''}</p>
+                <div class="dash-header">
+                    <h2>🎯 Sales Dashboard</h2>
+                    <p>${dateLabel}${reportFilters.customer ? ' • ' + getCustomerName(reportFilters.customer) : ''}</p>
                 </div>
                 
                 <!-- Main KPI Cards -->
@@ -10406,7 +10703,7 @@
                         border-radius: 10px;
                         padding: 15px;
                         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                        border-left: 4px solid #667eea;
+                        border-left: 4px solid #2e7d32;
                         transition: transform 0.2s;
                     }
                     .period-card:hover {
@@ -12509,17 +12806,17 @@
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
-            newRow.style.cssText = 'display: grid; grid-template-columns: 2fr 0.6fr 0.6fr 0.8fr 0.8fr 0.8fr 60px; gap: 4px; margin-bottom: 6px; align-items: center;';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: center;';
             newRow.innerHTML = `
-                <select class="createpo-item" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" onchange="updateCreatePOItemCost(this)">
+                <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
                     <option value="">Select item...</option>
                 </select>
-                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px;">
-                <div class="createpo-units" style="text-align: center; font-size: 13px; color: #666; padding: 4px;">-</div>
-                <div class="createpo-totalunits" style="text-align: center; font-size: 15px; font-weight: bold; color: #1565C0; padding: 4px;">-</div>
-                <div class="createpo-cost" style="text-align: center; font-size: 13px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 8px; border-radius: 4px;">-</div>
-                <div class="createpo-linetotal" style="text-align: right; font-size: 13px; font-weight: bold; color: #1565C0; background: #E3F2FD; padding: 8px; border-radius: 4px;">$0.00</div>
-                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 8px; font-size: 14px;">🗑️</button>
+                <input type="number" class="createpo-qty" placeholder="0" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
+                <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                <div class="createpo-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">-</div>
+                <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px;">🗑️</button>
             `;
             
             container.appendChild(newRow);
@@ -13640,10 +13937,7 @@ NOTE: Please print the attached PO document for full details.`;
             </div>
             <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: space-between; flex-shrink: 0; background: #f8f9fa; border-radius: 0 0 12px 12px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary" onclick="printReport()" title="Print Report">🖨️ Print</button>
-                    <button class="btn btn-secondary" onclick="emailReport()" title="Email Report">📧 Email</button>
-                    <button class="btn btn-secondary" onclick="textReport()" title="Text Report">💬 Text</button>
-                    <button class="btn btn-secondary" onclick="saveReportPDF()" title="Save as PDF">💾 Save</button>
+                    <button class="btn btn-secondary" onclick="printReport()" title="Print Report (or Save as PDF)">🖨️ Print</button>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn btn-secondary" onclick="closeReportSetup()">Cancel</button>
