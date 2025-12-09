@@ -1052,6 +1052,32 @@
         body.theme-packers .header {
             border-bottom: 4px solid #FFB612 !important;
         }
+        
+        /* Landing Page Navigation Cards */
+        .landing-nav-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2) !important;
+        }
+        
+        .landing-nav-card:active {
+            transform: translateY(-4px) scale(1.01);
+        }
+        
+        /* Responsive adjustments for landing page */
+        @media (max-width: 768px) {
+            #home h1 {
+                font-size: 32px !important;
+            }
+            #home p {
+                font-size: 16px !important;
+            }
+            .landing-nav-card {
+                padding: 20px !important;
+            }
+            .landing-nav-card h3 {
+                font-size: 20px !important;
+            }
+        }
     </style>
     <link rel="stylesheet" href="sports-themes.css">
 </head>
@@ -1070,7 +1096,8 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('suppliers')">🏭 Suppliers</button>
+            <button class="tab active" onclick="switchTab('home')">🏠 Home</button>
+            <button class="tab" onclick="switchTab('suppliers')">🏭 Suppliers</button>
             <button class="tab" onclick="switchTab('items')">📦 Items</button>
             <button class="tab" onclick="switchTab('customers')">👥 Customers</button>
             <button class="tab" onclick="switchTab('createpo')">📝 Create PO</button>
@@ -1236,8 +1263,127 @@
             </div>
         </div>
 
+        <!-- HOME / LANDING PAGE -->
+        <div id="home" class="card active">
+            <div style="text-align: center; padding: 60px 20px; background: linear-gradient(135deg, var(--primary, #1e3a8a) 0%, var(--accent, #3b82f6) 100%); border-radius: 16px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);">
+                <h1 style="font-size: 48px; margin-bottom: 10px; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    Nowak Distributing
+                </h1>
+                <p style="font-size: 20px; color: white; margin-bottom: 0; opacity: 0.95;">
+                    Professional Inventory & Order Management System
+                </p>
+            </div>
+
+            <!-- Quick Navigation Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; padding: 20px; max-width: 1400px; margin: 0 auto;">
+                
+                <!-- Suppliers Card -->
+                <div class="landing-nav-card" onclick="switchTab('suppliers')" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🏭</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Suppliers</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Manage your supplier relationships</p>
+                </div>
+
+                <!-- Items Card -->
+                <div class="landing-nav-card" onclick="switchTab('items')" style="background: linear-gradient(135deg, #475569 0%, #64748b 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(71, 85, 105, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Items</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Inventory catalog & pricing</p>
+                </div>
+
+                <!-- Customers Card -->
+                <div class="landing-nav-card" onclick="switchTab('customers')" style="background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(3, 105, 161, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">👥</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Customers</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Customer management & contacts</p>
+                </div>
+
+                <!-- Create PO Card -->
+                <div class="landing-nav-card" onclick="switchTab('createpo')" style="background: linear-gradient(135deg, #0f766e 0%, #06b6d4 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(15, 118, 110, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Create PO</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Generate new purchase orders</p>
+                </div>
+
+                <!-- Purchases Card -->
+                <div class="landing-nav-card" onclick="switchTab('purchases')" style="background: linear-gradient(135deg, #4338ca 0%, #3b82f6 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(67, 56, 202, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📥</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Purchases</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">View & manage purchase orders</p>
+                </div>
+
+                <!-- Sales Card -->
+                <div class="landing-nav-card" onclick="switchTab('sales')" style="background: linear-gradient(135deg, #065f46 0%, #059669 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(6, 95, 70, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">💰</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Sales</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Sales orders & invoicing</p>
+                </div>
+
+                <!-- Inventory Card -->
+                <div class="landing-nav-card" onclick="switchTab('inventory')" style="background: linear-gradient(135deg, #374151 0%, #6b7280 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(55, 65, 81, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Inventory</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Stock levels & adjustments</p>
+                </div>
+
+                <!-- Price Simulator Card -->
+                <div class="landing-nav-card" onclick="switchTab('pricesim')" style="background: linear-gradient(135deg, #1e40af 0%, #60a5fa 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Price Simulator</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Analyze pricing & margins</p>
+                </div>
+
+                <!-- Reports Card -->
+                <div class="landing-nav-card" onclick="switchTab('reports')" style="background: linear-gradient(135deg, #4c1d95 0%, #8b5cf6 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(76, 29, 149, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📈</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Reports</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Analytics & business insights</p>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="landing-nav-card" onclick="switchTab('config')" style="background: linear-gradient(135deg, #52525b 0%, #a1a1aa 100%); color: white; padding: 30px; border-radius: 16px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(82, 82, 91, 0.3);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">⚙️</div>
+                    <h3 style="margin: 0 0 10px 0; font-size: 24px;">Settings</h3>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">Configure your system</p>
+                </div>
+            </div>
+
+            <!-- Theme-Aware Feature Highlights -->
+            <div style="margin: 60px 20px 20px 20px; padding: 30px; background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 1200px; margin-left: auto; margin-right: auto;">
+                <h2 style="text-align: center; color: var(--primary, #667eea); margin-bottom: 30px;">✨ System Features</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">🚀</div>
+                        <h4 style="margin: 10px 0; color: var(--primary, #667eea);">Fast & Efficient</h4>
+                        <p style="font-size: 14px; color: #666; margin: 0;">Streamlined workflows for maximum productivity</p>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">📱</div>
+                        <h4 style="margin: 10px 0; color: var(--primary, #667eea);">Mobile Friendly</h4>
+                        <p style="font-size: 14px; color: #666; margin: 0;">Access from any device, anywhere</p>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">🔒</div>
+                        <h4 style="margin: 10px 0; color: var(--primary, #667eea);">Secure</h4>
+                        <p style="font-size: 14px; color: #666; margin: 0;">Your data is protected and private</p>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">🎨</div>
+                        <h4 style="margin: 10px 0; color: var(--primary, #667eea);">Customizable</h4>
+                        <p style="font-size: 14px; color: #666; margin: 0;">Choose from 100+ team themes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Info -->
+            <div style="text-align: center; margin-top: 40px; padding: 20px; color: #999;">
+                <p style="margin: 5px 0;">Nowak Distributing ERP System v12.0</p>
+                <p style="margin: 5px 0; font-size: 14px;">Professional Inventory & Order Management</p>
+            </div>
+        </div>
+
         <!-- Suppliers Tab -->
-        <div id="suppliers" class="card active">
+        <div id="suppliers" class="card">
             <h2>Suppliers</h2>
             <div class="status" id="suppliersStatus"></div>
             
@@ -3988,7 +4134,7 @@
             displayItems(filtered);
         }
         
-        async function clearItemFilters() {
+        function clearItemFilters() {
             document.getElementById('filterItemSearch').value = '';
             document.getElementById('filterItemSupplier').value = '';
             document.getElementById('filterItemStock').value = '';
@@ -3997,7 +4143,7 @@
             filterItems();
         }
         
-        async function loadItemFilterSuppliers() {
+        function loadItemFilterSuppliers() {
             const filterSupplier = document.getElementById('filterItemSupplier');
             
             if (cachedSuppliers && cachedSuppliers.length > 0) {
