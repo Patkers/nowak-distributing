@@ -2463,6 +2463,20 @@
                         <button class="btn report-btn report-btn-red" onclick="showReport('accounts-payable')">💸 Accounts Payable</button>
                     </div>
                 </div>
+                
+                <div class="report-category">
+                    <div class="report-category-header" onclick="toggleReportSection('taxReports')">
+                        <h4>🧾 Tax & Annual Reports</h4>
+                        <span id="taxReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="taxReports" class="report-buttons">
+                        <button class="btn report-btn" onclick="showReport('profit-loss')">📊 Profit & Loss Statement</button>
+                        <button class="btn report-btn" onclick="showReport('annual-sales-summary')">📈 Annual Sales Summary</button>
+                        <button class="btn report-btn" onclick="showReport('annual-purchase-summary')">📉 Annual Purchase Summary</button>
+                        <button class="btn report-btn" onclick="showReport('inventory-valuation')">💰 Inventory Valuation</button>
+                        <button class="btn report-btn" onclick="showReport('cash-flow-summary')">💵 Cash Flow Summary</button>
+                    </div>
+                </div>
             </div>
             
             <!-- Report Container -->
@@ -5501,8 +5515,6 @@
                 const qty = parseInt(row.querySelector('.edit-qty').value) || 0;
                 const cost = parseFloat(row.querySelector('.edit-price').value) || 0;
                 
-                console.log('Line item:', { itemId, qty, cost });  // DEBUG
-                
                 if (itemId && qty > 0) {
                     newLines.push({
                         itemId: itemId,
@@ -5516,7 +5528,7 @@
                 }
             });
             
-            console.log('Total lines collected:', newLines.length);  // DEBUG
+            console.log('Total lines collected:', newLines.length);
             
             if (newLines.length === 0) {
                 const rowCount = document.querySelectorAll('#editPOLineItems .edit-line-item').length;
@@ -7624,6 +7636,31 @@
                 title: '📋 Inventory List',
                 filters: ['supplier', 'stockStatus'],
                 dateLabel: ''
+            },
+            'profit-loss': {
+                title: '📊 Profit & Loss Statement',
+                filters: ['yearSelect', 'quarterSelect', 'cogsMethod'],
+                dateLabel: ''
+            },
+            'annual-sales-summary': {
+                title: '📈 Annual Sales Summary',
+                filters: ['yearSelect'],
+                dateLabel: ''
+            },
+            'annual-purchase-summary': {
+                title: '📉 Annual Purchase Summary',
+                filters: ['yearSelect'],
+                dateLabel: ''
+            },
+            'inventory-valuation': {
+                title: '💰 Inventory Valuation',
+                filters: ['supplier'],
+                dateLabel: ''
+            },
+            'cash-flow-summary': {
+                title: '💵 Cash Flow Summary',
+                filters: ['yearSelect', 'quarterSelect'],
+                dateLabel: ''
             }
         };
         
@@ -7758,6 +7795,49 @@
                     <div class="form-group">
                         <label>💵 Min Amount</label>
                         <input type="number" id="rptFilter_minAmount" placeholder="0.00" min="0" step="0.01">
+                    </div>`;
+            }
+            
+            // Year Select (for tax reports)
+            if (config.filters.includes('yearSelect')) {
+                const currentYear = new Date().getFullYear();
+                const years = [];
+                for (let y = currentYear; y >= currentYear - 5; y--) {
+                    years.push(y);
+                }
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📅 Year</label>
+                        <select id="rptFilter_year">
+                            ${years.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('')}
+                        </select>
+                    </div>`;
+            }
+            
+            // Quarter Select (for tax reports)
+            if (config.filters.includes('quarterSelect')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📊 Period</label>
+                        <select id="rptFilter_quarter">
+                            <option value="annual">Full Year</option>
+                            <option value="Q1">Q1 (Jan-Mar)</option>
+                            <option value="Q2">Q2 (Apr-Jun)</option>
+                            <option value="Q3">Q3 (Jul-Sep)</option>
+                            <option value="Q4">Q4 (Oct-Dec)</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // COGS Method (for P&L report)
+            if (config.filters.includes('cogsMethod')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📦 Cost of Goods Method</label>
+                        <select id="rptFilter_cogsMethod">
+                            <option value="actual">Actual Purchase Costs (from POs)</option>
+                            <option value="standard">Standard Costs (from Items table)</option>
+                        </select>
                     </div>`;
             }
             
@@ -7902,7 +7982,10 @@
                 stockStatus: document.getElementById('rptFilter_stockStatus')?.value || '',
                 turnoverStatus: document.getElementById('rptFilter_turnoverStatus')?.value || '',
                 aging: document.getElementById('rptFilter_aging')?.value || '',
-                minAmount: parseFloat(document.getElementById('rptFilter_minAmount')?.value) || 0
+                minAmount: parseFloat(document.getElementById('rptFilter_minAmount')?.value) || 0,
+                year: document.getElementById('rptFilter_year')?.value || new Date().getFullYear(),
+                quarter: document.getElementById('rptFilter_quarter')?.value || 'annual',
+                cogsMethod: document.getElementById('rptFilter_cogsMethod')?.value || 'actual'
             };
             
             const container = document.getElementById('reportSetupContent');
@@ -7944,6 +8027,21 @@
                     case 'simple-inventory':
                         reportHtml = await generateSimpleInventoryModal();
                         break;
+                    case 'profit-loss':
+                        reportHtml = await generateProfitLossModal();
+                        break;
+                    case 'annual-sales-summary':
+                        reportHtml = await generateAnnualSalesSummaryModal();
+                        break;
+                    case 'annual-purchase-summary':
+                        reportHtml = await generateAnnualPurchaseSummaryModal();
+                        break;
+                    case 'inventory-valuation':
+                        reportHtml = await generateInventoryValuationModal();
+                        break;
+                    case 'cash-flow-summary':
+                        reportHtml = await generateCashFlowSummaryModal();
+                        break;
                 }
                 
                 container.innerHTML = reportHtml;
@@ -7968,17 +8066,13 @@
             let sales = salesResult.data;
             
             // DEBUG: Show how many SOs we found
-            console.log('Sales Orders found:', sales.length);
-            console.log('Date filter from:', reportFilters.fromDate, 'to:', reportFilters.toDate);
+            console.log('Sales by Customer: Found', sales.length, 'orders');
             
             // Fetch ALL sales order lines
             const allDetails = [];
-            let totalLinesFound = 0;
             for (const so of sales) {
                 const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
-                console.log('SO:', so.SO_ID, 'Lines:', linesResult?.data?.length || 0);
                 if (linesResult?.data) {
-                    totalLinesFound += linesResult.data.length;
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
                         const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
@@ -8004,19 +8098,50 @@
                 }
             }
             
-            console.log('Total line items found:', totalLinesFound);
-            console.log('All details array length:', allDetails.length);
+            // Helper function to parse dates in various formats
+            function parseFlexibleDate(dateVal) {
+                if (!dateVal) return null;
+                
+                // If already a Date object
+                if (dateVal instanceof Date) return dateVal;
+                
+                // Convert to string
+                const dateStr = String(dateVal).trim();
+                if (!dateStr) return null;
+                
+                // Try ISO format first (2025-12-09)
+                let parsed = new Date(dateStr);
+                if (!isNaN(parsed.getTime())) return parsed;
+                
+                // Try parsing MM/DD/YYYY or M/D/YYYY format (with optional time)
+                const usMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (usMatch) {
+                    const month = parseInt(usMatch[1]) - 1;
+                    const day = parseInt(usMatch[2]);
+                    const year = parseInt(usMatch[3]);
+                    return new Date(year, month, day);
+                }
+                
+                return null;
+            }
             
             // Apply filters
             let filtered = allDetails;
             if (reportFilters.fromDate) {
                 const fromDate = new Date(reportFilters.fromDate);
-                filtered = filtered.filter(d => new Date(d.soDate) >= fromDate);
+                fromDate.setHours(0, 0, 0, 0);
+                filtered = filtered.filter(d => {
+                    const soDate = parseFlexibleDate(d.soDate);
+                    return soDate && soDate >= fromDate;
+                });
             }
             if (reportFilters.toDate) {
                 const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59);
-                filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
+                toDate.setHours(23, 59, 59, 999);
+                filtered = filtered.filter(d => {
+                    const soDate = parseFlexibleDate(d.soDate);
+                    return soDate && soDate <= toDate;
+                });
             }
             if (reportFilters.customer) {
                 filtered = filtered.filter(d => d.customerId === reportFilters.customer);
@@ -8024,8 +8149,6 @@
             if (reportFilters.minAmount) {
                 filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
             }
-            
-            console.log('After date filter:', filtered.length);
             
             // Group by customer
             const byCustomer = {};
@@ -8053,7 +8176,7 @@
                     <th style="text-align: right;">Margin</th>
                 </tr></thead><tbody>`;
             
-            let totalSales = 0, totalCost = 0, totalProfit = 0;
+            let totalSales = 0, totalCost = 0, totalProfit = 0, totalOrders = 0;
             Object.entries(byCustomer)
                 .sort((a, b) => b[1].sales - a[1].sales)
                 .forEach(([id, data]) => {
@@ -8061,6 +8184,7 @@
                     totalSales += data.sales;
                     totalCost += data.cost;
                     totalProfit += data.profit;
+                    totalOrders += data.orders.size;
                     html += `<tr>
                         <td>${data.name}</td>
                         <td style="text-align: right;">${data.orders.size}</td>
@@ -8074,7 +8198,7 @@
             const totalMargin = totalSales > 0 ? (totalProfit / totalSales * 100) : 0;
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td>TOTAL</td>
-                <td></td>
+                <td style="text-align: right;">${totalOrders}</td>
                 <td style="text-align: right;">$${totalSales.toFixed(2)}</td>
                 <td style="text-align: right;">$${totalCost.toFixed(2)}</td>
                 <td style="text-align: right; color: ${totalProfit >= 0 ? '#2e7d32' : '#c62828'};">$${totalProfit.toFixed(2)}</td>
@@ -8091,14 +8215,37 @@
             
             let sales = salesResult.data;
             
+            // Helper function to parse dates in various formats
+            function parseFlexibleDate(dateVal) {
+                if (!dateVal) return null;
+                if (dateVal instanceof Date) return dateVal;
+                const dateStr = String(dateVal).trim();
+                if (!dateStr) return null;
+                let parsed = new Date(dateStr);
+                if (!isNaN(parsed.getTime())) return parsed;
+                const usMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (usMatch) {
+                    return new Date(parseInt(usMatch[3]), parseInt(usMatch[1]) - 1, parseInt(usMatch[2]));
+                }
+                return null;
+            }
+            
             // Apply filters
             if (reportFilters.fromDate) {
-                sales = sales.filter(s => new Date(s.Sale_Date || s.SO_Date) >= new Date(reportFilters.fromDate));
+                const fromDate = new Date(reportFilters.fromDate);
+                fromDate.setHours(0, 0, 0, 0);
+                sales = sales.filter(s => {
+                    const saleDate = parseFlexibleDate(s.Sale_Date || s.SO_Date);
+                    return saleDate && saleDate >= fromDate;
+                });
             }
             if (reportFilters.toDate) {
                 const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59);
-                sales = sales.filter(s => new Date(s.Sale_Date || s.SO_Date) <= toDate);
+                toDate.setHours(23, 59, 59, 999);
+                sales = sales.filter(s => {
+                    const saleDate = parseFlexibleDate(s.Sale_Date || s.SO_Date);
+                    return saleDate && saleDate <= toDate;
+                });
             }
             if (reportFilters.customer) {
                 sales = sales.filter(s => s.Customer_ID === reportFilters.customer);
@@ -8153,13 +8300,36 @@
             
             let purchases = poResult.data;
             
+            // Helper function to parse dates in various formats
+            function parseFlexibleDate(dateVal) {
+                if (!dateVal) return null;
+                if (dateVal instanceof Date) return dateVal;
+                const dateStr = String(dateVal).trim();
+                if (!dateStr) return null;
+                let parsed = new Date(dateStr);
+                if (!isNaN(parsed.getTime())) return parsed;
+                const usMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (usMatch) {
+                    return new Date(parseInt(usMatch[3]), parseInt(usMatch[1]) - 1, parseInt(usMatch[2]));
+                }
+                return null;
+            }
+            
             if (reportFilters.fromDate) {
-                purchases = purchases.filter(p => new Date(p.PO_Date) >= new Date(reportFilters.fromDate));
+                const fromDate = new Date(reportFilters.fromDate);
+                fromDate.setHours(0, 0, 0, 0);
+                purchases = purchases.filter(p => {
+                    const poDate = parseFlexibleDate(p.PO_Date);
+                    return poDate && poDate >= fromDate;
+                });
             }
             if (reportFilters.toDate) {
                 const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59);
-                purchases = purchases.filter(p => new Date(p.PO_Date) <= toDate);
+                toDate.setHours(23, 59, 59, 999);
+                purchases = purchases.filter(p => {
+                    const poDate = parseFlexibleDate(p.PO_Date);
+                    return poDate && poDate <= toDate;
+                });
             }
             if (reportFilters.supplier) {
                 purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
@@ -8209,13 +8379,36 @@
             
             let purchases = poResult.data;
             
+            // Helper function to parse dates in various formats
+            function parseFlexibleDate(dateVal) {
+                if (!dateVal) return null;
+                if (dateVal instanceof Date) return dateVal;
+                const dateStr = String(dateVal).trim();
+                if (!dateStr) return null;
+                let parsed = new Date(dateStr);
+                if (!isNaN(parsed.getTime())) return parsed;
+                const usMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (usMatch) {
+                    return new Date(parseInt(usMatch[3]), parseInt(usMatch[1]) - 1, parseInt(usMatch[2]));
+                }
+                return null;
+            }
+            
             if (reportFilters.fromDate) {
-                purchases = purchases.filter(p => new Date(p.PO_Date) >= new Date(reportFilters.fromDate));
+                const fromDate = new Date(reportFilters.fromDate);
+                fromDate.setHours(0, 0, 0, 0);
+                purchases = purchases.filter(p => {
+                    const poDate = parseFlexibleDate(p.PO_Date);
+                    return poDate && poDate >= fromDate;
+                });
             }
             if (reportFilters.toDate) {
                 const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59);
-                purchases = purchases.filter(p => new Date(p.PO_Date) <= toDate);
+                toDate.setHours(23, 59, 59, 999);
+                purchases = purchases.filter(p => {
+                    const poDate = parseFlexibleDate(p.PO_Date);
+                    return poDate && poDate <= toDate;
+                });
             }
             if (reportFilters.supplier) {
                 purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
@@ -8243,10 +8436,12 @@
                 </tr></thead><tbody>`;
             
             let grandTotal = 0;
+            let totalOrderCount = 0;
             Object.entries(bySupplier)
                 .sort((a, b) => b[1].total - a[1].total)
                 .forEach(([id, data]) => {
                     grandTotal += data.total;
+                    totalOrderCount += data.count;
                     html += `<tr>
                         <td>${data.name}</td>
                         <td style="text-align: right;">${data.count}</td>
@@ -8256,7 +8451,7 @@
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td>TOTAL</td>
-                <td></td>
+                <td style="text-align: right;">${totalOrderCount}</td>
                 <td style="text-align: right;">$${grandTotal.toFixed(2)}</td>
             </tr></tfoot></table></div>`;
             
@@ -8309,16 +8504,27 @@
                     <th style="text-align: right;">Qty</th>
                     <th style="text-align: right;">Cost</th>
                     <th style="text-align: right;">Sell</th>
+                    <th style="text-align: right;">Value</th>
                     ${type === 'margin' ? '<th style="text-align: right;">Margin</th>' : ''}
                 </tr></thead><tbody>`;
+            
+            let totalQty = 0;
+            let totalValue = 0;
+            let totalSellValue = 0;
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
                 const cost = parseFloat(item.Package_Cost) || 0;
-                const sell = parseFloat(item.Sell_Price) || 0;
+                const sell = parseFloat(item.Unit_Sell_Price) || parseFloat(item.Sell_Price) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
                 const unitCost = cost / units;
                 const margin = sell > 0 ? ((sell - unitCost) / sell * 100) : 0;
+                const itemValue = qty * unitCost;
+                const itemSellValue = qty * sell;
+                
+                totalQty += qty;
+                totalValue += itemValue;
+                totalSellValue += itemSellValue;
                 
                 html += `<tr>
                     <td>${item.SKU || '-'}</td>
@@ -8326,11 +8532,19 @@
                     <td style="text-align: right; color: ${qty <= 0 ? '#c62828' : '#333'};">${qty}</td>
                     <td style="text-align: right;">$${unitCost.toFixed(2)}</td>
                     <td style="text-align: right;">$${sell.toFixed(2)}</td>
+                    <td style="text-align: right;">$${itemValue.toFixed(2)}</td>
                     ${type === 'margin' ? `<td style="text-align: right; color: ${margin >= 20 ? '#2e7d32' : '#ff9800'};">${margin.toFixed(1)}%</td>` : ''}
                 </tr>`;
             });
             
-            html += `</tbody></table></div>`;
+            const totalMargin = totalSellValue > 0 ? ((totalSellValue - totalValue) / totalSellValue * 100) : 0;
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="2">TOTAL (${items.length} items)</td>
+                <td style="text-align: right;">${totalQty}</td>
+                <td colspan="2" style="text-align: right;">Inventory Value:</td>
+                <td style="text-align: right;">$${totalValue.toFixed(2)}</td>
+                ${type === 'margin' ? `<td style="text-align: right;">${totalMargin.toFixed(1)}%</td>` : ''}
+            </tr></tfoot></table></div>`;
             return html;
         }
         
@@ -8352,26 +8566,38 @@
                     <th>Invoice</th>
                     <th>Customer</th>
                     <th>Date</th>
-                    <th style="text-align: right;">Amount</th>
+                    <th style="text-align: right;">Total</th>
+                    <th style="text-align: right;">Paid</th>
+                    <th style="text-align: right;">Balance Due</th>
                     <th>Status</th>
                 </tr></thead><tbody>`;
             
-            let total = 0;
+            let totalAmount = 0;
+            let totalPaid = 0;
+            let totalDue = 0;
             unpaid.forEach(s => {
                 const amt = parseFloat(s.Total_Amount) || 0;
-                total += amt;
+                const paid = parseFloat(s.Amount_Paid) || 0;
+                const due = amt - paid;
+                totalAmount += amt;
+                totalPaid += paid;
+                totalDue += due;
                 html += `<tr>
                     <td>${s.Invoice_Number || s.SO_Number || '-'}</td>
                     <td>${getCustomerName(s.Customer_ID)}</td>
                     <td>${s.Sale_Date || '-'}</td>
                     <td style="text-align: right;">$${amt.toFixed(2)}</td>
+                    <td style="text-align: right;">$${paid.toFixed(2)}</td>
+                    <td style="text-align: right; color: #c62828; font-weight: bold;">$${due.toFixed(2)}</td>
                     <td>${s.Payment_Status || 'Unpaid'}</td>
                 </tr>`;
             });
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="3">TOTAL RECEIVABLE</td>
-                <td style="text-align: right; color: #2e7d32;">$${total.toFixed(2)}</td>
+                <td colspan="3">TOTAL (${unpaid.length} invoices)</td>
+                <td style="text-align: right;">$${totalAmount.toFixed(2)}</td>
+                <td style="text-align: right;">$${totalPaid.toFixed(2)}</td>
+                <td style="text-align: right; color: #2e7d32;">$${totalDue.toFixed(2)}</td>
                 <td></td>
             </tr></tfoot></table></div>`;
             
@@ -8396,28 +8622,614 @@
                     <th>PO #</th>
                     <th>Supplier</th>
                     <th>Date</th>
-                    <th style="text-align: right;">Amount</th>
+                    <th style="text-align: right;">Total</th>
+                    <th style="text-align: right;">Paid</th>
+                    <th style="text-align: right;">Balance Due</th>
                     <th>Status</th>
                 </tr></thead><tbody>`;
             
-            let total = 0;
+            let totalAmount = 0;
+            let totalPaid = 0;
+            let totalDue = 0;
             unpaid.forEach(p => {
                 const amt = parseFloat(p.Total_Amount) || 0;
-                total += amt;
+                const paid = parseFloat(p.Amount_Paid) || 0;
+                const due = amt - paid;
+                totalAmount += amt;
+                totalPaid += paid;
+                totalDue += due;
                 html += `<tr>
-                    <td>${p.PO_Number || '-'}</td>
+                    <td>${p.PO_ID || '-'}</td>
                     <td>${getSupplierName(p.Supplier_ID)}</td>
                     <td>${p.PO_Date || '-'}</td>
                     <td style="text-align: right;">$${amt.toFixed(2)}</td>
+                    <td style="text-align: right;">$${paid.toFixed(2)}</td>
+                    <td style="text-align: right; color: #c62828; font-weight: bold;">$${due.toFixed(2)}</td>
                     <td>${p.Payment_Status || 'Unpaid'}</td>
                 </tr>`;
             });
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="3">TOTAL PAYABLE</td>
-                <td style="text-align: right; color: #c62828;">$${total.toFixed(2)}</td>
+                <td colspan="3">TOTAL (${unpaid.length} POs)</td>
+                <td style="text-align: right;">$${totalAmount.toFixed(2)}</td>
+                <td style="text-align: right;">$${totalPaid.toFixed(2)}</td>
+                <td style="text-align: right; color: #c62828;">$${totalDue.toFixed(2)}</td>
                 <td></td>
             </tr></tfoot></table></div>`;
+            
+            return html;
+        }
+        
+        // ==================== TAX & ANNUAL REPORT GENERATORS ====================
+        
+        // Helper function to get date range for year/quarter
+        function getDateRangeForPeriod(year, quarter) {
+            year = parseInt(year);
+            let startDate, endDate;
+            
+            if (quarter === 'annual' || !quarter) {
+                startDate = new Date(year, 0, 1);  // Jan 1
+                endDate = new Date(year, 11, 31, 23, 59, 59);  // Dec 31
+            } else if (quarter === 'Q1') {
+                startDate = new Date(year, 0, 1);  // Jan 1
+                endDate = new Date(year, 2, 31, 23, 59, 59);  // Mar 31
+            } else if (quarter === 'Q2') {
+                startDate = new Date(year, 3, 1);  // Apr 1
+                endDate = new Date(year, 5, 30, 23, 59, 59);  // Jun 30
+            } else if (quarter === 'Q3') {
+                startDate = new Date(year, 6, 1);  // Jul 1
+                endDate = new Date(year, 8, 30, 23, 59, 59);  // Sep 30
+            } else if (quarter === 'Q4') {
+                startDate = new Date(year, 9, 1);  // Oct 1
+                endDate = new Date(year, 11, 31, 23, 59, 59);  // Dec 31
+            }
+            
+            return { startDate, endDate };
+        }
+        
+        // Helper to parse dates flexibly
+        function parseDate(dateVal) {
+            if (!dateVal) return null;
+            if (dateVal instanceof Date) return dateVal;
+            const d = new Date(dateVal);
+            return isNaN(d.getTime()) ? null : d;
+        }
+        
+        // Profit & Loss Statement
+        async function generateProfitLossModal() {
+            const year = reportFilters.year || new Date().getFullYear();
+            const quarter = reportFilters.quarter || 'annual';
+            const cogsMethod = reportFilters.cogsMethod || 'actual';
+            
+            const { startDate, endDate } = getDateRangeForPeriod(year, quarter);
+            
+            // Fetch all data
+            const [salesResult, poResult, itemsResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getPurchaseOrders'),
+                apiCall('getItems')
+            ]);
+            
+            if (!salesResult?.data || !poResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            
+            // Filter sales by date
+            const salesInPeriod = salesResult.data.filter(s => {
+                const saleDate = parseDate(s.Sale_Date || s.SO_Date);
+                return saleDate && saleDate >= startDate && saleDate <= endDate;
+            });
+            
+            // Filter purchases by date
+            const purchasesInPeriod = poResult.data.filter(p => {
+                const poDate = parseDate(p.PO_Date);
+                return poDate && poDate >= startDate && poDate <= endDate;
+            });
+            
+            // Calculate Revenue (total sales)
+            let totalRevenue = 0;
+            salesInPeriod.forEach(s => {
+                totalRevenue += parseFloat(s.Total_Amount) || 0;
+            });
+            
+            // Calculate COGS based on method
+            let totalCOGS = 0;
+            
+            if (cogsMethod === 'actual') {
+                // COGS from actual purchase orders (INBOUND POs only)
+                purchasesInPeriod.forEach(p => {
+                    if (p.PO_Type !== 'OUTBOUND') {
+                        totalCOGS += parseFloat(p.Total_Amount) || 0;
+                    }
+                });
+            } else {
+                // COGS from standard costs based on units sold
+                for (const so of salesInPeriod) {
+                    const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                    if (linesResult?.data) {
+                        linesResult.data.forEach(line => {
+                            const item = items.find(i => i.Item_ID === line.Item_ID);
+                            const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
+                            const packageCost = parseFloat(item?.Package_Cost) || 0;
+                            const unitCost = packageCost / unitsPerPackage;
+                            const qty = parseInt(line.Quantity) || 0;
+                            totalCOGS += qty * unitCost;
+                        });
+                    }
+                }
+            }
+            
+            // Calculate Gross Profit
+            const grossProfit = totalRevenue - totalCOGS;
+            const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue * 100) : 0;
+            
+            // Period label
+            const periodLabel = quarter === 'annual' ? `Year ${year}` : `${quarter} ${year}`;
+            const cogsLabel = cogsMethod === 'actual' ? 'Actual Purchase Costs' : 'Standard Costs';
+            
+            let html = `
+                <h3 style="margin-top: 0;">📊 Profit & Loss Statement</h3>
+                <p style="color: #666; margin-bottom: 5px;">Period: <strong>${periodLabel}</strong></p>
+                <p style="color: #666; margin-bottom: 20px; font-size: 12px;">COGS Method: ${cogsLabel}</p>
+                
+                <div style="max-width: 500px; margin: 0 auto;">
+                    <table class="data-table" style="width: 100%;">
+                        <tbody>
+                            <tr style="background: #e8f5e9;">
+                                <td style="padding: 15px; font-weight: bold; font-size: 16px;">💰 REVENUE</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 16px; color: #2e7d32;">$${totalRevenue.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; padding-left: 30px; color: #666;">Sales Orders (${salesInPeriod.length})</td>
+                                <td style="padding: 12px; text-align: right;">$${totalRevenue.toFixed(2)}</td>
+                            </tr>
+                            
+                            <tr style="background: #ffebee;">
+                                <td style="padding: 15px; font-weight: bold; font-size: 16px;">📦 COST OF GOODS SOLD</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 16px; color: #c62828;">($${totalCOGS.toFixed(2)})</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; padding-left: 30px; color: #666;">
+                                    ${cogsMethod === 'actual' ? `Purchase Orders (${purchasesInPeriod.filter(p => p.PO_Type !== 'OUTBOUND').length})` : 'Standard unit costs × units sold'}
+                                </td>
+                                <td style="padding: 12px; text-align: right;">$${totalCOGS.toFixed(2)}</td>
+                            </tr>
+                            
+                            <tr style="background: linear-gradient(135deg, #667eea15, #764ba215); border-top: 3px solid #667eea;">
+                                <td style="padding: 20px; font-weight: bold; font-size: 18px;">📈 GROSS PROFIT</td>
+                                <td style="padding: 20px; text-align: right; font-weight: bold; font-size: 18px; color: ${grossProfit >= 0 ? '#2e7d32' : '#c62828'};">
+                                    $${grossProfit.toFixed(2)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; padding-left: 30px; color: #666;">Gross Margin</td>
+                                <td style="padding: 12px; text-align: right; font-weight: bold; color: ${grossMargin >= 20 ? '#2e7d32' : '#ff9800'};">${grossMargin.toFixed(1)}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px; font-size: 12px; color: #666;">
+                    <strong>Note:</strong> This is a simplified P&L showing gross profit only. Operating expenses, taxes, and net income are not tracked in this system.
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Annual Sales Summary
+        async function generateAnnualSalesSummaryModal() {
+            const year = parseInt(reportFilters.year) || new Date().getFullYear();
+            const { startDate, endDate } = getDateRangeForPeriod(year, 'annual');
+            
+            const salesResult = await apiCall('getSalesOrders');
+            if (!salesResult?.data) throw new Error('Failed to load sales data');
+            
+            // Filter by year
+            const salesInYear = salesResult.data.filter(s => {
+                const saleDate = parseDate(s.Sale_Date || s.SO_Date);
+                return saleDate && saleDate >= startDate && saleDate <= endDate;
+            });
+            
+            // Group by month
+            const byMonth = {};
+            for (let m = 0; m < 12; m++) {
+                byMonth[m] = { sales: 0, orders: 0, paid: 0 };
+            }
+            
+            salesInYear.forEach(s => {
+                const saleDate = parseDate(s.Sale_Date || s.SO_Date);
+                if (saleDate) {
+                    const month = saleDate.getMonth();
+                    byMonth[month].sales += parseFloat(s.Total_Amount) || 0;
+                    byMonth[month].orders++;
+                    byMonth[month].paid += parseFloat(s.Amount_Paid) || 0;
+                }
+            });
+            
+            // Group by customer for summary
+            const byCustomer = {};
+            salesInYear.forEach(s => {
+                const custId = s.Customer_ID;
+                if (!byCustomer[custId]) {
+                    byCustomer[custId] = { name: getCustomerName(custId), total: 0, orders: 0 };
+                }
+                byCustomer[custId].total += parseFloat(s.Total_Amount) || 0;
+                byCustomer[custId].orders++;
+            });
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            let totalSales = 0, totalOrders = 0, totalPaid = 0;
+            
+            let html = `
+                <h3 style="margin-top: 0;">📈 Annual Sales Summary - ${year}</h3>
+                <p style="color: #666; margin-bottom: 20px;">${salesInYear.length} orders in calendar year ${year}</p>
+                
+                <h4 style="margin: 20px 0 10px 0;">Monthly Breakdown</h4>
+                <div style="overflow-x: auto;"><table class="data-table">
+                    <thead><tr>
+                        <th>Month</th>
+                        <th style="text-align: right;">Orders</th>
+                        <th style="text-align: right;">Sales</th>
+                        <th style="text-align: right;">Collected</th>
+                    </tr></thead><tbody>`;
+            
+            for (let m = 0; m < 12; m++) {
+                const data = byMonth[m];
+                totalSales += data.sales;
+                totalOrders += data.orders;
+                totalPaid += data.paid;
+                
+                html += `<tr${data.orders === 0 ? ' style="color: #999;"' : ''}>
+                    <td>${monthNames[m]}</td>
+                    <td style="text-align: right;">${data.orders}</td>
+                    <td style="text-align: right;">$${data.sales.toFixed(2)}</td>
+                    <td style="text-align: right;">$${data.paid.toFixed(2)}</td>
+                </tr>`;
+            }
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td>TOTAL</td>
+                <td style="text-align: right;">${totalOrders}</td>
+                <td style="text-align: right;">$${totalSales.toFixed(2)}</td>
+                <td style="text-align: right;">$${totalPaid.toFixed(2)}</td>
+            </tr></tfoot></table></div>`;
+            
+            // Customer summary
+            html += `<h4 style="margin: 30px 0 10px 0;">Sales by Customer</h4>
+                <div style="overflow-x: auto;"><table class="data-table">
+                    <thead><tr>
+                        <th>Customer</th>
+                        <th style="text-align: right;">Orders</th>
+                        <th style="text-align: right;">Total Sales</th>
+                    </tr></thead><tbody>`;
+            
+            Object.entries(byCustomer)
+                .sort((a, b) => b[1].total - a[1].total)
+                .forEach(([id, data]) => {
+                    html += `<tr>
+                        <td>${data.name}</td>
+                        <td style="text-align: right;">${data.orders}</td>
+                        <td style="text-align: right;">$${data.total.toFixed(2)}</td>
+                    </tr>`;
+                });
+            
+            html += `</tbody></table></div>`;
+            
+            return html;
+        }
+        
+        // Annual Purchase Summary
+        async function generateAnnualPurchaseSummaryModal() {
+            const year = parseInt(reportFilters.year) || new Date().getFullYear();
+            const { startDate, endDate } = getDateRangeForPeriod(year, 'annual');
+            
+            const poResult = await apiCall('getPurchaseOrders');
+            if (!poResult?.data) throw new Error('Failed to load PO data');
+            
+            // Filter by year
+            const posInYear = poResult.data.filter(p => {
+                const poDate = parseDate(p.PO_Date);
+                return poDate && poDate >= startDate && poDate <= endDate;
+            });
+            
+            // Group by month
+            const byMonth = {};
+            for (let m = 0; m < 12; m++) {
+                byMonth[m] = { total: 0, orders: 0, paid: 0 };
+            }
+            
+            posInYear.forEach(p => {
+                const poDate = parseDate(p.PO_Date);
+                if (poDate) {
+                    const month = poDate.getMonth();
+                    byMonth[month].total += parseFloat(p.Total_Amount) || 0;
+                    byMonth[month].orders++;
+                    byMonth[month].paid += parseFloat(p.Amount_Paid) || 0;
+                }
+            });
+            
+            // Group by supplier
+            const bySupplier = {};
+            posInYear.forEach(p => {
+                const suppId = p.Supplier_ID;
+                if (!bySupplier[suppId]) {
+                    bySupplier[suppId] = { name: getSupplierName(suppId), total: 0, orders: 0 };
+                }
+                bySupplier[suppId].total += parseFloat(p.Total_Amount) || 0;
+                bySupplier[suppId].orders++;
+            });
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            let totalPurchases = 0, totalOrders = 0, totalPaid = 0;
+            
+            let html = `
+                <h3 style="margin-top: 0;">📉 Annual Purchase Summary - ${year}</h3>
+                <p style="color: #666; margin-bottom: 20px;">${posInYear.length} purchase orders in calendar year ${year}</p>
+                
+                <h4 style="margin: 20px 0 10px 0;">Monthly Breakdown</h4>
+                <div style="overflow-x: auto;"><table class="data-table">
+                    <thead><tr>
+                        <th>Month</th>
+                        <th style="text-align: right;">POs</th>
+                        <th style="text-align: right;">Purchases</th>
+                        <th style="text-align: right;">Paid</th>
+                    </tr></thead><tbody>`;
+            
+            for (let m = 0; m < 12; m++) {
+                const data = byMonth[m];
+                totalPurchases += data.total;
+                totalOrders += data.orders;
+                totalPaid += data.paid;
+                
+                html += `<tr${data.orders === 0 ? ' style="color: #999;"' : ''}>
+                    <td>${monthNames[m]}</td>
+                    <td style="text-align: right;">${data.orders}</td>
+                    <td style="text-align: right;">$${data.total.toFixed(2)}</td>
+                    <td style="text-align: right;">$${data.paid.toFixed(2)}</td>
+                </tr>`;
+            }
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td>TOTAL</td>
+                <td style="text-align: right;">${totalOrders}</td>
+                <td style="text-align: right;">$${totalPurchases.toFixed(2)}</td>
+                <td style="text-align: right;">$${totalPaid.toFixed(2)}</td>
+            </tr></tfoot></table></div>`;
+            
+            // Supplier summary
+            html += `<h4 style="margin: 30px 0 10px 0;">Purchases by Supplier</h4>
+                <div style="overflow-x: auto;"><table class="data-table">
+                    <thead><tr>
+                        <th>Supplier</th>
+                        <th style="text-align: right;">POs</th>
+                        <th style="text-align: right;">Total Purchases</th>
+                    </tr></thead><tbody>`;
+            
+            Object.entries(bySupplier)
+                .sort((a, b) => b[1].total - a[1].total)
+                .forEach(([id, data]) => {
+                    html += `<tr>
+                        <td>${data.name}</td>
+                        <td style="text-align: right;">${data.orders}</td>
+                        <td style="text-align: right;">$${data.total.toFixed(2)}</td>
+                    </tr>`;
+                });
+            
+            html += `</tbody></table></div>`;
+            
+            return html;
+        }
+        
+        // Inventory Valuation
+        async function generateInventoryValuationModal() {
+            const itemsResult = await apiCall('getItems');
+            if (!itemsResult?.data) throw new Error('Failed to load items');
+            
+            let items = itemsResult.data;
+            
+            // Filter by supplier if selected
+            if (reportFilters.supplier) {
+                items = items.filter(i => i.Supplier_ID === reportFilters.supplier);
+            }
+            
+            const today = new Date().toLocaleDateString();
+            
+            let html = `
+                <h3 style="margin-top: 0;">💰 Inventory Valuation Report</h3>
+                <p style="color: #666; margin-bottom: 20px;">As of ${today}</p>
+                
+                <div style="overflow-x: auto;"><table class="data-table">
+                    <thead><tr>
+                        <th>SKU</th>
+                        <th>Description</th>
+                        <th>Supplier</th>
+                        <th style="text-align: right;">Qty</th>
+                        <th style="text-align: right;">Unit Cost</th>
+                        <th style="text-align: right;">Ext. Value</th>
+                    </tr></thead><tbody>`;
+            
+            let totalUnits = 0;
+            let totalValue = 0;
+            let itemCount = 0;
+            
+            items.forEach(item => {
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPerPkg = parseInt(item.Units_Per_Package) || 1;
+                const unitCost = packageCost / unitsPerPkg;
+                const extValue = qty * unitCost;
+                
+                totalUnits += qty;
+                totalValue += extValue;
+                itemCount++;
+                
+                html += `<tr>
+                    <td>${item.SKU || '-'}</td>
+                    <td>${item.Item_Description || '-'}</td>
+                    <td>${getSupplierName(item.Supplier_ID)}</td>
+                    <td style="text-align: right; color: ${qty < 0 ? '#c62828' : '#333'};">${qty}</td>
+                    <td style="text-align: right;">$${unitCost.toFixed(2)}</td>
+                    <td style="text-align: right;">$${extValue.toFixed(2)}</td>
+                </tr>`;
+            });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="3">TOTAL (${itemCount} items)</td>
+                <td style="text-align: right;">${totalUnits}</td>
+                <td></td>
+                <td style="text-align: right; color: #2e7d32;">$${totalValue.toFixed(2)}</td>
+            </tr></tfoot></table></div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #667eea15, #764ba215); border-radius: 8px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; text-align: center;">
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold; color: #667eea;">${itemCount}</div>
+                        <div style="color: #666; font-size: 12px;">Total SKUs</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold; color: #667eea;">${totalUnits.toLocaleString()}</div>
+                        <div style="color: #666; font-size: 12px;">Total Units</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">$${totalValue.toFixed(2)}</div>
+                        <div style="color: #666; font-size: 12px;">Total Value at Cost</div>
+                    </div>
+                </div>
+            </div>`;
+            
+            return html;
+        }
+        
+        // Cash Flow Summary
+        async function generateCashFlowSummaryModal() {
+            const year = parseInt(reportFilters.year) || new Date().getFullYear();
+            const quarter = reportFilters.quarter || 'annual';
+            
+            const { startDate, endDate } = getDateRangeForPeriod(year, quarter);
+            
+            const [salesResult, poResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getPurchaseOrders')
+            ]);
+            
+            if (!salesResult?.data || !poResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            // Filter by period
+            const salesInPeriod = salesResult.data.filter(s => {
+                const d = parseDate(s.Sale_Date || s.SO_Date);
+                return d && d >= startDate && d <= endDate;
+            });
+            
+            const posInPeriod = poResult.data.filter(p => {
+                const d = parseDate(p.PO_Date);
+                return d && d >= startDate && d <= endDate;
+            });
+            
+            // Calculate totals
+            let totalSalesInvoiced = 0, totalSalesCollected = 0;
+            let totalPurchasesInvoiced = 0, totalPurchasesPaid = 0;
+            
+            salesInPeriod.forEach(s => {
+                totalSalesInvoiced += parseFloat(s.Total_Amount) || 0;
+                totalSalesCollected += parseFloat(s.Amount_Paid) || 0;
+            });
+            
+            posInPeriod.forEach(p => {
+                totalPurchasesInvoiced += parseFloat(p.Total_Amount) || 0;
+                totalPurchasesPaid += parseFloat(p.Amount_Paid) || 0;
+            });
+            
+            const outstandingReceivables = totalSalesInvoiced - totalSalesCollected;
+            const outstandingPayables = totalPurchasesInvoiced - totalPurchasesPaid;
+            const netCashFlow = totalSalesCollected - totalPurchasesPaid;
+            
+            const periodLabel = quarter === 'annual' ? `Year ${year}` : `${quarter} ${year}`;
+            
+            let html = `
+                <h3 style="margin-top: 0;">💵 Cash Flow Summary</h3>
+                <p style="color: #666; margin-bottom: 20px;">Period: <strong>${periodLabel}</strong></p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    
+                    <!-- Cash In -->
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; border-left: 4px solid #2e7d32;">
+                        <h4 style="margin: 0 0 15px 0; color: #2e7d32;">📥 Cash In (Collections)</h4>
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Sales Invoiced</td>
+                                <td style="text-align: right;">$${totalSalesInvoiced.toFixed(2)}</td>
+                            </tr>
+                            <tr style="font-weight: bold; font-size: 18px;">
+                                <td style="padding: 8px 0; color: #2e7d32;">Collected</td>
+                                <td style="text-align: right; color: #2e7d32;">$${totalSalesCollected.toFixed(2)}</td>
+                            </tr>
+                            <tr style="border-top: 1px solid #c8e6c9;">
+                                <td style="padding: 8px 0; color: #666;">Outstanding A/R</td>
+                                <td style="text-align: right; color: #ff9800;">$${outstandingReceivables.toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Cash Out -->
+                    <div style="background: #ffebee; padding: 20px; border-radius: 12px; border-left: 4px solid #c62828;">
+                        <h4 style="margin: 0 0 15px 0; color: #c62828;">📤 Cash Out (Payments)</h4>
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Purchases Invoiced</td>
+                                <td style="text-align: right;">$${totalPurchasesInvoiced.toFixed(2)}</td>
+                            </tr>
+                            <tr style="font-weight: bold; font-size: 18px;">
+                                <td style="padding: 8px 0; color: #c62828;">Paid Out</td>
+                                <td style="text-align: right; color: #c62828;">$${totalPurchasesPaid.toFixed(2)}</td>
+                            </tr>
+                            <tr style="border-top: 1px solid #ffcdd2;">
+                                <td style="padding: 8px 0; color: #666;">Outstanding A/P</td>
+                                <td style="text-align: right; color: #ff9800;">$${outstandingPayables.toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Net Cash Flow -->
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 25px; border-radius: 12px; color: white; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">NET CASH FLOW</div>
+                    <div style="font-size: 36px; font-weight: bold;">
+                        ${netCashFlow >= 0 ? '+' : ''}$${netCashFlow.toFixed(2)}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">Collections minus Payments</div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0;">Summary</h4>
+                    <table class="data-table">
+                        <tr>
+                            <td>Total Sales Orders</td>
+                            <td style="text-align: right;">${salesInPeriod.length}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Purchase Orders</td>
+                            <td style="text-align: right;">${posInPeriod.length}</td>
+                        </tr>
+                        <tr>
+                            <td>Collection Rate</td>
+                            <td style="text-align: right;">${totalSalesInvoiced > 0 ? (totalSalesCollected / totalSalesInvoiced * 100).toFixed(1) : 0}%</td>
+                        </tr>
+                        <tr>
+                            <td>Payment Rate</td>
+                            <td style="text-align: right;">${totalPurchasesInvoiced > 0 ? (totalPurchasesPaid / totalPurchasesInvoiced * 100).toFixed(1) : 0}%</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
             
             return html;
         }
