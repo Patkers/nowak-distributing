@@ -4461,18 +4461,27 @@
             let calculatedTotal = 0;
             
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                const itemId = row.querySelector('.po-item').value;
                 const qty = parseInt(row.querySelector('.po-qty').value) || 0;
                 const cost = parseFloat(row.querySelector('.po-cost').value) || 0;
                 const lineTotal = qty * cost;
                 
-                lineItems.push({
-                    itemId: row.querySelector('.po-item').value,
-                    quantity: qty,
-                    unitCost: cost
-                });
-                
-                calculatedTotal += lineTotal;
+                // Only add valid line items (has item selected, qty > 0)
+                if (itemId && qty > 0) {
+                    lineItems.push({
+                        itemId: itemId,
+                        quantity: qty,
+                        unitCost: cost
+                    });
+                    calculatedTotal += lineTotal;
+                }
             });
+
+            // Validate at least one line item
+            if (lineItems.length === 0) {
+                alert('⚠️ Please add at least one item to the purchase order.\n\nSelect an item and enter a quantity before saving.');
+                return;
+            }
 
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
@@ -4587,11 +4596,38 @@
                 return;
             }
 
-            // Calculate totals
+            // Calculate totals first
             let totalAmount = 0;
             let totalPaid = 0;
             
-            let html = '<table class="data-table" id="purchasesDataTable"><thead><tr>';
+            orders.forEach(po => {
+                totalAmount += parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
+                totalPaid += parseFloat(po.Amount_Paid) || 0;
+            });
+            const balance = totalAmount - totalPaid;
+            
+            // Summary boxes
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
+                    <div style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #f57c00;">
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Total Purchases</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #f57c00;">$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 12px; color: #888;">${orders.length} orders</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #388e3c;">
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Paid</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #388e3c;">$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 12px; color: #888;">${((totalPaid/totalAmount)*100 || 0).toFixed(0)}% paid</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${balance > 0 ? '#ffebee, #ffcdd2' : '#e8f5e9, #c8e6c9'}); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid ${balance > 0 ? '#c62828' : '#388e3c'};">
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Outstanding</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${balance > 0 ? '#c62828' : '#388e3c'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 12px; color: #888;">${balance > 0 ? 'to pay' : 'all paid!'}</div>
+                    </div>
+                </div>
+            `;
+            
+            html += '<table class="data-table" id="purchasesDataTable"><thead><tr>';
             html += '<th>Invoice #</th><th>Supplier</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -4600,9 +4636,6 @@
                 const paymentStatus = po.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(po.Amount_Paid) || 0;
                 const total = parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
-                
-                totalAmount += total;
-                totalPaid += amountPaid;
                 
                 // Color code payment status
                 let paymentBadge = '';
@@ -4628,7 +4661,6 @@
             });
 
             // Add totals row
-            const balance = totalAmount - totalPaid;
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
                 <td colspan="4" style="text-align: right; padding-right: 20px;">TOTALS:</td>
                 <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -6152,18 +6184,27 @@
             let calculatedTotal = 0;
             
             document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
+                const itemId = row.querySelector('.so-item').value;
                 const qty = parseInt(row.querySelector('.so-qty').value) || 0;
                 const price = parseFloat(row.querySelector('.so-price').value) || 0;
                 const lineTotal = qty * price;
                 
-                lineItems.push({
-                    itemId: row.querySelector('.so-item').value,
-                    quantity: qty,
-                    unitPrice: price
-                });
-                
-                calculatedTotal += lineTotal;
+                // Only add valid line items (has item selected, qty > 0)
+                if (itemId && qty > 0) {
+                    lineItems.push({
+                        itemId: itemId,
+                        quantity: qty,
+                        unitPrice: price
+                    });
+                    calculatedTotal += lineTotal;
+                }
             });
+
+            // Validate at least one line item
+            if (lineItems.length === 0) {
+                alert('⚠️ Please add at least one item to the sale.\n\nSelect an item and enter a quantity before saving.');
+                return;
+            }
 
             // LOCK - Prevent double submit
             isSavingSale = true;
@@ -6336,7 +6377,35 @@
             // Cache sales for row click
             window.cachedSales = orders;
             
-            let html = '<table class="data-table" id="salesDataTable"><thead><tr>';
+            // Calculate totals first
+            orders.forEach(so => {
+                totalAmount += parseFloat(so.Total_Amount || so.Order_Total) || 0;
+                totalPaid += parseFloat(so.Amount_Paid) || 0;
+            });
+            const balance = totalAmount - totalPaid;
+            
+            // Summary boxes
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
+                    <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #1976d2;">
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Total Sales</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #1976d2;">$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 12px; color: #888;">${orders.length} orders</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #388e3c;">
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Collected</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #388e3c;">$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 12px; color: #888;">${((totalPaid/totalAmount)*100 || 0).toFixed(0)}% collected</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${balance > 0 ? '#ffebee, #ffcdd2' : '#e8f5e9, #c8e6c9'}); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid ${balance > 0 ? '#c62828' : '#388e3c'};">
+                        <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Outstanding</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${balance > 0 ? '#c62828' : '#388e3c'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 12px; color: #888;">${balance > 0 ? 'to collect' : 'all paid!'}</div>
+                    </div>
+                </div>
+            `;
+            
+            html += '<table class="data-table" id="salesDataTable"><thead><tr>';
             html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -6346,9 +6415,6 @@
                 const amountPaid = parseFloat(so.Amount_Paid) || 0;
                 const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
                 const invoiceNum = so.Invoice_Number || so.SO_ID;
-                
-                totalAmount += total;
-                totalPaid += amountPaid;
                 
                 // Color code payment status badge
                 let paymentBadge = '';
@@ -6371,7 +6437,6 @@
             });
 
             // Add totals row
-            const balance = totalAmount - totalPaid;
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
                 <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
                 <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -8310,8 +8375,8 @@
                 footer: document.getElementById('invoiceFooter')?.value || 'Thank you for your business!'
             };
             
-            // Get current theme colors
-            const themeColors = getCurrentThemeColors();
+            // Use professional navy color for all reports (not theme-dependent)
+            const reportColor = '#1a365d';
             
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -8397,11 +8462,11 @@
                         .report-header {
                             text-align: center;
                             margin-bottom: 30px;
-                            border-bottom: 3px solid ${themeColors.primary};
+                            border-bottom: 3px solid ${reportColor};
                             padding-bottom: 20px;
                         }
                         .report-header h1 {
-                            color: ${themeColors.primary};
+                            color: ${reportColor};
                             margin: 0 0 5px 0;
                             font-size: 24pt;
                         }
@@ -8415,61 +8480,30 @@
                             font-size: 11pt;
                         }
                         
-                        /* Company Info Box - mobile friendly */
+                        /* Company Info Box - simplified for mobile */
                         .company-info {
-                            background: ${themeColors.primary}10;
-                            border: 1px solid ${themeColors.primary}30;
+                            background: #f8f9fa;
+                            border: 1px solid #dee2e6;
+                            border-left: 4px solid ${reportColor};
                             border-radius: 8px;
                             padding: 15px;
                             margin-bottom: 25px;
-                            display: block;
-                            width: 100%;
-                            max-width: 100%;
-                            overflow: visible;
-                            box-sizing: border-box;
-                        }
-                        .company-info .left,
-                        .company-info .right {
-                            display: block;
-                            width: 100%;
-                            max-width: 100%;
-                            margin-bottom: 15px;
-                            overflow: visible;
-                        }
-                        .company-info .right {
-                            text-align: left;
-                            margin-bottom: 0;
                         }
                         .company-info h3 {
-                            margin: 0 0 8px 0;
-                            color: ${themeColors.primary};
-                            font-size: 11pt;
+                            margin: 0 0 10px 0;
+                            color: ${reportColor};
+                            font-size: 12pt;
                         }
                         .company-info p {
-                            margin: 2px 0;
-                            font-size: 10pt;
-                            word-wrap: break-word;
-                            overflow-wrap: break-word;
+                            margin: 4px 0;
+                            font-size: 11pt;
+                            line-height: 1.4;
                         }
-                        
-                        /* Desktop: side by side */
-                        @media (min-width: 600px) {
-                            body { padding: 0.5in; }
-                            .company-info {
-                                display: flex;
-                                justify-content: space-between;
-                                flex-wrap: wrap;
-                                gap: 20px;
-                            }
-                            .company-info .left,
-                            .company-info .right {
-                                flex: 1;
-                                min-width: 200px;
-                                margin-bottom: 0;
-                            }
-                            .company-info .right {
-                                text-align: right;
-                            }
+                        .company-info .section {
+                            margin-bottom: 15px;
+                        }
+                        .company-info .section:last-child {
+                            margin-bottom: 0;
                         }
                         
                         /* Tables */
@@ -8480,7 +8514,7 @@
                             font-size: 10pt;
                         }
                         th { 
-                            background: ${themeColors.primary}; 
+                            background: ${reportColor}; 
                             color: white; 
                             padding: 10px 8px; 
                             text-align: left;
@@ -8495,7 +8529,7 @@
                             background: #f5f5f5; 
                         }
                         tfoot td {
-                            border-top: 2px solid ${themeColors.primary};
+                            border-top: 2px solid ${reportColor};
                         }
                         
                         /* Dashboard Cards (for print) */
@@ -8507,7 +8541,7 @@
                         }
                         .dash-card {
                             border: 1px solid #ddd;
-                            border-left: 4px solid ${themeColors.primary};
+                            border-left: 4px solid ${reportColor};
                             padding: 10px;
                             border-radius: 6px;
                         }
@@ -8560,7 +8594,7 @@
                         }
                         
                         /* General content */
-                        h3, h4 { color: ${themeColors.primary}; margin: 15px 0 10px 0; }
+                        h3, h4 { color: ${reportColor}; margin: 15px 0 10px 0; }
                         p { margin: 5px 0; }
                     </style>
                 </head>
@@ -8580,7 +8614,7 @@
                     </div>
                     
                     <div class="company-info">
-                        <div class="left">
+                        <div class="section">
                             <h3>Prepared By</h3>
                             <p><strong>${settings.companyName}</strong></p>
                             ${settings.contactName ? `<p>${settings.contactName}</p>` : ''}
@@ -8588,11 +8622,13 @@
                             ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
                             ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
                         </div>
-                        <div class="right">
+                        ${(settings.phone || settings.email) ? `
+                        <div class="section">
                             <h3>Contact</h3>
                             ${settings.phone ? `<p>📞 ${settings.phone}</p>` : ''}
                             ${settings.email ? `<p>✉️ ${settings.email}</p>` : ''}
                         </div>
+                        ` : ''}
                     </div>
                     
                     ${content.innerHTML}
