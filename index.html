@@ -1109,6 +1109,19 @@
             <h2>System Configuration</h2>
             <div class="status" id="configStatus"></div>
             
+            <!-- How-To Guide Section -->
+            <div style="margin-bottom: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3); color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin: 0 0 8px 0; font-size: 20px;">📚 How-To Guide</h3>
+                        <p style="margin: 0; opacity: 0.95; font-size: 14px;">Complete instructions for using the ERP system</p>
+                    </div>
+                    <button onclick="openHowToGuide()" style="background: white; color: var(--primary, #667eea); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'">
+                        📖 Open Guide
+                    </button>
+                </div>
+            </div>
+            
             <!-- Theme Selection - First and prominent -->
             <div style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1500,6 +1513,8 @@
             
             <button class="btn" onclick="loadItems()">🔄 Refresh</button>
             <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
+            <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
+            <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -2695,6 +2710,388 @@
             
             <!-- Report Container -->
             <div id="reportContainer"></div>
+        </div>
+    </div>
+
+    <!-- How-To Guide Modal -->
+    <div id="howToGuideModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+        <div style="max-width: 900px; margin: 40px auto; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px 30px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 28px;">📚 Nowak Distributing ERP - How-To Guide</h2>
+                    <p style="margin: 0; opacity: 0.95; font-size: 14px;">Complete instructions for using the system</p>
+                </div>
+                <button onclick="closeHowToGuide()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">×</button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div style="display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; background: #f8f9fa; padding: 0 20px; overflow-x: auto;">
+                <button class="guide-tab active" onclick="showGuideSection('getting-started')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    🚀 Getting Started
+                </button>
+                <button class="guide-tab" onclick="showGuideSection('suppliers')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    🏭 Suppliers
+                </button>
+                <button class="guide-tab" onclick="showGuideSection('items')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    📦 Items
+                </button>
+                <button class="guide-tab" onclick="showGuideSection('customers')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    👥 Customers
+                </button>
+                <button class="guide-tab" onclick="showGuideSection('orders')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    📝 Orders
+                </button>
+                <button class="guide-tab" onclick="showGuideSection('advanced')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    ⚡ Advanced
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px; max-height: 600px; overflow-y: auto;">
+                
+                <!-- Getting Started Section -->
+                <div id="guide-getting-started" class="guide-section">
+                    <h3 style="color: #667eea; margin-top: 0;">🚀 Getting Started</h3>
+                    
+                    <div style="background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                        <strong>Welcome to Nowak Distributing ERP!</strong><br>
+                        This system helps you manage suppliers, inventory, customers, and orders all in one place.
+                    </div>
+
+                    <h4>🏠 Home / Landing Page</h4>
+                    <ul style="line-height: 1.8;">
+                        <li>The <strong>Home tab</strong> is your dashboard - click any card to navigate to that section</li>
+                        <li>Each card shows a different area of the system</li>
+                        <li>Perfect for showing to customers (no data visible)</li>
+                    </ul>
+
+                    <h4>🎨 Choosing a Theme</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Settings</strong> tab</li>
+                        <li>Click the <strong>Theme</strong> box</li>
+                        <li>Browse 280+ themes (sports teams, colors, etc.)</li>
+                        <li>Click any theme to apply it instantly</li>
+                    </ol>
+
+                    <h4>📊 Navigation Tips</h4>
+                    <ul style="line-height: 1.8;">
+                        <li>Use the <strong>tabs at the top</strong> to switch between sections</li>
+                        <li>Click <strong>🔙 Back button</strong> (bottom-left) to return to previous page</li>
+                        <li>The active tab is highlighted</li>
+                    </ul>
+                </div>
+
+                <!-- Suppliers Section -->
+                <div id="guide-suppliers" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">🏭 Managing Suppliers</h3>
+
+                    <h4>➕ Adding a New Supplier</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Suppliers</strong> tab</li>
+                        <li>Click <strong>➕ Add Supplier</strong></li>
+                        <li>Fill in:
+                            <ul>
+                                <li><strong>Supplier Name</strong> (required)</li>
+                                <li><strong>Contact Name</strong></li>
+                                <li><strong>Email & Phone</strong></li>
+                                <li><strong>Address</strong></li>
+                                <li><strong>Payment Terms</strong> (Net 30, Net 60, etc.)</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>💾 Save</strong></li>
+                    </ol>
+
+                    <h4>✏️ Editing a Supplier</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Find the supplier in the list</li>
+                        <li>Click the <strong>✏️ Edit</strong> button</li>
+                        <li>Update any information</li>
+                        <li>Click <strong>💾 Save Changes</strong></li>
+                    </ol>
+
+                    <h4>🗑️ Deleting a Supplier</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Click <strong>🗑️ Delete</strong> on the supplier</li>
+                        <li>Confirm deletion</li>
+                        <li><strong>Warning:</strong> You cannot delete suppliers with existing items or orders</li>
+                    </ol>
+
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                        <strong>💡 Tip:</strong> Keep supplier information up-to-date for accurate purchase orders and invoicing.
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div id="guide-items" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">📦 Managing Items</h3>
+
+                    <h4>➕ Adding a New Item</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Items</strong> tab</li>
+                        <li>Click <strong>➕ Add Item</strong></li>
+                        <li>Fill in:
+                            <ul>
+                                <li><strong>SKU</strong> - Your product code</li>
+                                <li><strong>Description</strong> - What is it?</li>
+                                <li><strong>Supplier</strong> - Who do you buy from?</li>
+                                <li><strong>Cost</strong> - What you pay</li>
+                                <li><strong>Sell Price</strong> - What you charge</li>
+                                <li><strong>Qty On Hand</strong> - Current stock</li>
+                                <li><strong>Reorder Point</strong> - When to reorder</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>💾 Save</strong></li>
+                    </ol>
+
+                    <h4>📥 Bulk Import Items (from Excel)</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Click <strong>📥 Download Items</strong> button</li>
+                        <li>Save the PDF, then convert to Excel (use ilovepdf.com)</li>
+                        <li>Edit prices, quantities, etc. in Excel</li>
+                        <li>Click <strong>📤 Upload Items</strong></li>
+                        <li>Select your Excel file</li>
+                        <li>Choose mode: <strong>Update Existing + Add New</strong> OR <strong>Full Refresh</strong></li>
+                        <li>Click <strong>🔍 Preview Changes</strong></li>
+                        <li>Review what will change</li>
+                        <li>Click <strong>✅ Commit Changes</strong> or <strong>❌ Cancel</strong></li>
+                    </ol>
+
+                    <h4>🔍 Filtering Items</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Search:</strong> Type SKU or description</li>
+                        <li><strong>Supplier:</strong> Filter by supplier</li>
+                        <li><strong>Stock Status:</strong> Low Stock, Negative, On Order, Needs Reorder</li>
+                        <li><strong>Active/Archived:</strong> Show only active items</li>
+                    </ul>
+
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                        <strong>💡 Tip:</strong> Use the bulk import feature for price updates or inventory counts!
+                    </div>
+                </div>
+
+                <!-- Customers Section -->
+                <div id="guide-customers" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">👥 Managing Customers</h3>
+
+                    <h4>➕ Adding a New Customer</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Customers</strong> tab</li>
+                        <li>Click <strong>➕ Add Customer</strong></li>
+                        <li>Fill in:
+                            <ul>
+                                <li><strong>Customer Name</strong></li>
+                                <li><strong>Contact Name</strong></li>
+                                <li><strong>Email & Phone</strong></li>
+                                <li><strong>Billing Address</strong></li>
+                                <li><strong>Shipping Address</strong> (if different)</li>
+                                <li><strong>Payment Terms</strong></li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>💾 Save</strong></li>
+                    </ol>
+
+                    <h4>✏️ Editing a Customer</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Find customer in the list</li>
+                        <li>Click <strong>✏️ Edit</strong></li>
+                        <li>Update information</li>
+                        <li>Click <strong>💾 Save Changes</strong></li>
+                    </ol>
+
+                    <div style="background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                        <strong>📝 Note:</strong> Customer information is used for sales orders and invoices.
+                    </div>
+                </div>
+
+                <!-- Orders Section -->
+                <div id="guide-orders" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">📝 Managing Orders</h3>
+
+                    <h4>📥 Creating a Purchase Order</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Create PO</strong> tab</li>
+                        <li>Select <strong>Supplier</strong></li>
+                        <li>Click <strong>➕ Add Line Item</strong></li>
+                        <li>Select <strong>Item</strong> and enter <strong>Quantity</strong></li>
+                        <li>Add more line items as needed</li>
+                        <li>Review <strong>Total Amount</strong></li>
+                        <li>Click <strong>💾 Save Purchase Order</strong></li>
+                    </ol>
+
+                    <h4>💰 Creating a Sales Order</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Sales</strong> tab</li>
+                        <li>Click <strong>➕ Create Sales Order</strong></li>
+                        <li>Select <strong>Customer</strong></li>
+                        <li>Add line items (items and quantities)</li>
+                        <li>Review total</li>
+                        <li>Click <strong>💾 Save</strong></li>
+                    </ol>
+
+                    <h4>✅ Receiving a Purchase Order</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Purchases</strong> tab</li>
+                        <li>Find the PO</li>
+                        <li>Click <strong>👁️ View</strong></li>
+                        <li>Change status to <strong>Received</strong></li>
+                        <li>Inventory automatically updates!</li>
+                    </ol>
+
+                    <h4>🚫 Voiding an Order</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Open the order</li>
+                        <li>Change status to <strong>Voided</strong></li>
+                        <li>Inventory reverses automatically</li>
+                    </ol>
+
+                    <h4>🖨️ Printing Orders</h4>
+                    <ul style="line-height: 1.8;">
+                        <li>Open any order</li>
+                        <li>Click <strong>🖨️ Print</strong></li>
+                        <li>Print matches your selected theme!</li>
+                    </ul>
+
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                        <strong>💡 Tip:</strong> Status changes automatically update inventory counts.
+                    </div>
+                </div>
+
+                <!-- Advanced Section -->
+                <div id="guide-advanced" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">⚡ Advanced Features</h3>
+
+                    <h4>📊 Inventory Management</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Manual Adjustments:</strong> Add/remove inventory manually</li>
+                        <li><strong>Audit Trail:</strong> See all inventory changes with dates</li>
+                        <li><strong>Low Stock Alerts:</strong> Filter by items below reorder point</li>
+                    </ul>
+
+                    <h4>🎯 Price Simulator</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Price Sim</strong> tab</li>
+                        <li>Select an item</li>
+                        <li>Try different sell prices</li>
+                        <li>See profit margin and revenue impact</li>
+                        <li>Apply new price if desired</li>
+                    </ol>
+
+                    <h4>📈 Reports</h4>
+                    <p><strong>Available Reports:</strong></p>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Low Stock Report:</strong> Items below reorder point</li>
+                        <li><strong>Supplier Report:</strong> All items by supplier</li>
+                        <li><strong>Customer Report:</strong> Sales by customer</li>
+                        <li><strong>Inventory Value:</strong> Total inventory cost</li>
+                    </ul>
+
+                    <h4>💾 Backup & Data Access</h4>
+                    <ol style="line-height: 1.8;">
+                        <li>Go to <strong>Settings</strong> tab</li>
+                        <li>Click <strong>📥 Open Google Sheet</strong></li>
+                        <li>Access raw data directly</li>
+                        <li>Make backups as needed</li>
+                    </ol>
+
+                    <h4>🎨 Customization</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>280+ Themes:</strong> NFL, NHL, MLB teams + colors</li>
+                        <li><strong>Print Templates:</strong> Auto-match theme colors</li>
+                        <li><strong>Landing Page:</strong> Customer-safe first screen</li>
+                    </ul>
+
+                    <div style="background: #d1f2eb; border-left: 4px solid #28a745; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                        <strong>✅ Pro Tip:</strong> Regularly backup your Google Sheet and use the bulk import for major updates!
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div style="background: #f8f9fa; padding: 20px 30px; border-radius: 0 0 16px 16px; border-top: 1px solid #e0e0e0; text-align: center; color: #666;">
+                <p style="margin: 0; font-size: 14px;">Need more help? Contact support or refer to the Google Sheet for raw data access.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Items Modal -->
+    <div id="uploadItemsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+        <div style="max-width: 700px; margin: 60px auto; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0; color: #667eea;">📤 Upload Items - Bulk Import</h2>
+                <button onclick="closeUploadItemsModal()" style="background: #f44336; border: none; color: white; font-size: 24px; width: 35px; height: 35px; border-radius: 6px; cursor: pointer;">×</button>
+            </div>
+
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <strong>⚠️ Important Instructions:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px; line-height: 1.7;">
+                    <li><strong>DO NOT modify the Item_ID column</strong> - This is your primary key</li>
+                    <li>You can edit SKU, Description, Supplier_ID, Cost, Sell_Price, quantities, Status</li>
+                    <li>To add new items, leave Item_ID blank or type "NEW"</li>
+                    <li><strong>BACKUP RECOMMENDED:</strong> Download a copy before uploading</li>
+                    <li>Accepted formats: Excel (.xlsx, .xls) or CSV (.csv)</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Select File:</label>
+                <input type="file" id="uploadItemsFile" accept=".xlsx,.xls,.csv" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 12px; font-weight: 600;">Upload Mode:</label>
+                
+                <label style="display: block; padding: 15px; border: 2px solid #28a745; border-radius: 8px; margin-bottom: 10px; cursor: pointer; background: #f0f7ff;">
+                    <input type="radio" name="uploadMode" value="update-add" checked style="margin-right: 10px;">
+                    <strong style="color: #28a745;">✅ Update Existing + Add New (Recommended)</strong>
+                    <div style="margin-left: 28px; margin-top: 5px; font-size: 13px; color: #666;">
+                        • Matches on Item_ID<br>
+                        • Updates existing items<br>
+                        • Adds new items if Item_ID is blank or "NEW"<br>
+                        • Safe - does not delete anything
+                    </div>
+                </label>
+
+                <label style="display: block; padding: 15px; border: 2px solid #f44336; border-radius: 8px; cursor: pointer; background: #ffebee;">
+                    <input type="radio" name="uploadMode" value="full-refresh" style="margin-right: 10px;">
+                    <strong style="color: #f44336;">⚠️ Full Refresh (DANGER)</strong>
+                    <div style="margin-left: 28px; margin-top: 5px; font-size: 13px; color: #666;">
+                        • <strong>DELETES ALL existing items</strong><br>
+                        • Replaces with uploaded file<br>
+                        • Requires 3 confirmations<br>
+                        • Use with extreme caution!
+                    </div>
+                </label>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="previewItemsUpload()" style="background: #17a2b8; width: 100%; padding: 15px; font-size: 16px;">
+                    🔍 Preview Changes
+                </button>
+                <button class="btn btn-secondary" onclick="closeUploadItemsModal()" style="width: 100%; margin-top: 10px;">
+                    Cancel
+                </button>
+            </div>
+
+            <div id="uploadItemsPreview" style="margin-top: 20px; display: none;">
+                <h3 style="color: #667eea; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;">📊 Preview Changes</h3>
+                <div id="uploadItemsSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 15px 0;"></div>
+                <div id="uploadItemsPreviewContent" style="max-height: 400px; overflow-y: auto; background: #f5f5f5; padding: 12px; border-radius: 8px; border: 2px solid #667eea; font-size: 13px;"></div>
+                
+                <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <strong>⚠️ Review carefully before committing!</strong> Once you click "Commit Changes", the database will be updated.
+                </div>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn" onclick="commitItemsUpload()" style="background: #28a745; flex: 1; padding: 12px; font-size: 15px;">
+                        ✅ Commit Changes
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelPreview()" style="flex: 1; padding: 12px; font-size: 15px;">
+                        ❌ Cancel
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -16679,6 +17076,531 @@ NOTE: Please print the attached PO document for full details.`;
                 attachStatusPickerToSelects();
             }, 1000);
         });
+        
+        // ==================== HOW-TO GUIDE FUNCTIONS ====================
+        
+        function openHowToGuide() {
+            document.getElementById('howToGuideModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            showGuideSection('getting-started'); // Show first section by default
+        }
+        
+        function closeHowToGuide() {
+            document.getElementById('howToGuideModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function showGuideSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.guide-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            const targetSection = document.getElementById('guide-' + sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+            
+            // Update tab styles
+            document.querySelectorAll('.guide-tab').forEach(tab => {
+                tab.style.color = '#666';
+                tab.style.borderBottom = '3px solid transparent';
+                tab.style.background = 'none';
+            });
+            
+            // Highlight active tab (find by checking onclick)
+            document.querySelectorAll('.guide-tab').forEach(tab => {
+                if (tab.onclick && tab.onclick.toString().includes(`'${sectionId}'`)) {
+                    tab.style.color = '#667eea';
+                    tab.style.borderBottom = '3px solid #667eea';
+                    tab.style.background = 'white';
+                }
+            });
+        }
+        
+        // Close guide modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('howToGuideModal');
+            if (event.target === modal) {
+                closeHowToGuide();
+            }
+        });
+        
+        // ==================== BULK IMPORT/EXPORT FUNCTIONS ====================
+        
+        // Store parsed items temporarily for commit
+        let pendingItemsUpload = null;
+        let pendingUploadMode = null;
+
+        async function downloadItemsReport() {
+            if (!cachedItems || cachedItems.length === 0) {
+                alert('No items to download. Please load items first.');
+                return;
+            }
+
+            // Create printable HTML report
+            const reportHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Items Report - Nowak Distributing</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { text-align: center; color: #333; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                        th { background: #667eea; color: white; padding: 8px; text-align: left; border: 1px solid #ddd; }
+                        td { padding: 6px; border: 1px solid #ddd; }
+                        tr:nth-child(even) { background: #f9f9f9; }
+                        .footer { margin-top: 30px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Nowak Distributing - Items Report</h1>
+                    <p style="text-align: center; color: #666;">Generated: ${new Date().toLocaleString()} | Total Items: ${cachedItems.length}</p>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item_ID</th>
+                                <th>SKU</th>
+                                <th>Description</th>
+                                <th>Supplier_ID</th>
+                                <th>Cost</th>
+                                <th>Sell_Price</th>
+                                <th>Qty_On_Hand</th>
+                                <th>Reorder_Point</th>
+                                <th>Package_Cost</th>
+                                <th>Units_Per_Package</th>
+                                <th>Qty_On_Order</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cachedItems.map(item => `
+                                <tr>
+                                    <td>${item.Item_ID || ''}</td>
+                                    <td>${item.SKU || ''}</td>
+                                    <td>${item.Item_Description || ''}</td>
+                                    <td>${item.Supplier_ID || ''}</td>
+                                    <td>${parseFloat(item.Cost || 0).toFixed(2)}</td>
+                                    <td>${parseFloat(item.Sell_Price || 0).toFixed(2)}</td>
+                                    <td>${parseInt(item.Qty_On_Hand || 0)}</td>
+                                    <td>${parseInt(item.Reorder_Point || 0)}</td>
+                                    <td>${parseFloat(item.Package_Cost || 0).toFixed(2)}</td>
+                                    <td>${parseInt(item.Units_Per_Package || 0)}</td>
+                                    <td>${parseInt(item.Qty_On_Order || 0)}</td>
+                                    <td>${item.Status || 'Active'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="footer">
+                        <h3>How to Use This Report:</h3>
+                        <ol>
+                            <li>Save this page as PDF (Ctrl+P or Cmd+P)</li>
+                            <li>Upload PDF to <strong>ilovepdf.com/pdf_to_excel</strong></li>
+                            <li>Download the Excel file</li>
+                            <li>Edit prices, quantities, or other fields</li>
+                            <li><strong>DO NOT modify Item_ID column!</strong></li>
+                            <li>Upload back via the "Upload Items" button</li>
+                        </ol>
+                        <p><strong>⚠️ Important:</strong> Always backup before uploading!</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Open in new window for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(reportHTML);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+        }
+
+        function openUploadItemsModal() {
+            document.getElementById('uploadItemsModal').style.display = 'block';
+            document.getElementById('uploadItemsFile').value = '';
+            document.getElementById('uploadItemsPreview').style.display = 'none';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeUploadItemsModal() {
+            document.getElementById('uploadItemsModal').style.display = 'none';
+            document.body.style.overflow = '';
+            pendingItemsUpload = null;
+            pendingUploadMode = null;
+        }
+
+        async function previewItemsUpload() {
+            const fileInput = document.getElementById('uploadItemsFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            const uploadMode = document.querySelector('input[name="uploadMode"]:checked').value;
+            
+            try {
+                showStatus('itemsStatus', '⏳ Processing file and generating preview...', 'info');
+
+                // Read and parse the file
+                const uploadedItems = await parseUploadedFile(file);
+                
+                if (!uploadedItems || uploadedItems.length === 0) {
+                    alert('No valid items found in file');
+                    return;
+                }
+
+                // Store for later commit
+                pendingItemsUpload = uploadedItems;
+                pendingUploadMode = uploadMode;
+
+                // Generate comparison report
+                const comparison = compareItemsForPreview(uploadedItems, uploadMode);
+                
+                // Display preview
+                displayPreviewReport(comparison);
+                
+                // Show the preview section
+                document.getElementById('uploadItemsPreview').style.display = 'block';
+                
+                // Scroll to preview
+                document.getElementById('uploadItemsPreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                showStatus('itemsStatus', '✅ Preview generated - Review changes below', 'success');
+
+            } catch (error) {
+                showStatus('itemsStatus', '❌ Error processing file: ' + error.message, 'error');
+            }
+        }
+
+        function compareItemsForPreview(uploadedItems, mode) {
+            const existing = cachedItems || [];
+            const comparison = {
+                toAdd: [],
+                toUpdate: [],
+                noChange: [],
+                notInUpload: []
+            };
+
+            // Create map of existing items by Item_ID
+            const existingMap = {};
+            existing.forEach(item => {
+                if (item.Item_ID) {
+                    existingMap[item.Item_ID] = item;
+                }
+            });
+
+            // Compare uploaded items
+            uploadedItems.forEach(uploadItem => {
+                const itemId = uploadItem.Item_ID;
+                
+                // Check if this is a new item
+                if (!itemId || itemId === 'NEW' || itemId === '' || !existingMap[itemId]) {
+                    comparison.toAdd.push({
+                        item: uploadItem,
+                        isNew: true
+                    });
+                } else {
+                    // Existing item - check for changes
+                    const existingItem = existingMap[itemId];
+                    const changes = detectChanges(existingItem, uploadItem);
+                    
+                    if (changes.length > 0) {
+                        comparison.toUpdate.push({
+                            itemId: itemId,
+                            before: existingItem,
+                            after: uploadItem,
+                            changes: changes
+                        });
+                    } else {
+                        comparison.noChange.push({
+                            itemId: itemId,
+                            item: existingItem
+                        });
+                    }
+                    
+                    // Mark as seen
+                    existingMap[itemId].seen = true;
+                }
+            });
+
+            // Find items not in upload (only matters for Full Refresh)
+            if (mode === 'full-refresh') {
+                existing.forEach(item => {
+                    if (item.Item_ID && !item.seen) {
+                        comparison.notInUpload.push(item);
+                    }
+                });
+            }
+
+            return comparison;
+        }
+
+        function detectChanges(before, after) {
+            const changes = [];
+            const fieldsToCheck = [
+                { key: 'SKU', label: 'SKU' },
+                { key: 'Item_Description', label: 'Description' },
+                { key: 'Supplier_ID', label: 'Supplier' },
+                { key: 'Cost', label: 'Cost', isNumber: true },
+                { key: 'Sell_Price', label: 'Sell Price', isNumber: true },
+                { key: 'Qty_On_Hand', label: 'Qty On Hand', isNumber: true },
+                { key: 'Reorder_Point', label: 'Reorder Point', isNumber: true },
+                { key: 'Package_Cost', label: 'Package Cost', isNumber: true },
+                { key: 'Units_Per_Package', label: 'Units/Package', isNumber: true },
+                { key: 'Qty_On_Order', label: 'Qty On Order', isNumber: true },
+                { key: 'Status', label: 'Status' }
+            ];
+
+            fieldsToCheck.forEach(field => {
+                let beforeVal = before[field.key];
+                let afterVal = after[field.key];
+
+                // Normalize for comparison
+                if (field.isNumber) {
+                    beforeVal = parseFloat(beforeVal) || 0;
+                    afterVal = parseFloat(afterVal) || 0;
+                } else {
+                    beforeVal = String(beforeVal || '').trim();
+                    afterVal = String(afterVal || '').trim();
+                }
+
+                if (beforeVal !== afterVal) {
+                    changes.push({
+                        field: field.label,
+                        before: beforeVal,
+                        after: afterVal
+                    });
+                }
+            });
+
+            return changes;
+        }
+
+        function displayPreviewReport(comparison) {
+            // Summary stats
+            const summaryHtml = `
+                <div style="padding: 12px; background: #e8f5e9; border-radius: 6px; text-align: center; border-left: 4px solid #4caf50;">
+                    <div style="font-size: 20px; font-weight: bold; color: #2e7d32;">${comparison.toAdd.length}</div>
+                    <div style="font-size: 11px; color: #666;">To Add</div>
+                </div>
+                <div style="padding: 12px; background: #fff3e0; border-radius: 6px; text-align: center; border-left: 4px solid #ff9800;">
+                    <div style="font-size: 20px; font-weight: bold; color: #e65100;">${comparison.toUpdate.length}</div>
+                    <div style="font-size: 11px; color: #666;">To Update</div>
+                </div>
+                ${pendingUploadMode === 'full-refresh' ? `
+                <div style="padding: 12px; background: #ffebee; border-radius: 6px; text-align: center; border-left: 4px solid #f44336;">
+                    <div style="font-size: 20px; font-weight: bold; color: #c62828;">${comparison.notInUpload.length}</div>
+                    <div style="font-size: 11px; color: #666;">To Delete</div>
+                </div>
+                ` : ''}
+                <div style="padding: 12px; background: #f5f5f5; border-radius: 6px; text-align: center; border-left: 4px solid #9e9e9e;">
+                    <div style="font-size: 20px; font-weight: bold; color: #616161;">${comparison.noChange.length}</div>
+                    <div style="font-size: 11px; color: #666;">No Change</div>
+                </div>
+            `;
+            document.getElementById('uploadItemsSummary').innerHTML = summaryHtml;
+
+            // Detailed changes
+            let detailHtml = '';
+
+            // Items to ADD
+            if (comparison.toAdd.length > 0) {
+                detailHtml += `<div style="margin-bottom: 15px;"><h4 style="background: #4caf50; color: white; padding: 8px; border-radius: 6px 6px 0 0; margin: 0;">➕ ${comparison.toAdd.length} Items to ADD</h4><div style="background: white; padding: 12px; border: 2px solid #4caf50; border-radius: 0 0 6px 6px;">`;
+                
+                comparison.toAdd.slice(0, 10).forEach(entry => {
+                    const item = entry.item;
+                    detailHtml += `<div style="padding: 8px; margin-bottom: 8px; background: #e8f5e9; border-radius: 4px; border-left: 4px solid #4caf50; font-size: 12px;"><strong>${item.SKU || 'No SKU'}</strong> - ${item.Item_Description || 'No Description'} | Cost: $${parseFloat(item.Cost || 0).toFixed(2)} | Sell: $${parseFloat(item.Sell_Price || 0).toFixed(2)}</div>`;
+                });
+                
+                if (comparison.toAdd.length > 10) {
+                    detailHtml += `<div style="padding: 8px; color: #666; font-size: 12px;">...and ${comparison.toAdd.length - 10} more</div>`;
+                }
+                
+                detailHtml += `</div></div>`;
+            }
+
+            // Items to UPDATE
+            if (comparison.toUpdate.length > 0) {
+                detailHtml += `<div style="margin-bottom: 15px;"><h4 style="background: #ff9800; color: white; padding: 8px; border-radius: 6px 6px 0 0; margin: 0;">✏️ ${comparison.toUpdate.length} Items to UPDATE</h4><div style="background: white; padding: 12px; border: 2px solid #ff9800; border-radius: 0 0 6px 6px;">`;
+                
+                comparison.toUpdate.slice(0, 10).forEach(entry => {
+                    detailHtml += `<div style="padding: 8px; margin-bottom: 10px; background: #fff3e0; border-radius: 4px; border-left: 4px solid #ff9800; font-size: 12px;"><strong>${entry.before.SKU || entry.itemId}</strong> - ${entry.before.Item_Description || 'No Description'}<br>${entry.changes.map(c => `<span style="color: #e65100;">${c.field}:</span> <span style="text-decoration: line-through;">${c.before}</span> → <strong>${c.after}</strong>`).join(' | ')}</div>`;
+                });
+                
+                if (comparison.toUpdate.length > 10) {
+                    detailHtml += `<div style="padding: 8px; color: #666; font-size: 12px;">...and ${comparison.toUpdate.length - 10} more</div>`;
+                }
+                
+                detailHtml += `</div></div>`;
+            }
+
+            // Items to DELETE (Full Refresh only)
+            if (pendingUploadMode === 'full-refresh' && comparison.notInUpload.length > 0) {
+                detailHtml += `<div style="margin-bottom: 15px;"><h4 style="background: #f44336; color: white; padding: 8px; border-radius: 6px 6px 0 0; margin: 0;">⛔ ${comparison.notInUpload.length} Items to DELETE</h4><div style="background: white; padding: 12px; border: 2px solid #f44336; border-radius: 0 0 6px 6px;">`;
+                
+                comparison.notInUpload.slice(0, 20).forEach(item => {
+                    detailHtml += `<div style="padding: 6px; margin-bottom: 6px; background: #ffebee; border-radius: 4px; border-left: 4px solid #f44336; font-size: 12px;"><strong>${item.SKU || item.Item_ID}</strong> - ${item.Item_Description || 'No Description'}</div>`;
+                });
+                
+                if (comparison.notInUpload.length > 20) {
+                    detailHtml += `<div style="padding: 8px; color: #666; font-size: 12px;">...and ${comparison.notInUpload.length - 20} more</div>`;
+                }
+                
+                detailHtml += `</div></div>`;
+            }
+
+            document.getElementById('uploadItemsPreviewContent').innerHTML = detailHtml || '<p>No changes detected</p>';
+        }
+
+        async function commitItemsUpload() {
+            if (!pendingItemsUpload) {
+                alert('No upload pending');
+                return;
+            }
+
+            // Final confirmation for Full Refresh
+            if (pendingUploadMode === 'full-refresh') {
+                if (!confirm('⚠️ FINAL CONFIRMATION: This will DELETE ALL existing items and replace with the uploaded file.\n\nAre you ABSOLUTELY SURE?')) {
+                    return;
+                }
+                const finalConfirm = prompt('Type YES (in capital letters) to proceed with FULL REFRESH:');
+                if (finalConfirm !== 'YES') {
+                    alert('Upload cancelled');
+                    return;
+                }
+            }
+
+            try {
+                showStatus('itemsStatus', '⏳ Committing changes to database...', 'info');
+
+                // Send to backend
+                const result = await apiCall('bulkUpdateItems', {
+                    items: pendingItemsUpload,
+                    mode: pendingUploadMode
+                });
+
+                if (result && result.status === 'success') {
+                    showStatus('itemsStatus', `✅ Upload complete! ${result.added || 0} added, ${result.updated || 0} updated, ${result.deleted || 0} deleted`, 'success');
+                    
+                    // Clear pending upload
+                    pendingItemsUpload = null;
+                    pendingUploadMode = null;
+                    
+                    closeUploadItemsModal();
+                    await loadItems();
+                } else {
+                    showStatus('itemsStatus', '❌ Upload failed: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showStatus('itemsStatus', '❌ Error committing changes: ' + error.message, 'error');
+            }
+        }
+
+        function cancelPreview() {
+            // Clear pending upload
+            pendingItemsUpload = null;
+            pendingUploadMode = null;
+            
+            // Hide preview
+            document.getElementById('uploadItemsPreview').style.display = 'none';
+            
+            // Reset file input
+            document.getElementById('uploadItemsFile').value = '';
+            
+            showStatus('itemsStatus', 'Upload cancelled', 'info');
+        }
+
+        async function parseUploadedFile(file) {
+            const fileName = file.name.toLowerCase();
+            
+            if (fileName.endsWith('.csv')) {
+                // Parse CSV
+                const text = await file.text();
+                return parseCSV(text);
+            } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                // Parse Excel
+                await loadSheetJS();
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                // Normalize column names
+                return jsonData.map(row => ({
+                    Item_ID: row.Item_ID || row.item_id || '',
+                    SKU: row.SKU || row.sku || '',
+                    Item_Description: row.Item_Description || row.Description || row.description || '',
+                    Supplier_ID: row.Supplier_ID || row.supplier_id || '',
+                    Cost: parseFloat(row.Cost || row.cost || 0),
+                    Sell_Price: parseFloat(row.Sell_Price || row.Unit_Sell_Price || row.sell_price || 0),
+                    Qty_On_Hand: parseInt(row.Qty_On_Hand || row.qty_on_hand || 0),
+                    Reorder_Point: parseInt(row.Reorder_Point || row.reorder_point || 0),
+                    Package_Cost: parseFloat(row.Package_Cost || row.package_cost || 0),
+                    Units_Per_Package: parseInt(row.Units_Per_Package || row.units_per_package || 0),
+                    Qty_On_Order: parseInt(row.Qty_On_Order || row.qty_on_order || 0),
+                    Status: row.Status || row.status || 'Active'
+                }));
+            } else {
+                throw new Error('Unsupported file type. Please use .xlsx, .xls, or .csv');
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) return [];
+            
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const items = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                const item = {};
+                
+                headers.forEach((header, index) => {
+                    item[header] = values[index] || '';
+                });
+                
+                // Normalize column names
+                items.push({
+                    Item_ID: item.Item_ID || item.item_id || '',
+                    SKU: item.SKU || item.sku || '',
+                    Item_Description: item.Item_Description || item.Description || '',
+                    Supplier_ID: item.Supplier_ID || item.supplier_id || '',
+                    Cost: parseFloat(item.Cost || item.cost || 0),
+                    Sell_Price: parseFloat(item.Sell_Price || item.Unit_Sell_Price || 0),
+                    Qty_On_Hand: parseInt(item.Qty_On_Hand || 0),
+                    Reorder_Point: parseInt(item.Reorder_Point || 0),
+                    Package_Cost: parseFloat(item.Package_Cost || 0),
+                    Units_Per_Package: parseInt(item.Units_Per_Package || 0),
+                    Qty_On_Order: parseInt(item.Qty_On_Order || 0),
+                    Status: item.Status || 'Active'
+                });
+            }
+            
+            return items;
+        }
+
+        function loadSheetJS() {
+            return new Promise((resolve, reject) => {
+                if (window.XLSX) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
     </script>
 </body>
 </html>
