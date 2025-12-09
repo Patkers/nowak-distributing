@@ -15,7 +15,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
+            background: var(--primary, #667eea);
             background-attachment: fixed;
             min-height: 100vh;
             padding: 20px;
@@ -146,7 +146,7 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
+            background: var(--primary, #667eea);
             color: white;
             border: none;
             border-left: 4px solid rgba(255, 255, 255, 0.4);
@@ -168,11 +168,11 @@
         }
 
         .btn-success {
-            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
+            background: var(--primary, #667eea);
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%) !important;
+            background: var(--secondary, #764ba2) !important;
             color: white !important;
             border-left: 4px solid rgba(255, 255, 255, 0.4) !important;
             opacity: 0.85;
@@ -1027,372 +1027,15 @@
                     <p style="margin-bottom: 10px; color: #666;">
                         Choose your color scheme (280+ options!)
                     </p>
-                    <select id="themeSelector" onchange="changeTheme()" style="width: 100%; padding: 10px; margin-bottom: 15px;">
-                    <optgroup label="🎨 Classic Themes">
-                        <option value="purple">🟣 Royal Purple (Default)</option>
-                        <option value="ocean">🌊 Ocean Blue</option>
-                        <option value="forest">🌲 Forest Green</option>
-                        <option value="sunset">🌅 Sunset Orange</option>
-                        <option value="crimson">❤️ Crimson Red</option>
-                        <option value="slate">🔘 Slate Gray</option>
-                        <option value="teal">💎 Teal</option>
-                        <option value="dark">🌙 Professional Dark</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - AFC East">
-                        <option value="bills">🦬 Buffalo Bills</option>
-                        <option value="dolphins">🐬 Miami Dolphins</option>
-                        <option value="patriots">🇺🇸 New England Patriots</option>
-                        <option value="jets">✈️ New York Jets</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - AFC North">
-                        <option value="ravens">🐦‍⬛ Baltimore Ravens</option>
-                        <option value="bengals">🐅 Cincinnati Bengals</option>
-                        <option value="browns">🐶 Cleveland Browns</option>
-                        <option value="steelers">⚙️ Pittsburgh Steelers</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - AFC South">
-                        <option value="texans">🤠 Houston Texans</option>
-                        <option value="colts">🐴 Indianapolis Colts</option>
-                        <option value="jaguars">🐆 Jacksonville Jaguars</option>
-                        <option value="titans">⚔️ Tennessee Titans</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - AFC West">
-                        <option value="broncos">🐴 Denver Broncos</option>
-                        <option value="chiefs">🪶 Kansas City Chiefs</option>
-                        <option value="raiders">☠️ Las Vegas Raiders</option>
-                        <option value="chargers">⚡ Los Angeles Chargers</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - NFC East">
-                        <option value="cowboys">⭐ Dallas Cowboys</option>
-                        <option value="giants">🗽 New York Giants</option>
-                        <option value="eagles">🦅 Philadelphia Eagles</option>
-                        <option value="commanders">🎖️ Washington Commanders</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - NFC North">
-                        <option value="bears">🐻 Chicago Bears</option>
-                        <option value="lions">🦁 Detroit Lions</option>
-                        <option value="packers">🧀 Green Bay Packers</option>
-                        <option value="vikings">⛵ Minnesota Vikings</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - NFC South">
-                        <option value="falcons">🦅 Atlanta Falcons</option>
-                        <option value="panthers">🐈‍⬛ Carolina Panthers</option>
-                        <option value="saints">⚜️ New Orleans Saints</option>
-                        <option value="bucs">🏴‍☠️ Tampa Bay Buccaneers</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL - NFC West">
-                        <option value="azcardinals">🔴 Arizona Cardinals</option>
-                        <option value="rams">🐏 Los Angeles Rams</option>
-                        <option value="niners">⛏️ San Francisco 49ers</option>
-                        <option value="seahawks">🦅 Seattle Seahawks</option>
-                    </optgroup>
-                    <optgroup label="⚾ MLB - AL East">
-                        <option value="orioles">🦜 Baltimore Orioles</option>
-                        <option value="redsox">🧦 Boston Red Sox</option>
-                        <option value="yankees">⚾ New York Yankees</option>
-                        <option value="rays">☀️ Tampa Bay Rays</option>
-                        <option value="bluejays">🐦 Toronto Blue Jays</option>
-                    </optgroup>
-                    <optgroup label="⚾ MLB - AL Central">
-                        <option value="whitesox">🧦 Chicago White Sox</option>
-                        <option value="guardians">⚾ Cleveland Guardians</option>
-                        <option value="tigers">🐯 Detroit Tigers</option>
-                        <option value="royals">👑 Kansas City Royals</option>
-                        <option value="twins">⚾ Minnesota Twins</option>
-                    </optgroup>
-                    <optgroup label="⚾ MLB - AL West">
-                        <option value="astros">🚀 Houston Astros</option>
-                        <option value="angels">😇 Los Angeles Angels</option>
-                        <option value="athletics">🐘 Oakland Athletics</option>
-                        <option value="mariners">🧭 Seattle Mariners</option>
-                        <option value="rangers">⚾ Texas Rangers</option>
-                    </optgroup>
-                    <optgroup label="⚾ MLB - NL East">
-                        <option value="braves">🪓 Atlanta Braves</option>
-                        <option value="marlins">🐟 Miami Marlins</option>
-                        <option value="mets">🍎 New York Mets</option>
-                        <option value="phillies">🔔 Philadelphia Phillies</option>
-                        <option value="nationals">🇺🇸 Washington Nationals</option>
-                    </optgroup>
-                    <optgroup label="⚾ MLB - NL Central">
-                        <option value="cubs">⚾ Chicago Cubs</option>
-                        <option value="reds">🔴 Cincinnati Reds</option>
-                        <option value="brewers">🍺 Milwaukee Brewers</option>
-                        <option value="pirates">🏴‍☠️ Pittsburgh Pirates</option>
-                        <option value="stlcardinals">🐦 St. Louis Cardinals</option>
-                    </optgroup>
-                    <optgroup label="⚾ MLB - NL West">
-                        <option value="dbacks">🐍 Arizona Diamondbacks</option>
-                        <option value="rockies">⛰️ Colorado Rockies</option>
-                        <option value="dodgers">⚾ Los Angeles Dodgers</option>
-                        <option value="padres">🤎 San Diego Padres</option>
-                        <option value="sfgiants">🧡 San Francisco Giants</option>
-                    </optgroup>
-                    <optgroup label="🏀🏒 Chicago Teams">
-                        <option value="bulls">🏀 Chicago Bulls</option>
-                        <option value="blackhawks">🏒 Chicago Blackhawks</option>
-                    </optgroup>
-                    <optgroup label="🏒 NHL - Atlantic">
-                        <option value="bruins">🐻 Boston Bruins</option>
-                        <option value="sabres">⚔️ Buffalo Sabres</option>
-                        <option value="redwings">🐙 Detroit Red Wings</option>
-                        <option value="flapanthers">🐆 Florida Panthers</option>
-                        <option value="canadiens">🔴 Montreal Canadiens</option>
-                        <option value="senators">⚔️ Ottawa Senators</option>
-                        <option value="lightning">⚡ Tampa Bay Lightning</option>
-                        <option value="mapleleafs">🍁 Toronto Maple Leafs</option>
-                    </optgroup>
-                    <optgroup label="🏒 NHL - Metropolitan">
-                        <option value="hurricanes">🌀 Carolina Hurricanes</option>
-                        <option value="bluejackets">🔵 Columbus Blue Jackets</option>
-                        <option value="devils">😈 New Jersey Devils</option>
-                        <option value="islanders">🏝️ New York Islanders</option>
-                        <option value="nhlrangers">🗽 New York Rangers</option>
-                        <option value="flyers">🟠 Philadelphia Flyers</option>
-                        <option value="penguins">🐧 Pittsburgh Penguins</option>
-                        <option value="capitals">🦅 Washington Capitals</option>
-                    </optgroup>
-                    <optgroup label="🏒 NHL - Central">
-                        <option value="coyotes">🐺 Arizona Coyotes</option>
-                        <option value="avalanche">⛰️ Colorado Avalanche</option>
-                        <option value="stars">⭐ Dallas Stars</option>
-                        <option value="wild">🌲 Minnesota Wild</option>
-                        <option value="predators">🐆 Nashville Predators</option>
-                        <option value="stlblues">🎵 St. Louis Blues</option>
-                        <option value="nhljets">✈️ Winnipeg Jets</option>
-                    </optgroup>
-                    <optgroup label="🏒 NHL - Pacific">
-                        <option value="ducks">🦆 Anaheim Ducks</option>
-                        <option value="flames">🔥 Calgary Flames</option>
-                        <option value="oilers">🛢️ Edmonton Oilers</option>
-                        <option value="kings">👑 Los Angeles Kings</option>
-                        <option value="sharks">🦈 San Jose Sharks</option>
-                        <option value="kraken">🦑 Seattle Kraken</option>
-                        <option value="canucks">🐋 Vancouver Canucks</option>
-                        <option value="goldenknights">⚔️ Vegas Golden Knights</option>
-                    </optgroup>
-                    <optgroup label="🏀 NBA - Atlantic">
-                        <option value="celtics">☘️ Boston Celtics</option>
-                        <option value="nets">🏀 Brooklyn Nets</option>
-                        <option value="knicks">🏀 New York Knicks</option>
-                        <option value="sixers">🔔 Philadelphia 76ers</option>
-                        <option value="raptors">🦖 Toronto Raptors</option>
-                    </optgroup>
-                    <optgroup label="🏀 NBA - Central">
-                        <option value="cavs">⚔️ Cleveland Cavaliers</option>
-                        <option value="pistons">🏀 Detroit Pistons</option>
-                        <option value="pacers">🏎️ Indiana Pacers</option>
-                        <option value="bucks">🦌 Milwaukee Bucks</option>
-                    </optgroup>
-                    <optgroup label="🏀 NBA - Southeast">
-                        <option value="hawks">🦅 Atlanta Hawks</option>
-                        <option value="hornets">🐝 Charlotte Hornets</option>
-                        <option value="heat">🔥 Miami Heat</option>
-                        <option value="magic">✨ Orlando Magic</option>
-                        <option value="wizards">🧙 Washington Wizards</option>
-                    </optgroup>
-                    <optgroup label="🏀 NBA - Northwest">
-                        <option value="nuggets">⛏️ Denver Nuggets</option>
-                        <option value="twolves">🐺 Minnesota Timberwolves</option>
-                        <option value="thunder">⚡ Oklahoma City Thunder</option>
-                        <option value="blazers">🔥 Portland Trail Blazers</option>
-                        <option value="jazz">🎷 Utah Jazz</option>
-                    </optgroup>
-                    <optgroup label="🏀 NBA - Pacific">
-                        <option value="warriors">🌉 Golden State Warriors</option>
-                        <option value="clippers">⛵ LA Clippers</option>
-                        <option value="lakers">💜 Los Angeles Lakers</option>
-                        <option value="suns">☀️ Phoenix Suns</option>
-                        <option value="nbakings">👑 Sacramento Kings</option>
-                    </optgroup>
-                    <optgroup label="🏀 NBA - Southwest">
-                        <option value="mavs">🐴 Dallas Mavericks</option>
-                        <option value="rockets">🚀 Houston Rockets</option>
-                        <option value="grizzlies">🐻 Memphis Grizzlies</option>
-                        <option value="pelicans">🦅 New Orleans Pelicans</option>
-                        <option value="spurs">🤠 San Antonio Spurs</option>
-                    </optgroup>
-                    <optgroup label="🏈 College - SEC">
-                        <option value="alabama">🐘 Alabama Crimson Tide</option>
-                        <option value="arkansas">🐗 Arkansas Razorbacks</option>
-                        <option value="auburn">🐅 Auburn Tigers</option>
-                        <option value="florida">🐊 Florida Gators</option>
-                        <option value="georgia">🐶 Georgia Bulldogs</option>
-                        <option value="lsu">🐯 LSU Tigers</option>
-                        <option value="tennessee">🟠 Tennessee Volunteers</option>
-                        <option value="texasam">👍 Texas A&M Aggies</option>
-                    </optgroup>
-                    <optgroup label="🏈 College - Big Ten">
-                        <option value="michigan">〽️ Michigan Wolverines</option>
-                        <option value="michiganst">💚 Michigan State Spartans</option>
-                        <option value="ohiostate">🌰 Ohio State Buckeyes</option>
-                        <option value="pennstate">🦁 Penn State Nittany Lions</option>
-                        <option value="wisconsin">🦡 Wisconsin Badgers</option>
-                        <option value="nebraska">🌽 Nebraska Cornhuskers</option>
-                    </optgroup>
-                    <optgroup label="🏈 College - Big 12 / ACC / Pac-12">
-                        <option value="clemson">🐅 Clemson Tigers</option>
-                        <option value="fsu">🏹 Florida State Seminoles</option>
-                        <option value="miami">🙌 Miami Hurricanes</option>
-                        <option value="oklahoma">🐎 Oklahoma Sooners</option>
-                        <option value="okstate">🤠 Oklahoma State Cowboys</option>
-                        <option value="texas">🤘 Texas Longhorns</option>
-                        <option value="oregon">🦆 Oregon Ducks</option>
-                        <option value="oregonst">🦫 Oregon State Beavers</option>
-                        <option value="usc">✌️ USC Trojans</option>
-                        <option value="ucla">🐻 UCLA Bruins</option>
-                        <option value="byu">🏔️ BYU Cougars</option>
-                    </optgroup>
-                    <optgroup label="🏈 College - Independent">
-                        <option value="notredame">☘️ Notre Dame Fighting Irish</option>
-                    </optgroup>
-                    <optgroup label="🍔 Fast Food">
-                        <option value="mcdonalds">🍟 McDonald's</option>
-                        <option value="burgerking">🍔 Burger King</option>
-                        <option value="wendys">🟥 Wendy's</option>
-                        <option value="tacobell">🌮 Taco Bell</option>
-                        <option value="kfc">🍗 KFC</option>
-                        <option value="subway">🥖 Subway</option>
-                        <option value="pizzahut">🍕 Pizza Hut</option>
-                        <option value="chickfila">🐔 Chick-fil-A</option>
-                        <option value="dunkin">🍩 Dunkin'</option>
-                        <option value="dominos">🍕 Domino's</option>
-                        <option value="sonic">🥤 Sonic</option>
-                        <option value="arbys">🥩 Arby's</option>
-                        <option value="dairyqueen">🍦 Dairy Queen</option>
-                        <option value="jackinthebox">📦 Jack in the Box</option>
-                        <option value="popeyes">🍗 Popeyes</option>
-                        <option value="chipotle">🌯 Chipotle</option>
-                        <option value="fiveguys">🍔 Five Guys</option>
-                        <option value="innout">🌴 In-N-Out</option>
-                        <option value="culvers">🧈 Culver's</option>
-                        <option value="timhortons">☕ Tim Hortons</option>
-                    </optgroup>
-                    <optgroup label="🧀 Wisconsin Local">
-                        <option value="kwiktrip">⛽ Kwik Trip</option>
-                        <option value="rutters">⛽ Rutter's</option>
-                        <option value="cenex">⛽ Cenex</option>
-                        <option value="cenexcoop">⛽ Cenex Co-op</option>
-                        <option value="fleetfarm">🚜 Fleet Farm</option>
-                        <option value="woodmans">🛒 Woodman's Markets</option>
-                        <option value="picknsave">🛒 Pick 'n Save</option>
-                        <option value="sentry">🛒 Sentry Foods</option>
-                        <option value="festival">🛒 Festival Foods</option>
-                        <option value="pigglywiggly">🐷 Piggly Wiggly</option>
-                        <option value="holiday">⛽ Holiday Stationstores</option>
-                        <option value="bp">⛽ BP Wisconsin</option>
-                        <option value="caseys">⛽ Casey's</option>
-                        <option value="shell">⛽ Shell</option>
-                        <option value="mobil">⛽ Mobil / Exxon</option>
-                    </optgroup>
-                    <optgroup label="🎮 Retro Gaming">
-                        <option value="nes">🕹️ NES Classic</option>
-                        <option value="snes">🎮 SNES Classic</option>
-                        <option value="genesis">🎮 Sega Genesis</option>
-                        <option value="gameboy">🎮 Game Boy Color</option>
-                        <option value="n64">🎮 N64 Funtastic</option>
-                        <option value="ps1">🎮 PlayStation 1</option>
-                        <option value="windows95">💻 Windows 95/98</option>
-                        <option value="windowsxp">🌄 Windows XP Bliss</option>
-                        <option value="macos9">🍎 Mac OS 9</option>
-                        <option value="amiga">💻 Amiga Workbench</option>
-                        <option value="c64">💾 Commodore 64</option>
-                    </optgroup>
-                    <optgroup label="🚗 Muscle Cars">
-                        <option value="camaro">🚗 '69 Camaro Z28 Orange</option>
-                        <option value="challenger">🚗 '70 Challenger Plum Crazy</option>
-                        <option value="bullitt">🚗 '68 Mustang Bullitt</option>
-                    </optgroup>
-                    <optgroup label="🚗 JDM Legends">
-                        <option value="supra">🚗 '94 Toyota Supra</option>
-                        <option value="skyline">🚗 '99 Nissan Skyline R34</option>
-                        <option value="typer">🚗 '97 Civic Type R</option>
-                    </optgroup>
-                    <optgroup label="👟 Sneakers">
-                        <option value="jordan1">👟 Jordan 1 Chicago</option>
-                        <option value="yeezy">👟 Yeezy 350 Turtle Dove</option>
-                        <option value="pigeon">👟 Nike SB Dunk Pigeon</option>
-                        <option value="wotherspoon">👟 Air Max 97 Wotherspoon</option>
-                    </optgroup>
-                    <optgroup label="🏞️ National Parks">
-                        <option value="yellowstone">🦬 Yellowstone</option>
-                        <option value="grandcanyon">🏜️ Grand Canyon</option>
-                        <option value="yosemite">⛰️ Yosemite</option>
-                    </optgroup>
-                    <optgroup label="🎵 Lo-Fi / Vaporwave">
-                        <option value="lofi">📻 Lo-Fi ChilledCow</option>
-                        <option value="chillhop">🦝 Chillhop Raccoon</option>
-                        <option value="vaporwave">🌴 Vaporwave Classic</option>
-                        <option value="mallsoft">🏬 Mallsoft Sunset</option>
-                        <option value="miamivice">🌆 Miami Vice</option>
-                        <option value="outrun">🌃 Outrun Grid</option>
-                    </optgroup>
-                    <optgroup label="✈️ Airlines">
-                        <option value="panam">✈️ Pan Am Classic</option>
-                        <option value="braniff">✈️ Braniff International</option>
-                        <option value="southwest">❤️ Southwest Heart</option>
-                        <option value="pokemon">⚡ ANA Pokémon Jet</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL Throwbacks">
-                        <option value="bucscreamsicle">🍊 Bucs Creamsicle</option>
-                        <option value="steelersbee">🐝 Steelers Bumblebee</option>
-                        <option value="oilersthrow">🛢️ Oilers Columbia Blue</option>
-                        <option value="patpatriot">🎩 Patriots Pat Patriot</option>
-                        <option value="chargerspowder">⚡ Chargers Powder Blue</option>
-                        <option value="orangecrush">🧡 Broncos Orange Crush</option>
-                        <option value="kellygreen">🟢 Eagles Kelly Green</option>
-                        <option value="niners94">🏆 49ers '94 Gold</option>
-                        <option value="rams99">🏆 Rams '99 Blue</option>
-                        <option value="seahawkslime">💚 Seahawks Original</option>
-                        <option value="falcons66">🐦 Falcons '66</option>
-                        <option value="jets98">✈️ Jets '98 Green</option>
-                        <option value="bears36">🐻 Bears '36 Orange</option>
-                        <option value="acme">📦 Packers Acme</option>
-                        <option value="cards47">🐦 Cardinals '47</option>
-                    </optgroup>
-                    <optgroup label="🏈 NFL Alternates">
-                        <option value="billsred">🔴 Bills Red Helmet</option>
-                        <option value="chiefsred">🔴 Chiefs Red on Red</option>
-                        <option value="raidersblack">⬛ Raiders Color Rush</option>
-                        <option value="whitetiger">🐅 Bengals White Tiger</option>
-                        <option value="brownsrush">🟤 Browns Color Rush</option>
-                        <option value="eaglesblack">⬛ Eagles Black Alt</option>
-                        <option value="titansoilers">🛢️ Titans Oilers '23</option>
-                        <option value="actiongreen">💚 Seahawks Action Green</option>
-                        <option value="jagsteal">🐆 Jaguars Teal</option>
-                        <option value="purplepeople">💜 Vikings Purple Eaters</option>
-                    </optgroup>
-                    <optgroup label="🦸 Superheroes">
-                        <option value="spiderman">🕷️ Spider-Man Classic</option>
-                        <option value="symbiote">🕸️ Spider-Man Symbiote</option>
-                        <option value="batman">🦇 Batman Arkham</option>
-                        <option value="superman">🦸 Superman</option>
-                        <option value="wonderwoman">👸 Wonder Woman</option>
-                        <option value="ironman">🤖 Iron Man</option>
-                        <option value="captainamerica">🛡️ Captain America</option>
-                        <option value="hulk">💪 Hulk</option>
-                        <option value="thor">⚡ Thor</option>
-                        <option value="harleyquinn">🃏 Harley Quinn</option>
-                        <option value="starlord">🎧 Star-Lord</option>
-                        <option value="groot">🌳 Groot</option>
-                        <option value="marvelrivals">🎮 Marvel Rivals</option>
-                        <option value="flash">⚡ The Flash</option>
-                        <option value="greenlantern">💚 Green Lantern</option>
-                        <option value="reaper">💀 Overwatch Reaper</option>
-                    </optgroup>
-                    <optgroup label="🤖 Cyberpunk 2077">
-                        <option value="nightcity">🌃 Night City Neon</option>
-                        <option value="arasaka">🏢 Arasaka Corpo</option>
-                        <option value="militech">🎖️ Militech Military</option>
-                        <option value="moxes">💜 Moxes Gang</option>
-                        <option value="valentinos">💗 Valentinos Gang</option>
-                        <option value="vjacket">🧥 V's Jacket</option>
-                        <option value="silverhand">🎸 Johnny Silverhand</option>
-                        <option value="cyberpunkui">📺 Cyberpunk UI</option>
-                        <option value="phantomliberty">🦅 Phantom Liberty</option>
-                        <option value="cyberpunklogo">💛 Cyberpunk Logo</option>
-                    </optgroup>
-                </select>
+                    <div onclick="openThemePicker()" style="cursor: pointer; padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; background: white; display: flex; align-items: center; gap: 15px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary, #667eea)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                        <div id="themePreviewSwatch" style="width: 50px; height: 50px; border-radius: 10px; background: var(--primary, #667eea); box-shadow: 0 2px 8px rgba(0,0,0,0.2);"></div>
+                        <div style="flex: 1;">
+                            <div id="themePreviewName" style="font-weight: 600; font-size: 16px; color: #333;">🟣 Royal Purple</div>
+                            <div style="font-size: 13px; color: #888;">Click to browse 280+ themes</div>
+                        </div>
+                        <div style="font-size: 24px; color: #999;">→</div>
+                    </div>
+                    <input type="hidden" id="themeSelector" value="purple">
                 </div>
             </div>
             
@@ -1736,13 +1379,10 @@
                         </div>
                         <div class="form-group">
                             <label>Purchase UOM (What you buy)</label>
-                            <select id="newItemPurchaseUOM">
-                                <option value="Each" selected>Each</option>
-                                <option value="Box">Box</option>
-                                <option value="Case">Case</option>
-                                <option value="Pack">Pack</option>
-                                <option value="Pallet">Pallet</option>
-                            </select>
+                            <input type="text" id="newItemPurchaseUOMDisplay" value="Case" 
+                                   onclick="openUOMPicker('newItemPurchaseUOM')" readonly
+                                   style="cursor: pointer; background: #fff;">
+                            <input type="hidden" id="newItemPurchaseUOM" value="Case">
                         </div>
                     </div>
                     <div class="form-grid">
@@ -1804,13 +1444,10 @@
                         </div>
                         <div class="form-group">
                             <label>Purchase UOM</label>
-                            <select id="editItemPurchaseUOM">
-                                <option value="Box">Box</option>
-                                <option value="Case">Case</option>
-                                <option value="Pallet">Pallet</option>
-                                <option value="Each">Each</option>
-                                <option value="Pack">Pack</option>
-                            </select>
+                            <input type="text" id="editItemPurchaseUOMDisplay" 
+                                   onclick="openUOMPicker('editItemPurchaseUOM')" readonly
+                                   style="cursor: pointer; background: #fff;">
+                            <input type="hidden" id="editItemPurchaseUOM">
                         </div>
                     </div>
                     <div class="form-grid">
@@ -3394,7 +3031,32 @@
                 'theme-flash', 'theme-greenlantern',
                 // Cyberpunk
                 'theme-nightcity', 'theme-arasaka', 'theme-militech', 'theme-moxes', 'theme-valentinos',
-                'theme-vjacket', 'theme-silverhand', 'theme-cyberpunkui', 'theme-phantomliberty', 'theme-cyberpunklogo'
+                'theme-vjacket', 'theme-silverhand', 'theme-cyberpunkui', 'theme-phantomliberty', 'theme-cyberpunklogo',
+                // Retro Search Engines
+                'theme-yahoo1996', 'theme-yahoo2000s', 'theme-aol1995', 'theme-aol2000s', 'theme-excite1997',
+                'theme-lycos', 'theme-altavista', 'theme-askjeeves', 'theme-webcrawler', 'theme-infoseek',
+                'theme-msn1998', 'theme-netscape', 'theme-dogpile', 'theme-geocities',
+                // MAME Arcade
+                'theme-mamepacman', 'theme-mamemspacman', 'theme-mamedonkeykong', 'theme-mamespaceinvaders',
+                'theme-mamegalaga', 'theme-mamefrogger', 'theme-mamestreetfighter', 'theme-mamemortalkombat',
+                'theme-mamedefender', 'theme-mamecentipede', 'theme-mamedigdug', 'theme-mameqbert',
+                'theme-mametempest', 'theme-mameasteroids', 'theme-mamebubble', 'theme-mamegauntlet',
+                'theme-mamerampage', 'theme-mamerobotron', 'theme-mamejoust', 'theme-mametron',
+                'theme-mamenbajam', 'theme-mamecontra', 'theme-mamemetalslug', 'theme-mametmnt',
+                'theme-mamedoubledragon', 'theme-mamefinalfight', 'theme-mamegradius', 'theme-mamegoldenaxe',
+                'theme-mamestrider', 'theme-mamertype',
+                // Monster Energy
+                'theme-monstergreen', 'theme-monsterblack', 'theme-monstersunrise', 'theme-monsterparadise',
+                'theme-monsterviolet', 'theme-monsterpipeline', 'theme-monsterrehab', 'theme-monsterred',
+                // Mountain Dew
+                'theme-mtndewgreen', 'theme-mtndewcodered', 'theme-mtndewvoltage', 'theme-mtndewbaja',
+                'theme-mtndewlivewire', 'theme-mtndewwhiteout',
+                // Root Beer & Soda
+                'theme-awrootbeer', 'theme-barqs', 'theme-mugcream', 'theme-ibccherry',
+                'theme-cocacola', 'theme-drpepper', 'theme-pepsi', 'theme-sprite', 'theme-fanta',
+                // Energy Drinks
+                'theme-redbull', 'theme-rockstar', 'theme-nos', 'theme-bang', 'theme-c4energy',
+                'theme-alaninu', 'theme-ghostenergy', 'theme-celsius', 'theme-prime', 'theme-reign', 'theme-gamerfuel'
             );
             
             // Add new theme class
@@ -3511,7 +3173,91 @@
                 sfgiants: { primary: '#FD5A1E', accent: '#000000', text: '#000000' },
                 // Chicago extras
                 bulls: { primary: '#121212', accent: '#CE1141', text: '#CE1141' },
-                blackhawks: { primary: '#002F6C', accent: '#CF0A2C', text: '#CF0A2C' }
+                blackhawks: { primary: '#002F6C', accent: '#CF0A2C', text: '#CF0A2C' },
+                // Retro Search Engines
+                yahoo1996: { primary: '#6001A8', accent: '#FF9900', text: '#FF9900' },
+                yahoo2000s: { primary: '#7B0099', accent: '#FF0000', text: '#FF0000' },
+                aol1995: { primary: '#00C8FF', accent: '#FFCC00', text: '#FFCC00' },
+                aol2000s: { primary: '#00A0D8', accent: '#FFFFFF', text: '#FFFFFF' },
+                excite1997: { primary: '#E4002B', accent: '#000000', text: '#FFFFFF' },
+                lycos: { primary: '#FF0000', accent: '#000000', text: '#FFFFFF' },
+                altavista: { primary: '#0066CC', accent: '#FF9900', text: '#FF9900' },
+                askjeeves: { primary: '#00A99D', accent: '#FF6600', text: '#FF6600' },
+                webcrawler: { primary: '#009900', accent: '#FFFF00', text: '#FFFF00' },
+                infoseek: { primary: '#660099', accent: '#FFCC00', text: '#FFCC00' },
+                msn1998: { primary: '#00ADEF', accent: '#FFB900', text: '#FFB900' },
+                netscape: { primary: '#0033CC', accent: '#FFCC00', text: '#FFCC00' },
+                dogpile: { primary: '#FF6600', accent: '#6600CC', text: '#6600CC' },
+                geocities: { primary: '#FF0099', accent: '#00FF00', text: '#00FF00' },
+                // MAME Arcade
+                mamepacman: { primary: '#FFFF00', accent: '#FF0000', text: '#FFFF00' },
+                mamemspacman: { primary: '#FF21AE', accent: '#00FFFF', text: '#00FFFF' },
+                mamedonkeykong: { primary: '#E80709', accent: '#EE7511', text: '#EE7511' },
+                mamespaceinvaders: { primary: '#62DE6D', accent: '#F83B3A', text: '#62DE6D' },
+                mamegalaga: { primary: '#00FF00', accent: '#EC4705', text: '#00FF00' },
+                mamefrogger: { primary: '#66A400', accent: '#EB1C2D', text: '#66A400' },
+                mamestreetfighter: { primary: '#FFFFFF', accent: '#E70000', text: '#E70000' },
+                mamemortalkombat: { primary: '#EED911', accent: '#F53929', text: '#EED911' },
+                mamedefender: { primary: '#00A651', accent: '#FF4500', text: '#00A651' },
+                mamecentipede: { primary: '#228B22', accent: '#8B4513', text: '#FFFFFF' },
+                mamedigdug: { primary: '#4169E1', accent: '#FF0000', text: '#4169E1' },
+                mameqbert: { primary: '#9370DB', accent: '#FF8C00', text: '#9370DB' },
+                mametempest: { primary: '#8A2BE2', accent: '#00BFFF', text: '#00BFFF' },
+                mameasteroids: { primary: '#FFFFFF', accent: '#00FFFF', text: '#00FFFF' },
+                mamebubble: { primary: '#FFB6C1', accent: '#87CEEB', text: '#FFB6C1' },
+                mamegauntlet: { primary: '#40FF40', accent: '#FF4040', text: '#40FF40' },
+                mamerampage: { primary: '#00A000', accent: '#FF69B4', text: '#00A000' },
+                mamerobotron: { primary: '#00FFFF', accent: '#FF00FF', text: '#00FFFF' },
+                mamejoust: { primary: '#FFD700', accent: '#FF0000', text: '#FFD700' },
+                mametron: { primary: '#00FFFF', accent: '#FF0000', text: '#00FFFF' },
+                mamenbajam: { primary: '#C8102E', accent: '#002244', text: '#FFFFFF' },
+                mamecontra: { primary: '#0000FF', accent: '#FF0000', text: '#FF0000' },
+                mamemetalslug: { primary: '#FFD700', accent: '#4169E1', text: '#FFD700' },
+                mametmnt: { primary: '#008000', accent: '#FF0000', text: '#008000' },
+                mamedoubledragon: { primary: '#0000FF', accent: '#FF0000', text: '#0000FF' },
+                mamefinalfight: { primary: '#FFFF00', accent: '#FF0000', text: '#FFFF00' },
+                mamegradius: { primary: '#00FFFF', accent: '#FF4500', text: '#00FFFF' },
+                mamegoldenaxe: { primary: '#8B0000', accent: '#FF4500', text: '#FF4500' },
+                mamestrider: { primary: '#00FF00', accent: '#FF00FF', text: '#00FF00' },
+                mamertype: { primary: '#4169E1', accent: '#FF0000', text: '#4169E1' },
+                // Monster Energy
+                monstergreen: { primary: '#8DC63F', accent: '#000000', text: '#8DC63F' },
+                monsterblack: { primary: '#000000', accent: '#C0C0C0', text: '#C0C0C0' },
+                monstersunrise: { primary: '#FF6B00', accent: '#FFD700', text: '#FFD700' },
+                monsterparadise: { primary: '#00FF7F', accent: '#FFFFFF', text: '#00FF7F' },
+                monsterviolet: { primary: '#9932CC', accent: '#E0B0FF', text: '#E0B0FF' },
+                monsterpipeline: { primary: '#FF69B4', accent: '#FFD700', text: '#FFD700' },
+                monsterrehab: { primary: '#FFD700', accent: '#8B4513', text: '#FFD700' },
+                monsterred: { primary: '#C8102E', accent: '#FFFFFF', text: '#FFFFFF' },
+                // Mountain Dew
+                mtndewgreen: { primary: '#99CC00', accent: '#006633', text: '#99CC00' },
+                mtndewcodered: { primary: '#C8102E', accent: '#000000', text: '#C8102E' },
+                mtndewvoltage: { primary: '#00B7EB', accent: '#000000', text: '#00B7EB' },
+                mtndewbaja: { primary: '#66CCCC', accent: '#FFFFFF', text: '#FFFFFF' },
+                mtndewlivewire: { primary: '#FF6B00', accent: '#000000', text: '#FF6B00' },
+                mtndewwhiteout: { primary: '#FFFFFF', accent: '#00BFFF', text: '#00BFFF' },
+                // Root Beer & Soda
+                awrootbeer: { primary: '#8B4513', accent: '#FFD700', text: '#FFD700' },
+                barqs: { primary: '#C8102E', accent: '#FFFFFF', text: '#FFFFFF' },
+                mugcream: { primary: '#FFF8DC', accent: '#8B4513', text: '#8B4513' },
+                ibccherry: { primary: '#4B0082', accent: '#C71585', text: '#C71585' },
+                cocacola: { primary: '#C8102E', accent: '#FFFFFF', text: '#FFFFFF' },
+                drpepper: { primary: '#8B0000', accent: '#DAA520', text: '#DAA520' },
+                pepsi: { primary: '#004B8D', accent: '#E4002B', text: '#FFFFFF' },
+                sprite: { primary: '#00A550', accent: '#FFFFFF', text: '#FFFFFF' },
+                fanta: { primary: '#FF6600', accent: '#003DA5', text: '#FF6600' },
+                // Energy Drinks
+                redbull: { primary: '#0050A4', accent: '#C0C0C0', text: '#C0C0C0' },
+                rockstar: { primary: '#800080', accent: '#FFD700', text: '#FFD700' },
+                nos: { primary: '#000000', accent: '#FF0000', text: '#FF0000' },
+                bang: { primary: '#FF6B00', accent: '#FFD700', text: '#FFD700' },
+                c4energy: { primary: '#00BFFF', accent: '#FFFFFF', text: '#FFFFFF' },
+                alaninu: { primary: '#FF69B4', accent: '#E0B0FF', text: '#E0B0FF' },
+                ghostenergy: { primary: '#39FF14', accent: '#000000', text: '#39FF14' },
+                celsius: { primary: '#FF4500', accent: '#FFD700', text: '#FFD700' },
+                prime: { primary: '#00AEEF', accent: '#FF6B00', text: '#FF6B00' },
+                reign: { primary: '#000000', accent: '#C0C0C0', text: '#C0C0C0' },
+                gamerfuel: { primary: '#00FFFF', accent: '#FF00FF', text: '#00FFFF' }
             };
             return themes[theme] || themes.purple;
         }
@@ -3555,6 +3301,11 @@
                 document.documentElement.style.setProperty('--primary', themeColors.primary);
                 document.documentElement.style.setProperty('--secondary', themeColors.accent);
                 document.documentElement.style.setProperty('--primary-light', hexToRgbaLight(themeColors.primary));
+                
+                // Update theme preview in settings
+                if (typeof updateThemePreview === 'function') {
+                    updateThemePreview();
+                }
             }, 100);
         });
         
@@ -4168,7 +3919,9 @@
             document.getElementById('editItemSupplier').value = item.Supplier_ID || '';
             document.getElementById('editItemDescription').value = item.Item_Description || '';
             document.getElementById('editItemSKU').value = item.SKU || '';
-            document.getElementById('editItemPurchaseUOM').value = item.Purchase_UOM || 'Box';
+            const uomValue = item.Purchase_UOM || 'Case';
+            document.getElementById('editItemPurchaseUOM').value = uomValue;
+            document.getElementById('editItemPurchaseUOMDisplay').value = uomValue;
             document.getElementById('editUnitsPerPackage').value = item.Units_Per_Package || 1;
             document.getElementById('editPackageCost').value = item.Package_Cost || '';
             document.getElementById('editUnitSellPrice').value = item.Unit_Sell_Price || '';
@@ -4676,7 +4429,9 @@
             const paymentStatusFilter = document.getElementById('filterPurchasePaymentStatus').value;
             
             const filtered = purchasesData.filter(po => {
-                const matchesPO = !poFilter || (po.PO_ID && po.PO_ID.toLowerCase().includes(poFilter));
+                const matchesPO = !poFilter || 
+                    (po.PO_ID && po.PO_ID.toLowerCase().includes(poFilter)) ||
+                    (po.Invoice_Number && po.Invoice_Number.toLowerCase().includes(poFilter));
                 const matchesSupplier = !supplierFilter || po.Supplier_ID === supplierFilter;
                 const matchesStatus = !statusFilter || po.Status === statusFilter;
                 const poDate = new Date(po.PO_Date);
@@ -11187,7 +10942,7 @@ NOTE: Please print the attached PO document for full details.`;
     <!-- Order View/Edit Modal -->
     <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
         <div style="background: white; margin: 50px auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <div id="orderModalHeader" style="background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <div id="orderModalHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
                 <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
                 <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
             </div>
@@ -11206,7 +10961,7 @@ NOTE: Please print the attached PO document for full details.`;
     <!-- Report Setup Modal -->
     <div id="reportSetupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
         <div style="background: white; margin: 30px auto; max-width: 95%; width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column;">
-            <div style="background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
                 <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
             </div>
@@ -11292,6 +11047,35 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- UOM PICKER MODAL -->
+    <div id="uomPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+                <h3>📦 Select Unit of Measure</h3>
+                <button class="item-picker-close" onclick="closeUOMPicker()">&times;</button>
+            </div>
+            <div id="uomPickerList" class="item-picker-list" style="padding: 15px;">
+                <!-- UOM options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- THEME PICKER MODAL -->
+    <div id="themePickerModal" class="item-picker-overlay">
+        <div class="item-picker-container" style="max-width: 700px; height: 85vh; margin: 5vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0; background: var(--primary, #667eea);">
+                <h3>🎨 Choose Your Theme</h3>
+                <button class="item-picker-close" onclick="closeThemePicker()">&times;</button>
+            </div>
+            <div class="item-picker-search" style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
+                <input type="text" id="themePickerSearch" placeholder="🔍 Search themes... (e.g. 'packers', 'blue', 'nfl')" oninput="filterThemePicker()" style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px;">
+            </div>
+            <div id="themePickerList" class="item-picker-list" style="padding: 15px; height: calc(85vh - 140px); overflow-y: auto;">
+                <!-- Theme options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- STATUS PICKER MODAL -->
     <div id="statusPickerModal" class="item-picker-overlay">
         <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
@@ -11371,7 +11155,7 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         .item-picker-header {
-            background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
+            background: var(--primary, #667eea);
             color: white;
             padding: 20px;
             display: flex;
@@ -12268,6 +12052,661 @@ NOTE: Please print the attached PO document for full details.`;
             document.body.style.overflow = '';
         }
         
+        // ==================== UOM PICKER ====================
+        let uomPickerTargetId = null;
+        
+        const purchaseUOMs = [
+            { value: 'Case', icon: '📦', desc: 'Standard case/carton of products' },
+            { value: 'Box', icon: '🗃️', desc: 'Smaller box packaging' },
+            { value: 'Pack', icon: '📋', desc: 'Multi-pack bundle' },
+            { value: 'Each', icon: '1️⃣', desc: 'Individual unit' },
+            { value: 'Pallet', icon: '🏗️', desc: 'Full pallet load' },
+            { value: 'Bag', icon: '👜', desc: 'Bag packaging' },
+            { value: 'Tray', icon: '🍽️', desc: 'Tray packaging' },
+            { value: 'Dozen', icon: '🔢', desc: '12 units' }
+        ];
+        
+        function openUOMPicker(targetId) {
+            uomPickerTargetId = targetId;
+            const listContainer = document.getElementById('uomPickerList');
+            
+            let html = '';
+            purchaseUOMs.forEach(uom => {
+                html += `
+                    <div class="item-picker-card" onclick="selectUOM('${uom.value}')" 
+                         style="border-left: 4px solid #c0c0c0; margin-bottom: 10px; padding: 15px; cursor: pointer; transition: all 0.2s;"
+                         onmouseover="this.style.background='#f0f4ff'; this.style.borderLeftColor='var(--primary, #667eea)'"
+                         onmouseout="this.style.background='white'; this.style.borderLeftColor='#c0c0c0'">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 24px;">${uom.icon}</span>
+                            <div>
+                                <div style="font-weight: 600; color: #333;">${uom.value}</div>
+                                <div style="font-size: 12px; color: #666;">${uom.desc}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+            
+            document.getElementById('uomPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function selectUOM(uom) {
+            if (uomPickerTargetId) {
+                document.getElementById(uomPickerTargetId).value = uom;
+                document.getElementById(uomPickerTargetId + 'Display').value = uom;
+            }
+            closeUOMPicker();
+        }
+        
+        function closeUOMPicker() {
+            document.getElementById('uomPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            uomPickerTargetId = null;
+        }
+        
+        // ==================== THEME PICKER ====================
+        const themeCategories = [
+            {
+                name: '🎨 Classic Themes',
+                themes: [
+                    { value: 'purple', name: '🟣 Royal Purple', primary: '#667eea', secondary: '#764ba2' },
+                    { value: 'ocean', name: '🌊 Ocean Blue', primary: '#0077b6', secondary: '#00b4d8' },
+                    { value: 'forest', name: '🌲 Forest Green', primary: '#2d6a4f', secondary: '#40916c' },
+                    { value: 'sunset', name: '🌅 Sunset Orange', primary: '#f77f00', secondary: '#fcbf49' },
+                    { value: 'crimson', name: '❤️ Crimson Red', primary: '#9d0208', secondary: '#dc2f02' },
+                    { value: 'slate', name: '🔘 Slate Gray', primary: '#475569', secondary: '#64748b' },
+                    { value: 'teal', name: '💎 Teal', primary: '#0d9488', secondary: '#14b8a6' },
+                    { value: 'dark', name: '🌙 Professional Dark', primary: '#1e293b', secondary: '#334155' }
+                ]
+            },
+            {
+                name: '🏈 NFL - AFC',
+                themes: [
+                    { value: 'bills', name: '🦬 Buffalo Bills', primary: '#00338D', secondary: '#C60C30' },
+                    { value: 'dolphins', name: '🐬 Miami Dolphins', primary: '#008E97', secondary: '#FC4C02' },
+                    { value: 'patriots', name: '🇺🇸 New England Patriots', primary: '#002244', secondary: '#C60C30' },
+                    { value: 'jets', name: '✈️ New York Jets', primary: '#125740', secondary: '#000000' },
+                    { value: 'ravens', name: '🐦‍⬛ Baltimore Ravens', primary: '#241773', secondary: '#9E7C0C' },
+                    { value: 'bengals', name: '🐅 Cincinnati Bengals', primary: '#FB4F14', secondary: '#000000' },
+                    { value: 'browns', name: '🐶 Cleveland Browns', primary: '#311D00', secondary: '#FF3C00' },
+                    { value: 'steelers', name: '⚙️ Pittsburgh Steelers', primary: '#FFB612', secondary: '#101820' },
+                    { value: 'texans', name: '🤠 Houston Texans', primary: '#03202F', secondary: '#A71930' },
+                    { value: 'colts', name: '🐴 Indianapolis Colts', primary: '#002C5F', secondary: '#A2AAAD' },
+                    { value: 'jaguars', name: '🐆 Jacksonville Jaguars', primary: '#006778', secondary: '#D7A22A' },
+                    { value: 'titans', name: '⚔️ Tennessee Titans', primary: '#0C2340', secondary: '#4B92DB' },
+                    { value: 'broncos', name: '🐴 Denver Broncos', primary: '#FB4F14', secondary: '#002244' },
+                    { value: 'chiefs', name: '🪶 Kansas City Chiefs', primary: '#E31837', secondary: '#FFB81C' },
+                    { value: 'raiders', name: '☠️ Las Vegas Raiders', primary: '#000000', secondary: '#A5ACAF' },
+                    { value: 'chargers', name: '⚡ Los Angeles Chargers', primary: '#0080C6', secondary: '#FFC20E' }
+                ]
+            },
+            {
+                name: '🏈 NFL - NFC',
+                themes: [
+                    { value: 'cowboys', name: '⭐ Dallas Cowboys', primary: '#003594', secondary: '#869397' },
+                    { value: 'giants', name: '🗽 New York Giants', primary: '#0B2265', secondary: '#A71930' },
+                    { value: 'eagles', name: '🦅 Philadelphia Eagles', primary: '#004C54', secondary: '#A5ACAF' },
+                    { value: 'commanders', name: '🎖️ Washington Commanders', primary: '#5A1414', secondary: '#FFB612' },
+                    { value: 'bears', name: '🐻 Chicago Bears', primary: '#0B162A', secondary: '#C83803' },
+                    { value: 'lions', name: '🦁 Detroit Lions', primary: '#0076B6', secondary: '#B0B7BC' },
+                    { value: 'packers', name: '🧀 Green Bay Packers', primary: '#203731', secondary: '#FFB612' },
+                    { value: 'vikings', name: '⛵ Minnesota Vikings', primary: '#4F2683', secondary: '#FFC62F' },
+                    { value: 'falcons', name: '🦅 Atlanta Falcons', primary: '#A71930', secondary: '#000000' },
+                    { value: 'panthers', name: '🐈‍⬛ Carolina Panthers', primary: '#0085CA', secondary: '#101820' },
+                    { value: 'saints', name: '⚜️ New Orleans Saints', primary: '#D3BC8D', secondary: '#101820' },
+                    { value: 'bucs', name: '🏴‍☠️ Tampa Bay Buccaneers', primary: '#D50A0A', secondary: '#FF7900' },
+                    { value: 'azcardinals', name: '🔴 Arizona Cardinals', primary: '#97233F', secondary: '#000000' },
+                    { value: 'rams', name: '🐏 Los Angeles Rams', primary: '#003594', secondary: '#FFA300' },
+                    { value: 'niners', name: '⛏️ San Francisco 49ers', primary: '#AA0000', secondary: '#B3995D' },
+                    { value: 'seahawks', name: '🦅 Seattle Seahawks', primary: '#002244', secondary: '#69BE28' }
+                ]
+            },
+            {
+                name: '🏈 NFL Throwbacks',
+                themes: [
+                    { value: 'bucscreamsicle', name: '🍊 Bucs Creamsicle', primary: '#FF8200', secondary: '#B71234' },
+                    { value: 'steelersbee', name: '🐝 Steelers Bumblebee', primary: '#FFB612', secondary: '#000000' },
+                    { value: 'oilersthrow', name: '🛢️ Oilers Columbia Blue', primary: '#8CBED6', secondary: '#C41E3A' },
+                    { value: 'patpatriot', name: '🎩 Patriots Pat Patriot', primary: '#C8102E', secondary: '#002244' },
+                    { value: 'chargerspowder', name: '⚡ Chargers Powder Blue', primary: '#0080C6', secondary: '#FFC20E' },
+                    { value: 'orangecrush', name: '🧡 Broncos Orange Crush', primary: '#FB4F14', secondary: '#002244' },
+                    { value: 'kellygreen', name: '🟢 Eagles Kelly Green', primary: '#004C54', secondary: '#A5ACAF' },
+                    { value: 'niners94', name: '🏆 49ers 94 Gold', primary: '#AA0000', secondary: '#B3995D' },
+                    { value: 'rams99', name: '🏆 Rams 99 Blue', primary: '#003594', secondary: '#FFA300' },
+                    { value: 'seahawkslime', name: '💚 Seahawks Original', primary: '#002244', secondary: '#69BE28' },
+                    { value: 'falcons66', name: '🐦 Falcons 66', primary: '#A71930', secondary: '#000000' },
+                    { value: 'jets98', name: '✈️ Jets 98 Green', primary: '#125740', secondary: '#000000' },
+                    { value: 'bears36', name: '🐻 Bears 36 Orange', primary: '#0B162A', secondary: '#C83803' },
+                    { value: 'acme', name: '📦 Packers Acme', primary: '#203731', secondary: '#FFB612' },
+                    { value: 'cards47', name: '🐦 Cardinals 47', primary: '#97233F', secondary: '#000000' }
+                ]
+            },
+            {
+                name: '🏈 NFL Alternates',
+                themes: [
+                    { value: 'billsred', name: '🔴 Bills Red Helmet', primary: '#C60C30', secondary: '#00338D' },
+                    { value: 'chiefsred', name: '🔴 Chiefs Red on Red', primary: '#E31837', secondary: '#FFB81C' },
+                    { value: 'raidersblack', name: '⬛ Raiders Color Rush', primary: '#000000', secondary: '#A5ACAF' },
+                    { value: 'whitetiger', name: '🐅 Bengals White Tiger', primary: '#FB4F14', secondary: '#000000' },
+                    { value: 'brownsrush', name: '🟤 Browns Color Rush', primary: '#311D00', secondary: '#FF3C00' },
+                    { value: 'eaglesblack', name: '⬛ Eagles Black Alt', primary: '#004C54', secondary: '#000000' },
+                    { value: 'titansoilers', name: '🛢️ Titans Oilers 23', primary: '#8CBED6', secondary: '#C41E3A' },
+                    { value: 'actiongreen', name: '💚 Seahawks Action Green', primary: '#69BE28', secondary: '#002244' },
+                    { value: 'jagsteal', name: '🐆 Jaguars Teal', primary: '#006778', secondary: '#D7A22A' },
+                    { value: 'purplepeople', name: '💜 Vikings Purple Eaters', primary: '#4F2683', secondary: '#FFC62F' }
+                ]
+            },
+            {
+                name: '⚾ MLB - American League',
+                themes: [
+                    { value: 'orioles', name: '🦜 Baltimore Orioles', primary: '#DF4601', secondary: '#000000' },
+                    { value: 'redsox', name: '🧦 Boston Red Sox', primary: '#BD3039', secondary: '#0C2340' },
+                    { value: 'yankees', name: '⚾ New York Yankees', primary: '#003087', secondary: '#E4002C' },
+                    { value: 'rays', name: '☀️ Tampa Bay Rays', primary: '#092C5C', secondary: '#8FBCE6' },
+                    { value: 'bluejays', name: '🐦 Toronto Blue Jays', primary: '#134A8E', secondary: '#E8291C' },
+                    { value: 'whitesox', name: '🧦 Chicago White Sox', primary: '#27251F', secondary: '#C4CED4' },
+                    { value: 'guardians', name: '⚾ Cleveland Guardians', primary: '#00385D', secondary: '#E50022' },
+                    { value: 'tigers', name: '🐯 Detroit Tigers', primary: '#0C2340', secondary: '#FA4616' },
+                    { value: 'royals', name: '👑 Kansas City Royals', primary: '#004687', secondary: '#BD9B60' },
+                    { value: 'twins', name: '⚾ Minnesota Twins', primary: '#002B5C', secondary: '#D31145' },
+                    { value: 'astros', name: '🚀 Houston Astros', primary: '#002D62', secondary: '#EB6E1F' },
+                    { value: 'angels', name: '😇 Los Angeles Angels', primary: '#BA0021', secondary: '#003263' },
+                    { value: 'athletics', name: '🐘 Oakland Athletics', primary: '#003831', secondary: '#EFB21E' },
+                    { value: 'mariners', name: '🧭 Seattle Mariners', primary: '#0C2C56', secondary: '#005C5C' },
+                    { value: 'rangers', name: '⚾ Texas Rangers', primary: '#003278', secondary: '#C0111F' }
+                ]
+            },
+            {
+                name: '⚾ MLB - National League',
+                themes: [
+                    { value: 'braves', name: '🪓 Atlanta Braves', primary: '#CE1141', secondary: '#13274F' },
+                    { value: 'marlins', name: '🐟 Miami Marlins', primary: '#00A3E0', secondary: '#EF3340' },
+                    { value: 'mets', name: '🍎 New York Mets', primary: '#002D72', secondary: '#FF5910' },
+                    { value: 'phillies', name: '🔔 Philadelphia Phillies', primary: '#E81828', secondary: '#002D72' },
+                    { value: 'nationals', name: '🇺🇸 Washington Nationals', primary: '#AB0003', secondary: '#14225A' },
+                    { value: 'cubs', name: '⚾ Chicago Cubs', primary: '#0E3386', secondary: '#CC3433' },
+                    { value: 'reds', name: '🔴 Cincinnati Reds', primary: '#C6011F', secondary: '#000000' },
+                    { value: 'brewers', name: '🍺 Milwaukee Brewers', primary: '#12284B', secondary: '#B6922E' },
+                    { value: 'pirates', name: '🏴‍☠️ Pittsburgh Pirates', primary: '#27251F', secondary: '#FDB827' },
+                    { value: 'stlcardinals', name: '🐦 St. Louis Cardinals', primary: '#C41E3A', secondary: '#0C2340' },
+                    { value: 'dbacks', name: '🐍 Arizona Diamondbacks', primary: '#A71930', secondary: '#E3D4AD' },
+                    { value: 'rockies', name: '⛰️ Colorado Rockies', primary: '#33006F', secondary: '#C4CED4' },
+                    { value: 'dodgers', name: '⚾ Los Angeles Dodgers', primary: '#005A9C', secondary: '#EF3E42' },
+                    { value: 'padres', name: '🤎 San Diego Padres', primary: '#2F241D', secondary: '#FFC425' },
+                    { value: 'sfgiants', name: '🧡 San Francisco Giants', primary: '#FD5A1E', secondary: '#27251F' }
+                ]
+            },
+            {
+                name: '🏀 NBA Teams',
+                themes: [
+                    { value: 'bulls', name: '🏀 Chicago Bulls', primary: '#CE1141', secondary: '#000000' },
+                    { value: 'celtics', name: '☘️ Boston Celtics', primary: '#007A33', secondary: '#BA9653' },
+                    { value: 'nets', name: '🏀 Brooklyn Nets', primary: '#000000', secondary: '#FFFFFF' },
+                    { value: 'knicks', name: '🏀 New York Knicks', primary: '#006BB6', secondary: '#F58426' },
+                    { value: 'sixers', name: '🔔 Philadelphia 76ers', primary: '#006BB6', secondary: '#ED174C' },
+                    { value: 'raptors', name: '🦖 Toronto Raptors', primary: '#CE1141', secondary: '#000000' },
+                    { value: 'cavs', name: '⚔️ Cleveland Cavaliers', primary: '#860038', secondary: '#041E42' },
+                    { value: 'pistons', name: '🏀 Detroit Pistons', primary: '#C8102E', secondary: '#1D42BA' },
+                    { value: 'pacers', name: '🏎️ Indiana Pacers', primary: '#002D62', secondary: '#FDBB30' },
+                    { value: 'bucks', name: '🦌 Milwaukee Bucks', primary: '#00471B', secondary: '#EEE1C6' },
+                    { value: 'hawks', name: '🦅 Atlanta Hawks', primary: '#E03A3E', secondary: '#C1D32F' },
+                    { value: 'hornets', name: '🐝 Charlotte Hornets', primary: '#1D1160', secondary: '#00788C' },
+                    { value: 'heat', name: '🔥 Miami Heat', primary: '#98002E', secondary: '#F9A01B' },
+                    { value: 'magic', name: '✨ Orlando Magic', primary: '#0077C0', secondary: '#C4CED4' },
+                    { value: 'wizards', name: '🧙 Washington Wizards', primary: '#002B5C', secondary: '#E31837' },
+                    { value: 'nuggets', name: '⛏️ Denver Nuggets', primary: '#0E2240', secondary: '#FEC524' },
+                    { value: 'twolves', name: '🐺 Minnesota Timberwolves', primary: '#0C2340', secondary: '#236192' },
+                    { value: 'thunder', name: '⚡ Oklahoma City Thunder', primary: '#007AC1', secondary: '#EF3B24' },
+                    { value: 'blazers', name: '🔥 Portland Trail Blazers', primary: '#E03A3E', secondary: '#000000' },
+                    { value: 'jazz', name: '🎷 Utah Jazz', primary: '#002B5C', secondary: '#00471B' },
+                    { value: 'warriors', name: '🌉 Golden State Warriors', primary: '#1D428A', secondary: '#FFC72C' },
+                    { value: 'clippers', name: '⛵ LA Clippers', primary: '#C8102E', secondary: '#1D428A' },
+                    { value: 'lakers', name: '💜 Los Angeles Lakers', primary: '#552583', secondary: '#FDB927' },
+                    { value: 'suns', name: '☀️ Phoenix Suns', primary: '#1D1160', secondary: '#E56020' },
+                    { value: 'nbakings', name: '👑 Sacramento Kings', primary: '#5A2D81', secondary: '#63727A' },
+                    { value: 'mavs', name: '🐴 Dallas Mavericks', primary: '#00538C', secondary: '#002B5E' },
+                    { value: 'rockets', name: '🚀 Houston Rockets', primary: '#CE1141', secondary: '#000000' },
+                    { value: 'grizzlies', name: '🐻 Memphis Grizzlies', primary: '#5D76A9', secondary: '#12173F' },
+                    { value: 'pelicans', name: '🦅 New Orleans Pelicans', primary: '#0C2340', secondary: '#C8102E' },
+                    { value: 'spurs', name: '🤠 San Antonio Spurs', primary: '#C4CED4', secondary: '#000000' }
+                ]
+            },
+            {
+                name: '🏒 NHL Teams',
+                themes: [
+                    { value: 'blackhawks', name: '🏒 Chicago Blackhawks', primary: '#CF0A2C', secondary: '#000000' },
+                    { value: 'bruins', name: '🐻 Boston Bruins', primary: '#FFB81C', secondary: '#000000' },
+                    { value: 'sabres', name: '⚔️ Buffalo Sabres', primary: '#002654', secondary: '#FCB514' },
+                    { value: 'redwings', name: '🐙 Detroit Red Wings', primary: '#CE1126', secondary: '#FFFFFF' },
+                    { value: 'flapanthers', name: '🐆 Florida Panthers', primary: '#041E42', secondary: '#C8102E' },
+                    { value: 'canadiens', name: '🔴 Montreal Canadiens', primary: '#AF1E2D', secondary: '#192168' },
+                    { value: 'senators', name: '⚔️ Ottawa Senators', primary: '#C52032', secondary: '#C2912C' },
+                    { value: 'lightning', name: '⚡ Tampa Bay Lightning', primary: '#002868', secondary: '#FFFFFF' },
+                    { value: 'mapleleafs', name: '🍁 Toronto Maple Leafs', primary: '#00205B', secondary: '#FFFFFF' },
+                    { value: 'hurricanes', name: '🌀 Carolina Hurricanes', primary: '#CC0000', secondary: '#000000' },
+                    { value: 'bluejackets', name: '🔵 Columbus Blue Jackets', primary: '#002654', secondary: '#CE1126' },
+                    { value: 'devils', name: '😈 New Jersey Devils', primary: '#CE1126', secondary: '#000000' },
+                    { value: 'islanders', name: '🏝️ New York Islanders', primary: '#00539B', secondary: '#F47D30' },
+                    { value: 'nhlrangers', name: '🗽 New York Rangers', primary: '#0038A8', secondary: '#CE1126' },
+                    { value: 'flyers', name: '🟠 Philadelphia Flyers', primary: '#F74902', secondary: '#000000' },
+                    { value: 'penguins', name: '🐧 Pittsburgh Penguins', primary: '#000000', secondary: '#FCB514' },
+                    { value: 'capitals', name: '🦅 Washington Capitals', primary: '#041E42', secondary: '#C8102E' },
+                    { value: 'coyotes', name: '🐺 Arizona Coyotes', primary: '#8C2633', secondary: '#E2D6B5' },
+                    { value: 'avalanche', name: '⛰️ Colorado Avalanche', primary: '#6F263D', secondary: '#236192' },
+                    { value: 'stars', name: '⭐ Dallas Stars', primary: '#006847', secondary: '#8F8F8C' },
+                    { value: 'wild', name: '🌲 Minnesota Wild', primary: '#154734', secondary: '#A6192E' },
+                    { value: 'predators', name: '🐆 Nashville Predators', primary: '#FFB81C', secondary: '#041E42' },
+                    { value: 'stlblues', name: '🎵 St. Louis Blues', primary: '#002F87', secondary: '#FCB514' },
+                    { value: 'nhljets', name: '✈️ Winnipeg Jets', primary: '#041E42', secondary: '#004C97' },
+                    { value: 'ducks', name: '🦆 Anaheim Ducks', primary: '#F47A38', secondary: '#B9975B' },
+                    { value: 'flames', name: '🔥 Calgary Flames', primary: '#C8102E', secondary: '#F1BE48' },
+                    { value: 'oilers', name: '🛢️ Edmonton Oilers', primary: '#041E42', secondary: '#FF4C00' },
+                    { value: 'kings', name: '👑 Los Angeles Kings', primary: '#111111', secondary: '#A2AAAD' },
+                    { value: 'sharks', name: '🦈 San Jose Sharks', primary: '#006D75', secondary: '#EA7200' },
+                    { value: 'kraken', name: '🦑 Seattle Kraken', primary: '#001628', secondary: '#99D9D9' },
+                    { value: 'canucks', name: '🐋 Vancouver Canucks', primary: '#00205B', secondary: '#00843D' },
+                    { value: 'goldenknights', name: '⚔️ Vegas Golden Knights', primary: '#B4975A', secondary: '#333F42' }
+                ]
+            },
+            {
+                name: '🏈 College Football',
+                themes: [
+                    { value: 'alabama', name: '🐘 Alabama Crimson Tide', primary: '#9E1B32', secondary: '#828A8F' },
+                    { value: 'arkansas', name: '🐗 Arkansas Razorbacks', primary: '#9D2235', secondary: '#000000' },
+                    { value: 'auburn', name: '🐅 Auburn Tigers', primary: '#0C2340', secondary: '#E87722' },
+                    { value: 'florida', name: '🐊 Florida Gators', primary: '#0021A5', secondary: '#FA4616' },
+                    { value: 'georgia', name: '🐶 Georgia Bulldogs', primary: '#BA0C2F', secondary: '#000000' },
+                    { value: 'lsu', name: '🐯 LSU Tigers', primary: '#461D7C', secondary: '#FDD023' },
+                    { value: 'tennessee', name: '🟠 Tennessee Volunteers', primary: '#FF8200', secondary: '#58595B' },
+                    { value: 'texasam', name: '👍 Texas A&M Aggies', primary: '#500000', secondary: '#FFFFFF' },
+                    { value: 'michigan', name: '〽️ Michigan Wolverines', primary: '#00274C', secondary: '#FFCB05' },
+                    { value: 'michiganst', name: '💚 Michigan State Spartans', primary: '#18453B', secondary: '#FFFFFF' },
+                    { value: 'ohiostate', name: '🌰 Ohio State Buckeyes', primary: '#BB0000', secondary: '#666666' },
+                    { value: 'pennstate', name: '🦁 Penn State Nittany Lions', primary: '#041E42', secondary: '#FFFFFF' },
+                    { value: 'wisconsin', name: '🦡 Wisconsin Badgers', primary: '#C5050C', secondary: '#FFFFFF' },
+                    { value: 'nebraska', name: '🌽 Nebraska Cornhuskers', primary: '#E41C38', secondary: '#F5F1E7' },
+                    { value: 'clemson', name: '🐅 Clemson Tigers', primary: '#F56600', secondary: '#522D80' },
+                    { value: 'fsu', name: '🏹 Florida State Seminoles', primary: '#782F40', secondary: '#CEB888' },
+                    { value: 'miami', name: '🙌 Miami Hurricanes', primary: '#F47321', secondary: '#005030' },
+                    { value: 'oklahoma', name: '🐎 Oklahoma Sooners', primary: '#841617', secondary: '#FDF9D8' },
+                    { value: 'okstate', name: '🤠 Oklahoma State Cowboys', primary: '#FF7300', secondary: '#000000' },
+                    { value: 'texas', name: '🤘 Texas Longhorns', primary: '#BF5700', secondary: '#333F48' },
+                    { value: 'oregon', name: '🦆 Oregon Ducks', primary: '#154733', secondary: '#FEE123' },
+                    { value: 'oregonst', name: '🦫 Oregon State Beavers', primary: '#DC4405', secondary: '#000000' },
+                    { value: 'usc', name: '✌️ USC Trojans', primary: '#990000', secondary: '#FFC72C' },
+                    { value: 'ucla', name: '🐻 UCLA Bruins', primary: '#2D68C4', secondary: '#F2A900' },
+                    { value: 'byu', name: '🏔️ BYU Cougars', primary: '#002E5D', secondary: '#FFFFFF' },
+                    { value: 'notredame', name: '☘️ Notre Dame Fighting Irish', primary: '#0C2340', secondary: '#C99700' }
+                ]
+            },
+            {
+                name: '🍔 Fast Food',
+                themes: [
+                    { value: 'mcdonalds', name: "🍟 McDonald's", primary: '#FFC72C', secondary: '#DA291C' },
+                    { value: 'burgerking', name: '🍔 Burger King', primary: '#FF8732', secondary: '#502314' },
+                    { value: 'wendys', name: "🟥 Wendy's", primary: '#E2203D', secondary: '#199FDA' },
+                    { value: 'tacobell', name: '🌮 Taco Bell', primary: '#702082', secondary: '#FF5BA3' },
+                    { value: 'kfc', name: '🍗 KFC', primary: '#F40027', secondary: '#FFFFFF' },
+                    { value: 'subway', name: '🥖 Subway', primary: '#008C15', secondary: '#FFC600' },
+                    { value: 'pizzahut', name: '🍕 Pizza Hut', primary: '#EE3124', secondary: '#00A160' },
+                    { value: 'chickfila', name: '🐔 Chick-fil-A', primary: '#E51636', secondary: '#004F71' },
+                    { value: 'dunkin', name: "🍩 Dunkin'", primary: '#FF671F', secondary: '#DA1884' },
+                    { value: 'dominos', name: "🍕 Domino's", primary: '#006491', secondary: '#E31837' },
+                    { value: 'sonic', name: '🥤 Sonic', primary: '#0066A1', secondary: '#EF3E42' },
+                    { value: 'arbys', name: "🥩 Arby's", primary: '#D22630', secondary: '#64502F' },
+                    { value: 'dairyqueen', name: '🍦 Dairy Queen', primary: '#ED1C24', secondary: '#0066B2' },
+                    { value: 'jackinthebox', name: '📦 Jack in the Box', primary: '#E31837', secondary: '#FFD100' },
+                    { value: 'popeyes', name: '🍗 Popeyes', primary: '#F15A22', secondary: '#008578' },
+                    { value: 'chipotle', name: '🌯 Chipotle', primary: '#441500', secondary: '#A81612' },
+                    { value: 'fiveguys', name: '🍔 Five Guys', primary: '#D32323', secondary: '#FFFFFF' },
+                    { value: 'innout', name: '🌴 In-N-Out', primary: '#E4002B', secondary: '#FFD700' },
+                    { value: 'culvers', name: "🧈 Culver's", primary: '#0033A0', secondary: '#FFC72C' },
+                    { value: 'timhortons', name: '☕ Tim Hortons', primary: '#DD0031', secondary: '#683B29' }
+                ]
+            },
+            {
+                name: '🧀 Wisconsin & Midwest',
+                themes: [
+                    { value: 'kwiktrip', name: '⛽ Kwik Trip', primary: '#D21034', secondary: '#231F20' },
+                    { value: 'rutters', name: "⛽ Rutter's", primary: '#D40029', secondary: '#000000' },
+                    { value: 'cenex', name: '⛽ Cenex', primary: '#004B87', secondary: '#ED1C24' },
+                    { value: 'cenexcoop', name: '⛽ Cenex Co-op', primary: '#004B87', secondary: '#ED1C24' },
+                    { value: 'fleetfarm', name: '🚜 Fleet Farm', primary: '#00703C', secondary: '#231F20' },
+                    { value: 'woodmans', name: "🛒 Woodman's Markets", primary: '#2E3092', secondary: '#ED1C24' },
+                    { value: 'picknsave', name: "🛒 Pick 'n Save", primary: '#004990', secondary: '#E4002B' },
+                    { value: 'sentry', name: '🛒 Sentry Foods', primary: '#004990', secondary: '#E4002B' },
+                    { value: 'festival', name: '🛒 Festival Foods', primary: '#00A651', secondary: '#ED1C24' },
+                    { value: 'pigglywiggly', name: '🐷 Piggly Wiggly', primary: '#E31837', secondary: '#231F20' },
+                    { value: 'holiday', name: '⛽ Holiday Stationstores', primary: '#00703C', secondary: '#ED1C24' },
+                    { value: 'bp', name: '⛽ BP Wisconsin', primary: '#009639', secondary: '#F7E600' },
+                    { value: 'caseys', name: "⛽ Casey's", primary: '#E21A22', secondary: '#000000' },
+                    { value: 'shell', name: '⛽ Shell', primary: '#FFD500', secondary: '#DD1D21' },
+                    { value: 'mobil', name: '⛽ Mobil / Exxon', primary: '#0033A0', secondary: '#ED1C24' }
+                ]
+            },
+            {
+                name: '🎮 Retro Gaming',
+                themes: [
+                    { value: 'nes', name: '🕹️ NES Classic', primary: '#E60012', secondary: '#484848' },
+                    { value: 'snes', name: '🎮 SNES Classic', primary: '#5F249F', secondary: '#009DC4' },
+                    { value: 'genesis', name: '🎮 Sega Genesis', primary: '#0060A8', secondary: '#C8102E' },
+                    { value: 'gameboy', name: '🎮 Game Boy Color', primary: '#306230', secondary: '#8BAC0F' },
+                    { value: 'n64', name: '🎮 N64 Funtastic', primary: '#009E60', secondary: '#A020F0' },
+                    { value: 'ps1', name: '🎮 PlayStation 1', primary: '#003087', secondary: '#00A4E8' },
+                    { value: 'windows95', name: '💻 Windows 95', primary: '#008080', secondary: '#000080' },
+                    { value: 'windowsxp', name: '🌄 Windows XP Bliss', primary: '#3A6EA5', secondary: '#6EA04B' },
+                    { value: 'macos9', name: '🍎 Mac OS 9', primary: '#666666', secondary: '#999999' },
+                    { value: 'amiga', name: '💻 Amiga Workbench', primary: '#FF8800', secondary: '#0055AA' },
+                    { value: 'c64', name: '💾 Commodore 64', primary: '#A5A5FF', secondary: '#0000AA' }
+                ]
+            },
+            {
+                name: '🚗 Cars & Sneakers',
+                themes: [
+                    { value: 'camaro', name: "🚗 '69 Camaro Z28", primary: '#FF6600', secondary: '#1C1C1C' },
+                    { value: 'challenger', name: "🚗 '70 Challenger", primary: '#7B1FA2', secondary: '#1A1A1A' },
+                    { value: 'bullitt', name: "🚗 '68 Mustang Bullitt", primary: '#355E3B', secondary: '#1A1A1A' },
+                    { value: 'supra', name: "🚗 '94 Toyota Supra", primary: '#FF4500', secondary: '#1A1A1A' },
+                    { value: 'skyline', name: "🚗 '99 Nissan Skyline", primary: '#0033CC', secondary: '#C0C0C0' },
+                    { value: 'typer', name: "🚗 '97 Civic Type R", primary: '#CC0000', secondary: '#FFFFFF' },
+                    { value: 'jordan1', name: '👟 Jordan 1 Chicago', primary: '#CE1126', secondary: '#000000' },
+                    { value: 'yeezy', name: '👟 Yeezy 350', primary: '#B8B8B8', secondary: '#3D3D3D' },
+                    { value: 'pigeon', name: '👟 Nike SB Dunk Pigeon', primary: '#808080', secondary: '#FF6B00' },
+                    { value: 'wotherspoon', name: '👟 Air Max 97 Wotherspoon', primary: '#87CEEB', secondary: '#FFD700' }
+                ]
+            },
+            {
+                name: '🦸 Superheroes',
+                themes: [
+                    { value: 'spiderman', name: '🕷️ Spider-Man Classic', primary: '#E62429', secondary: '#003DA5' },
+                    { value: 'symbiote', name: '🕸️ Spider-Man Symbiote', primary: '#1A1A1A', secondary: '#FFFFFF' },
+                    { value: 'batman', name: '🦇 Batman Arkham', primary: '#1A1A1A', secondary: '#2B3A4A' },
+                    { value: 'superman', name: '🦸 Superman', primary: '#0099F7', secondary: '#ED1D24' },
+                    { value: 'wonderwoman', name: '👸 Wonder Woman', primary: '#C9A227', secondary: '#B22234' },
+                    { value: 'ironman', name: '🤖 Iron Man', primary: '#B71C1C', secondary: '#FFD700' },
+                    { value: 'captainamerica', name: '🛡️ Captain America', primary: '#002868', secondary: '#BF0A30' },
+                    { value: 'hulk', name: '💪 Hulk', primary: '#4CAF50', secondary: '#1B5E20' },
+                    { value: 'thor', name: '⚡ Thor', primary: '#0D47A1', secondary: '#FFD700' },
+                    { value: 'harleyquinn', name: '🃏 Harley Quinn', primary: '#E91E63', secondary: '#00BCD4' },
+                    { value: 'starlord', name: '🎧 Star-Lord', primary: '#8B0000', secondary: '#FFD700' },
+                    { value: 'groot', name: '🌳 Groot', primary: '#8B4513', secondary: '#228B22' },
+                    { value: 'marvelrivals', name: '🎮 Marvel Rivals', primary: '#E62429', secondary: '#003DA5' },
+                    { value: 'flash', name: '⚡ The Flash', primary: '#E62429', secondary: '#FFD700' },
+                    { value: 'greenlantern', name: '💚 Green Lantern', primary: '#00A651', secondary: '#1A1A1A' },
+                    { value: 'reaper', name: '💀 Overwatch Reaper', primary: '#1A1A1A', secondary: '#8B0000' }
+                ]
+            },
+            {
+                name: '🤖 Cyberpunk 2077',
+                themes: [
+                    { value: 'nightcity', name: '🌃 Night City Neon', primary: '#FF003C', secondary: '#00F0FF' },
+                    { value: 'arasaka', name: '🏢 Arasaka Corpo', primary: '#E21B1B', secondary: '#1A1A1A' },
+                    { value: 'militech', name: '🎖️ Militech Military', primary: '#3D5C5C', secondary: '#8B8B00' },
+                    { value: 'moxes', name: '💜 Moxes Gang', primary: '#9B2D9B', secondary: '#00BFFF' },
+                    { value: 'valentinos', name: '💗 Valentinos Gang', primary: '#DC143C', secondary: '#FFD700' },
+                    { value: 'vjacket', name: "🧥 V's Jacket", primary: '#FFD700', secondary: '#000000' },
+                    { value: 'silverhand', name: '🎸 Johnny Silverhand', primary: '#FF6B35', secondary: '#1A1A1A' },
+                    { value: 'cyberpunkui', name: '📺 Cyberpunk UI', primary: '#00F0FF', secondary: '#FF003C' },
+                    { value: 'phantomliberty', name: '🦅 Phantom Liberty', primary: '#B8860B', secondary: '#191970' },
+                    { value: 'cyberpunklogo', name: '💛 Cyberpunk Logo', primary: '#FCE94F', secondary: '#00D4FF' }
+                ]
+            },
+            {
+                name: '🎵 Lo-Fi / Vaporwave',
+                themes: [
+                    { value: 'lofi', name: '📻 Lo-Fi ChilledCow', primary: '#E67E22', secondary: '#5B3A29' },
+                    { value: 'chillhop', name: '🦝 Chillhop Raccoon', primary: '#4A90A4', secondary: '#E8D5B7' },
+                    { value: 'vaporwave', name: '🌴 Vaporwave Classic', primary: '#FF71CE', secondary: '#01CDFE' },
+                    { value: 'mallsoft', name: '🏬 Mallsoft Sunset', primary: '#FF6B9D', secondary: '#C9EEFF' },
+                    { value: 'miamivice', name: '🌆 Miami Vice', primary: '#FF6B9D', secondary: '#00D4FF' },
+                    { value: 'outrun', name: '🌃 Outrun Grid', primary: '#FF2975', secondary: '#00BFFF' }
+                ]
+            },
+            {
+                name: '✈️ Airlines',
+                themes: [
+                    { value: 'panam', name: '✈️ Pan Am Classic', primary: '#0033A0', secondary: '#FFFFFF' },
+                    { value: 'braniff', name: '✈️ Braniff International', primary: '#FF6600', secondary: '#00A86B' },
+                    { value: 'southwest', name: '❤️ Southwest Heart', primary: '#304CB2', secondary: '#FFBF27' },
+                    { value: 'pokemon', name: '⚡ ANA Pokémon Jet', primary: '#FFCB05', secondary: '#3D7DCA' }
+                ]
+            },
+            {
+                name: '🏞️ National Parks',
+                themes: [
+                    { value: 'yellowstone', name: '🦬 Yellowstone', primary: '#8B4513', secondary: '#228B22' },
+                    { value: 'grandcanyon', name: '🏜️ Grand Canyon', primary: '#CD5C5C', secondary: '#DAA520' },
+                    { value: 'yosemite', name: '⛰️ Yosemite', primary: '#2E8B57', secondary: '#4682B4' }
+                ]
+            },
+            {
+                name: '🔍 Retro Search Engines',
+                themes: [
+                    { value: 'yahoo1996', name: '🟣 Yahoo! 1996', primary: '#6001A8', secondary: '#FF9900' },
+                    { value: 'yahoo2000s', name: '🔴 Yahoo! 2000s', primary: '#7B0099', secondary: '#FF0000' },
+                    { value: 'aol1995', name: '💛 AOL 1995', primary: '#00C8FF', secondary: '#FFCC00' },
+                    { value: 'aol2000s', name: '🔵 AOL 2000s Teal', primary: '#00A0D8', secondary: '#FFFFFF' },
+                    { value: 'excite1997', name: '❗ Excite 1997', primary: '#E4002B', secondary: '#000000' },
+                    { value: 'lycos', name: '🐕 Lycos', primary: '#FF0000', secondary: '#000000' },
+                    { value: 'altavista', name: '🔎 AltaVista 1998', primary: '#0066CC', secondary: '#FF9900' },
+                    { value: 'askjeeves', name: '🎩 Ask Jeeves', primary: '#00A99D', secondary: '#FF6600' },
+                    { value: 'webcrawler', name: '🕷️ WebCrawler', primary: '#009900', secondary: '#FFFF00' },
+                    { value: 'infoseek', name: '🔮 Infoseek 1997', primary: '#660099', secondary: '#FFCC00' },
+                    { value: 'msn1998', name: '🦋 MSN 1998 Butterfly', primary: '#00ADEF', secondary: '#FFB900' },
+                    { value: 'netscape', name: '🌐 Netscape Navigator', primary: '#0033CC', secondary: '#FFCC00' },
+                    { value: 'dogpile', name: '🐕 Dogpile', primary: '#FF6600', secondary: '#6600CC' },
+                    { value: 'geocities', name: '🏗️ GeoCities Classic', primary: '#FF0099', secondary: '#00FF00' }
+                ]
+            },
+            {
+                name: '🕹️ MAME Arcade Classics',
+                themes: [
+                    { value: 'mamepacman', name: '👻 Pac-Man', primary: '#FFFF00', secondary: '#FF0000' },
+                    { value: 'mamemspacman', name: '🎀 Ms. Pac-Man', primary: '#FF21AE', secondary: '#00FFFF' },
+                    { value: 'mamedonkeykong', name: '🦍 Donkey Kong', primary: '#E80709', secondary: '#EE7511' },
+                    { value: 'mamespaceinvaders', name: '👾 Space Invaders', primary: '#62DE6D', secondary: '#F83B3A' },
+                    { value: 'mamegalaga', name: '🚀 Galaga', primary: '#00FF00', secondary: '#EC4705' },
+                    { value: 'mamefrogger', name: '🐸 Frogger', primary: '#66A400', secondary: '#EB1C2D' },
+                    { value: 'mamestreetfighter', name: '🥋 Street Fighter II', primary: '#FFFFFF', secondary: '#E70000' },
+                    { value: 'mamemortalkombat', name: '🐉 Mortal Kombat', primary: '#EED911', secondary: '#F53929' },
+                    { value: 'mamedefender', name: '🛸 Defender', primary: '#00A651', secondary: '#FF4500' },
+                    { value: 'mamecentipede', name: '🐛 Centipede', primary: '#228B22', secondary: '#8B4513' },
+                    { value: 'mamedigdug', name: '⛏️ Dig Dug', primary: '#4169E1', secondary: '#FF0000' },
+                    { value: 'mameqbert', name: '🔶 Q*bert', primary: '#9370DB', secondary: '#FF8C00' },
+                    { value: 'mametempest', name: '🌀 Tempest', primary: '#8A2BE2', secondary: '#00BFFF' },
+                    { value: 'mameasteroids', name: '☄️ Asteroids', primary: '#FFFFFF', secondary: '#00FFFF' },
+                    { value: 'mamebubble', name: '🫧 Bubble Bobble', primary: '#FFB6C1', secondary: '#87CEEB' },
+                    { value: 'mamegauntlet', name: '⚔️ Gauntlet', primary: '#40FF40', secondary: '#FF4040' },
+                    { value: 'mamerampage', name: '🦎 Rampage', primary: '#00A000', secondary: '#FF69B4' },
+                    { value: 'mamerobotron', name: '🤖 Robotron', primary: '#00FFFF', secondary: '#FF00FF' },
+                    { value: 'mamejoust', name: '🦅 Joust', primary: '#FFD700', secondary: '#FF0000' },
+                    { value: 'mametron', name: '💠 Tron', primary: '#00FFFF', secondary: '#FF0000' },
+                    { value: 'mamenbajam', name: '🏀 NBA Jam', primary: '#C8102E', secondary: '#002244' },
+                    { value: 'mamecontra', name: '🔫 Contra', primary: '#0000FF', secondary: '#FF0000' },
+                    { value: 'mamemetalslug', name: '🪖 Metal Slug', primary: '#FFD700', secondary: '#4169E1' },
+                    { value: 'mametmnt', name: '🐢 TMNT Arcade', primary: '#008000', secondary: '#FF0000' },
+                    { value: 'mamedoubledragon', name: '🐲 Double Dragon', primary: '#0000FF', secondary: '#FF0000' },
+                    { value: 'mamefinalfight', name: '👊 Final Fight', primary: '#FFFF00', secondary: '#FF0000' },
+                    { value: 'mamegradius', name: '🚀 Gradius', primary: '#00FFFF', secondary: '#FF4500' },
+                    { value: 'mamegoldenaxe', name: '🪓 Golden Axe', primary: '#8B0000', secondary: '#FF4500' },
+                    { value: 'mamestrider', name: '⚔️ Strider', primary: '#00FF00', secondary: '#FF00FF' },
+                    { value: 'mamertype', name: '🛩️ R-Type', primary: '#4169E1', secondary: '#FF0000' }
+                ]
+            },
+            {
+                name: '🥤 Monster Energy',
+                themes: [
+                    { value: 'monstergreen', name: '💚 Monster Original', primary: '#8DC63F', secondary: '#000000' },
+                    { value: 'monsterblack', name: '⬛ Ultra Black', primary: '#000000', secondary: '#C0C0C0' },
+                    { value: 'monstersunrise', name: '🌅 Ultra Sunrise', primary: '#FF6B00', secondary: '#FFD700' },
+                    { value: 'monsterparadise', name: '🥝 Ultra Paradise', primary: '#00FF7F', secondary: '#FFFFFF' },
+                    { value: 'monsterviolet', name: '🍇 Ultra Violet', primary: '#9932CC', secondary: '#E0B0FF' },
+                    { value: 'monsterpipeline', name: '🍹 Pipeline Punch', primary: '#FF69B4', secondary: '#FFD700' },
+                    { value: 'monsterrehab', name: '🍋 Rehab Tea+Lemonade', primary: '#FFD700', secondary: '#8B4513' },
+                    { value: 'monsterred', name: '🍒 Ultra Red', primary: '#C8102E', secondary: '#FFFFFF' }
+                ]
+            },
+            {
+                name: '🏔️ Mountain Dew',
+                themes: [
+                    { value: 'mtndewgreen', name: '💚 Original Dew', primary: '#99CC00', secondary: '#006633' },
+                    { value: 'mtndewcodered', name: '🍒 Code Red', primary: '#C8102E', secondary: '#000000' },
+                    { value: 'mtndewvoltage', name: '⚡ Voltage', primary: '#00B7EB', secondary: '#000000' },
+                    { value: 'mtndewbaja', name: '🌴 Baja Blast', primary: '#66CCCC', secondary: '#FFFFFF' },
+                    { value: 'mtndewlivewire', name: '🍊 Live Wire', primary: '#FF6B00', secondary: '#000000' },
+                    { value: 'mtndewwhiteout', name: '🤍 White Out', primary: '#FFFFFF', secondary: '#00BFFF' }
+                ]
+            },
+            {
+                name: '🍺 Root Beer & Soda',
+                themes: [
+                    { value: 'awrootbeer', name: '🍺 A&W Root Beer', primary: '#8B4513', secondary: '#FFD700' },
+                    { value: 'barqs', name: '🔴 Barqs Red Crème', primary: '#C8102E', secondary: '#FFFFFF' },
+                    { value: 'mugcream', name: '🍦 Mug Cream Soda', primary: '#FFF8DC', secondary: '#8B4513' },
+                    { value: 'ibccherry', name: '🍒 IBC Black Cherry', primary: '#4B0082', secondary: '#C71585' },
+                    { value: 'cocacola', name: '🥤 Coca-Cola', primary: '#C8102E', secondary: '#FFFFFF' },
+                    { value: 'drpepper', name: '🥤 Dr Pepper', primary: '#8B0000', secondary: '#DAA520' },
+                    { value: 'pepsi', name: '🥤 Pepsi', primary: '#004B8D', secondary: '#E4002B' },
+                    { value: 'sprite', name: '🥤 Sprite', primary: '#00A550', secondary: '#FFFFFF' },
+                    { value: 'fanta', name: '🍊 Fanta Orange', primary: '#FF6600', secondary: '#003DA5' }
+                ]
+            },
+            {
+                name: '⚡ Energy Drinks',
+                themes: [
+                    { value: 'redbull', name: '🐂 Red Bull', primary: '#0050A4', secondary: '#C0C0C0' },
+                    { value: 'rockstar', name: '⭐ Rockstar', primary: '#800080', secondary: '#FFD700' },
+                    { value: 'nos', name: '🔥 NOS Nitrous', primary: '#000000', secondary: '#FF0000' },
+                    { value: 'bang', name: '💥 Bang Neon', primary: '#FF6B00', secondary: '#FFD700' },
+                    { value: 'c4energy', name: '💪 C4 Electric Blue', primary: '#00BFFF', secondary: '#FFFFFF' },
+                    { value: 'alaninu', name: '💗 Alani Nu Pink', primary: '#FF69B4', secondary: '#E0B0FF' },
+                    { value: 'ghostenergy', name: '👻 Ghost Neon', primary: '#39FF14', secondary: '#000000' },
+                    { value: 'celsius', name: '🌡️ Celsius Orange', primary: '#FF4500', secondary: '#FFD700' },
+                    { value: 'prime', name: '🏆 Prime Tropical', primary: '#00AEEF', secondary: '#FF6B00' },
+                    { value: 'reign', name: '👑 Reign Matte Black', primary: '#000000', secondary: '#C0C0C0' },
+                    { value: 'gamerfuel', name: '🎮 Gamer Neon Grid', primary: '#00FFFF', secondary: '#FF00FF' }
+                ]
+            }
+        ];
+
+        function openThemePicker() {
+            renderThemePickerList();
+            document.getElementById('themePickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('themePickerSearch').focus();
+            }, 100);
+        }
+        
+        function closeThemePicker() {
+            document.getElementById('themePickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function filterThemePicker() {
+            renderThemePickerList();
+        }
+        
+        function renderThemePickerList() {
+            const search = document.getElementById('themePickerSearch').value.toLowerCase().trim();
+            const listContainer = document.getElementById('themePickerList');
+            const currentTheme = document.getElementById('themeSelector').value;
+            
+            let html = '';
+            
+            themeCategories.forEach(category => {
+                // Filter themes in this category
+                const filteredThemes = category.themes.filter(t => {
+                    return !search || 
+                        t.name.toLowerCase().includes(search) || 
+                        t.value.toLowerCase().includes(search) ||
+                        category.name.toLowerCase().includes(search);
+                });
+                
+                if (filteredThemes.length === 0) return;
+                
+                // Category header
+                html += `<div style="font-weight: 600; font-size: 16px; color: #333; margin: 15px 0 10px 0; padding-bottom: 5px; border-bottom: 2px solid #e0e0e0;">${category.name}</div>`;
+                
+                // Theme grid
+                html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">';
+                
+                filteredThemes.forEach(theme => {
+                    const isSelected = theme.value === currentTheme;
+                    html += `
+                        <div onclick="selectTheme('${theme.value}', '${theme.name.replace(/'/g, "\\'")}')" 
+                             style="cursor: pointer; padding: 12px; border: 2px solid ${isSelected ? theme.primary : '#e0e0e0'}; border-radius: 12px; background: ${isSelected ? '#f8f9fa' : 'white'}; transition: all 0.2s; display: flex; align-items: center; gap: 10px;"
+                             onmouseover="this.style.borderColor='${theme.primary}'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                             onmouseout="this.style.borderColor='${isSelected ? theme.primary : '#e0e0e0'}'; this.style.transform='none'; this.style.boxShadow='none'">
+                            <div style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%); box-shadow: 0 2px 6px rgba(0,0,0,0.2); flex-shrink: 0;"></div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 500; font-size: 13px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${theme.name}</div>
+                                ${isSelected ? '<div style="font-size: 11px; color: #4CAF50; font-weight: 600;">✓ Active</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+            
+            if (!html) {
+                html = `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">🔍</div>
+                        <div>No themes found for "${search}"</div>
+                    </div>
+                `;
+            }
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectTheme(themeValue, themeName) {
+            document.getElementById('themeSelector').value = themeValue;
+            document.getElementById('themePreviewName').textContent = themeName;
+            
+            // Call the existing changeTheme function
+            changeTheme();
+            
+            // Update the preview swatch with new colors
+            setTimeout(() => {
+                const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+                const secondary = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
+                document.getElementById('themePreviewSwatch').style.background = `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`;
+            }, 50);
+            
+            closeThemePicker();
+        }
+        
+        // Update theme preview on page load
+        function updateThemePreview() {
+            const savedTheme = localStorage.getItem('theme') || 'purple';
+            document.getElementById('themeSelector').value = savedTheme;
+            
+            // Find the theme name
+            let themeName = '🟣 Royal Purple';
+            themeCategories.forEach(cat => {
+                const found = cat.themes.find(t => t.value === savedTheme);
+                if (found) themeName = found.name;
+            });
+            
+            document.getElementById('themePreviewName').textContent = themeName;
+            
+            // Update swatch
+            setTimeout(() => {
+                const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+                const secondary = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim();
+                if (primary && secondary) {
+                    document.getElementById('themePreviewSwatch').style.background = `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`;
+                }
+            }, 100);
+        }
+        
         function filterCustomerPicker() {
             renderCustomerPickerList();
         }
@@ -12517,8 +12956,8 @@ NOTE: Please print the attached PO document for full details.`;
             
             let filtered = pos.filter(po => {
                 return !search || 
-                    (po.PO_Number && po.PO_Number.toLowerCase().includes(search)) ||
-                    (po.Supplier_Invoice && po.Supplier_Invoice.toLowerCase().includes(search));
+                    (po.PO_ID && po.PO_ID.toLowerCase().includes(search)) ||
+                    (po.Invoice_Number && po.Invoice_Number.toLowerCase().includes(search));
             });
             
             let html = '';
@@ -12555,11 +12994,12 @@ NOTE: Please print the attached PO document for full details.`;
                 const supplierName = getSupplierName(po.Supplier_ID);
                 const total = parseFloat(po.Total_Amount) || 0;
                 const date = po.PO_Date ? new Date(po.PO_Date).toLocaleDateString() : '';
+                const displayNum = po.Invoice_Number || po.PO_ID;
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectPOFromPicker('${po.PO_Number}')" style="border-left: 4px solid #c0c0c0;">
+                    <div class="item-picker-card" onclick="selectPOFromPicker('${displayNum}')" style="border-left: 4px solid #c0c0c0;">
                         <div class="item-picker-card-header">
-                            <span class="item-picker-sku">${po.PO_Number || 'No PO#'}</span>
+                            <span class="item-picker-sku">${displayNum}</span>
                             <span class="item-picker-stock" style="background: ${status === 'Received' ? '#e8f5e9' : '#fff3e0'}; color: ${statusColor};">${status}</span>
                         </div>
                         <div class="item-picker-desc">${supplierName}</div>
@@ -12572,7 +13012,7 @@ NOTE: Please print the attached PO document for full details.`;
                                 <span class="item-picker-detail-label">Total</span>
                                 <span class="item-picker-detail-value item-picker-price">$${total.toFixed(2)}</span>
                             </div>
-                            ${po.Supplier_Invoice ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Invoice</span><span class="item-picker-detail-value">${po.Supplier_Invoice}</span></div>` : ''}
+                            ${po.PO_ID !== displayNum ? `<div class="item-picker-detail"><span class="item-picker-detail-label">PO ID</span><span class="item-picker-detail-value">${po.PO_ID}</span></div>` : ''}
                         </div>
                     </div>
                 `;
