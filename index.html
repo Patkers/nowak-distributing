@@ -38,7 +38,7 @@
         .header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
 
         .header h1 {
@@ -1062,6 +1062,46 @@
         .landing-nav-card:active {
             transform: translateY(-4px) scale(1.01);
         }
+        
+        /* Desktop Modal Features - Draggable & Resizable */
+        @media (min-width: 769px) {
+            /* Add resize handle indicator to modals on desktop */
+            .resizable-added::after {
+                content: '⋰';
+                position: absolute;
+                bottom: 5px;
+                right: 5px;
+                font-size: 20px;
+                color: #999;
+                pointer-events: none;
+                line-height: 1;
+            }
+            
+            /* Draggable header hint */
+            .draggable-added:hover {
+                background: rgba(255, 255, 255, 0.1) !important;
+            }
+            
+            /* Center modals initially */
+            #orderModal > div,
+            #reportSetupModal > div,
+            .item-picker-container {
+                position: relative;
+                margin: 50px auto !important;
+            }
+        }
+        
+        /* Mobile - keep modals fixed and full screen */
+        @media (max-width: 768px) {
+            #orderModal > div,
+            #reportSetupModal > div,
+            .item-picker-container {
+                margin: 0 !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                transform: none !important;
+            }
+        }
     </style>
     <link rel="stylesheet" href="sports-themes.css">
 </head>
@@ -1080,7 +1120,8 @@
         </div>
 
         <!-- Navigation Cards - Always Visible at Top -->
-        <div style="position: sticky; top: 5px; z-index: 100; background: var(--bg-color, #f5f5f5); padding: 8px; margin: 5px; border: 3px solid var(--primary, #667eea); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+        <!-- Navigation Cards - LOCKED (Not Sticky) - V13 -->
+        <div style="position: static; z-index: 100; background: var(--bg-color, #f5f5f5); padding: 5px; margin: 0px 5px 5px 5px; border: 3px solid var(--primary, #667eea); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 8px; background: linear-gradient(135deg, var(--primary, #1e3a8a) 0%, var(--accent, #3b82f6) 100%); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
                 
                 <!-- Suppliers Card -->
@@ -2596,6 +2637,18 @@
             <!-- Report Selection Buttons - Organized Grid -->
             <div class="report-grid">
                 <div class="report-category">
+                    <div class="report-category-header" onclick="toggleReportSection('dashboardReports')">
+                        <h4>📊 Dashboards</h4>
+                        <span id="dashboardReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="dashboardReports" class="report-buttons">
+                        <button class="btn report-btn" onclick="showReport('daily-dashboard')" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">🎯 Sales Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('customer-dashboard')" style="background: linear-gradient(135deg, #2e7d32, #4caf50); color: white;">👤 Customer Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('supplier-dashboard')" style="background: linear-gradient(135deg, #1565c0, #42a5f5); color: white;">🏭 Supplier Dashboard</button>
+                    </div>
+                </div>
+                
+                <div class="report-category">
                     <div class="report-category-header" onclick="toggleReportSection('salesReports')">
                         <h4>📊 Sales Reports</h4>
                         <span id="salesReports-toggle" class="report-toggle">▼</span>
@@ -2653,18 +2706,6 @@
                         <button class="btn report-btn" onclick="showReport('annual-purchase-summary')">📉 Annual Purchase Summary</button>
                         <button class="btn report-btn" onclick="showReport('inventory-valuation')">💰 Inventory Valuation</button>
                         <button class="btn report-btn" onclick="showReport('cash-flow-summary')">💵 Cash Flow Summary</button>
-                    </div>
-                </div>
-                
-                <div class="report-category">
-                    <div class="report-category-header" onclick="toggleReportSection('dashboardReports')">
-                        <h4>📊 Dashboards</h4>
-                        <span id="dashboardReports-toggle" class="report-toggle">▼</span>
-                    </div>
-                    <div id="dashboardReports" class="report-buttons">
-                        <button class="btn report-btn" onclick="showReport('daily-dashboard')" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">🎯 Sales Dashboard</button>
-                        <button class="btn report-btn" onclick="showReport('customer-dashboard')" style="background: linear-gradient(135deg, #2e7d32, #4caf50); color: white;">👤 Customer Dashboard</button>
-                        <button class="btn report-btn" onclick="showReport('supplier-dashboard')" style="background: linear-gradient(135deg, #1565c0, #42a5f5); color: white;">🏭 Supplier Dashboard</button>
                     </div>
                 </div>
             </div>
@@ -8456,7 +8497,7 @@
                 filterHtml += `
                     <div class="form-group">
                         <label>📦 Item</label>
-                        <input type="text" id="rptFilter_item_display" placeholder="🔍 All Items (click to filter)" onclick="openItemPicker()" readonly style="cursor: pointer; background: #fff;">
+                        <input type="text" id="rptFilter_item_display" placeholder="🔍 All Items (click to filter)" onclick="openItemPickerForReport()" readonly style="cursor: pointer; background: #fff;">
                         <input type="hidden" id="rptFilter_item" value="">
                     </div>`;
             }
@@ -14652,21 +14693,6 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- ITEM PICKER MODAL (for reports) -->
-    <div id="itemPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container">
-            <div class="item-picker-header">
-                <h3>📦 Select Item</h3>
-                <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
-            </div>
-            <div class="item-picker-search">
-                <input type="text" id="itemPickerSearch" placeholder="🔍 Search items by name or SKU..." oninput="filterItemPicker()" onkeyup="filterItemPicker()">
-            </div>
-            <div id="itemPickerList" class="item-picker-list">
-                <!-- Items will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-
     <!-- PO TYPE PICKER MODAL -->
     <div id="poTypePickerModal" class="item-picker-overlay">
         <div class="item-picker-container" style="max-width: 400px;">
@@ -16867,9 +16893,9 @@ NOTE: Please print the attached PO document for full details.`;
         
         // ==================== ITEM PICKER (for reports) ====================
         
-        function openItemPicker() {
+        function openItemPickerForReport() {
             document.getElementById('itemPickerSearch').value = '';
-            renderItemPickerList();
+            renderItemPickerListForReport();
             document.getElementById('itemPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
@@ -16877,16 +16903,16 @@ NOTE: Please print the attached PO document for full details.`;
             }, 100);
         }
         
-        function closeItemPicker() {
+        function closeItemPickerForReport() {
             document.getElementById('itemPickerModal').style.display = 'none';
             document.body.style.overflow = '';
         }
         
-        function filterItemPicker() {
-            renderItemPickerList();
+        function filterItemPickerForReport() {
+            renderItemPickerListForReport();
         }
         
-        function renderItemPickerList() {
+        function renderItemPickerListForReport() {
             const search = document.getElementById('itemPickerSearch').value.toLowerCase().trim();
             const listContainer = document.getElementById('itemPickerList');
             
@@ -16902,7 +16928,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Add "All Items" option at top
             html += `
-                <div class="item-picker-card" onclick="selectItemFromPicker('', 'All Items')" style="border-left: 4px solid #28a745; background: #e8f5e9;">
+                <div class="item-picker-card" onclick="selectItemForReport('', 'All Items')" style="border-left: 4px solid #28a745; background: #e8f5e9;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
                         <span style="font-size: 18px; margin-right: 8px;">📊</span> All Items
                     </div>
@@ -16942,7 +16968,7 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
+                    <div class="item-picker-card" onclick="selectItemForReport('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
                         <div class="item-picker-card-header">
                             <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
                             <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>
@@ -16965,10 +16991,10 @@ NOTE: Please print the attached PO document for full details.`;
             listContainer.innerHTML = html;
         }
         
-        function selectItemFromPicker(itemId, itemName) {
+        function selectItemForReport(itemId, itemName) {
             document.getElementById('rptFilter_item').value = itemId;
             document.getElementById('rptFilter_item_display').value = itemId ? itemName : 'All Items (click to filter)';
-            closeItemPicker();
+            closeItemPickerForReport();
         }
         
         // ==================== PO TYPE PICKER (for reports) ====================
@@ -17624,6 +17650,119 @@ NOTE: Please print the attached PO document for full details.`;
                 document.head.appendChild(script);
             });
         }
+        
+        // ==================== DESKTOP MODAL DRAG & RESIZE ====================
+        // Make modals draggable and resizable on desktop only
+        
+        function initDesktopModalFeatures() {
+            // Only enable on desktop (screen width > 768px)
+            if (window.innerWidth <= 768) return;
+            
+            // Find all modals with inner containers
+            const modals = [
+                { overlay: document.getElementById('orderModal'), container: document.querySelector('#orderModal > div') },
+                { overlay: document.getElementById('reportSetupModal'), container: document.querySelector('#reportSetupModal > div') },
+                { overlay: document.getElementById('itemPickerModal'), container: document.querySelector('#itemPickerModal .item-picker-container') }
+            ];
+            
+            modals.forEach(modal => {
+                if (!modal.overlay || !modal.container) return;
+                
+                // Make container resizable
+                if (!modal.container.classList.contains('resizable-added')) {
+                    modal.container.style.resize = 'both';
+                    modal.container.style.overflow = 'auto';
+                    modal.container.style.minWidth = '400px';
+                    modal.container.style.minHeight = '300px';
+                    modal.container.style.maxWidth = '95vw';
+                    modal.container.style.maxHeight = '95vh';
+                    modal.container.classList.add('resizable-added');
+                }
+                
+                // Find header for dragging
+                const header = modal.container.querySelector('[id*="Header"], .item-picker-header, h2');
+                if (!header || header.classList.contains('draggable-added')) return;
+                
+                header.style.cursor = 'move';
+                header.style.userSelect = 'none';
+                header.classList.add('draggable-added');
+                
+                let isDragging = false;
+                let currentX;
+                let currentY;
+                let initialX;
+                let initialY;
+                let xOffset = 0;
+                let yOffset = 0;
+                
+                header.addEventListener('mousedown', dragStart);
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', dragEnd);
+                
+                function dragStart(e) {
+                    // Don't drag if clicking on a button or input
+                    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+                    
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                    
+                    if (e.target === header || header.contains(e.target)) {
+                        isDragging = true;
+                        modal.container.style.position = 'fixed';
+                    }
+                }
+                
+                function drag(e) {
+                    if (isDragging) {
+                        e.preventDefault();
+                        
+                        currentX = e.clientX - initialX;
+                        currentY = e.clientY - initialY;
+                        
+                        xOffset = currentX;
+                        yOffset = currentY;
+                        
+                        // Keep modal within viewport
+                        const rect = modal.container.getBoundingClientRect();
+                        const maxX = window.innerWidth - rect.width;
+                        const maxY = window.innerHeight - rect.height;
+                        
+                        xOffset = Math.max(0, Math.min(xOffset, maxX));
+                        yOffset = Math.max(0, Math.min(yOffset, maxY));
+                        
+                        setTranslate(xOffset, yOffset, modal.container);
+                    }
+                }
+                
+                function dragEnd(e) {
+                    initialX = currentX;
+                    initialY = currentY;
+                    isDragging = false;
+                }
+                
+                function setTranslate(xPos, yPos, el) {
+                    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+                }
+            });
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', initDesktopModalFeatures);
+        
+        // Re-initialize when modals are opened
+        const originalDisplaySetters = {};
+        ['orderModal', 'reportSetupModal', 'itemPickerModal'].forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                // Watch for display changes
+                const observer = new MutationObserver(() => {
+                    if (modal.style.display !== 'none') {
+                        setTimeout(initDesktopModalFeatures, 100);
+                    }
+                });
+                observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+            }
+        });
     </script>
     
     <!-- Footer at Bottom of Page -->
