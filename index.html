@@ -7138,6 +7138,7 @@
         function openItemPickerForAdjustment() {
             window.adjustmentPickerActive = true;
             window.itemPickerIsFilter = false; // Reset filter mode
+            window.itemPickerSupplierContext = ''; // No supplier context for adjustments
             window.itemPickerCallback = {
                 tagName: 'ADJUSTMENT_FORM',
                 value: document.getElementById('adjustItem').value
@@ -10999,6 +11000,7 @@ NOTE: Please print the attached PO document for full details.`;
         window.itemPickerItems = window.itemPickerItems || [];
         window.itemPickerIsFilter = false;
         window.itemPickerCallback = null;
+        window.itemPickerSupplierContext = ''; // Stores supplier context for PO mode
         
         // Define globally immediately so inline handlers can find it
         window.filterItemPicker = function() {
@@ -11013,16 +11015,13 @@ NOTE: Please print the attached PO document for full details.`;
             if (!listContainer) return;
             
             const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
-            const supplier = supplierEl ? supplierEl.value : '';
+            // Use global context if select is empty (for PO mode where select is hidden)
+            const supplier = (supplierEl && supplierEl.value) ? supplierEl.value : (window.itemPickerSupplierContext || '');
             
-            // DEBUG
-            var matchCount = 0;
-            if (supplier && window.itemPickerItems) {
-                window.itemPickerItems.forEach(function(item) {
-                    if (String(item.Supplier_ID) === String(supplier)) matchCount++;
-                });
+            // DEBUG - remove after confirming fix
+            if (!search) { // Only show on initial open, not while typing
+                alert('Supplier filter: "' + supplier + '" (from context: ' + window.itemPickerSupplierContext + ')');
             }
-            alert('Filtering by supplier: "' + supplier + '"\nTotal items: ' + (window.itemPickerItems || []).length + '\nMatching items: ' + matchCount);
             
             const isFilterInput = window.itemPickerIsFilter;
             
@@ -11627,10 +11626,12 @@ NOTE: Please print the attached PO document for full details.`;
                 // SALES MODE: Hide supplier filter - show ALL items from all suppliers
                 supplierFilterDiv.style.display = 'none';
                 supplierSelect.value = ''; // No supplier filter
+                window.itemPickerSupplierContext = ''; // Store globally
             } else if (supplierContext) {
                 // PO MODE with supplier selected: Hide filter, only show that supplier's items
                 supplierFilterDiv.style.display = 'none';
                 supplierSelect.value = supplierContext;
+                window.itemPickerSupplierContext = supplierContext; // Store globally
             } else {
                 // OTHER MODE: Show supplier filter dropdown
                 supplierFilterDiv.style.display = 'block';
@@ -11641,6 +11642,7 @@ NOTE: Please print the attached PO document for full details.`;
                     });
                 }
                 supplierSelect.value = '';
+                window.itemPickerSupplierContext = ''; // No preset context
             }
             
             // Get items from cache
@@ -11812,6 +11814,7 @@ NOTE: Please print the attached PO document for full details.`;
         function openItemPickerForFilter(inputElement) {
             window.itemPickerCallback = inputElement;
             window.itemPickerIsFilter = true;
+            window.itemPickerSupplierContext = ''; // No supplier context for filters
             
             // Show supplier filter for filter context
             const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
