@@ -11018,11 +11018,6 @@ NOTE: Please print the attached PO document for full details.`;
             // Use global context if select is empty (for PO mode where select is hidden)
             const supplier = (supplierEl && supplierEl.value) ? supplierEl.value : (window.itemPickerSupplierContext || '');
             
-            // DEBUG - remove after confirming fix
-            if (!search) { // Only show on initial open, not while typing
-                alert('Supplier filter: "' + supplier + '" (from context: ' + window.itemPickerSupplierContext + ')');
-            }
-            
             const isFilterInput = window.itemPickerIsFilter;
             
             let filtered = (window.itemPickerItems || []).filter(item => {
