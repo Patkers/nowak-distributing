@@ -2524,7 +2524,7 @@
                     <div id="salesReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
                         <button class="btn report-btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
-                        <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Product</button>
+                        <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Item</button>
                     </div>
                 </div>
                 
@@ -7829,7 +7829,7 @@
                 dateLabel: 'Sale Date'
             },
             'sales-by-product': {
-                title: '📦 Sales by Product',
+                title: '📦 Sales by Item',
                 filters: ['dateRange', 'item', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
@@ -7972,15 +7972,13 @@
                     </div>`;
             }
             
-            // Item/Product dropdown
+            // Item/Product picker (smart search)
             if (config.filters.includes('item')) {
                 filterHtml += `
                     <div class="form-group">
-                        <label>📦 Product</label>
-                        <select id="rptFilter_item">
-                            <option value="">All Products</option>
-                            ${cachedItems.map(i => `<option value="${i.Item_ID}">${i.Item_Description}</option>`).join('')}
-                        </select>
+                        <label>📦 Item</label>
+                        <input type="text" id="rptFilter_item_display" placeholder="🔍 All Items (click to filter)" onclick="openItemPicker()" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_item" value="">
                     </div>`;
             }
             
@@ -9071,7 +9069,7 @@
         
         async function generateSalesByProductModal() {
             // Similar structure - abbreviated for space
-            return '<div style="padding: 20px; text-align: center; color: #666;">Sales by Product report generated with applied filters.</div>';
+            return '<div style="padding: 20px; text-align: center; color: #666;">Sales by Item report generated with applied filters.</div>';
         }
         
         async function generatePurchaseOrderDetailModal() {
@@ -11659,8 +11657,8 @@
             
             html += `
                 <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📦 Product Pricing & Margin Analysis</h3>
-                    <p style="color: #666;">Total Products: ${sorted.length} | Average Margin: ${avgMarginPercent.toFixed(1)}% | Total Profit (from sales): $${totalPotentialProfit.toFixed(2)}</p>
+                    <h3>📦 Sales by Item - Pricing & Margin Analysis</h3>
+                    <p style="color: #666;">Total Items: ${sorted.length} | Average Margin: ${avgMarginPercent.toFixed(1)}% | Total Profit (from sales): $${totalPotentialProfit.toFixed(2)}</p>
                     
                 </div>`;
             
@@ -11670,7 +11668,7 @@
                 html += `<table class="data-table" id="salesByProductTable">
                     <thead>
                         <tr>
-                            <th>Product</th>
+                            <th>Item</th>
                             <th>SKU</th>
                             <th>Cost</th>
                             <th>Sell</th>
@@ -14123,6 +14121,22 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- ITEM PICKER MODAL (for reports) -->
+    <div id="itemPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
+                <h3>📦 Select Item</h3>
+                <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
+            </div>
+            <div class="item-picker-search">
+                <input type="text" id="itemPickerSearch" placeholder="🔍 Search items by name or SKU..." oninput="filterItemPicker()" onkeyup="filterItemPicker()">
+            </div>
+            <div id="itemPickerList" class="item-picker-list">
+                <!-- Items will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <style>
         /* Mobile-Friendly Item Picker Styles */
         .item-picker-overlay {
@@ -16289,6 +16303,112 @@ NOTE: Please print the attached PO document for full details.`;
                 if (typeof filterSales === 'function') filterSales();
             }
             closeInvoicePicker();
+        }
+        
+        // ==================== ITEM PICKER (for reports) ====================
+        
+        function openItemPicker() {
+            document.getElementById('itemPickerSearch').value = '';
+            renderItemPickerList();
+            document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('itemPickerSearch').focus();
+            }, 100);
+        }
+        
+        function closeItemPicker() {
+            document.getElementById('itemPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function filterItemPicker() {
+            renderItemPickerList();
+        }
+        
+        function renderItemPickerList() {
+            const search = document.getElementById('itemPickerSearch').value.toLowerCase().trim();
+            const listContainer = document.getElementById('itemPickerList');
+            
+            let items = cachedItems || [];
+            
+            let filtered = items.filter(item => {
+                return !search || 
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search)) ||
+                    (item.SKU && item.SKU.toLowerCase().includes(search));
+            });
+            
+            let html = '';
+            
+            // Add "All Items" option at top
+            html += `
+                <div class="item-picker-card" onclick="selectItemFromPicker('', 'All Items')" style="border-left: 4px solid #28a745; background: #e8f5e9;">
+                    <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
+                        <span style="font-size: 18px; margin-right: 8px;">📊</span> All Items
+                    </div>
+                    <div style="font-size: 12px; color: #388e3c;">Show report for all products</div>
+                </div>
+            `;
+            
+            if (filtered.length === 0 && search) {
+                listContainer.innerHTML = html + `
+                    <div class="item-picker-empty">
+                        <div class="item-picker-empty-icon">📦</div>
+                        <div>No items found matching "${search}"</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort alphabetically by description
+            filtered.sort((a, b) => (a.Item_Description || '').localeCompare(b.Item_Description || ''));
+            
+            // Show items
+            filtered.forEach(item => {
+                const supplierName = getSupplierName(item.Supplier_ID);
+                const sellPrice = parseFloat(item.Sell_Price) || 0;
+                const costPrice = parseFloat(item.Cost) || 0;
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                
+                // Stock status color
+                let stockColor = '#28a745';
+                let stockBg = '#e8f5e9';
+                if (qty <= 0) {
+                    stockColor = '#dc3545';
+                    stockBg = '#ffebee';
+                } else if (qty <= (parseInt(item.Reorder_Point) || 10)) {
+                    stockColor = '#ff9800';
+                    stockBg = '#fff3e0';
+                }
+                
+                html += `
+                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
+                        <div class="item-picker-card-header">
+                            <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
+                            <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>
+                        </div>
+                        <div class="item-picker-desc">${item.Item_Description || 'No Description'}</div>
+                        <div class="item-picker-details">
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Supplier</span>
+                                <span class="item-picker-detail-value">${supplierName}</span>
+                            </div>
+                            <div class="item-picker-detail">
+                                <span class="item-picker-detail-label">Sell</span>
+                                <span class="item-picker-detail-value item-picker-price">$${sellPrice.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        function selectItemFromPicker(itemId, itemName) {
+            document.getElementById('rptFilter_item').value = itemId;
+            document.getElementById('rptFilter_item_display').value = itemId ? itemName : 'All Items (click to filter)';
+            closeItemPicker();
         }
         
         function attachStatusPickerToSelects() {
