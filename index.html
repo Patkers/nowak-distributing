@@ -7967,11 +7967,18 @@
             const items = itemsResult.data;
             let sales = salesResult.data;
             
+            // DEBUG: Show how many SOs we found
+            console.log('Sales Orders found:', sales.length);
+            console.log('Date filter from:', reportFilters.fromDate, 'to:', reportFilters.toDate);
+            
             // Fetch ALL sales order lines
             const allDetails = [];
+            let totalLinesFound = 0;
             for (const so of sales) {
                 const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                console.log('SO:', so.SO_ID, 'Lines:', linesResult?.data?.length || 0);
                 if (linesResult?.data) {
+                    totalLinesFound += linesResult.data.length;
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
                         const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
@@ -7997,6 +8004,9 @@
                 }
             }
             
+            console.log('Total line items found:', totalLinesFound);
+            console.log('All details array length:', allDetails.length);
+            
             // Apply filters
             let filtered = allDetails;
             if (reportFilters.fromDate) {
@@ -8014,6 +8024,8 @@
             if (reportFilters.minAmount) {
                 filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
             }
+            
+            console.log('After date filter:', filtered.length);
             
             // Group by customer
             const byCustomer = {};
@@ -11691,14 +11703,13 @@ NOTE: Please print the attached PO document for full details.`;
                 display: none !important;
             }
             
-            /* Content area takes remaining space - DEBUG: green background */
+            /* Content area takes remaining space */
             #reportSetupContent {
                 flex: 1 1 auto !important;
                 min-height: 100px !important; /* Force minimum height */
                 padding: 5px !important;
                 overflow: auto !important;
                 -webkit-overflow-scrolling: touch !important;
-                background: #e8f5e9 !important; /* DEBUG - light green */
             }
             
             #modalContent {
