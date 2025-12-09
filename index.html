@@ -11023,8 +11023,8 @@ NOTE: Please print the attached PO document for full details.`;
                 const desc = String(item.Item_Description || '').toLowerCase();
                 const matchesSearch = !search || sku.includes(search) || desc.includes(search);
                 
-                // Supplier filter
-                const matchesSupplier = !supplier || item.Supplier_ID === supplier;
+                // Supplier filter (convert both to string for comparison)
+                const matchesSupplier = !supplier || String(item.Supplier_ID) === String(supplier);
                 
                 // Hide archived items UNLESS this is a filter input
                 const isArchived = item.Status === 'Archived';
@@ -11601,11 +11601,14 @@ NOTE: Please print the attached PO document for full details.`;
                 }
             }
             
-            // Detect if we're in Sales context (customer selected = sales mode)
-            const saleCustomer = document.getElementById('newSaleCustomer');
-            const editSOCustomer = document.getElementById('editSOCustomer');
-            if ((saleCustomer && saleCustomer.value) || (editSOCustomer && editSOCustomer.value)) {
-                isSalesContext = true;
+            // Only check for Sales context if we DON'T have a supplier context
+            // This prevents false detection when both forms might exist in DOM
+            if (!supplierContext) {
+                const saleCustomer = document.getElementById('newSaleCustomer');
+                const editSOCustomer = document.getElementById('editSOCustomer');
+                if ((saleCustomer && saleCustomer.value) || (editSOCustomer && editSOCustomer.value)) {
+                    isSalesContext = true;
+                }
             }
             
             const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
