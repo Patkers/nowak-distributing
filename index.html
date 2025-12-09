@@ -11015,11 +11015,14 @@ NOTE: Please print the attached PO document for full details.`;
             const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
             const supplier = supplierEl ? supplierEl.value : '';
             
-            // DEBUG - remove after testing
-            console.log('Render - supplier filter:', supplier, 'Total items:', (window.itemPickerItems || []).length);
-            if (window.itemPickerItems && window.itemPickerItems.length > 0) {
-                console.log('First item Supplier_ID:', window.itemPickerItems[0].Supplier_ID, 'Type:', typeof window.itemPickerItems[0].Supplier_ID);
+            // DEBUG
+            var matchCount = 0;
+            if (supplier && window.itemPickerItems) {
+                window.itemPickerItems.forEach(function(item) {
+                    if (String(item.Supplier_ID) === String(supplier)) matchCount++;
+                });
             }
+            alert('Filtering by supplier: "' + supplier + '"\nTotal items: ' + (window.itemPickerItems || []).length + '\nMatching items: ' + matchCount);
             
             const isFilterInput = window.itemPickerIsFilter;
             
@@ -11584,8 +11587,6 @@ NOTE: Please print the attached PO document for full details.`;
         });
         
         function openItemPicker(selectElement, preSelectedSupplierId = null) {
-            alert('openItemPicker CALLED!'); // DEBUG - first line
-            
             // Store callback to set value when item is selected
             window.itemPickerCallback = selectElement;
             
