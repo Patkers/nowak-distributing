@@ -11002,8 +11002,6 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Define globally immediately so inline handlers can find it
         window.filterItemPicker = function() {
-            var searchVal = document.getElementById('itemPickerSearch').value;
-            alert('Filter called! Value: ' + searchVal);
             window.renderItemPickerList();
         };
         
@@ -11012,24 +11010,19 @@ NOTE: Please print the attached PO document for full details.`;
             const supplierEl = document.getElementById('itemPickerSupplier');
             const listContainer = document.getElementById('itemPickerList');
             
-            if (!listContainer) {
-                console.log('ERROR: listContainer not found!');
-                return;
-            }
+            if (!listContainer) return;
             
             const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
             const supplier = supplierEl ? supplierEl.value : '';
-            
-            console.log('RENDER called - Search:', search, 'Items count:', (window.itemPickerItems || []).length);
             const supplier = supplierEl ? supplierEl.value : '';
             
             const isFilterInput = window.itemPickerIsFilter;
             
             let filtered = (window.itemPickerItems || []).filter(item => {
-                // Search filter - check SKU and Description
-                const matchesSearch = !search || 
-                    (item.SKU && item.SKU.toLowerCase().includes(search)) ||
-                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
+                // Search filter - check SKU and Description (convert to string first!)
+                const sku = String(item.SKU || '').toLowerCase();
+                const desc = String(item.Item_Description || '').toLowerCase();
+                const matchesSearch = !search || sku.includes(search) || desc.includes(search);
                 
                 // Supplier filter
                 const matchesSupplier = !supplier || item.Supplier_ID === supplier;
