@@ -7137,6 +7137,7 @@
         // Open item picker for inventory adjustment
         function openItemPickerForAdjustment() {
             window.adjustmentPickerActive = true;
+            window.itemPickerIsFilter = false; // Reset filter mode
             itemPickerCallback = {
                 tagName: 'ADJUSTMENT_FORM',
                 value: document.getElementById('adjustItem').value
@@ -11469,8 +11470,13 @@ NOTE: Please print the attached PO document for full details.`;
             // Store callback to set value when item is selected
             itemPickerCallback = selectElement;
             
-            // Check if we're in a context where supplier is already selected (PO/SO forms)
+            // Reset filter mode flag
+            window.itemPickerIsFilter = false;
+            
+            // Check if we're in a context where supplier is already selected (PO forms)
             let supplierContext = preSelectedSupplierId;
+            let isSalesContext = false;
+            
             if (!supplierContext) {
                 // Try to detect from Create PO form
                 const createPOSupplier = document.getElementById('createPOSupplier');
@@ -11482,20 +11488,28 @@ NOTE: Please print the attached PO document for full details.`;
                 if (purchaseSupplier && purchaseSupplier.value) {
                     supplierContext = purchaseSupplier.value;
                 }
-                // Try to detect from Sale form
-                const saleCustomer = document.getElementById('newSaleCustomer');
-                // For sales, we don't filter by supplier, so only hide if in PO context
+            }
+            
+            // Detect if we're in Sales context (customer selected = sales mode)
+            const saleCustomer = document.getElementById('newSaleCustomer');
+            const editSOCustomer = document.getElementById('editSOCustomer');
+            if ((saleCustomer && saleCustomer.value) || (editSOCustomer && editSOCustomer.value)) {
+                isSalesContext = true;
             }
             
             const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
             const supplierSelect = document.getElementById('itemPickerSupplier');
             
-            if (supplierContext) {
-                // Hide supplier filter - we already know which supplier
+            if (isSalesContext) {
+                // SALES MODE: Hide supplier filter - show ALL items from all suppliers
+                supplierFilterDiv.style.display = 'none';
+                supplierSelect.value = ''; // No supplier filter
+            } else if (supplierContext) {
+                // PO MODE with supplier selected: Hide filter, only show that supplier's items
                 supplierFilterDiv.style.display = 'none';
                 supplierSelect.value = supplierContext;
             } else {
-                // Show supplier filter - user can choose
+                // OTHER MODE: Show supplier filter dropdown
                 supplierFilterDiv.style.display = 'block';
                 supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
                 if (cachedSuppliers && cachedSuppliers.length > 0) {
@@ -11506,7 +11520,7 @@ NOTE: Please print the attached PO document for full details.`;
                 supplierSelect.value = '';
             }
             
-            // Get items from cache or the select element options
+            // Get items from cache
             window.itemPickerItems = [];
             if (cachedItems && cachedItems.length > 0) {
                 window.itemPickerItems = cachedItems;
@@ -11535,13 +11549,23 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function filterItemPicker() {
+            // Force get fresh search value and re-render
+            const searchEl = document.getElementById('itemPickerSearch');
+            const searchValue = searchEl ? searchEl.value : '';
             renderItemPickerList();
         }
+        // Make globally accessible for inline handlers
+        window.filterItemPicker = filterItemPicker;
         
         function renderItemPickerList() {
-            const search = document.getElementById('itemPickerSearch').value.toLowerCase().trim();
-            const supplier = document.getElementById('itemPickerSupplier').value;
+            const searchEl = document.getElementById('itemPickerSearch');
+            const supplierEl = document.getElementById('itemPickerSupplier');
             const listContainer = document.getElementById('itemPickerList');
+            
+            // Get fresh values directly
+            const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
+            const supplier = supplierEl ? supplierEl.value : '';
+            
             
             // Check if this is a filter text input (needs "Clear" option and shows archived items)
             const isFilterInput = window.itemPickerIsFilter;
@@ -11635,6 +11659,8 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
         }
+        // Make globally accessible
+        window.renderItemPickerList = renderItemPickerList;
         
         function selectItemFromPicker(itemId) {
             if (itemPickerCallback) {
