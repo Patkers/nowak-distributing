@@ -11002,6 +11002,8 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Define globally immediately so inline handlers can find it
         window.filterItemPicker = function() {
+            var searchVal = document.getElementById('itemPickerSearch').value;
+            alert('Filter called! Value: ' + searchVal);
             window.renderItemPickerList();
         };
         
@@ -11010,9 +11012,15 @@ NOTE: Please print the attached PO document for full details.`;
             const supplierEl = document.getElementById('itemPickerSupplier');
             const listContainer = document.getElementById('itemPickerList');
             
-            if (!listContainer) return;
+            if (!listContainer) {
+                console.log('ERROR: listContainer not found!');
+                return;
+            }
             
             const search = searchEl ? searchEl.value.toLowerCase().trim() : '';
+            const supplier = supplierEl ? supplierEl.value : '';
+            
+            console.log('RENDER called - Search:', search, 'Items count:', (window.itemPickerItems || []).length);
             const supplier = supplierEl ? supplierEl.value : '';
             
             const isFilterInput = window.itemPickerIsFilter;
@@ -11551,15 +11559,15 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Bind search event properly when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            // Item picker
+            // Item picker - use window. since function is in different script block
             const searchInput = document.getElementById('itemPickerSearch');
             if (searchInput) {
-                searchInput.addEventListener('input', filterItemPicker);
-                searchInput.addEventListener('keyup', filterItemPicker);
+                searchInput.addEventListener('input', window.filterItemPicker);
+                searchInput.addEventListener('keyup', window.filterItemPicker);
             }
             const supplierFilter = document.getElementById('itemPickerSupplier');
             if (supplierFilter) {
-                supplierFilter.addEventListener('change', filterItemPicker);
+                supplierFilter.addEventListener('change', window.filterItemPicker);
             }
             
             // Supplier picker
