@@ -2315,11 +2315,11 @@
             <div class="section-card accent-theme" style="background: #e8f5e9;">
                 <h3 style="margin: 0 0 15px 0; color: #2e7d32;">📈 Bulk Price Adjustment (Existing Items)</h3>
                 <div style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap;">
-                    <div class="form-group" style="margin: 0;">
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
                         <label>Increase by Percentage</label>
-                        <div style="display: flex; align-items: center; gap: 5px;">
-                            <input type="number" id="pricesimPercent" value="10" min="0" max="100" step="0.5" style="width: 80px;" oninput="clearFlatAmount()">
-                            <span style="font-size: 18px; font-weight: bold;">%</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="pricesimPercent" value="10" min="0" max="50" step="0.5" style="flex: 1;" oninput="updatePercentLabel(); clearFlatAmount()">
+                            <span id="pricesimPercentLabel" style="font-weight: bold; color: #2e7d32; min-width: 50px; text-align: right;">10%</span>
                         </div>
                     </div>
                     <div style="color: #666; font-size: 14px; padding-bottom: 8px;">— OR —</div>
@@ -3504,7 +3504,7 @@
             }
 
             let html = '<table class="data-table" id="suppliersDataTable"><thead><tr>';
-            html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th><th>Actions</th>';
+            html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th>';
             html += '</tr></thead><tbody>';
 
             suppliers.forEach(s => {
@@ -3515,9 +3515,6 @@
                     <td>${s.Email || '-'}</td>
                     <td>${s.City || '-'}, ${s.State || '-'}</td>
                     <td>${s.Payment_Terms || '-'}</td>
-                    <td onclick="event.stopPropagation();">
-                        <button class="btn-delete-icon" onclick="deleteSupplier('${s.Supplier_ID}', '${s.Supplier_Name}')">🗑️</button>
-                    </td>
                 </tr>`;
             });
 
@@ -6986,6 +6983,12 @@
         
         function clearPercentAmount() {
             document.getElementById('pricesimPercent').value = '0';
+            updatePercentLabel();
+        }
+        
+        function updatePercentLabel() {
+            const value = document.getElementById('pricesimPercent').value;
+            document.getElementById('pricesimPercentLabel').textContent = value + '%';
         }
         
         function toggleAllPriceSimItems() {
@@ -7155,7 +7158,7 @@
             }
             
             // Get items from cache
-            itemPickerItems = cachedItems || [];
+            window.itemPickerItems = cachedItems || [];
             
             // Clear search
             document.getElementById('itemPickerSearch').value = '';
@@ -7754,14 +7757,36 @@
             // Add quick date presets if dateRange filter exists
             if (config.filters.includes('dateRange')) {
                 filterHtml += `
-                    <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
-                        <span style="color: #666; font-size: 13px; margin-right: 5px;">Quick:</span>
-                        <button type="button" class="btn-small" onclick="setDatePreset('today')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">Today</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('week')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Week</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('month')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Month</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('quarter')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Quarter</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('year')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">This Year</button>
-                        <button type="button" class="btn-small" onclick="setDatePreset('all')" style="background: var(--primary, #667eea); color: white; padding: 4px 10px; font-size: 12px; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">All Time</button>
+                    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #666; font-size: 13px;">Quick Select:</span>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="btn" onclick="toggleDatePresetPicker()" 
+                                    style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                <span>📅</span>
+                                <span id="datePresetLabel">Choose Period</span>
+                                <span style="opacity: 0.7;">▼</span>
+                            </button>
+                            <div id="datePresetDropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 1000; margin-top: 5px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-width: 180px; overflow: hidden;">
+                                <div onclick="selectDatePreset('today', '📆 Today')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📆</span> Today
+                                </div>
+                                <div onclick="selectDatePreset('week', '📅 This Week')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📅</span> This Week
+                                </div>
+                                <div onclick="selectDatePreset('month', '🗓️ This Month')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>🗓️</span> This Month
+                                </div>
+                                <div onclick="selectDatePreset('quarter', '📊 This Quarter')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📊</span> This Quarter
+                                </div>
+                                <div onclick="selectDatePreset('year', '📈 This Year')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📈</span> This Year
+                                </div>
+                                <div onclick="selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>🗃️</span> All Time
+                                </div>
+                            </div>
+                        </div>
                     </div>`;
             }
             
@@ -7816,6 +7841,37 @@
             const toEl = document.getElementById('rptFilter_toDate');
             if (fromEl) fromEl.value = fromDate.toISOString().split('T')[0];
             if (toEl) toEl.value = toDate.toISOString().split('T')[0];
+        }
+        
+        function toggleDatePresetPicker() {
+            const dropdown = document.getElementById('datePresetDropdown');
+            if (dropdown.style.display === 'none') {
+                dropdown.style.display = 'block';
+                // Close when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', closeDatePresetOnClickOutside);
+                }, 10);
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+        
+        function closeDatePresetOnClickOutside(e) {
+            const dropdown = document.getElementById('datePresetDropdown');
+            if (!e.target.closest('#datePresetDropdown') && !e.target.closest('[onclick*="toggleDatePresetPicker"]')) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeDatePresetOnClickOutside);
+            }
+        }
+        
+        function selectDatePreset(preset, label) {
+            // Update the button label
+            document.getElementById('datePresetLabel').textContent = label;
+            // Close dropdown
+            document.getElementById('datePresetDropdown').style.display = 'none';
+            document.removeEventListener('click', closeDatePresetOnClickOutside);
+            // Apply the preset
+            setDatePreset(preset);
         }
         
         function closeReportSetup() {
@@ -11378,7 +11434,7 @@ NOTE: Please print the attached PO document for full details.`;
         // ==================== MOBILE ITEM PICKER ====================
         
         let itemPickerCallback = null;
-        let itemPickerItems = [];
+        window.itemPickerItems = [];  // Make global so all script blocks can access
         let itemPickerSupplierFilter = '';
         
         // Bind search event properly when DOM is ready
@@ -11451,9 +11507,9 @@ NOTE: Please print the attached PO document for full details.`;
             }
             
             // Get items from cache or the select element options
-            itemPickerItems = [];
+            window.itemPickerItems = [];
             if (cachedItems && cachedItems.length > 0) {
-                itemPickerItems = cachedItems;
+                window.itemPickerItems = cachedItems;
             }
             
             // Clear search
@@ -11490,7 +11546,7 @@ NOTE: Please print the attached PO document for full details.`;
             // Check if this is a filter text input (needs "Clear" option and shows archived items)
             const isFilterInput = window.itemPickerIsFilter;
             
-            let filtered = itemPickerItems.filter(item => {
+            let filtered = window.itemPickerItems.filter(item => {
                 // Search filter
                 const matchesSearch = !search || 
                     (item.SKU && item.SKU.toLowerCase().includes(search)) ||
@@ -11738,7 +11794,7 @@ NOTE: Please print the attached PO document for full details.`;
             }
             
             // Get items from cache
-            itemPickerItems = cachedItems || [];
+            window.itemPickerItems = cachedItems || [];
             
             // Clear search
             document.getElementById('itemPickerSearch').value = '';
