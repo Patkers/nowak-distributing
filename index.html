@@ -7835,12 +7835,12 @@
             },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
-                filters: ['dateRange', 'supplier', 'paymentStatus', 'transactionStatus'],
+                filters: ['dateRange', 'supplier', 'poType', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'purchase-by-supplier': {
                 title: '🏭 Purchase by Supplier',
-                filters: ['dateRange', 'supplier', 'transactionStatus'],
+                filters: ['dateRange', 'supplier', 'poType', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'inventory-turnover': {
@@ -7993,6 +7993,16 @@
                             <option value="Partial">🔶 Partial</option>
                             <option value="Unpaid">❌ Unpaid</option>
                         </select>
+                    </div>`;
+            }
+            
+            // PO Type (Inbound/Outbound)
+            if (config.filters.includes('poType')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📦 PO Type</label>
+                        <input type="text" id="rptFilter_poType_display" placeholder="🔍 All Types (click to select)" onclick="openPOTypePicker()" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_poType" value="">
                     </div>`;
             }
             
@@ -8725,6 +8735,7 @@
                 supplier: document.getElementById('rptFilter_supplier')?.value || '',
                 item: document.getElementById('rptFilter_item')?.value || '',
                 paymentStatus: document.getElementById('rptFilter_paymentStatus')?.value || '',
+                poType: document.getElementById('rptFilter_poType')?.value || '',
                 stockStatus: document.getElementById('rptFilter_stockStatus')?.value || '',
                 turnoverStatus: document.getElementById('rptFilter_turnoverStatus')?.value || '',
                 aging: document.getElementById('rptFilter_aging')?.value || '',
@@ -9116,14 +9127,32 @@
                 purchases = purchases.filter(p => p.Payment_Status === reportFilters.paymentStatus);
             }
             
+            // Filter by PO Type
+            if (reportFilters.poType) {
+                purchases = purchases.filter(p => (p.PO_Type || 'INBOUND') === reportFilters.poType);
+            }
+            
+            // Apply transaction status filter
+            const statusFilter = reportFilters.transactionStatus || 'exclude-voided';
+            if (statusFilter === 'exclude-voided') {
+                purchases = purchases.filter(p => p.Status !== 'Voided');
+            } else if (statusFilter && statusFilter !== '') {
+                purchases = purchases.filter(p => p.Status === statusFilter);
+            }
+            
+            // Show PO type filter in header
+            const poTypeLabel = reportFilters.poType === 'INBOUND' ? '📥 Inbound Only' : 
+                               reportFilters.poType === 'OUTBOUND' ? '📤 Outbound Only' : '📋 All Types';
+            
             let html = `<h3 style="margin-top: 0;">Purchase Order Detail</h3>`;
-            html += `<p style="color: #666; margin-bottom: 20px;">${purchases.length} orders found</p>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${purchases.length} orders found | ${poTypeLabel}</p>`;
             
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
                     <th>PO #</th>
                     <th>Date</th>
                     <th>Supplier</th>
+                    <th>Type</th>
                     <th style="text-align: right;">Total</th>
                     <th>Status</th>
                 </tr></thead><tbody>`;
@@ -9133,17 +9162,22 @@
                 .forEach(p => {
                     const amt = parseFloat(p.Total_Amount) || 0;
                     total += amt;
+                    const poType = p.PO_Type || 'INBOUND';
+                    const typeStyle = poType === 'OUTBOUND' 
+                        ? 'background: #e3f2fd; color: #1565c0;' 
+                        : 'background: #e8f5e9; color: #2e7d32;';
                     html += `<tr>
-                        <td>${p.PO_Number || '-'}</td>
+                        <td>${p.PO_Number || p.Invoice_Number || '-'}</td>
                         <td>${p.PO_Date || '-'}</td>
                         <td>${getSupplierName(p.Supplier_ID)}</td>
+                        <td><span style="${typeStyle} padding: 3px 8px; border-radius: 4px; font-size: 11px;">${poType === 'OUTBOUND' ? '📤 Out' : '📥 In'}</span></td>
                         <td style="text-align: right;">$${amt.toFixed(2)}</td>
                         <td>${p.Status || '-'}</td>
                     </tr>`;
                 });
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="3">TOTAL</td>
+                <td colspan="4">TOTAL</td>
                 <td style="text-align: right;">$${total.toFixed(2)}</td>
                 <td></td>
             </tr></tfoot></table></div>`;
@@ -9192,6 +9226,19 @@
                 purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
             }
             
+            // Filter by PO Type
+            if (reportFilters.poType) {
+                purchases = purchases.filter(p => (p.PO_Type || 'INBOUND') === reportFilters.poType);
+            }
+            
+            // Apply transaction status filter
+            const statusFilter = reportFilters.transactionStatus || 'exclude-voided';
+            if (statusFilter === 'exclude-voided') {
+                purchases = purchases.filter(p => p.Status !== 'Voided');
+            } else if (statusFilter && statusFilter !== '') {
+                purchases = purchases.filter(p => p.Status === statusFilter);
+            }
+            
             // Group by supplier
             const bySupplier = {};
             purchases.forEach(p => {
@@ -9203,8 +9250,12 @@
                 bySupplier[suppId].count++;
             });
             
+            // Show PO type filter in header
+            const poTypeLabel = reportFilters.poType === 'INBOUND' ? '📥 Inbound Only' : 
+                               reportFilters.poType === 'OUTBOUND' ? '📤 Outbound Only' : '📋 All Types';
+            
             let html = `<h3 style="margin-top: 0;">Purchase by Supplier</h3>`;
-            html += `<p style="color: #666; margin-bottom: 20px;">${Object.keys(bySupplier).length} suppliers</p>`;
+            html += `<p style="color: #666; margin-bottom: 20px;">${Object.keys(bySupplier).length} suppliers | ${purchases.length} orders | ${poTypeLabel}</p>`;
             
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
@@ -14137,6 +14188,36 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- PO TYPE PICKER MODAL -->
+    <div id="poTypePickerModal" class="item-picker-overlay">
+        <div class="item-picker-container" style="max-width: 400px;">
+            <div class="item-picker-header">
+                <h3>📦 Select PO Type</h3>
+                <button class="item-picker-close" onclick="closePOTypePicker()">&times;</button>
+            </div>
+            <div id="poTypePickerList" class="item-picker-list" style="padding: 15px;">
+                <div class="item-picker-card" onclick="selectPOType('', 'All Types')" style="border-left: 4px solid #6c757d; background: #f8f9fa; margin-bottom: 10px;">
+                    <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
+                        <span style="font-size: 24px; margin-right: 12px;">📋</span> All Types
+                    </div>
+                    <div style="font-size: 13px; color: #6c757d; margin-top: 5px;">Show both inbound and outbound POs</div>
+                </div>
+                <div class="item-picker-card" onclick="selectPOType('INBOUND', 'Inbound (Purchases)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
+                    <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
+                        <span style="font-size: 24px; margin-right: 12px;">📥</span> Inbound (Purchases)
+                    </div>
+                    <div style="font-size: 13px; color: #388e3c; margin-top: 5px;">Products received from suppliers</div>
+                </div>
+                <div class="item-picker-card" onclick="selectPOType('OUTBOUND', 'Outbound (Returns/Transfers)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
+                    <div class="item-picker-desc" style="font-weight: bold; color: #1565c0;">
+                        <span style="font-size: 24px; margin-right: 12px;">📤</span> Outbound (Returns/Transfers)
+                    </div>
+                    <div style="font-size: 13px; color: #1976d2; margin-top: 5px;">Products sent back to suppliers or transferred out</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
         /* Mobile-Friendly Item Picker Styles */
         .item-picker-overlay {
@@ -16409,6 +16490,24 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('rptFilter_item').value = itemId;
             document.getElementById('rptFilter_item_display').value = itemId ? itemName : 'All Items (click to filter)';
             closeItemPicker();
+        }
+        
+        // ==================== PO TYPE PICKER (for reports) ====================
+        
+        function openPOTypePicker() {
+            document.getElementById('poTypePickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closePOTypePicker() {
+            document.getElementById('poTypePickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        function selectPOType(typeValue, typeName) {
+            document.getElementById('rptFilter_poType').value = typeValue;
+            document.getElementById('rptFilter_poType_display').value = typeValue ? typeName : 'All Types (click to select)';
+            closePOTypePicker();
         }
         
         function attachStatusPickerToSelects() {
