@@ -1814,6 +1814,8 @@
                             <option value="">All</option>
                             <option value="Ordered">📤 Ordered (Pending)</option>
                             <option value="Received">📥 Received</option>
+                            <option value="Voided">❌ Voided</option>
+                            <option value="exclude-voided">🚫 Exclude Voided</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1876,6 +1878,7 @@
                                 <option value="Received">Received</option>
                                 <option value="Pending">Pending</option>
                                 <option value="Partial">Partial</option>
+                                <option value="Voided">❌ Voided</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1947,6 +1950,17 @@
                         <input type="text" id="filterInvoiceNumber" placeholder="🔍 Click to search..." onclick="openInvoicePicker(this)" readonly style="cursor: pointer; background: #fff;">
                     </div>
                     <div class="form-group">
+                        <label>Order Status</label>
+                        <select id="filterSaleStatus" onchange="filterSales()">
+                            <option value="">All</option>
+                            <option value="Completed">✅ Completed</option>
+                            <option value="Pending">🟡 Pending</option>
+                            <option value="Cancelled">🚫 Cancelled</option>
+                            <option value="Voided">❌ Voided</option>
+                            <option value="exclude-voided">🚫 Exclude Voided</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Date From</label>
                         <input type="date" id="filterSaleDateFrom" onchange="filterSales()">
                     </div>
@@ -2004,6 +2018,7 @@
                                 <option value="Completed">Completed</option>
                                 <option value="Pending">Pending</option>
                                 <option value="Cancelled">Cancelled</option>
+                                <option value="Voided">❌ Voided</option>
                             </select>
                         </div>
                     </div>
@@ -2450,6 +2465,7 @@
                         <button class="btn report-btn" onclick="showReport('simple-inventory')">📋 Inventory List</button>
                         <button class="btn report-btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
                         <button class="btn report-btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
+                        <button class="btn report-btn" onclick="showReport('inventory-adjustments')">📝 Adjustment History</button>
                     </div>
                 </div>
                 
@@ -2475,6 +2491,18 @@
                         <button class="btn report-btn" onclick="showReport('annual-purchase-summary')">📉 Annual Purchase Summary</button>
                         <button class="btn report-btn" onclick="showReport('inventory-valuation')">💰 Inventory Valuation</button>
                         <button class="btn report-btn" onclick="showReport('cash-flow-summary')">💵 Cash Flow Summary</button>
+                    </div>
+                </div>
+                
+                <div class="report-category">
+                    <div class="report-category-header" onclick="toggleReportSection('dashboardReports')">
+                        <h4>📊 Dashboards</h4>
+                        <span id="dashboardReports-toggle" class="report-toggle">▼</span>
+                    </div>
+                    <div id="dashboardReports" class="report-buttons">
+                        <button class="btn report-btn" onclick="showReport('daily-dashboard')" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">🎯 Sales Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('customer-dashboard')" style="background: linear-gradient(135deg, #2e7d32, #4caf50); color: white;">👤 Customer Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('supplier-dashboard')" style="background: linear-gradient(135deg, #1565c0, #42a5f5); color: white;">🏭 Supplier Dashboard</button>
                     </div>
                 </div>
             </div>
@@ -4444,7 +4472,15 @@
                     (po.PO_ID && po.PO_ID.toLowerCase().includes(poFilter)) ||
                     (po.Invoice_Number && po.Invoice_Number.toLowerCase().includes(poFilter));
                 const matchesSupplier = !supplierFilter || po.Supplier_ID === supplierFilter;
-                const matchesStatus = !statusFilter || po.Status === statusFilter;
+                
+                // Handle exclude-voided option
+                let matchesStatus = true;
+                if (statusFilter === 'exclude-voided') {
+                    matchesStatus = po.Status !== 'Voided';
+                } else if (statusFilter) {
+                    matchesStatus = po.Status === statusFilter;
+                }
+                
                 const poDate = new Date(po.PO_Date);
                 const matchesDateFrom = !dateFrom || poDate >= new Date(dateFrom);
                 const matchesDateTo = !dateTo || poDate <= new Date(dateTo);
@@ -5550,6 +5586,26 @@
                 oldLines: currentEditingOrder._originalLines || []
             };
             
+            // Check if voiding - show confirmation
+            const newStatus = document.getElementById('editPOStatus').value;
+            const oldStatus = po.Status;
+            if (newStatus === 'Voided' && oldStatus !== 'Voided') {
+                let message = '⚠️ VOID PURCHASE ORDER?\n\n' +
+                    'This will:\n' +
+                    '• Mark the order as VOIDED\n';
+                
+                if (oldStatus === 'Received') {
+                    message += '• REMOVE inventory for all line items\n';
+                }
+                message += '• Create adjustment log entries\n' +
+                    '• Exclude from tax reports\n\n' +
+                    'This action cannot be easily undone.\n\n' +
+                    'Continue with voiding ' + (po.Invoice_Number || po.PO_ID) + '?';
+                
+                const confirmVoid = confirm(message);
+                if (!confirmVoid) return;
+            }
+            
             showStatus('purchasesStatus', '⏳ Saving changes...', 'info');
             
             const result = await apiCall('updatePurchaseOrder', data);
@@ -5736,6 +5792,23 @@
                 amountPaid: parseFloat(document.getElementById('editSOAmountPaid').value) || 0,
                 lines: newLines
             };
+            
+            // Check if voiding - show confirmation
+            const newStatus = document.getElementById('editSOStatus').value;
+            const oldStatus = so.Status;
+            if (newStatus === 'Voided' && oldStatus !== 'Voided') {
+                const confirmVoid = confirm(
+                    '⚠️ VOID SALES ORDER?\n\n' +
+                    'This will:\n' +
+                    '• Mark the order as VOIDED\n' +
+                    '• ADD inventory back for all line items\n' +
+                    '• Create adjustment log entries\n' +
+                    '• Exclude from tax reports\n\n' +
+                    'This action cannot be easily undone.\n\n' +
+                    'Continue with voiding ' + (so.Invoice_Number || so.SO_ID) + '?'
+                );
+                if (!confirmVoid) return;
+            }
             
             showStatus('salesStatus', '⏳ Saving changes...', 'info');
             
@@ -6136,6 +6209,7 @@
             const invoiceNumberFilter = document.getElementById('filterInvoiceNumber').value.trim().toLowerCase();
             const dateFrom = document.getElementById('filterSaleDateFrom').value;
             const dateTo = document.getElementById('filterSaleDateTo').value;
+            const statusFilter = document.getElementById('filterSaleStatus')?.value || '';
             
             const filtered = salesData.filter(so => {
                 const matchesCustomer = !customerFilter || so.Customer_ID === customerFilter;
@@ -6143,7 +6217,16 @@
                 const soDate = new Date(so.SO_Date);
                 const matchesDateFrom = !dateFrom || soDate >= new Date(dateFrom);
                 const matchesDateTo = !dateTo || soDate <= new Date(dateTo);
-                return matchesCustomer && matchesInvoice && matchesDateFrom && matchesDateTo;
+                
+                // Status filter
+                let matchesStatus = true;
+                if (statusFilter === 'exclude-voided') {
+                    matchesStatus = so.Status !== 'Voided';
+                } else if (statusFilter) {
+                    matchesStatus = so.Status === statusFilter;
+                }
+                
+                return matchesCustomer && matchesInvoice && matchesDateFrom && matchesDateTo && matchesStatus;
             });
             
             displaySales(filtered);
@@ -6154,6 +6237,9 @@
             document.getElementById('filterInvoiceNumber').value = '';
             document.getElementById('filterSaleDateFrom').value = '';
             document.getElementById('filterSaleDateTo').value = '';
+            if (document.getElementById('filterSaleStatus')) {
+                document.getElementById('filterSaleStatus').value = '';
+            }
             displaySales(salesData);
         }
 
@@ -7589,27 +7675,27 @@
         const reportConfig = {
             'sales-by-customer': {
                 title: '👥 Sales by Customer',
-                filters: ['dateRange', 'customer', 'minAmount'],
+                filters: ['dateRange', 'customer', 'minAmount', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'sales-order-detail': {
                 title: '📋 Sales Order Detail',
-                filters: ['dateRange', 'customer', 'paymentStatus'],
+                filters: ['dateRange', 'customer', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'sales-by-product': {
                 title: '📦 Sales by Product',
-                filters: ['dateRange', 'item'],
+                filters: ['dateRange', 'item', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
-                filters: ['dateRange', 'supplier', 'paymentStatus'],
+                filters: ['dateRange', 'supplier', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'purchase-by-supplier': {
                 title: '🏭 Purchase by Supplier',
-                filters: ['dateRange', 'supplier'],
+                filters: ['dateRange', 'supplier', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'inventory-turnover': {
@@ -7637,6 +7723,11 @@
                 filters: ['supplier', 'stockStatus'],
                 dateLabel: ''
             },
+            'inventory-adjustments': {
+                title: '📝 Inventory Adjustment History',
+                filters: ['dateRange', 'item', 'adjustmentType'],
+                dateLabel: 'Adjustment Date'
+            },
             'profit-loss': {
                 title: '📊 Profit & Loss Statement',
                 filters: ['yearSelect', 'quarterSelect', 'cogsMethod'],
@@ -7661,6 +7752,23 @@
                 title: '💵 Cash Flow Summary',
                 filters: ['yearSelect', 'quarterSelect'],
                 dateLabel: ''
+            },
+            'daily-dashboard': {
+                title: '🎯 Sales Dashboard',
+                filters: ['dateRange', 'customer'],
+                dateLabel: 'Date'
+            },
+            'customer-dashboard': {
+                title: '👤 Customer Dashboard',
+                filters: ['customer', 'dateRange'],
+                dateLabel: 'Date',
+                customerRequired: true
+            },
+            'supplier-dashboard': {
+                title: '🏭 Supplier Dashboard',
+                filters: ['supplier', 'dateRange'],
+                dateLabel: 'Date',
+                supplierRequired: true
             }
         };
         
@@ -7795,6 +7903,37 @@
                     <div class="form-group">
                         <label>💵 Min Amount</label>
                         <input type="number" id="rptFilter_minAmount" placeholder="0.00" min="0" step="0.01">
+                    </div>`;
+            }
+            
+            // Transaction Status (for filtering voided transactions)
+            if (config.filters.includes('transactionStatus')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📋 Transaction Status</label>
+                        <select id="rptFilter_transactionStatus">
+                            <option value="exclude-voided" selected>🚫 Exclude Voided</option>
+                            <option value="">All Transactions</option>
+                            <option value="Completed">✅ Completed Only</option>
+                            <option value="Pending">🟡 Pending Only</option>
+                            <option value="Voided">❌ Voided Only</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Adjustment Type (for inventory adjustments report)
+            if (config.filters.includes('adjustmentType')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📝 Adjustment Type</label>
+                        <select id="rptFilter_adjustmentType">
+                            <option value="">All Types</option>
+                            <option value="VOID REVERSAL">🔄 Void Reversals</option>
+                            <option value="Manual">✏️ Manual Adjustments</option>
+                            <option value="Sale">📤 Sales (Out)</option>
+                            <option value="Purchase">📥 Purchases (In)</option>
+                            <option value="OUTBOUND">🚚 Outbound/Returns</option>
+                        </select>
                     </div>`;
             }
             
@@ -7970,6 +8109,301 @@
             document.body.classList.remove('modal-open');
         }
         
+        // Print report with professional invoice-style formatting
+        function printReport() {
+            const content = document.getElementById('reportSetupContent');
+            const title = document.getElementById('reportSetupTitle').textContent;
+            
+            if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
+                alert('Please run the report first before printing.');
+                return;
+            }
+            
+            // Get invoice settings for company info
+            const settings = {
+                companyName: document.getElementById('invoiceCompanyName')?.value || 'Nowak Distributing',
+                contactName: document.getElementById('invoiceContactName')?.value || '',
+                address1: document.getElementById('invoiceAddress1')?.value || '',
+                address2: document.getElementById('invoiceAddress2')?.value || '',
+                cityStateZip: document.getElementById('invoiceCityStateZip')?.value || '',
+                phone: document.getElementById('invoicePhone')?.value || '',
+                email: document.getElementById('invoiceEmail')?.value || '',
+                footer: document.getElementById('invoiceFooter')?.value || 'Thank you for your business!'
+            };
+            
+            // Get current theme colors
+            const themeColors = getCurrentThemeColors();
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${title} - ${settings.companyName}</title>
+                    <style>
+                        * { box-sizing: border-box; }
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            padding: 0.5in;
+                            margin: 0;
+                            color: #333;
+                        }
+                        
+                        /* Header - matches invoice style */
+                        .report-header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border-bottom: 3px solid ${themeColors.primary};
+                            padding-bottom: 20px;
+                        }
+                        .report-header h1 {
+                            color: ${themeColors.primary};
+                            margin: 0 0 5px 0;
+                            font-size: 24pt;
+                        }
+                        .report-header .company-name {
+                            font-size: 16pt;
+                            margin: 5px 0;
+                            font-weight: bold;
+                        }
+                        .report-header .report-date {
+                            color: #666;
+                            font-size: 11pt;
+                        }
+                        
+                        /* Company Info Box */
+                        .company-info {
+                            background: ${themeColors.primary}10;
+                            border: 1px solid ${themeColors.primary}30;
+                            border-radius: 8px;
+                            padding: 15px;
+                            margin-bottom: 25px;
+                            display: flex;
+                            justify-content: space-between;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                        }
+                        .company-info .left {
+                            flex: 1;
+                            min-width: 200px;
+                        }
+                        .company-info .right {
+                            text-align: right;
+                            flex: 1;
+                            min-width: 200px;
+                        }
+                        .company-info h3 {
+                            margin: 0 0 8px 0;
+                            color: ${themeColors.primary};
+                            font-size: 11pt;
+                        }
+                        .company-info p {
+                            margin: 2px 0;
+                            font-size: 10pt;
+                        }
+                        
+                        /* Tables */
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin: 15px 0; 
+                            font-size: 10pt;
+                        }
+                        th { 
+                            background: ${themeColors.primary}; 
+                            color: white; 
+                            padding: 10px 8px; 
+                            text-align: left;
+                            font-weight: bold;
+                        }
+                        td { 
+                            border: 1px solid #ddd; 
+                            padding: 8px; 
+                        }
+                        tfoot tr { 
+                            font-weight: bold; 
+                            background: #f5f5f5; 
+                        }
+                        tfoot td {
+                            border-top: 2px solid ${themeColors.primary};
+                        }
+                        
+                        /* Dashboard Cards (for print) */
+                        .dash-card-grid {
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 10px;
+                            margin: 15px 0;
+                        }
+                        .dash-card {
+                            border: 1px solid #ddd;
+                            border-left: 4px solid ${themeColors.primary};
+                            padding: 10px;
+                            border-radius: 6px;
+                        }
+                        .dash-card-label {
+                            font-size: 8pt;
+                            color: #666;
+                            text-transform: uppercase;
+                        }
+                        .dash-card-value {
+                            font-size: 16pt;
+                            font-weight: bold;
+                        }
+                        .dash-card-sub {
+                            font-size: 8pt;
+                            color: #888;
+                        }
+                        .dash-section {
+                            border: 1px solid #ddd;
+                            border-radius: 6px;
+                            padding: 15px;
+                            margin: 10px 0;
+                        }
+                        .top-item {
+                            display: flex;
+                            justify-content: space-between;
+                            padding: 8px 0;
+                            border-bottom: 1px solid #eee;
+                        }
+                        .top-item-rank {
+                            display: inline-block;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            text-align: center;
+                            line-height: 20px;
+                            font-size: 10px;
+                            margin-right: 8px;
+                            background: #f0f0f0;
+                        }
+                        
+                        /* Print adjustments */
+                        @media print { 
+                            body { 
+                                print-color-adjust: exact; 
+                                -webkit-print-color-adjust: exact; 
+                            }
+                            .no-print { display: none; }
+                        }
+                        
+                        /* General content */
+                        h3, h4 { color: ${themeColors.primary}; margin: 15px 0 10px 0; }
+                        p { margin: 5px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="report-header">
+                        <h1>${title.replace(/^[^\w]+/, '')}</h1>
+                        <div class="company-name">${settings.companyName}</div>
+                        <div class="report-date">Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</div>
+                    </div>
+                    
+                    <div class="company-info">
+                        <div class="left">
+                            <h3>Prepared By</h3>
+                            <p><strong>${settings.companyName}</strong></p>
+                            ${settings.contactName ? `<p>${settings.contactName}</p>` : ''}
+                            ${settings.address1 ? `<p>${settings.address1}</p>` : ''}
+                            ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
+                            ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
+                        </div>
+                        <div class="right">
+                            <h3>Contact</h3>
+                            ${settings.phone ? `<p>📞 ${settings.phone}</p>` : ''}
+                            ${settings.email ? `<p>✉️ ${settings.email}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    ${content.innerHTML}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            // Small delay to ensure styles load
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
+        }
+        
+        // Helper to get current theme colors for printing
+        function getCurrentThemeColors() {
+            const root = document.documentElement;
+            const styles = getComputedStyle(root);
+            return {
+                primary: styles.getPropertyValue('--primary').trim() || '#667eea',
+                secondary: styles.getPropertyValue('--secondary').trim() || '#764ba2',
+                text: styles.getPropertyValue('--text-dark').trim() || '#333333'
+            };
+        }
+        
+        // Email report
+        function emailReport() {
+            const title = document.getElementById('reportSetupTitle').textContent;
+            const content = document.getElementById('reportSetupContent');
+            
+            if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
+                alert('Please run the report first before emailing.');
+                return;
+            }
+            
+            const companyName = document.getElementById('invoiceCompanyName')?.value || 'Nowak Distributing';
+            
+            // Extract text content for email body
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content.innerHTML;
+            const textContent = tempDiv.innerText.substring(0, 1500) + '...';
+            
+            const subject = encodeURIComponent(`${title} - ${companyName} - ${new Date().toLocaleDateString()}`);
+            const body = encodeURIComponent(`${title}\n${companyName}\nGenerated: ${new Date().toLocaleString()}\n\n${textContent}\n\n---\nFull report available in the ERP system.`);
+            
+            window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+        }
+        
+        // Text/SMS report
+        function textReport() {
+            const title = document.getElementById('reportSetupTitle').textContent;
+            const content = document.getElementById('reportSetupContent');
+            
+            if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
+                alert('Please run the report first before texting.');
+                return;
+            }
+            
+            const companyName = document.getElementById('invoiceCompanyName')?.value || 'Nowak Distributing';
+            
+            // Extract key numbers for SMS
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content.innerHTML;
+            const textContent = tempDiv.innerText.substring(0, 250);
+            
+            const message = encodeURIComponent(`${companyName}\n${title}\n${new Date().toLocaleDateString()}\n\n${textContent}...`);
+            
+            // Try SMS on mobile, fallback to prompt
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                window.open(`sms:?body=${message}`, '_blank');
+            } else {
+                const phone = prompt('Enter phone number to text:');
+                if (phone) {
+                    window.open(`sms:${phone}?body=${message}`, '_blank');
+                }
+            }
+        }
+        
+        // Save report as PDF (print to PDF)
+        function saveReportPDF() {
+            const content = document.getElementById('reportSetupContent');
+            
+            if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
+                alert('Please run the report first before saving.');
+                return;
+            }
+            
+            alert('💡 Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
+            printReport();
+        }
+        
         async function executeReport() {
             // Gather filter values
             reportFilters = {
@@ -7985,7 +8419,9 @@
                 minAmount: parseFloat(document.getElementById('rptFilter_minAmount')?.value) || 0,
                 year: document.getElementById('rptFilter_year')?.value || new Date().getFullYear(),
                 quarter: document.getElementById('rptFilter_quarter')?.value || 'annual',
-                cogsMethod: document.getElementById('rptFilter_cogsMethod')?.value || 'actual'
+                cogsMethod: document.getElementById('rptFilter_cogsMethod')?.value || 'actual',
+                transactionStatus: document.getElementById('rptFilter_transactionStatus')?.value || 'exclude-voided',
+                adjustmentType: document.getElementById('rptFilter_adjustmentType')?.value || ''
             };
             
             const container = document.getElementById('reportSetupContent');
@@ -8027,6 +8463,9 @@
                     case 'simple-inventory':
                         reportHtml = await generateSimpleInventoryModal();
                         break;
+                    case 'inventory-adjustments':
+                        reportHtml = await generateInventoryAdjustmentsModal();
+                        break;
                     case 'profit-loss':
                         reportHtml = await generateProfitLossModal();
                         break;
@@ -8041,6 +8480,21 @@
                         break;
                     case 'cash-flow-summary':
                         reportHtml = await generateCashFlowSummaryModal();
+                        break;
+                    case 'daily-dashboard':
+                        reportHtml = await generateDailyDashboardModal();
+                        break;
+                    case 'customer-dashboard':
+                        if (!reportFilters.customer) {
+                            throw new Error('Please select a customer first');
+                        }
+                        reportHtml = await generateCustomerDashboardModal();
+                        break;
+                    case 'supplier-dashboard':
+                        if (!reportFilters.supplier) {
+                            throw new Error('Please select a supplier first');
+                        }
+                        reportHtml = await generateSupplierDashboardModal();
                         break;
                 }
                 
@@ -8065,8 +8519,13 @@
             const items = itemsResult.data;
             let sales = salesResult.data;
             
-            // DEBUG: Show how many SOs we found
-            console.log('Sales by Customer: Found', sales.length, 'orders');
+            // Apply transaction status filter to sales orders first
+            const statusFilter = reportFilters.transactionStatus || 'exclude-voided';
+            if (statusFilter === 'exclude-voided') {
+                sales = sales.filter(s => s.Status !== 'Voided');
+            } else if (statusFilter && statusFilter !== '') {
+                sales = sales.filter(s => s.Status === statusFilter);
+            }
             
             // Fetch ALL sales order lines
             const allDetails = [];
@@ -8162,8 +8621,12 @@
                 byCustomer[d.customerId].orders.add(d.soId);
             });
             
+            // Build filter summary
+            const filterSummary = generateFilterSummary();
+            
             // Build HTML
             let html = `<h3 style="margin-top: 0;">Sales by Customer Report</h3>`;
+            html += filterSummary;
             html += `<p style="color: #666; margin-bottom: 20px;">${filtered.length} line items from ${Object.keys(byCustomer).length} customers</p>`;
             
             html += `<div style="overflow-x: auto;"><table class="data-table">
@@ -8470,6 +8933,166 @@
             return await generateInventoryReportModal('simple');
         }
         
+        // Inventory Adjustments Report
+        async function generateInventoryAdjustmentsModal() {
+            const [adjustmentsResult, itemsResult] = await Promise.all([
+                apiCall('getInventoryAdjustments'),
+                apiCall('getItems')
+            ]);
+            
+            if (!adjustmentsResult?.data) {
+                return `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>
+                    <p style="color: #888; text-align: center; padding: 40px;">No adjustments found. Adjustments are logged when inventory changes.</p>`;
+            }
+            
+            const items = itemsResult?.data || [];
+            let adjustments = adjustmentsResult.data;
+            
+            // Helper to get item description
+            function getItemDesc(itemId) {
+                const item = items.find(i => String(i.Item_ID) === String(itemId));
+                return item ? item.Item_Description : itemId;
+            }
+            
+            function getItemSKU(itemId) {
+                const item = items.find(i => String(i.Item_ID) === String(itemId));
+                return item ? item.SKU : '-';
+            }
+            
+            // Apply date filters
+            if (reportFilters.fromDate) {
+                const fromDate = new Date(reportFilters.fromDate);
+                fromDate.setHours(0, 0, 0, 0);
+                adjustments = adjustments.filter(a => {
+                    const adjDate = parseDate(a.Adjustment_Date || a.Date);
+                    return adjDate && adjDate >= fromDate;
+                });
+            }
+            if (reportFilters.toDate) {
+                const toDate = new Date(reportFilters.toDate);
+                toDate.setHours(23, 59, 59, 999);
+                adjustments = adjustments.filter(a => {
+                    const adjDate = parseDate(a.Adjustment_Date || a.Date);
+                    return adjDate && adjDate <= toDate;
+                });
+            }
+            
+            // Apply item filter
+            if (reportFilters.item) {
+                adjustments = adjustments.filter(a => String(a.Item_ID) === String(reportFilters.item));
+            }
+            
+            // Apply adjustment type filter
+            if (reportFilters.adjustmentType) {
+                adjustments = adjustments.filter(a => {
+                    const reason = (a.Reason || '').toUpperCase();
+                    const filterType = reportFilters.adjustmentType.toUpperCase();
+                    return reason.includes(filterType);
+                });
+            }
+            
+            // Sort by date (newest first)
+            adjustments.sort((a, b) => {
+                const dateA = parseDate(a.Adjustment_Date || a.Date) || new Date(0);
+                const dateB = parseDate(b.Adjustment_Date || b.Date) || new Date(0);
+                return dateB - dateA;
+            });
+            
+            // Build filter summary
+            const filterSummary = generateFilterSummary();
+            
+            // Calculate summary stats
+            let totalPositive = 0, totalNegative = 0;
+            adjustments.forEach(a => {
+                const qty = parseFloat(a.Qty_Change || a.Adjustment) || 0;
+                if (qty > 0) totalPositive += qty;
+                else totalNegative += Math.abs(qty);
+            });
+            
+            let html = `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>`;
+            html += filterSummary;
+            
+            // Summary cards
+            html += `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1565c0;">${adjustments.length}</div>
+                        <div style="font-size: 12px; color: #666;">Total Adjustments</div>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">+${totalPositive.toLocaleString()}</div>
+                        <div style="font-size: 12px; color: #666;">Units Added</div>
+                    </div>
+                    <div style="background: #ffebee; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #c62828;">-${totalNegative.toLocaleString()}</div>
+                        <div style="font-size: 12px; color: #666;">Units Removed</div>
+                    </div>
+                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #7b1fa2;">${(totalPositive - totalNegative).toLocaleString()}</div>
+                        <div style="font-size: 12px; color: #666;">Net Change</div>
+                    </div>
+                </div>
+            `;
+            
+            if (adjustments.length === 0) {
+                html += `<p style="color: #888; text-align: center; padding: 40px;">No adjustments found for the selected filters.</p>`;
+                return html;
+            }
+            
+            html += `<div style="overflow-x: auto;"><table class="data-table">
+                <thead><tr>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>SKU</th>
+                    <th>Reason</th>
+                    <th style="text-align: right;">Before</th>
+                    <th style="text-align: right;">Change</th>
+                    <th style="text-align: right;">After</th>
+                    <th>Notes</th>
+                </tr></thead><tbody>`;
+            
+            adjustments.forEach(a => {
+                const adjDate = parseDate(a.Adjustment_Date || a.Date);
+                const dateStr = adjDate ? adjDate.toLocaleDateString() : '-';
+                const qtyChange = parseFloat(a.Qty_Change || a.Adjustment) || 0;
+                const qtyBefore = parseFloat(a.Qty_Before || a.Previous_Qty) || 0;
+                const qtyAfter = parseFloat(a.Qty_After || a.New_Qty) || 0;
+                const reason = a.Reason || '-';
+                const notes = a.Notes || '';
+                
+                // Color code the reason
+                let reasonBadge = reason;
+                if (reason.includes('VOID')) {
+                    reasonBadge = `<span style="background: #ffcdd2; color: #c62828; padding: 2px 8px; border-radius: 10px; font-size: 11px;">🔄 ${reason}</span>`;
+                } else if (reason.includes('Sale') || reason.includes('SALE')) {
+                    reasonBadge = `<span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 11px;">📤 ${reason}</span>`;
+                } else if (reason.includes('Purchase') || reason.includes('PURCHASE') || reason.includes('Received')) {
+                    reasonBadge = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 11px;">📥 ${reason}</span>`;
+                } else if (reason.includes('Manual')) {
+                    reasonBadge = `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 11px;">✏️ ${reason}</span>`;
+                } else if (reason.includes('OUTBOUND')) {
+                    reasonBadge = `<span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 11px;">🚚 ${reason}</span>`;
+                }
+                
+                html += `<tr>
+                    <td>${dateStr}</td>
+                    <td>${getItemDesc(a.Item_ID)}</td>
+                    <td style="font-family: monospace; font-size: 11px;">${getItemSKU(a.Item_ID)}</td>
+                    <td>${reasonBadge}</td>
+                    <td style="text-align: right;">${qtyBefore}</td>
+                    <td style="text-align: right; font-weight: bold; color: ${qtyChange >= 0 ? '#2e7d32' : '#c62828'};">
+                        ${qtyChange >= 0 ? '+' : ''}${qtyChange}
+                    </td>
+                    <td style="text-align: right;">${qtyAfter}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: #666;">${notes}</td>
+                </tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+            
+            return html;
+        }
+        
         async function generateInventoryReportModal(type) {
             const itemsResult = await apiCall('getItems');
             if (!itemsResult?.data) throw new Error('Failed to load items');
@@ -8695,6 +9318,95 @@
             return isNaN(d.getTime()) ? null : d;
         }
         
+        // Helper to filter transactions by status
+        function filterByTransactionStatus(items, statusField = 'Status') {
+            const statusFilter = reportFilters.transactionStatus || 'exclude-voided';
+            
+            if (statusFilter === 'exclude-voided') {
+                return items.filter(item => item[statusField] !== 'Voided');
+            } else if (statusFilter === '') {
+                return items; // All transactions
+            } else {
+                return items.filter(item => item[statusField] === statusFilter);
+            }
+        }
+        
+        // Helper to generate filter summary HTML
+        function generateFilterSummary(options = {}) {
+            const parts = [];
+            
+            // Date range
+            if (reportFilters.fromDate && reportFilters.toDate) {
+                parts.push(`📅 ${new Date(reportFilters.fromDate).toLocaleDateString()} - ${new Date(reportFilters.toDate).toLocaleDateString()}`);
+            } else if (reportFilters.fromDate) {
+                parts.push(`📅 From ${new Date(reportFilters.fromDate).toLocaleDateString()}`);
+            } else if (reportFilters.toDate) {
+                parts.push(`📅 Through ${new Date(reportFilters.toDate).toLocaleDateString()}`);
+            }
+            
+            // Year/Quarter for tax reports
+            if (options.showYear && reportFilters.year) {
+                const periodLabel = reportFilters.quarter === 'annual' ? `Year ${reportFilters.year}` : `${reportFilters.quarter} ${reportFilters.year}`;
+                parts.push(`📅 ${periodLabel}`);
+            }
+            
+            // Customer
+            if (reportFilters.customer) {
+                parts.push(`👤 ${getCustomerName(reportFilters.customer)}`);
+            }
+            
+            // Supplier
+            if (reportFilters.supplier) {
+                parts.push(`🏭 ${getSupplierName(reportFilters.supplier)}`);
+            }
+            
+            // Payment Status
+            if (reportFilters.paymentStatus) {
+                const statusLabels = { 'Paid': '✅ Paid', 'Partial': '🟡 Partial', 'Unpaid': '🔴 Unpaid' };
+                parts.push(statusLabels[reportFilters.paymentStatus] || reportFilters.paymentStatus);
+            }
+            
+            // Transaction Status
+            if (reportFilters.transactionStatus) {
+                const statusLabels = {
+                    'exclude-voided': '🚫 Excluding Voided',
+                    'Completed': '✅ Completed Only',
+                    'Pending': '🟡 Pending Only',
+                    'Voided': '❌ Voided Only'
+                };
+                if (reportFilters.transactionStatus !== 'exclude-voided' || options.showVoidedFilter) {
+                    parts.push(statusLabels[reportFilters.transactionStatus] || reportFilters.transactionStatus);
+                }
+            }
+            
+            // Min Amount
+            if (reportFilters.minAmount > 0) {
+                parts.push(`💵 Min $${reportFilters.minAmount.toFixed(2)}`);
+            }
+            
+            // Stock Status
+            if (reportFilters.stockStatus) {
+                const labels = { 'negative': '🚨 Negative', 'out': '🔴 Out of Stock', 'low': '🟡 Low Stock', 'ok': '🟢 In Stock' };
+                parts.push(labels[reportFilters.stockStatus] || reportFilters.stockStatus);
+            }
+            
+            // COGS Method
+            if (options.showCogsMethod && reportFilters.cogsMethod) {
+                parts.push(`📦 COGS: ${reportFilters.cogsMethod === 'actual' ? 'Actual Costs' : 'Standard Costs'}`);
+            }
+            
+            if (parts.length === 0) {
+                return '';
+            }
+            
+            return `
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <span style="font-weight: 600; color: #666; font-size: 12px;">FILTERS:</span>
+                    ${parts.map(p => `<span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">${p}</span>`).join('')}
+                </div>
+            `;
+        }
+        
         // Profit & Loss Statement
         async function generateProfitLossModal() {
             const year = reportFilters.year || new Date().getFullYear();
@@ -8716,14 +9428,16 @@
             
             const items = itemsResult.data;
             
-            // Filter sales by date
+            // Filter sales by date AND exclude voided (tax reports always exclude voided)
             const salesInPeriod = salesResult.data.filter(s => {
+                if (s.Status === 'Voided') return false; // Always exclude voided for tax reports
                 const saleDate = parseDate(s.Sale_Date || s.SO_Date);
                 return saleDate && saleDate >= startDate && saleDate <= endDate;
             });
             
-            // Filter purchases by date
+            // Filter purchases by date AND exclude voided
             const purchasesInPeriod = poResult.data.filter(p => {
+                if (p.Status === 'Voided') return false; // Always exclude voided for tax reports
                 const poDate = parseDate(p.PO_Date);
                 return poDate && poDate >= startDate && poDate <= endDate;
             });
@@ -8771,8 +9485,13 @@
             
             let html = `
                 <h3 style="margin-top: 0;">📊 Profit & Loss Statement</h3>
-                <p style="color: #666; margin-bottom: 5px;">Period: <strong>${periodLabel}</strong></p>
-                <p style="color: #666; margin-bottom: 20px; font-size: 12px;">COGS Method: ${cogsLabel}</p>
+                
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <span style="font-weight: 600; color: #666; font-size: 12px;">REPORT PARAMETERS:</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📅 ${periodLabel}</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📦 COGS: ${cogsLabel}</span>
+                    <span style="background: #fff3e0; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ffe0b2;">🚫 Voided Excluded</span>
+                </div>
                 
                 <div style="max-width: 500px; margin: 0 auto;">
                     <table class="data-table" style="width: 100%;">
@@ -8827,8 +9546,9 @@
             const salesResult = await apiCall('getSalesOrders');
             if (!salesResult?.data) throw new Error('Failed to load sales data');
             
-            // Filter by year
+            // Filter by year AND exclude voided (tax reports always exclude voided)
             const salesInYear = salesResult.data.filter(s => {
+                if (s.Status === 'Voided') return false;
                 const saleDate = parseDate(s.Sale_Date || s.SO_Date);
                 return saleDate && saleDate >= startDate && saleDate <= endDate;
             });
@@ -8867,7 +9587,13 @@
             
             let html = `
                 <h3 style="margin-top: 0;">📈 Annual Sales Summary - ${year}</h3>
-                <p style="color: #666; margin-bottom: 20px;">${salesInYear.length} orders in calendar year ${year}</p>
+                
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <span style="font-weight: 600; color: #666; font-size: 12px;">REPORT PARAMETERS:</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📅 Calendar Year ${year}</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📋 ${salesInYear.length} Orders</span>
+                    <span style="background: #fff3e0; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ffe0b2;">🚫 Voided Excluded</span>
+                </div>
                 
                 <h4 style="margin: 20px 0 10px 0;">Monthly Breakdown</h4>
                 <div style="overflow-x: auto;"><table class="data-table">
@@ -8931,8 +9657,9 @@
             const poResult = await apiCall('getPurchaseOrders');
             if (!poResult?.data) throw new Error('Failed to load PO data');
             
-            // Filter by year
+            // Filter by year AND exclude voided (tax reports always exclude voided)
             const posInYear = poResult.data.filter(p => {
+                if (p.Status === 'Voided') return false;
                 const poDate = parseDate(p.PO_Date);
                 return poDate && poDate >= startDate && poDate <= endDate;
             });
@@ -8971,7 +9698,13 @@
             
             let html = `
                 <h3 style="margin-top: 0;">📉 Annual Purchase Summary - ${year}</h3>
-                <p style="color: #666; margin-bottom: 20px;">${posInYear.length} purchase orders in calendar year ${year}</p>
+                
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <span style="font-weight: 600; color: #666; font-size: 12px;">REPORT PARAMETERS:</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📅 Calendar Year ${year}</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📋 ${posInYear.length} POs</span>
+                    <span style="background: #fff3e0; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ffe0b2;">🚫 Voided Excluded</span>
+                </div>
                 
                 <h4 style="margin: 20px 0 10px 0;">Monthly Breakdown</h4>
                 <div style="overflow-x: auto;"><table class="data-table">
@@ -9123,13 +9856,15 @@
                 throw new Error('Failed to load data');
             }
             
-            // Filter by period
+            // Filter by period AND exclude voided (tax reports always exclude voided)
             const salesInPeriod = salesResult.data.filter(s => {
+                if (s.Status === 'Voided') return false;
                 const d = parseDate(s.Sale_Date || s.SO_Date);
                 return d && d >= startDate && d <= endDate;
             });
             
             const posInPeriod = poResult.data.filter(p => {
+                if (p.Status === 'Voided') return false;
                 const d = parseDate(p.PO_Date);
                 return d && d >= startDate && d <= endDate;
             });
@@ -9156,7 +9891,13 @@
             
             let html = `
                 <h3 style="margin-top: 0;">💵 Cash Flow Summary</h3>
-                <p style="color: #666; margin-bottom: 20px;">Period: <strong>${periodLabel}</strong></p>
+                
+                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <span style="font-weight: 600; color: #666; font-size: 12px;">REPORT PARAMETERS:</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📅 ${periodLabel}</span>
+                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📋 ${salesInPeriod.length} Sales / ${posInPeriod.length} POs</span>
+                    <span style="background: #fff3e0; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ffe0b2;">🚫 Voided Excluded</span>
+                </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
                     
@@ -9228,6 +9969,924 @@
                             <td style="text-align: right;">${totalPurchasesInvoiced > 0 ? (totalPurchasesPaid / totalPurchasesInvoiced * 100).toFixed(1) : 0}%</td>
                         </tr>
                     </table>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // ==================== DAILY DASHBOARD ====================
+        
+        async function generateDailyDashboardModal() {
+            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : new Date();
+            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : new Date();
+            fromDate.setHours(0, 0, 0, 0);
+            
+            // Fetch all data
+            const [salesResult, itemsResult, customersResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getItems'),
+                apiCall('getCustomers')
+            ]);
+            
+            if (!salesResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            const customers = customersResult?.data || [];
+            
+            // Filter sales by date range
+            let salesInPeriod = salesResult.data.filter(s => {
+                const saleDate = parseDate(s.Sale_Date || s.SO_Date);
+                return saleDate && saleDate >= fromDate && saleDate <= toDate;
+            });
+            
+            // Filter by customer if selected
+            if (reportFilters.customer) {
+                salesInPeriod = salesInPeriod.filter(s => s.Customer_ID === reportFilters.customer);
+            }
+            
+            // Calculate metrics
+            let totalQtySold = 0;
+            let totalSales = 0;
+            let totalCost = 0;
+            let orderCount = salesInPeriod.length;
+            
+            // Get line items for each sale
+            const productSales = {};
+            const customerSales = {};
+            
+            for (const so of salesInPeriod) {
+                const soTotal = parseFloat(so.Total_Amount) || 0;
+                totalSales += soTotal;
+                
+                // Track customer sales
+                const custId = so.Customer_ID;
+                if (!customerSales[custId]) {
+                    customerSales[custId] = { 
+                        name: getCustomerName(custId), 
+                        sales: 0, 
+                        orders: 0 
+                    };
+                }
+                customerSales[custId].sales += soTotal;
+                customerSales[custId].orders++;
+                
+                // Get line items
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const qty = parseInt(line.Quantity) || 0;
+                        totalQtySold += qty;
+                        
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        const unitCost = pkgCost / unitsPerPkg;
+                        totalCost += qty * unitCost;
+                        
+                        // Track product sales
+                        const itemId = line.Item_ID;
+                        if (!productSales[itemId]) {
+                            productSales[itemId] = {
+                                name: item?.Item_Description || itemId,
+                                sku: item?.SKU || '-',
+                                qty: 0,
+                                sales: 0
+                            };
+                        }
+                        productSales[itemId].qty += qty;
+                        productSales[itemId].sales += parseFloat(line.Line_Total) || 0;
+                    });
+                }
+            }
+            
+            const profit = totalSales - totalCost;
+            const grossMargin = totalSales > 0 ? (profit / totalSales * 100) : 0;
+            const avgOrderValue = orderCount > 0 ? (totalSales / orderCount) : 0;
+            const avgUnitPrice = totalQtySold > 0 ? (totalSales / totalQtySold) : 0;
+            const avgUnitCost = totalQtySold > 0 ? (totalCost / totalQtySold) : 0;
+            
+            // Sort top performers
+            const topCustomers = Object.values(customerSales).sort((a, b) => b.sales - a.sales).slice(0, 5);
+            const topProducts = Object.values(productSales).sort((a, b) => b.sales - a.sales).slice(0, 5);
+            
+            // Date range label
+            const fromStr = fromDate.toLocaleDateString();
+            const toStr = toDate.toLocaleDateString();
+            const dateLabel = fromStr === toStr ? fromStr : `${fromStr} - ${toStr}`;
+            
+            // Build dashboard HTML with card styling
+            let html = `
+                <style>
+                    .dash-card-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .dash-card {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 15px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        border-left: 4px solid #667eea;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    }
+                    .dash-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+                    }
+                    .dash-card-label {
+                        font-size: 11px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 8px;
+                    }
+                    .dash-card-value {
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: #333;
+                        line-height: 1.1;
+                    }
+                    .dash-card-sub {
+                        font-size: 12px;
+                        color: #888;
+                        margin-top: 5px;
+                    }
+                    .dash-section {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    }
+                    .dash-section h4 {
+                        margin: 0 0 15px 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .top-item {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 0;
+                        border-bottom: 1px solid #f0f0f0;
+                    }
+                    .top-item:last-child { border-bottom: none; }
+                    .top-item-rank {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 12px;
+                        margin-right: 12px;
+                    }
+                    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+                    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: white; }
+                    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+                    .rank-other { background: #f0f0f0; color: #666; }
+                </style>
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #333;">🎯 Sales Dashboard</h3>
+                    <p style="margin: 5px 0 0 0; color: #666;">${dateLabel}${reportFilters.customer ? ' • ' + getCustomerName(reportFilters.customer) : ''}</p>
+                </div>
+                
+                <!-- Main KPI Cards -->
+                <div class="dash-card-grid">
+                    <div class="dash-card" style="border-color: #2196F3;">
+                        <div class="dash-card-label" style="color: #2196F3;">📦 QTY SOLD</div>
+                        <div class="dash-card-value">${totalQtySold.toLocaleString()}</div>
+                        <div class="dash-card-sub">units</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: #9C27B0;">
+                        <div class="dash-card-label" style="color: #9C27B0;">📋 ORDERS</div>
+                        <div class="dash-card-value">${orderCount}</div>
+                        <div class="dash-card-sub">sales orders</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: #4CAF50;">
+                        <div class="dash-card-label" style="color: #4CAF50;">💰 SALES</div>
+                        <div class="dash-card-value">$${totalSales.toFixed(0)}</div>
+                        <div class="dash-card-sub">total revenue</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: #FF9800;">
+                        <div class="dash-card-label" style="color: #FF9800;">📦 COST</div>
+                        <div class="dash-card-value">$${totalCost.toFixed(0)}</div>
+                        <div class="dash-card-sub">cost of goods</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: #4CAF50;">
+                        <div class="dash-card-label" style="color: #4CAF50;">📈 PROFIT</div>
+                        <div class="dash-card-value" style="color: ${profit >= 0 ? '#2e7d32' : '#c62828'};">$${profit.toFixed(0)}</div>
+                        <div class="dash-card-sub">gross profit</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: ${grossMargin >= 20 ? '#4CAF50' : grossMargin >= 10 ? '#FF9800' : '#f44336'};">
+                        <div class="dash-card-label" style="color: ${grossMargin >= 20 ? '#4CAF50' : grossMargin >= 10 ? '#FF9800' : '#f44336'};">📊 MARGIN</div>
+                        <div class="dash-card-value">${grossMargin.toFixed(1)}%</div>
+                        <div class="dash-card-sub">gross margin</div>
+                    </div>
+                </div>
+                
+                <!-- Secondary KPIs -->
+                <div class="dash-card-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <div class="dash-card" style="border-color: #607D8B;">
+                        <div class="dash-card-label" style="color: #607D8B;">🛒 AVG ORDER</div>
+                        <div class="dash-card-value">$${avgOrderValue.toFixed(2)}</div>
+                        <div class="dash-card-sub">average order value</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: #795548;">
+                        <div class="dash-card-label" style="color: #795548;">💵 AVG PRICE</div>
+                        <div class="dash-card-value">$${avgUnitPrice.toFixed(2)}</div>
+                        <div class="dash-card-sub">per unit sold</div>
+                    </div>
+                    
+                    <div class="dash-card" style="border-color: #9E9E9E;">
+                        <div class="dash-card-label" style="color: #9E9E9E;">📦 AVG COST</div>
+                        <div class="dash-card-value">$${avgUnitCost.toFixed(2)}</div>
+                        <div class="dash-card-sub">per unit cost</div>
+                    </div>
+                </div>
+                
+                <!-- Top Performers Section -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                    
+                    <!-- Top Customers -->
+                    <div class="dash-section">
+                        <h4>🏆 Top Customers</h4>
+                        ${topCustomers.length === 0 ? '<p style="color: #888; text-align: center;">No sales in this period</p>' : ''}
+                        ${topCustomers.map((c, i) => `
+                            <div class="top-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="top-item-rank ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</div>
+                                    <div>
+                                        <div style="font-weight: 500;">${c.name}</div>
+                                        <div style="font-size: 12px; color: #888;">${c.orders} order${c.orders !== 1 ? 's' : ''}</div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: bold; color: #2e7d32;">$${c.sales.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <!-- Top Products -->
+                    <div class="dash-section">
+                        <h4>🥇 Top Products</h4>
+                        ${topProducts.length === 0 ? '<p style="color: #888; text-align: center;">No sales in this period</p>' : ''}
+                        ${topProducts.map((p, i) => `
+                            <div class="top-item">
+                                <div style="display: flex; align-items: center;">
+                                    <div class="top-item-rank ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</div>
+                                    <div>
+                                        <div style="font-weight: 500;">${p.name}</div>
+                                        <div style="font-size: 12px; color: #888;">${p.qty} units • ${p.sku}</div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: bold; color: #2e7d32;">$${p.sales.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // ==================== CUSTOMER PRESENTATION DASHBOARD ====================
+        
+        async function generateCustomerDashboardModal() {
+            const customerId = reportFilters.customer;
+            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : null;
+            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : null;
+            
+            // Fetch all data
+            const [salesResult, itemsResult, customersResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getItems'),
+                apiCall('getCustomers')
+            ]);
+            
+            if (!salesResult?.data || !itemsResult?.data || !customersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            const customer = customersResult.data.find(c => c.Customer_ID === customerId);
+            const customerName = customer?.Customer_Name || 'Customer';
+            
+            // Get all sales for this customer
+            let allCustomerSales = salesResult.data.filter(s => s.Customer_ID === customerId);
+            
+            // Apply date filter if provided
+            let filteredSales = allCustomerSales;
+            if (fromDate) {
+                fromDate.setHours(0, 0, 0, 0);
+                filteredSales = filteredSales.filter(s => {
+                    const d = parseDate(s.Sale_Date || s.SO_Date);
+                    return d && d >= fromDate;
+                });
+            }
+            if (toDate) {
+                filteredSales = filteredSales.filter(s => {
+                    const d = parseDate(s.Sale_Date || s.SO_Date);
+                    return d && d <= toDate;
+                });
+            }
+            
+            // Calculate time period stats (regardless of date filter)
+            const now = new Date();
+            const periods = {
+                '1 MONTH': { start: new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()), sales: 0, orders: 0 },
+                '3 MONTH': { start: new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()), sales: 0, orders: 0 },
+                'YTD': { start: new Date(now.getFullYear(), 0, 1), sales: 0, orders: 0 },
+                '1 YEAR': { start: new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()), sales: 0, orders: 0 },
+                '3 YEAR': { start: new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()), sales: 0, orders: 0 },
+                'ALL TIME': { start: new Date(2000, 0, 1), sales: 0, orders: 0 }
+            };
+            
+            allCustomerSales.forEach(s => {
+                const saleDate = parseDate(s.Sale_Date || s.SO_Date);
+                const amount = parseFloat(s.Total_Amount) || 0;
+                if (saleDate) {
+                    Object.keys(periods).forEach(key => {
+                        if (saleDate >= periods[key].start) {
+                            periods[key].sales += amount;
+                            periods[key].orders++;
+                        }
+                    });
+                }
+            });
+            
+            // Get product breakdown for filtered period
+            const productSales = {};
+            let totalQty = 0, totalSales = 0, totalOrders = filteredSales.length;
+            
+            for (const so of filteredSales) {
+                totalSales += parseFloat(so.Total_Amount) || 0;
+                
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const qty = parseInt(line.Quantity) || 0;
+                        totalQty += qty;
+                        
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const itemId = line.Item_ID;
+                        if (!productSales[itemId]) {
+                            productSales[itemId] = {
+                                name: item?.Item_Description || itemId,
+                                sku: item?.SKU || '-',
+                                qty: 0,
+                                sales: 0
+                            };
+                        }
+                        productSales[itemId].qty += qty;
+                        productSales[itemId].sales += parseFloat(line.Line_Total) || 0;
+                    });
+                }
+            }
+            
+            const topProducts = Object.values(productSales).sort((a, b) => b.sales - a.sales).slice(0, 5);
+            const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+            
+            // Period colors matching the reference image
+            const periodColors = ['#2196F3', '#9C27B0', '#FF9800', '#f44336', '#4CAF50', '#607D8B'];
+            
+            // Date range label
+            let dateLabel = 'All Time';
+            if (fromDate && toDate) {
+                dateLabel = `${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+            } else if (fromDate) {
+                dateLabel = `Since ${fromDate.toLocaleDateString()}`;
+            } else if (toDate) {
+                dateLabel = `Through ${toDate.toLocaleDateString()}`;
+            }
+            
+            let html = `
+                <style>
+                    .pres-header {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #2e7d32, #4caf50);
+                        color: white;
+                        border-radius: 12px;
+                        margin-bottom: 25px;
+                    }
+                    .pres-header h2 {
+                        margin: 0;
+                        font-size: 28px;
+                    }
+                    .pres-header p {
+                        margin: 8px 0 0 0;
+                        opacity: 0.9;
+                    }
+                    .period-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                        gap: 12px;
+                        margin-bottom: 25px;
+                    }
+                    .period-card {
+                        background: white;
+                        border-radius: 10px;
+                        padding: 15px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        border-left: 4px solid #667eea;
+                        transition: transform 0.2s;
+                    }
+                    .period-card:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+                    }
+                    .period-label {
+                        font-size: 11px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        margin-bottom: 8px;
+                    }
+                    .period-value {
+                        font-size: 26px;
+                        font-weight: bold;
+                        color: #333;
+                    }
+                    .period-sub {
+                        font-size: 11px;
+                        color: #888;
+                        margin-top: 4px;
+                    }
+                    .section-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        margin: 25px 0 15px 0;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #e0e0e0;
+                    }
+                    .section-title h3 {
+                        margin: 0;
+                        color: #333;
+                    }
+                    .summary-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .summary-card {
+                        background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+                        border-radius: 10px;
+                        padding: 20px;
+                        text-align: center;
+                    }
+                    .summary-card .label {
+                        font-size: 12px;
+                        color: #666;
+                        text-transform: uppercase;
+                    }
+                    .summary-card .value {
+                        font-size: 32px;
+                        font-weight: bold;
+                        color: #2e7d32;
+                        margin: 5px 0;
+                    }
+                    .product-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px 15px;
+                        background: white;
+                        border-radius: 8px;
+                        margin-bottom: 8px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                    }
+                    .product-rank {
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-right: 15px;
+                        color: white;
+                    }
+                    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+                    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
+                    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+                    .rank-other { background: #9e9e9e; }
+                </style>
+                
+                <div class="pres-header">
+                    <h2>👤 ${customerName}</h2>
+                    <p>Sales Performance Report</p>
+                </div>
+                
+                <div class="section-title">
+                    <span style="font-size: 20px;">🏆</span>
+                    <h3>Sales by Time Period</h3>
+                </div>
+                <p style="color: #666; margin: -10px 0 15px 0; font-size: 13px;">Click any tile to see detailed breakdown</p>
+                
+                <div class="period-grid">
+                    ${Object.entries(periods).map(([label, data], i) => `
+                        <div class="period-card" style="border-color: ${periodColors[i]};">
+                            <div class="period-label" style="color: ${periodColors[i]};">${label}</div>
+                            <div class="period-value">$${data.sales.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                            <div class="period-sub">${data.orders} order${data.orders !== 1 ? 's' : ''}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section-title">
+                    <span style="font-size: 20px;">📊</span>
+                    <h3>Selected Period Summary</h3>
+                    <span style="color: #666; font-size: 13px; margin-left: auto;">${dateLabel}</span>
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="label">Total Sales</div>
+                        <div class="value">$${totalSales.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">Orders</div>
+                        <div class="value" style="color: #1565c0;">${totalOrders}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">Units Purchased</div>
+                        <div class="value" style="color: #7b1fa2;">${totalQty.toLocaleString()}</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="label">Avg Order Value</div>
+                        <div class="value" style="color: #e65100;">$${avgOrderValue.toFixed(2)}</div>
+                    </div>
+                </div>
+                
+                <div class="section-title">
+                    <span style="font-size: 20px;">🥇</span>
+                    <h3>Top Products Purchased</h3>
+                </div>
+                
+                ${topProducts.length === 0 ? '<p style="color: #888; text-align: center; padding: 20px;">No purchases in selected period</p>' : ''}
+                ${topProducts.map((p, i) => `
+                    <div class="product-row">
+                        <div style="display: flex; align-items: center;">
+                            <div class="product-rank ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</div>
+                            <div>
+                                <div style="font-weight: 600;">${p.name}</div>
+                                <div style="font-size: 12px; color: #888;">${p.qty} units • SKU: ${p.sku}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: bold; color: #2e7d32;">$${p.sales.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            return html;
+        }
+        
+        // ==================== SUPPLIER PRESENTATION DASHBOARD ====================
+        
+        async function generateSupplierDashboardModal() {
+            const supplierId = reportFilters.supplier;
+            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : null;
+            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : null;
+            
+            // Fetch all data
+            const [poResult, itemsResult, suppliersResult] = await Promise.all([
+                apiCall('getPurchaseOrders'),
+                apiCall('getItems'),
+                apiCall('getSuppliers')
+            ]);
+            
+            if (!poResult?.data || !itemsResult?.data || !suppliersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            const supplier = suppliersResult.data.find(s => s.Supplier_ID === supplierId);
+            const supplierName = supplier?.Supplier_Name || 'Supplier';
+            
+            // Get all POs for this supplier (exclude OUTBOUND)
+            let allSupplierPOs = poResult.data.filter(p => p.Supplier_ID === supplierId && p.PO_Type !== 'OUTBOUND');
+            
+            // Apply date filter if provided
+            let filteredPOs = allSupplierPOs;
+            if (fromDate) {
+                fromDate.setHours(0, 0, 0, 0);
+                filteredPOs = filteredPOs.filter(p => {
+                    const d = parseDate(p.PO_Date);
+                    return d && d >= fromDate;
+                });
+            }
+            if (toDate) {
+                filteredPOs = filteredPOs.filter(p => {
+                    const d = parseDate(p.PO_Date);
+                    return d && d <= toDate;
+                });
+            }
+            
+            // Calculate time period stats
+            const now = new Date();
+            const periods = {
+                '1 MONTH': { start: new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()), purchases: 0, orders: 0 },
+                '3 MONTH': { start: new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()), purchases: 0, orders: 0 },
+                'YTD': { start: new Date(now.getFullYear(), 0, 1), purchases: 0, orders: 0 },
+                '1 YEAR': { start: new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()), purchases: 0, orders: 0 },
+                '3 YEAR': { start: new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()), purchases: 0, orders: 0 },
+                'ALL TIME': { start: new Date(2000, 0, 1), purchases: 0, orders: 0 }
+            };
+            
+            allSupplierPOs.forEach(p => {
+                const poDate = parseDate(p.PO_Date);
+                const amount = parseFloat(p.Total_Amount) || 0;
+                if (poDate) {
+                    Object.keys(periods).forEach(key => {
+                        if (poDate >= periods[key].start) {
+                            periods[key].purchases += amount;
+                            periods[key].orders++;
+                        }
+                    });
+                }
+            });
+            
+            // Get product breakdown for filtered period
+            const productPurchases = {};
+            let totalQty = 0, totalPurchases = 0, totalOrders = filteredPOs.length;
+            let totalPaid = 0;
+            
+            for (const po of filteredPOs) {
+                totalPurchases += parseFloat(po.Total_Amount) || 0;
+                totalPaid += parseFloat(po.Amount_Paid) || 0;
+                
+                const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const qty = parseInt(line.Quantity) || 0;
+                        totalQty += qty;
+                        
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const itemId = line.Item_ID;
+                        if (!productPurchases[itemId]) {
+                            productPurchases[itemId] = {
+                                name: item?.Item_Description || itemId,
+                                sku: item?.SKU || '-',
+                                qty: 0,
+                                cost: 0
+                            };
+                        }
+                        productPurchases[itemId].qty += qty;
+                        productPurchases[itemId].cost += parseFloat(line.Line_Total) || 0;
+                    });
+                }
+            }
+            
+            const topProducts = Object.values(productPurchases).sort((a, b) => b.cost - a.cost).slice(0, 5);
+            const avgOrderValue = totalOrders > 0 ? totalPurchases / totalOrders : 0;
+            
+            // Period colors
+            const periodColors = ['#1565c0', '#0097a7', '#00897b', '#43a047', '#7cb342', '#afb42b'];
+            
+            // Date range label
+            let dateLabel = 'All Time';
+            if (fromDate && toDate) {
+                dateLabel = `${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+            } else if (fromDate) {
+                dateLabel = `Since ${fromDate.toLocaleDateString()}`;
+            } else if (toDate) {
+                dateLabel = `Through ${toDate.toLocaleDateString()}`;
+            }
+            
+            let html = `
+                <style>
+                    .pres-header-supplier {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #1565c0, #42a5f5);
+                        color: white;
+                        border-radius: 12px;
+                        margin-bottom: 25px;
+                    }
+                    .pres-header-supplier h2 {
+                        margin: 0;
+                        font-size: 28px;
+                    }
+                    .pres-header-supplier p {
+                        margin: 8px 0 0 0;
+                        opacity: 0.9;
+                    }
+                    .period-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                        gap: 12px;
+                        margin-bottom: 25px;
+                    }
+                    .period-card {
+                        background: white;
+                        border-radius: 10px;
+                        padding: 15px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        border-left: 4px solid #1565c0;
+                        transition: transform 0.2s;
+                    }
+                    .period-card:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+                    }
+                    .period-label {
+                        font-size: 11px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        margin-bottom: 8px;
+                    }
+                    .period-value {
+                        font-size: 26px;
+                        font-weight: bold;
+                        color: #333;
+                    }
+                    .period-sub {
+                        font-size: 11px;
+                        color: #888;
+                        margin-top: 4px;
+                    }
+                    .section-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        margin: 25px 0 15px 0;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #e0e0e0;
+                    }
+                    .section-title h3 {
+                        margin: 0;
+                        color: #333;
+                    }
+                    .summary-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .summary-card-blue {
+                        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+                        border-radius: 10px;
+                        padding: 20px;
+                        text-align: center;
+                    }
+                    .summary-card-blue .label {
+                        font-size: 12px;
+                        color: #1565c0;
+                        text-transform: uppercase;
+                        font-weight: 600;
+                    }
+                    .summary-card-blue .value {
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: #0d47a1;
+                        margin: 5px 0;
+                    }
+                    .product-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px 15px;
+                        background: white;
+                        border-radius: 8px;
+                        margin-bottom: 8px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                    }
+                    .product-rank {
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-right: 15px;
+                        color: white;
+                    }
+                    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+                    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); }
+                    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+                    .rank-other { background: #9e9e9e; }
+                    .partnership-box {
+                        background: linear-gradient(135deg, #1a237e, #283593);
+                        color: white;
+                        padding: 25px;
+                        border-radius: 12px;
+                        text-align: center;
+                        margin-top: 25px;
+                    }
+                    .partnership-box h3 {
+                        margin: 0 0 15px 0;
+                        font-size: 18px;
+                    }
+                    .partnership-value {
+                        font-size: 42px;
+                        font-weight: bold;
+                    }
+                    .partnership-label {
+                        font-size: 14px;
+                        opacity: 0.9;
+                        margin-top: 5px;
+                    }
+                </style>
+                
+                <div class="pres-header-supplier">
+                    <h2>🏭 ${supplierName}</h2>
+                    <p>Partnership Performance Report</p>
+                </div>
+                
+                <div class="section-title">
+                    <span style="font-size: 20px;">📈</span>
+                    <h3>Purchase Volume by Time Period</h3>
+                </div>
+                <p style="color: #666; margin: -10px 0 15px 0; font-size: 13px;">Our business relationship over time</p>
+                
+                <div class="period-grid">
+                    ${Object.entries(periods).map(([label, data], i) => `
+                        <div class="period-card" style="border-color: ${periodColors[i]};">
+                            <div class="period-label" style="color: ${periodColors[i]};">${label}</div>
+                            <div class="period-value">$${data.purchases.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+                            <div class="period-sub">${data.orders} PO${data.orders !== 1 ? 's' : ''}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section-title">
+                    <span style="font-size: 20px;">📊</span>
+                    <h3>Selected Period Details</h3>
+                    <span style="color: #666; font-size: 13px; margin-left: auto;">${dateLabel}</span>
+                </div>
+                
+                <div class="summary-grid">
+                    <div class="summary-card-blue">
+                        <div class="label">Total Purchases</div>
+                        <div class="value">$${totalPurchases.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-card-blue">
+                        <div class="label">Purchase Orders</div>
+                        <div class="value">${totalOrders}</div>
+                    </div>
+                    <div class="summary-card-blue">
+                        <div class="label">Units Ordered</div>
+                        <div class="value">${totalQty.toLocaleString()}</div>
+                    </div>
+                    <div class="summary-card-blue">
+                        <div class="label">Avg PO Value</div>
+                        <div class="value">$${avgOrderValue.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-card-blue">
+                        <div class="label">Amount Paid</div>
+                        <div class="value" style="color: #2e7d32;">$${totalPaid.toFixed(2)}</div>
+                    </div>
+                </div>
+                
+                <div class="section-title">
+                    <span style="font-size: 20px;">📦</span>
+                    <h3>Top Products Ordered</h3>
+                </div>
+                
+                ${topProducts.length === 0 ? '<p style="color: #888; text-align: center; padding: 20px;">No purchases in selected period</p>' : ''}
+                ${topProducts.map((p, i) => `
+                    <div class="product-row">
+                        <div style="display: flex; align-items: center;">
+                            <div class="product-rank ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</div>
+                            <div>
+                                <div style="font-weight: 600;">${p.name}</div>
+                                <div style="font-size: 12px; color: #888;">${p.qty} units • SKU: ${p.sku}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: bold; color: #1565c0;">$${p.cost.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `).join('')}
+                
+                <div class="partnership-box">
+                    <h3>🤝 Total Partnership Value</h3>
+                    <div class="partnership-value">$${periods['ALL TIME'].purchases.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="partnership-label">${periods['ALL TIME'].orders} purchase orders • All Time</div>
                 </div>
             `;
             
@@ -11979,9 +13638,17 @@ NOTE: Please print the attached PO document for full details.`;
                     <p>Configure filters above and click <strong>Run Report</strong></p>
                 </div>
             </div>
-            <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; background: #f8f9fa; border-radius: 0 0 12px 12px;">
-                <button class="btn btn-secondary" onclick="closeReportSetup()">Cancel</button>
-                <button class="btn" onclick="executeReport()" id="runReportBtn">▶️ Run Report</button>
+            <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: space-between; flex-shrink: 0; background: #f8f9fa; border-radius: 0 0 12px 12px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" onclick="printReport()" title="Print Report">🖨️ Print</button>
+                    <button class="btn btn-secondary" onclick="emailReport()" title="Email Report">📧 Email</button>
+                    <button class="btn btn-secondary" onclick="textReport()" title="Text Report">💬 Text</button>
+                    <button class="btn btn-secondary" onclick="saveReportPDF()" title="Save as PDF">💾 Save</button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeReportSetup()">Cancel</button>
+                    <button class="btn" onclick="executeReport()" id="runReportBtn">▶️ Run Report</button>
+                </div>
             </div>
         </div>
     </div>
