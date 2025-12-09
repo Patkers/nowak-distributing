@@ -1397,6 +1397,8 @@
             
             <button class="btn" onclick="loadItems()">🔄 Refresh</button>
             <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
+            <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
+            <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -3996,6 +3998,620 @@
         }
         
         async function loadItemFilterSuppliers() {
+            const filterSupplier = document.getElementById('filterItemSupplier');
+            
+            if (cachedSuppliers && cachedSuppliers.length > 0) {
+                filterSupplier.innerHTML = '<option value="">All Suppliers</option>';
+                cachedSuppliers.forEach(supplier => {
+                    const option = document.createElement('option');
+                    option.value = supplier.Supplier_ID;
+                    option.textContent = supplier.Supplier_Name || supplier.Supplier_ID;
+                    filterSupplier.appendChild(option);
+                });
+            }
+        }
+
+        // ==================== BULK IMPORT/EXPORT ====================
+        
+        async function downloadItemsReport() {
+            if (!cachedItems || cachedItems.length === 0) {
+                alert('No items to download. Please load items first.');
+                return;
+            }
+
+            // Create clean PDF-friendly table
+            const win = window.open('', '_blank');
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Items Master - ${new Date().toLocaleDateString()}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                        }
+                        h1 {
+                            text-align: center;
+                            color: #333;
+                        }
+                        .info {
+                            text-align: center;
+                            margin-bottom: 20px;
+                            color: #666;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                            font-size: 10px;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 6px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #667eea;
+                            color: white;
+                            font-weight: bold;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f9f9f9;
+                        }
+                        .note {
+                            margin-top: 20px;
+                            padding: 15px;
+                            background: #fff3cd;
+                            border-left: 4px solid #ffc107;
+                        }
+                        @media print {
+                            body { margin: 10px; }
+                            .note { page-break-before: always; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>📦 Items Master Report</h1>
+                    <div class="info">
+                        Generated: ${new Date().toLocaleString()}<br>
+                        Total Items: ${cachedItems.length}
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item_ID</th>
+                                <th>SKU</th>
+                                <th>Description</th>
+                                <th>Supplier_ID</th>
+                                <th>Cost</th>
+                                <th>Sell_Price</th>
+                                <th>Qty_On_Hand</th>
+                                <th>Reorder_Point</th>
+                                <th>Package_Cost</th>
+                                <th>Units_Per_Package</th>
+                                <th>Qty_On_Order</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cachedItems.map(item => `
+                                <tr>
+                                    <td>${item.Item_ID || ''}</td>
+                                    <td>${item.SKU || ''}</td>
+                                    <td>${item.Item_Description || ''}</td>
+                                    <td>${item.Supplier_ID || ''}</td>
+                                    <td>${parseFloat(item.Cost || 0).toFixed(2)}</td>
+                                    <td>${parseFloat(item.Sell_Price || 0).toFixed(2)}</td>
+                                    <td>${parseInt(item.Qty_On_Hand || 0)}</td>
+                                    <td>${parseInt(item.Reorder_Point || 0)}</td>
+                                    <td>${parseFloat(item.Package_Cost || 0).toFixed(2)}</td>
+                                    <td>${parseInt(item.Units_Per_Package || 0)}</td>
+                                    <td>${parseInt(item.Qty_On_Order || 0)}</td>
+                                    <td>${item.Status || 'Active'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="note">
+                        <h3>📝 Instructions for Bulk Upload</h3>
+                        <ol>
+                            <li><strong>Save this page as PDF</strong> (Ctrl+P or Cmd+P)</li>
+                            <li><strong>Convert to Excel:</strong> Go to <a href="https://www.ilovepdf.com/pdf_to_excel" target="_blank">ilovepdf.com/pdf_to_excel</a></li>
+                            <li><strong>Edit the Excel file</strong> as needed</li>
+                            <li><strong>IMPORTANT:</strong> Do NOT modify the Item_ID column (primary key)</li>
+                            <li><strong>Upload:</strong> Use the "Upload Items" button in the ERP system</li>
+                        </ol>
+                        <p><strong>⚠️ BACKUP RECOMMENDATION:</strong> Save a copy of this file before making changes!</p>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            win.document.write(html);
+            win.document.close();
+            
+            // Auto-trigger print dialog
+            setTimeout(() => {
+                win.print();
+            }, 500);
+        }
+
+        function openUploadItemsModal() {
+            document.getElementById('uploadItemsModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Reset the form
+            document.getElementById('uploadItemsFile').value = '';
+            document.querySelector('input[name="uploadMode"][value="update-add"]').checked = true;
+            document.getElementById('uploadItemsPreview').style.display = 'none';
+        }
+
+        function closeUploadItemsModal() {
+            document.getElementById('uploadItemsModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // Store parsed items temporarily for commit
+        let pendingItemsUpload = null;
+        let pendingUploadMode = null;
+
+        async function previewItemsUpload() {
+            const fileInput = document.getElementById('uploadItemsFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            const uploadMode = document.querySelector('input[name="uploadMode"]:checked').value;
+            
+            try {
+                showStatus('itemsStatus', '⏳ Processing file and generating preview...', 'info');
+
+                // Read and parse the file
+                const uploadedItems = await parseUploadedFile(file);
+                
+                if (!uploadedItems || uploadedItems.length === 0) {
+                    alert('No valid items found in file');
+                    return;
+                }
+
+                // Store for later commit
+                pendingItemsUpload = uploadedItems;
+                pendingUploadMode = uploadMode;
+
+                // Generate comparison report
+                const comparison = compareItemsForPreview(uploadedItems, uploadMode);
+                
+                // Display preview
+                displayPreviewReport(comparison);
+                
+                // Show the preview section
+                document.getElementById('uploadItemsPreview').style.display = 'block';
+                
+                // Scroll to preview
+                document.getElementById('uploadItemsPreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                showStatus('itemsStatus', '✅ Preview generated - Review changes below', 'success');
+
+            } catch (error) {
+                showStatus('itemsStatus', '❌ Error processing file: ' + error.message, 'error');
+            }
+        }
+
+        function compareItemsForPreview(uploadedItems, mode) {
+            const existing = cachedItems || [];
+            const comparison = {
+                toAdd: [],
+                toUpdate: [],
+                noChange: [],
+                notInUpload: []
+            };
+
+            // Create map of existing items by Item_ID
+            const existingMap = {};
+            existing.forEach(item => {
+                if (item.Item_ID) {
+                    existingMap[item.Item_ID] = item;
+                }
+            });
+
+            // Compare uploaded items
+            uploadedItems.forEach(uploadItem => {
+                const itemId = uploadItem.Item_ID;
+                
+                // Check if this is a new item
+                if (!itemId || itemId === 'NEW' || itemId === '' || !existingMap[itemId]) {
+                    comparison.toAdd.push({
+                        item: uploadItem,
+                        isNew: true
+                    });
+                } else {
+                    // Existing item - check for changes
+                    const existingItem = existingMap[itemId];
+                    const changes = detectChanges(existingItem, uploadItem);
+                    
+                    if (changes.length > 0) {
+                        comparison.toUpdate.push({
+                            itemId: itemId,
+                            before: existingItem,
+                            after: uploadItem,
+                            changes: changes
+                        });
+                    } else {
+                        comparison.noChange.push({
+                            itemId: itemId,
+                            item: existingItem
+                        });
+                    }
+                    
+                    // Mark as seen
+                    existingMap[itemId].seen = true;
+                }
+            });
+
+            // Find items not in upload (only matters for Full Refresh)
+            if (mode === 'full-refresh') {
+                existing.forEach(item => {
+                    if (item.Item_ID && !item.seen) {
+                        comparison.notInUpload.push(item);
+                    }
+                });
+            }
+
+            return comparison;
+        }
+
+        function detectChanges(before, after) {
+            const changes = [];
+            const fieldsToCheck = [
+                { key: 'SKU', label: 'SKU' },
+                { key: 'Item_Description', label: 'Description' },
+                { key: 'Supplier_ID', label: 'Supplier' },
+                { key: 'Cost', label: 'Cost', isNumber: true },
+                { key: 'Sell_Price', label: 'Sell Price', isNumber: true },
+                { key: 'Qty_On_Hand', label: 'Qty On Hand', isNumber: true },
+                { key: 'Reorder_Point', label: 'Reorder Point', isNumber: true },
+                { key: 'Package_Cost', label: 'Package Cost', isNumber: true },
+                { key: 'Units_Per_Package', label: 'Units/Package', isNumber: true },
+                { key: 'Qty_On_Order', label: 'Qty On Order', isNumber: true },
+                { key: 'Status', label: 'Status' }
+            ];
+
+            fieldsToCheck.forEach(field => {
+                let beforeVal = before[field.key];
+                let afterVal = after[field.key];
+
+                // Normalize for comparison
+                if (field.isNumber) {
+                    beforeVal = parseFloat(beforeVal) || 0;
+                    afterVal = parseFloat(afterVal) || 0;
+                } else {
+                    beforeVal = String(beforeVal || '').trim();
+                    afterVal = String(afterVal || '').trim();
+                }
+
+                if (beforeVal !== afterVal) {
+                    changes.push({
+                        field: field.label,
+                        before: beforeVal,
+                        after: afterVal
+                    });
+                }
+            });
+
+            return changes;
+        }
+
+        function displayPreviewReport(comparison) {
+            // Summary stats
+            const summaryHtml = `
+                <div style="padding: 15px; background: #e8f5e9; border-radius: 8px; text-align: center; border-left: 4px solid #4caf50;">
+                    <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">${comparison.toAdd.length}</div>
+                    <div style="font-size: 12px; color: #666;">Items to Add</div>
+                </div>
+                <div style="padding: 15px; background: #fff3e0; border-radius: 8px; text-align: center; border-left: 4px solid #ff9800;">
+                    <div style="font-size: 24px; font-weight: bold; color: #e65100;">${comparison.toUpdate.length}</div>
+                    <div style="font-size: 12px; color: #666;">Items to Update</div>
+                </div>
+                ${pendingUploadMode === 'full-refresh' ? `
+                <div style="padding: 15px; background: #ffebee; border-radius: 8px; text-align: center; border-left: 4px solid #f44336;">
+                    <div style="font-size: 24px; font-weight: bold; color: #c62828;">${comparison.notInUpload.length}</div>
+                    <div style="font-size: 12px; color: #666;">Items to Delete</div>
+                </div>
+                ` : ''}
+                <div style="padding: 15px; background: #f5f5f5; border-radius: 8px; text-align: center; border-left: 4px solid #9e9e9e;">
+                    <div style="font-size: 24px; font-weight: bold; color: #616161;">${comparison.noChange.length}</div>
+                    <div style="font-size: 12px; color: #666;">No Changes</div>
+                </div>
+            `;
+            document.getElementById('uploadItemsSummary').innerHTML = summaryHtml;
+
+            // Detailed changes
+            let detailHtml = '';
+
+            // Items to ADD
+            if (comparison.toAdd.length > 0) {
+                detailHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="background: #4caf50; color: white; padding: 10px; border-radius: 8px 8px 0 0; margin: 0;">
+                            ➕ ${comparison.toAdd.length} Items to ADD
+                        </h4>
+                        <div style="background: white; padding: 15px; border: 2px solid #4caf50; border-radius: 0 0 8px 8px;">
+                `;
+                
+                comparison.toAdd.forEach(entry => {
+                    const item = entry.item;
+                    detailHtml += `
+                        <div style="padding: 12px; margin-bottom: 10px; background: #e8f5e9; border-radius: 6px; border-left: 4px solid #4caf50;">
+                            <div style="font-weight: bold; color: #2e7d32; margin-bottom: 8px;">
+                                NEW: ${item.SKU || 'No SKU'} - ${item.Item_Description || 'No Description'}
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px;">
+                                <div><strong>Supplier:</strong> ${item.Supplier_ID || 'N/A'}</div>
+                                <div><strong>Cost:</strong> $${parseFloat(item.Cost || 0).toFixed(2)}</div>
+                                <div><strong>Sell Price:</strong> $${parseFloat(item.Sell_Price || 0).toFixed(2)}</div>
+                                <div><strong>Qty:</strong> ${parseInt(item.Qty_On_Hand || 0)}</div>
+                                <div><strong>Reorder:</strong> ${parseInt(item.Reorder_Point || 0)}</div>
+                                <div><strong>Status:</strong> ${item.Status || 'Active'}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                detailHtml += `</div></div>`;
+            }
+
+            // Items to UPDATE
+            if (comparison.toUpdate.length > 0) {
+                detailHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="background: #ff9800; color: white; padding: 10px; border-radius: 8px 8px 0 0; margin: 0;">
+                            ✏️ ${comparison.toUpdate.length} Items to UPDATE
+                        </h4>
+                        <div style="background: white; padding: 15px; border: 2px solid #ff9800; border-radius: 0 0 8px 8px;">
+                `;
+                
+                comparison.toUpdate.forEach(entry => {
+                    detailHtml += `
+                        <div style="padding: 12px; margin-bottom: 15px; background: #fff3e0; border-radius: 6px; border-left: 4px solid #ff9800;">
+                            <div style="font-weight: bold; color: #e65100; margin-bottom: 8px;">
+                                ${entry.before.SKU || entry.itemId} - ${entry.before.Item_Description || 'No Description'}
+                            </div>
+                            <div style="font-size: 13px;">
+                                ${entry.changes.map(change => `
+                                    <div style="padding: 6px 0; border-bottom: 1px solid #ffe0b2;">
+                                        <strong>${change.field}:</strong>
+                                        <span style="color: #d32f2f; text-decoration: line-through;">${change.before}</span>
+                                        →
+                                        <span style="color: #388e3c; font-weight: bold;">${change.after}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                detailHtml += `</div></div>`;
+            }
+
+            // Items to DELETE (Full Refresh only)
+            if (pendingUploadMode === 'full-refresh' && comparison.notInUpload.length > 0) {
+                detailHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="background: #f44336; color: white; padding: 10px; border-radius: 8px 8px 0 0; margin: 0;">
+                            ⛔ ${comparison.notInUpload.length} Items to DELETE
+                        </h4>
+                        <div style="background: white; padding: 15px; border: 2px solid #f44336; border-radius: 0 0 8px 8px;">
+                `;
+                
+                comparison.notInUpload.forEach(item => {
+                    detailHtml += `
+                        <div style="padding: 10px; margin-bottom: 8px; background: #ffebee; border-radius: 6px; border-left: 4px solid #f44336;">
+                            <span style="font-weight: bold; color: #c62828;">${item.SKU || item.Item_ID}</span> - ${item.Item_Description || 'No Description'}
+                        </div>
+                    `;
+                });
+                
+                detailHtml += `</div></div>`;
+            }
+
+            // Items with NO CHANGES (collapsed by default)
+            if (comparison.noChange.length > 0) {
+                detailHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="background: #9e9e9e; color: white; padding: 10px; border-radius: 8px; margin: 0; cursor: pointer;" onclick="toggleNoChangeItems()">
+                            ✓ ${comparison.noChange.length} Items with NO CHANGES (click to expand)
+                        </h4>
+                        <div id="noChangeItemsList" style="display: none; background: white; padding: 15px; border: 2px solid #9e9e9e; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto;">
+                            ${comparison.noChange.map(entry => `
+                                <div style="padding: 6px; font-size: 13px;">
+                                    ${entry.item.SKU || entry.itemId} - ${entry.item.Item_Description || 'No Description'}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('uploadItemsPreviewContent').innerHTML = detailHtml || '<p>No changes detected</p>';
+        }
+
+        function toggleNoChangeItems() {
+            const list = document.getElementById('noChangeItemsList');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function commitItemsUpload() {
+            if (!pendingItemsUpload) {
+                alert('No upload pending');
+                return;
+            }
+
+            // Final confirmation for Full Refresh
+            if (pendingUploadMode === 'full-refresh') {
+                if (!confirm('⚠️ FINAL CONFIRMATION: This will DELETE ALL existing items and replace with the uploaded file.\n\nAre you ABSOLUTELY SURE?')) {
+                    return;
+                }
+                const finalConfirm = prompt('Type YES (in capital letters) to proceed with FULL REFRESH:');
+                if (finalConfirm !== 'YES') {
+                    alert('Upload cancelled');
+                    return;
+                }
+            }
+
+            try {
+                showStatus('itemsStatus', '⏳ Committing changes to database...', 'info');
+
+                // Send to backend
+                const result = await apiCall('bulkUpdateItems', {
+                    items: pendingItemsUpload,
+                    mode: pendingUploadMode
+                });
+
+                if (result && result.status === 'success') {
+                    showStatus('itemsStatus', `✅ Upload complete! ${result.added || 0} added, ${result.updated || 0} updated, ${result.deleted || 0} deleted`, 'success');
+                    
+                    // Clear pending upload
+                    pendingItemsUpload = null;
+                    pendingUploadMode = null;
+                    
+                    closeUploadItemsModal();
+                    await loadItems();
+                } else {
+                    showStatus('itemsStatus', '❌ Upload failed: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showStatus('itemsStatus', '❌ Error committing changes: ' + error.message, 'error');
+            }
+        }
+
+        function cancelPreview() {
+            // Clear pending upload
+            pendingItemsUpload = null;
+            pendingUploadMode = null;
+            
+            // Hide preview
+            document.getElementById('uploadItemsPreview').style.display = 'none';
+            
+            // Reset file input
+            document.getElementById('uploadItemsFile').value = '';
+            
+            showStatus('itemsStatus', 'Upload cancelled', 'info');
+        }
+
+        async function parseUploadedFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                reader.onload = async function(e) {
+                    try {
+                        let items = [];
+
+                        if (fileExtension === 'csv') {
+                            // Parse CSV
+                            const text = e.target.result;
+                            items = parseCSV(text);
+                        } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                            // Parse Excel using SheetJS (if available)
+                            if (typeof XLSX === 'undefined') {
+                                // Load SheetJS dynamically
+                                await loadSheetJS();
+                            }
+                            
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                            
+                            items = jsonData.map(row => ({
+                                Item_ID: row.Item_ID || row.item_id || '',
+                                SKU: row.SKU || row.sku || '',
+                                Item_Description: row.Item_Description || row.Description || row.description || '',
+                                Supplier_ID: row.Supplier_ID || row.supplier_id || '',
+                                Cost: parseFloat(row.Cost || row.cost || 0),
+                                Sell_Price: parseFloat(row.Sell_Price || row.sell_price || 0),
+                                Qty_On_Hand: parseInt(row.Qty_On_Hand || row.qty_on_hand || 0),
+                                Reorder_Point: parseInt(row.Reorder_Point || row.reorder_point || 0),
+                                Package_Cost: parseFloat(row.Package_Cost || row.package_cost || 0),
+                                Units_Per_Package: parseInt(row.Units_Per_Package || row.units_per_package || 0),
+                                Qty_On_Order: parseInt(row.Qty_On_Order || row.qty_on_order || 0),
+                                Status: row.Status || row.status || 'Active'
+                            }));
+                        }
+
+                        resolve(items);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+
+                reader.onerror = function() {
+                    reject(new Error('Failed to read file'));
+                };
+
+                if (fileExtension === 'csv') {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
+            });
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            if (lines.length < 2) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const items = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                const item = {};
+                
+                headers.forEach((header, index) => {
+                    item[header] = values[index] || '';
+                });
+
+                items.push({
+                    Item_ID: item.Item_ID || item.item_id || '',
+                    SKU: item.SKU || item.sku || '',
+                    Item_Description: item.Item_Description || item.Description || item.description || '',
+                    Supplier_ID: item.Supplier_ID || item.supplier_id || '',
+                    Cost: parseFloat(item.Cost || item.cost || 0),
+                    Sell_Price: parseFloat(item.Sell_Price || item.sell_price || 0),
+                    Qty_On_Hand: parseInt(item.Qty_On_Hand || item.qty_on_hand || 0),
+                    Reorder_Point: parseInt(item.Reorder_Point || item.reorder_point || 0),
+                    Package_Cost: parseFloat(item.Package_Cost || item.package_cost || 0),
+                    Units_Per_Package: parseInt(item.Units_Per_Package || item.units_per_package || 0),
+                    Qty_On_Order: parseInt(item.Qty_On_Order || item.qty_on_order || 0),
+                    Status: item.Status || item.status || 'Active'
+                });
+            }
+
+            return items;
+        }
+
+        async function loadSheetJS() {
+            return new Promise((resolve, reject) => {
+                if (typeof XLSX !== 'undefined') {
+                    resolve();
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Failed to load SheetJS library'));
+                document.head.appendChild(script);
+            });
+        }
             if (cachedSuppliers.length === 0) {
                 const result = await apiCall('getSuppliers');
                 if (result && result.status === 'success') {
@@ -4647,14 +5263,14 @@
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
                     <td>${getSupplierName(po.Supplier_ID)}</td>
                     <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
-                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : po.Status === 'Void' || po.Status === 'Cancelled' ? '#dc3545' : po.Status === 'Partial' ? '#17a2b8' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status === 'Void' ? '⛔ VOID' : po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status || 'Received'}</span></td>
+                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : po.Status === 'Voided' || po.Status === 'Cancelled' ? '#dc3545' : po.Status === 'Partial' ? '#17a2b8' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status === 'Voided' ? '⛔ VOID' : po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status || 'Received'}</span></td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
                         ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
-                        ${po.Status === 'Void' || po.Status === 'Cancelled' ? `<button class="btn-small" onclick="duplicatePO('${po.PO_ID}')" style="background: #17a2b8; color: white;">📋 Copy to New PO</button>` : ''}
+                        ${po.Status === 'Voided' || po.Status === 'Cancelled' ? `<button class="btn-small" onclick="duplicatePO('${po.PO_ID}')" style="background: #17a2b8; color: white;">📋 Copy to New PO</button>` : ''}
                         <button class="btn-small" onclick="viewPurchaseOrder('${po.PO_ID}')" style="background: #17a2b8; color: white; padding: 6px 12px;">View/Print</button>
                     </td>
                 </tr>`;
@@ -4718,11 +5334,11 @@
             const billDate = po.Bill_Date ? new Date(po.Bill_Date).toLocaleDateString() : '-';
             
             // Status color logic
-            const statusColor = po.Status === 'Void' || po.Status === 'Cancelled' ? '#dc3545' : 
+            const statusColor = po.Status === 'Voided' || po.Status === 'Cancelled' ? '#dc3545' : 
                                po.Status === 'Ordered' ? '#ffc107' : 
                                po.Status === 'Partial' ? '#17a2b8' : '#28a745';
             const statusTextColor = po.Status === 'Ordered' ? '#000' : '#fff';
-            const statusText = po.Status === 'Void' ? '⛔ VOID' : 
+            const statusText = po.Status === 'Voided' ? '⛔ VOID' : 
                               po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status;
             
             document.getElementById('modalTitle').textContent = `Purchase Order: ${po.PO_ID}`;
@@ -4748,7 +5364,7 @@
                             </button>
                         </div>
                         ` : ''}
-                        ${po.Status === 'Void' || po.Status === 'Cancelled' ? `
+                        ${po.Status === 'Voided' || po.Status === 'Cancelled' ? `
                         <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #c0c0c0;">
                             <strong>📋 Need to Reorder?</strong>
                             <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">Copy this PO's items to create a new order with current prices.</p>
@@ -4766,7 +5382,7 @@
                             <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</td></tr>
                             <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${po.Payment_Status}</span></td></tr>
                         </table>
-                        ${po.Payment_Status !== 'Paid' && po.Status !== 'Void' && po.Status !== 'Cancelled' ? `
+                        ${po.Payment_Status !== 'Paid' && po.Status !== 'Voided' && po.Status !== 'Cancelled' ? `
                         <div style="margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
                             <div style="margin-bottom: 10px;"><strong>💵 Quick Payment</strong></div>
                             <div style="display: flex; gap: 10px; align-items: center;">
@@ -5438,7 +6054,7 @@
                                 <option value="Ordered" ${po.Status === 'Ordered' ? 'selected' : ''}>Ordered (Pending Delivery)</option>
                                 <option value="Received" ${po.Status === 'Received' ? 'selected' : ''}>Received</option>
                                 <option value="Partial" ${po.Status === 'Partial' ? 'selected' : ''}>Partially Received</option>
-                                <option value="Void" ${po.Status === 'Void' ? 'selected' : ''}>⛔ Void (Prices Changed)</option>
+                                <option value="Voided" ${po.Status === 'Voided' ? 'selected' : ''}>⛔ Void (Prices Changed)</option>
                                 <option value="Cancelled" ${po.Status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
                             </select>
                             <small style="color: #666; display: block; margin-top: 5px;">Use "Void" if supplier prices changed and you need to create a new PO</small>
@@ -5469,6 +6085,13 @@
                 </div>
                 
                 <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; padding: 0 10px; font-weight: bold; color: #667eea;">
+                    <div>Item</div>
+                    <div>Quantity</div>
+                    <div>Unit Cost</div>
+                    <div>Line Total</div>
+                    <div></div>
+                </div>
                 <div id="editPOLineItems">
             `;
             
@@ -7977,7 +8600,7 @@
                 filterHtml += `
                     <div class="form-group">
                         <label>📦 Item</label>
-                        <input type="text" id="rptFilter_item_display" placeholder="🔍 All Items (click to filter)" onclick="openItemPicker()" readonly style="cursor: pointer; background: #fff;">
+                        <input type="text" id="rptFilter_item_display" placeholder="🔍 All Items (click to filter)" onclick="openReportItemPicker()" readonly style="cursor: pointer; background: #fff;">
                         <input type="hidden" id="rptFilter_item" value="">
                     </div>`;
             }
@@ -9597,7 +10220,7 @@
             const poResult = await apiCall('getPurchaseOrders');
             if (!poResult?.data) throw new Error('Failed to load POs');
             
-            let unpaid = poResult.data.filter(p => p.Payment_Status !== 'Paid' && p.Status !== 'Void');
+            let unpaid = poResult.data.filter(p => p.Payment_Status !== 'Paid' && p.Status !== 'Voided');
             
             if (reportFilters.supplier) {
                 unpaid = unpaid.filter(p => p.Supplier_ID === reportFilters.supplier);
@@ -13008,7 +13631,7 @@
             try {
                 const result = await apiCall('updatePurchaseOrder', {
                     poId: poId,
-                    status: 'Void',
+                    status: 'Voided',
                     notes: `VOIDED: ${reason || 'No reason provided'} - ${new Date().toLocaleDateString()}`
                 });
                 
@@ -14136,6 +14759,78 @@ NOTE: Please print the attached PO document for full details.`;
             </div>
             <div id="statusPickerList" class="item-picker-list" style="padding: 15px;">
                 <!-- Status options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- UPLOAD ITEMS MODAL -->
+    <div id="uploadItemsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close" onclick="closeUploadItemsModal()">&times;</span>
+            <h2 style="margin-top: 0;">📤 Upload Items - Bulk Import</h2>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #856404;">⚠️ Important Instructions</h4>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li><strong>DO NOT modify the Item_ID column</strong> - This is your primary key</li>
+                    <li>You can edit SKU, Description, Cost, Sell_Price, etc.</li>
+                    <li>To add new items, leave Item_ID blank or use "NEW"</li>
+                    <li><strong>BACKUP RECOMMENDED:</strong> Download a copy before uploading</li>
+                    <li>Accepted formats: Excel (.xlsx, .xls) or CSV (.csv)</li>
+                </ul>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px; font-weight: bold;">Select File:</label>
+                <input type="file" id="uploadItemsFile" accept=".xlsx,.xls,.csv" style="padding: 10px; border: 2px solid #667eea; border-radius: 8px; width: 100%;">
+            </div>
+
+            <div style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px; font-weight: bold;">Upload Mode:</label>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; padding: 15px; background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; cursor: pointer; flex: 1; min-width: 250px;">
+                        <input type="radio" name="uploadMode" value="update-add" checked style="margin-right: 10px; width: 20px; height: 20px;">
+                        <div>
+                            <div style="font-weight: bold; color: #2e7d32;">Update Existing + Add New</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">Match on Item_ID, update if exists, add if new</div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: center; padding: 15px; background: #ffebee; border: 2px solid #f44336; border-radius: 8px; cursor: pointer; flex: 1; min-width: 250px;">
+                        <input type="radio" name="uploadMode" value="full-refresh" style="margin-right: 10px; width: 20px; height: 20px;">
+                        <div>
+                            <div style="font-weight: bold; color: #c62828;">⚠️ Full Refresh (DANGER)</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">Delete ALL existing items, replace with upload</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="previewItemsUpload()" style="background: #17a2b8; width: 100%; padding: 15px; font-size: 16px;">
+                    🔍 Preview Changes
+                </button>
+                <button class="btn btn-secondary" onclick="closeUploadItemsModal()" style="width: 100%; margin-top: 10px;">
+                    Cancel
+                </button>
+            </div>
+
+            <div id="uploadItemsPreview" style="margin-top: 20px; display: none;">
+                <h3 style="color: #667eea; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0;">📊 Preview Changes</h3>
+                <div id="uploadItemsSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;"></div>
+                <div id="uploadItemsPreviewContent" style="max-height: 500px; overflow-y: auto; background: #f5f5f5; padding: 15px; border-radius: 8px; border: 2px solid #667eea;"></div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <strong>⚠️ Review carefully before committing!</strong> Once you click "Commit Changes", the database will be updated.
+                </div>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn" onclick="commitItemsUpload()" style="background: #28a745; flex: 1; padding: 15px; font-size: 16px;">
+                        ✅ Commit Changes
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelPreview()" style="flex: 1; padding: 15px; font-size: 16px;">
+                        ❌ Cancel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -16388,7 +17083,7 @@ NOTE: Please print the attached PO document for full details.`;
         
         // ==================== ITEM PICKER (for reports) ====================
         
-        function openItemPicker() {
+        function openReportItemPicker() {
             document.getElementById('itemPickerSearch').value = '';
             renderItemPickerList();
             document.getElementById('itemPickerModal').style.display = 'block';
@@ -16423,7 +17118,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Add "All Items" option at top
             html += `
-                <div class="item-picker-card" onclick="selectItemFromPicker('', 'All Items')" style="border-left: 4px solid #28a745; background: #e8f5e9;">
+                <div class="item-picker-card" onclick="selectReportItemFromPicker('', 'All Items')" style="border-left: 4px solid #28a745; background: #e8f5e9;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
                         <span style="font-size: 18px; margin-right: 8px;">📊</span> All Items
                     </div>
@@ -16463,7 +17158,7 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
+                    <div class="item-picker-card" onclick="selectReportItemFromPicker('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
                         <div class="item-picker-card-header">
                             <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
                             <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>
@@ -16486,7 +17181,7 @@ NOTE: Please print the attached PO document for full details.`;
             listContainer.innerHTML = html;
         }
         
-        function selectItemFromPicker(itemId, itemName) {
+        function selectReportItemFromPicker(itemId, itemName) {
             document.getElementById('rptFilter_item').value = itemId;
             document.getElementById('rptFilter_item_display').value = itemId ? itemName : 'All Items (click to filter)';
             closeItemPicker();
