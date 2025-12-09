@@ -1079,18 +1079,70 @@
             <p>Professional Inventory & Order Management System</p>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('home')">🏠 Home</button>
-            <button class="tab" onclick="switchTab('suppliers')">🏭 Suppliers</button>
-            <button class="tab" onclick="switchTab('items')">📦 Items</button>
-            <button class="tab" onclick="switchTab('customers')">👥 Customers</button>
-            <button class="tab" onclick="switchTab('createpo')">📝 Create PO</button>
-            <button class="tab" onclick="switchTab('purchases')">📥 Purchases</button>
-            <button class="tab" onclick="switchTab('sales')">💰 Sales</button>
-            <button class="tab" onclick="switchTab('inventory')">📊 Inventory</button>
-            <button class="tab" onclick="switchTab('pricesim')">🎯 Price Sim</button>
-            <button class="tab" onclick="switchTab('reports')">📈 Reports</button>
-            <button class="tab" onclick="switchTab('config')">⚙️ Settings</button>
+        <!-- Navigation Cards - Always Visible at Top -->
+        <div style="position: sticky; top: 5px; z-index: 100; background: var(--bg-color, #f5f5f5); padding: 8px; margin: 5px; border: 3px solid var(--primary, #667eea); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 8px; background: linear-gradient(135deg, var(--primary, #1e3a8a) 0%, var(--accent, #3b82f6) 100%); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
+                
+                <!-- Suppliers Card -->
+                <div class="landing-nav-card active-nav-card" onclick="switchTab('suppliers')" style="background: rgba(255,255,255,0.95); color: #1e3a8a; padding: 8px 6px; border: 2px solid #1e3a8a; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">🏭</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Suppliers</h3>
+                </div>
+
+                <!-- Items Card -->
+                <div class="landing-nav-card" onclick="switchTab('items')" style="background: rgba(255,255,255,0.95); color: #475569; padding: 8px 6px; border: 2px solid #475569; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📦</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Items</h3>
+                </div>
+
+                <!-- Customers Card -->
+                <div class="landing-nav-card" onclick="switchTab('customers')" style="background: rgba(255,255,255,0.95); color: #0369a1; padding: 8px 6px; border: 2px solid #0369a1; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">👥</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Customers</h3>
+                </div>
+
+                <!-- Create PO Card -->
+                <div class="landing-nav-card" onclick="switchTab('createpo')" style="background: rgba(255,255,255,0.95); color: #0f766e; padding: 8px 6px; border: 2px solid #0f766e; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📝</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Create PO</h3>
+                </div>
+
+                <!-- Purchases Card -->
+                <div class="landing-nav-card" onclick="switchTab('purchases')" style="background: rgba(255,255,255,0.95); color: #4338ca; padding: 8px 6px; border: 2px solid #4338ca; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📥</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Purchases</h3>
+                </div>
+
+                <!-- Sales Card -->
+                <div class="landing-nav-card" onclick="switchTab('sales')" style="background: rgba(255,255,255,0.95); color: #065f46; padding: 8px 6px; border: 2px solid #065f46; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">💰</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Sales</h3>
+                </div>
+
+                <!-- Inventory Card -->
+                <div class="landing-nav-card" onclick="switchTab('inventory')" style="background: rgba(255,255,255,0.95); color: #374151; padding: 8px 6px; border: 2px solid #374151; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📊</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Inventory</h3>
+                </div>
+
+                <!-- Price Simulator Card -->
+                <div class="landing-nav-card" onclick="switchTab('pricesim')" style="background: rgba(255,255,255,0.95); color: #1e40af; padding: 8px 6px; border: 2px solid #1e40af; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">🎯</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Price Sim</h3>
+                </div>
+
+                <!-- Reports Card -->
+                <div class="landing-nav-card" onclick="switchTab('reports')" style="background: rgba(255,255,255,0.95); color: #4c1d95; padding: 8px 6px; border: 2px solid #4c1d95; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📈</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Reports</h3>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="landing-nav-card" onclick="switchTab('config')" style="background: rgba(255,255,255,0.95); color: #52525b; padding: 8px 6px; border: 2px solid #52525b; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">⚙️</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Settings</h3>
+                </div>
+            </div>
         </div>
         
         <!-- Floating Navigation Buttons - Bottom Left Corner -->
@@ -1261,88 +1313,8 @@
         </div>
 
         <!-- HOME / LANDING PAGE -->
-        <div id="home" class="card active" style="padding: 10px; min-height: 100%; overflow: hidden;">
-            
-            <!-- Quick Navigation Cards - Compact Grid with Gradient Background -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; background: linear-gradient(135deg, var(--primary, #1e3a8a) 0%, var(--accent, #3b82f6) 100%); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">
-                
-                <!-- Suppliers Card -->
-                <div class="landing-nav-card" onclick="switchTab('suppliers')" style="background: rgba(255,255,255,0.95); color: #1e3a8a; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">🏭</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Suppliers</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Manage suppliers</p>
-                </div>
-
-                <!-- Items Card -->
-                <div class="landing-nav-card" onclick="switchTab('items')" style="background: rgba(255,255,255,0.95); color: #475569; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">📦</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Items</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Inventory catalog</p>
-                </div>
-
-                <!-- Customers Card -->
-                <div class="landing-nav-card" onclick="switchTab('customers')" style="background: rgba(255,255,255,0.95); color: #0369a1; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">👥</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Customers</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Customer mgmt</p>
-                </div>
-
-                <!-- Create PO Card -->
-                <div class="landing-nav-card" onclick="switchTab('createpo')" style="background: rgba(255,255,255,0.95); color: #0f766e; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">📝</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Create PO</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">New POs</p>
-                </div>
-
-                <!-- Purchases Card -->
-                <div class="landing-nav-card" onclick="switchTab('purchases')" style="background: rgba(255,255,255,0.95); color: #4338ca; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">📥</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Purchases</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">View POs</p>
-                </div>
-
-                <!-- Sales Card -->
-                <div class="landing-nav-card" onclick="switchTab('sales')" style="background: rgba(255,255,255,0.95); color: #065f46; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">💰</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Sales</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Sales orders</p>
-                </div>
-
-                <!-- Inventory Card -->
-                <div class="landing-nav-card" onclick="switchTab('inventory')" style="background: rgba(255,255,255,0.95); color: #374151; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">📊</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Inventory</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Stock levels</p>
-                </div>
-
-                <!-- Price Simulator Card -->
-                <div class="landing-nav-card" onclick="switchTab('pricesim')" style="background: rgba(255,255,255,0.95); color: #1e40af; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">🎯</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Price Sim</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Pricing</p>
-                </div>
-
-                <!-- Reports Card -->
-                <div class="landing-nav-card" onclick="switchTab('reports')" style="background: rgba(255,255,255,0.95); color: #4c1d95; padding: 12px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 28px; margin-bottom: 4px;">📈</div>
-                    <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">Reports</h3>
-                    <p style="margin: 0; opacity: 0.7; font-size: 9px; line-height: 1.2;">Analytics</p>
-                </div>
-
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; margin-top: 15px; padding: 5px;">
-                <div style="background: white; padding: 10px 20px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                    <p style="margin: 0; color: #333; font-size: 12px; font-weight: 500;">
-                        Nowak Vibe Systems Inc. © 2025
-                    </p>
-                </div>
-            </div>
-        </div>
-
         <!-- Suppliers Tab -->
-        <div id="suppliers" class="card">
+        <div id="suppliers" class="card active">
             <h2>Suppliers</h2>
             <div class="status" id="suppliersStatus"></div>
             
@@ -3249,14 +3221,32 @@
         });
 
         // Navigation history for back button
-        let navigationHistory = ['home'];
+        let navigationHistory = ['suppliers'];
         
         function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
+            // Remove active class from all navigation cards
+            document.querySelectorAll('.landing-nav-card').forEach(card => {
+                card.classList.remove('active-nav-card');
+                // Reset styling
+                card.style.transform = 'scale(1)';
+                card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            });
             
+            // Find and highlight the clicked navigation card
+            document.querySelectorAll('.landing-nav-card').forEach(card => {
+                if (card.onclick && card.onclick.toString().includes(`'${tabName}'`)) {
+                    card.classList.add('active-nav-card');
+                    card.style.transform = 'scale(1.05)';
+                    card.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)';
+                }
+            });
+            
+            // Hide all content sections and show the selected one
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
+            const targetCard = document.getElementById(tabName);
+            if (targetCard) {
+                targetCard.classList.add('active');
+            }
             
             // Add to history (avoid duplicates of current tab)
             if (navigationHistory[navigationHistory.length - 1] !== tabName) {
@@ -17142,9 +17132,54 @@ NOTE: Please print the attached PO document for full details.`;
                         td { padding: 6px; border: 1px solid #ddd; }
                         tr:nth-child(even) { background: #f9f9f9; }
                         .footer { margin-top: 30px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; }
+                        .action-buttons { 
+                            position: fixed; 
+                            top: 10px; 
+                            right: 10px; 
+                            z-index: 1000; 
+                            display: flex; 
+                            gap: 10px; 
+                        }
+                        .action-btn { 
+                            padding: 10px 20px; 
+                            border: none; 
+                            border-radius: 8px; 
+                            cursor: pointer; 
+                            font-size: 14px; 
+                            font-weight: 600; 
+                            transition: all 0.2s; 
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+                        }
+                        .print-btn { 
+                            background: #28a745; 
+                            color: white; 
+                        }
+                        .print-btn:hover { 
+                            background: #218838; 
+                            transform: translateY(-2px); 
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+                        }
+                        .close-btn { 
+                            background: #f44336; 
+                            color: white; 
+                        }
+                        .close-btn:hover { 
+                            background: #d32f2f; 
+                            transform: translateY(-2px); 
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+                        }
+                        @media print {
+                            .action-buttons { display: none; }
+                        }
                     </style>
                 </head>
                 <body>
+                    <!-- Action Buttons at Top -->
+                    <div class="action-buttons">
+                        <button class="action-btn print-btn" onclick="window.print()">🖨️ Print</button>
+                        <button class="action-btn close-btn" onclick="window.close()">✖️ Close</button>
+                    </div>
+
                     <h1>Nowak Distributing - Items Report</h1>
                     <p style="text-align: center; color: #666;">Generated: ${new Date().toLocaleString()} | Total Items: ${cachedItems.length}</p>
                     
@@ -17188,7 +17223,7 @@ NOTE: Please print the attached PO document for full details.`;
                     <div class="footer">
                         <h3>How to Use This Report:</h3>
                         <ol>
-                            <li>Save this page as PDF (Ctrl+P or Cmd+P)</li>
+                            <li>Click <strong>🖨️ Print</strong> button above and save as PDF</li>
                             <li>Upload PDF to <strong>ilovepdf.com/pdf_to_excel</strong></li>
                             <li>Download the Excel file</li>
                             <li>Edit prices, quantities, or other fields</li>
@@ -17201,12 +17236,11 @@ NOTE: Please print the attached PO document for full details.`;
                 </html>
             `;
 
-            // Open in new window for printing
+            // Open in new window
             const printWindow = window.open('', '_blank');
             printWindow.document.write(reportHTML);
             printWindow.document.close();
             printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
         }
 
         function openUploadItemsModal() {
@@ -17591,5 +17625,14 @@ NOTE: Please print the attached PO document for full details.`;
             });
         }
     </script>
+    
+    <!-- Footer at Bottom of Page -->
+    <div style="text-align: center; padding: 30px 10px;">
+        <div style="background: white; padding: 10px 20px; border: 2px solid #333; border-radius: 8px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <p style="margin: 0; color: #333; font-size: 12px; font-weight: 500;">
+                Nowak Vibe Systems Inc. © 2025
+            </p>
+        </div>
+    </div>
 </body>
 </html>
