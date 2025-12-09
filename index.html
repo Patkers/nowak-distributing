@@ -11584,6 +11584,8 @@ NOTE: Please print the attached PO document for full details.`;
         });
         
         function openItemPicker(selectElement, preSelectedSupplierId = null) {
+            alert('openItemPicker CALLED!'); // DEBUG - first line
+            
             // Store callback to set value when item is selected
             window.itemPickerCallback = selectElement;
             
@@ -11619,9 +11621,6 @@ NOTE: Please print the attached PO document for full details.`;
             
             const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
             const supplierSelect = document.getElementById('itemPickerSupplier');
-            
-            // DEBUG - remove after testing
-            alert('Supplier Context: ' + supplierContext + '\nisSalesContext: ' + isSalesContext);
             
             if (isSalesContext) {
                 // SALES MODE: Hide supplier filter - show ALL items from all suppliers
