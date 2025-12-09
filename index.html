@@ -11607,69 +11607,165 @@ NOTE: Please print the attached PO document for full details.`;
                 height: 100% !important;
                 max-height: 100% !important;
                 border-radius: 0 !important;
-                display: flex;
-                flex-direction: column;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            /* Headers don't shrink */
+            #orderModalHeader,
+            #reportSetupModal > div > div:first-child {
+                flex-shrink: 0 !important;
+            }
+            
+            /* Footers don't shrink */
+            #modalFooter,
+            #reportSetupModal > div > div:last-child {
+                flex-shrink: 0 !important;
+            }
+            
+            /* Filters don't shrink */
+            #reportSetupFilters {
+                flex-shrink: 0 !important;
             }
             
             /* Report content area - scrollable */
             #reportSetupContent {
-                flex: 1;
+                flex: 1 !important;
                 overflow-y: auto !important;
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch;
-                min-height: 0; /* Important for flex scrolling */
+                min-height: 0 !important; /* Important for flex scrolling */
             }
             
             /* Order modal content */
             #modalContent {
-                flex: 1;
+                flex: 1 !important;
                 overflow-y: auto !important;
                 -webkit-overflow-scrolling: touch;
-                min-height: 0;
+                min-height: 0 !important;
+                max-height: none !important; /* Override inline style */
             }
         }
         
         /* Landscape mode specific fixes */
         @media (max-height: 500px) and (orientation: landscape) {
+            /* Make modal overlay fill screen */
+            #reportSetupModal,
+            #orderModal {
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+            
+            /* Make inner container fullscreen */
             #reportSetupModal > div,
             #orderModal > div {
                 margin: 0 !important;
                 max-width: 100% !important;
                 width: 100% !important;
                 height: 100vh !important;
+                height: 100dvh !important; /* Dynamic viewport height for mobile */
                 max-height: 100vh !important;
+                max-height: 100dvh !important;
                 border-radius: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
             
-            /* Reduce header/footer padding in landscape */
+            /* Compact header in landscape */
             #reportSetupModal > div > div:first-child,
-            #orderModal > div > div:first-child {
-                padding: 10px 15px !important;
-            }
-            
-            #reportSetupModal > div > div:last-child {
+            #orderModal > div > div:first-child,
+            #orderModalHeader {
                 padding: 8px 15px !important;
+                flex-shrink: 0 !important;
             }
             
-            /* More space for content */
-            #reportSetupContent,
-            #modalContent {
-                padding: 10px !important;
+            #reportSetupModal > div > div:first-child h2,
+            #orderModal > div > div:first-child h2 {
+                font-size: 16px !important;
             }
             
-            /* Smaller filter area */
+            /* Compact filter area */
             #reportSetupFilters {
-                padding: 10px !important;
+                padding: 8px 10px !important;
+                flex-shrink: 0 !important;
+                max-height: 80px !important;
+                overflow-y: auto !important;
+            }
+            
+            #reportSetupFilters .form-grid {
+                gap: 8px !important;
+            }
+            
+            #reportSetupFilters .form-group {
+                margin-bottom: 0 !important;
+            }
+            
+            #reportSetupFilters label {
+                font-size: 11px !important;
+                margin-bottom: 2px !important;
+            }
+            
+            #reportSetupFilters input,
+            #reportSetupFilters select {
+                padding: 6px !important;
+                font-size: 13px !important;
+                min-height: 32px !important;
+            }
+            
+            /* Content area takes remaining space */
+            #reportSetupContent {
+                flex: 1 !important;
+                min-height: 0 !important; /* Critical for flex scrolling */
+                padding: 8px !important;
+                overflow: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            
+            #modalContent {
+                flex: 1 !important;
+                min-height: 0 !important;
+                padding: 8px !important;
+                overflow: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            
+            /* Compact footer */
+            #reportSetupModal > div > div:last-child {
+                padding: 6px 10px !important;
+                flex-shrink: 0 !important;
+            }
+            
+            #reportSetupModal > div > div:last-child .btn {
+                padding: 6px 12px !important;
+                font-size: 13px !important;
+            }
+            
+            /* Order modal footer */
+            #modalFooter {
+                padding: 6px 10px !important;
+                flex-shrink: 0 !important;
+            }
+            
+            #modalFooter .btn {
+                padding: 6px 12px !important;
+                font-size: 13px !important;
             }
         }
         
         /* Table horizontal scroll fix for reports */
         #reportSetupContent table {
-            min-width: 600px; /* Force horizontal scroll on narrow screens */
+            min-width: 500px; /* Force horizontal scroll on narrow screens */
         }
         
         #reportSetupContent .data-table {
             font-size: 13px;
+        }
+        
+        /* Wrapper for horizontal table scrolling */
+        #reportSetupContent > div[style*="overflow-x"] {
+            max-width: 100%;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
         }
         
         @media (max-width: 768px) {
@@ -11681,6 +11777,27 @@ NOTE: Please print the attached PO document for full details.`;
             #reportSetupContent .data-table td {
                 padding: 8px 6px;
                 white-space: nowrap;
+            }
+        }
+        
+        @media (max-height: 500px) and (orientation: landscape) {
+            #reportSetupContent .data-table {
+                font-size: 11px;
+            }
+            
+            #reportSetupContent .data-table th,
+            #reportSetupContent .data-table td {
+                padding: 5px 4px;
+            }
+            
+            #reportSetupContent h3 {
+                font-size: 14px !important;
+                margin: 0 0 5px 0 !important;
+            }
+            
+            #reportSetupContent p {
+                font-size: 11px !important;
+                margin-bottom: 8px !important;
             }
         }
     </style>
