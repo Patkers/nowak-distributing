@@ -183,6 +183,17 @@
             opacity: 1;
         }
         
+        /* Oval filter button styles */
+        .oval-filter-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 1 !important;
+        }
+        
+        .oval-filter-btn:active {
+            transform: translateY(0) scale(1);
+        }
+        
         .btn-small {
             background: var(--primary, #667eea);
             color: white;
@@ -655,6 +666,17 @@
             .btn {
                 padding: 10px 20px;
                 font-size: 14px;
+            }
+            
+            /* Responsive inventory summary numbers - smaller on mobile to prevent wrapping */
+            .inv-summary-number {
+                font-size: 18px !important; /* Much smaller on mobile */
+            }
+            
+            /* Oval filter buttons - better mobile layout */
+            .oval-filter-btn {
+                font-size: 11px !important;
+                padding: 6px 12px !important;
             }
         }
         
@@ -7188,6 +7210,77 @@
             }
             displaySales(salesData);
         }
+        
+        // Apply date filter from oval buttons
+        function applySalesDateFilter(period) {
+            const now = new Date();
+            let fromDate = new Date();
+            let toDate = new Date();
+            
+            // Calculate date ranges
+            switch(period) {
+                case 'today':
+                    fromDate = new Date(now);
+                    break;
+                case 'week':
+                    fromDate.setDate(now.getDate() - 7);
+                    break;
+                case '3months':
+                    fromDate.setMonth(now.getMonth() - 3);
+                    break;
+                case '6months':
+                    fromDate.setMonth(now.getMonth() - 6);
+                    break;
+                case '9months':
+                    fromDate.setMonth(now.getMonth() - 9);
+                    break;
+                case 'ytd':
+                    fromDate = new Date(now.getFullYear(), 0, 1); // Jan 1st this year
+                    break;
+                case '1year':
+                    fromDate.setFullYear(now.getFullYear() - 1);
+                    break;
+                case '3years':
+                    fromDate.setFullYear(now.getFullYear() - 3);
+                    break;
+                case '5years':
+                    fromDate.setFullYear(now.getFullYear() - 5);
+                    break;
+                case 'all':
+                    // Show everything - set date range fields to empty
+                    document.getElementById('filterSaleDateFrom').value = '';
+                    document.getElementById('filterSaleDateTo').value = '';
+                    filterSales();
+                    
+                    // Update button active state
+                    document.querySelectorAll('.oval-filter-btn').forEach(btn => {
+                        btn.style.opacity = '0.6';
+                        btn.style.transform = 'scale(1)';
+                    });
+                    event.target.style.opacity = '1';
+                    event.target.style.transform = 'scale(1.05)';
+                    return;
+            }
+            
+            // Format dates for input fields (YYYY-MM-DD)
+            const fromDateStr = fromDate.toISOString().split('T')[0];
+            const toDateStr = toDate.toISOString().split('T')[0];
+            
+            // Set filter fields
+            document.getElementById('filterSaleDateFrom').value = fromDateStr;
+            document.getElementById('filterSaleDateTo').value = toDateStr;
+            
+            // Apply filter
+            filterSales();
+            
+            // Update button active state
+            document.querySelectorAll('.oval-filter-btn').forEach(btn => {
+                btn.style.opacity = '0.6';
+                btn.style.transform = 'scale(1)';
+            });
+            event.target.style.opacity = '1';
+            event.target.style.transform = 'scale(1.05)';
+        }
 
         function displaySales(orders) {
             if (!orders || orders.length === 0) {
@@ -7209,8 +7302,46 @@
             });
             const balance = totalAmount - totalPaid;
             
-            // Summary boxes
+            // OVAL DATE FILTER BUTTONS - Above Summary Boxes
             let html = `
+                <div style="margin: 15px 0 20px 0; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: max-content; padding: 5px 0;">
+                        <button onclick="applySalesDateFilter('today')" class="oval-filter-btn" style="background: #e3f2fd; color: #1565c0; border: 2px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📅 Last Day
+                        </button>
+                        <button onclick="applySalesDateFilter('week')" class="oval-filter-btn" style="background: #fff3e0; color: #ef6c00; border: 2px solid #ef6c00; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📆 Last Week
+                        </button>
+                        <button onclick="applySalesDateFilter('3months')" class="oval-filter-btn" style="background: #fff9c4; color: #f57f17; border: 2px solid #f57f17; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            🗓️ Last 3 Months
+                        </button>
+                        <button onclick="applySalesDateFilter('6months')" class="oval-filter-btn" style="background: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📊 6 Months
+                        </button>
+                        <button onclick="applySalesDateFilter('9months')" class="oval-filter-btn" style="background: #e1f5fe; color: #0277bd; border: 2px solid #0277bd; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📈 9 Months
+                        </button>
+                        <button onclick="applySalesDateFilter('ytd')" class="oval-filter-btn" style="background: #f3e5f5; color: #6a1b9a; border: 2px solid #6a1b9a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📋 YTD
+                        </button>
+                        <button onclick="applySalesDateFilter('1year')" class="oval-filter-btn" style="background: #fce4ec; color: #c2185b; border: 2px solid #c2185b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📅 1 Year
+                        </button>
+                        <button onclick="applySalesDateFilter('3years')" class="oval-filter-btn" style="background: #ede7f6; color: #512da8; border: 2px solid #512da8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📊 3 Years
+                        </button>
+                        <button onclick="applySalesDateFilter('5years')" class="oval-filter-btn" style="background: #e0f2f1; color: #00695c; border: 2px solid #00695c; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            📈 5 Years
+                        </button>
+                        <button onclick="applySalesDateFilter('all')" class="oval-filter-btn active" style="background: #424242; color: white; border: 2px solid #424242; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+                            🌐 All Time
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Summary boxes
+            html += `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
                     <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #1976d2;">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Total Sales</div>
@@ -7600,23 +7731,23 @@
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${items.length}</div>
+                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${items.length}</div>
                         <div style="font-size: 13px; color: #6c757d;">Total Items</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${totalQty.toLocaleString()}</div>
+                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${totalQty.toLocaleString()}</div>
                         <div style="font-size: 13px; color: #6c757d;">Total Units</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'}; word-wrap: break-word; overflow-wrap: break-word;">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'}; word-wrap: break-word; overflow-wrap: break-word;">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; color: #6c757d;">Net Profit</div>
                     </div>
                 </div>
