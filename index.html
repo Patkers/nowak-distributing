@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:15 - DRAG REALLY FIXED - Added header IDs -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:30 - Mobile modal lock + button debounce -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -661,32 +661,80 @@
             }
             
             .header {
-                margin-bottom: 10px;
-            }
-            
-            .header h1 {
-                font-size: 1.3em;
                 margin-bottom: 5px;
             }
             
+            .header h1 {
+                font-size: 1.1em;
+                margin-bottom: 3px;
+            }
+            
             .header p {
-                font-size: 0.9em;
+                font-size: 0.75em;
+                margin: 0;
+            }
+            
+            /* CRITICAL: Make navigation single-row horizontal scroll in landscape */
+            /* Outer wrapper - reduce padding dramatically */
+            body > .container > div[style*="position: static"][style*="border: 3px solid"] {
+                padding: 2px !important;
+                margin: 0px 2px 5px 2px !important;
+                border-width: 2px !important;
+            }
+            
+            /* Inner grid container - make it horizontal scroll with ALL cards in ONE row */
+            body > .container > div[style*="position: static"] > div[style*="grid-template-columns"] {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                gap: 4px !important;
+                padding: 4px 6px !important;
+                scrollbar-width: thin !important;
+            }
+            
+            /* Navigation cards - compact size for landscape */
+            .landing-nav-card {
+                flex: 0 0 auto !important;
+                min-width: 60px !important;
+                max-width: 60px !important;
+                padding: 4px 3px !important;
+                margin: 0 !important;
+            }
+            
+            .landing-nav-card div[style*="font-size: 24px"] {
+                font-size: 18px !important;
+                margin-bottom: 2px !important;
+            }
+            
+            .landing-nav-card h3 {
+                font-size: 8px !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
             }
             
             .tabs {
-                margin-bottom: 10px;
+                margin-bottom: 5px;
                 gap: 3px;
             }
             
             .tab {
-                padding: 6px 10px;
-                font-size: 12px;
+                padding: 4px 8px;
+                font-size: 11px;
             }
             
             .card {
-                padding: 10px;
-                max-height: calc(100vh - 120px);
+                padding: 8px;
+                max-height: calc(100vh - 100px) !important;
                 overflow-y: auto;
+            }
+            
+            /* Hide floating navigation buttons in landscape - use compact nav instead */
+            #backToTopBtn,
+            #backBtn {
+                display: none !important;
             }
             
             /* Make tables scroll horizontally in landscape */
@@ -1095,24 +1143,36 @@
         
         /* Mobile - keep modals full screen friendly */
         @media (max-width: 768px) {
+            /* Lock modal containers to prevent scrolling/movement */
+            #orderModal,
+            #reportSetupModal,
+            #howToGuideModal,
+            #uploadItemsModal,
+            #itemPickerModal {
+                padding: 0 !important;
+                overflow: hidden !important; /* Prevent outer scroll */
+            }
+            
+            /* Lock inner modal content - prevent movement */
             #orderModal > div,
             #reportSetupModal > div,
             #howToGuideModal > div,
             #uploadItemsModal > div,
             .item-picker-container {
+                position: fixed !important; /* Lock to viewport */
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
                 margin: 0 !important;
                 max-width: 100% !important;
                 max-height: 100% !important;
+                width: 100% !important;
+                height: 100% !important;
                 transform: none !important;
                 border-radius: 0 !important;
-            }
-            
-            /* Add padding to modal containers on mobile */
-            #orderModal,
-            #reportSetupModal,
-            #howToGuideModal,
-            #uploadItemsModal {
-                padding: 0 !important;
+                overflow-y: auto !important; /* Content scrolls, but modal doesn't move */
+                -webkit-overflow-scrolling: touch !important;
             }
         }
     </style>
@@ -1330,7 +1390,7 @@
                         </label>
                     </div>
                     
-                    <button class="btn" onclick="saveInvoiceSettings()">💾 Save Invoice Settings</button>
+                    <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveInvoiceSettings()">💾 Save Invoice Settings</button>
                 </div>
             </div>
             
@@ -1361,7 +1421,7 @@
                     </p>
                     <input type="text" id="apiUrl" class="form-group" style="width: 100%; padding: 10px; margin-bottom: 15px;" 
                            placeholder="https://script.google.com/macros/s/.../exec">
-                    <button class="btn" onclick="saveConfig()">💾 Save Configuration</button>
+                    <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveConfig()">💾 Save Configuration</button>
                 </div>
             </div>
         </div>
@@ -1990,7 +2050,7 @@
                 </div>
                 
                 <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
-                    <button class="btn" onclick="saveOutgoingPO()" style="flex: 1; min-width: 200px;">💾 Save as OUTGOING PO</button>
+                    <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveOutgoingPO()" style="flex: 1; min-width: 200px;">💾 Save as OUTGOING PO</button>
                     <button class="btn" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
                     <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                 </div>
@@ -2296,7 +2356,7 @@
                         <textarea id="soNotes" rows="2"></textarea>
                     </div>
                     
-                    <button type="submit" class="btn">💾 Save Sale</button>
+                    <button type="submit" class="btn" onclick="return event && debounceButton(event.currentTarget)">💾 Save Sale</button>
                     <button type="button" class="btn btn-secondary" onclick="hideAddSaleForm()">Cancel</button>
                 </form>
             </div>
@@ -3153,6 +3213,39 @@
         let cachedSuppliers = [];
         let cachedItems = [];
         let cachedCustomers = [];
+        
+        // ==================== BUTTON DEBOUNCE SYSTEM ====================
+        // Prevents double-clicks/taps from submitting forms twice
+        let buttonDebounceMap = new Map();
+        
+        function debounceButton(buttonElement, duration = 2000) {
+            if (!buttonElement) return false;
+            
+            const buttonId = buttonElement.id || buttonElement.outerHTML.substring(0, 100);
+            const now = Date.now();
+            const lastClick = buttonDebounceMap.get(buttonId) || 0;
+            
+            if (now - lastClick < duration) {
+                console.log('⏸️ Button debounced - click ignored');
+                return false; // Too soon, ignore click
+            }
+            
+            buttonDebounceMap.set(buttonId, now);
+            
+            // Visually disable button
+            buttonElement.disabled = true;
+            buttonElement.style.opacity = '0.6';
+            buttonElement.style.cursor = 'not-allowed';
+            
+            // Re-enable after duration
+            setTimeout(() => {
+                buttonElement.disabled = false;
+                buttonElement.style.opacity = '';
+                buttonElement.style.cursor = '';
+            }, duration);
+            
+            return true; // Allow click
+        }
         
         // Helper functions to lookup names from IDs
         function getCustomerName(customerId) {
@@ -5344,7 +5437,7 @@
                                 <input type="number" id="quickPaymentAmount" step="0.01" min="0" 
                                        value="${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}"
                                        style="width: 120px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <button class="btn" onclick="recordQuickPOPayment('${po.PO_ID}')" 
+                                <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) recordQuickPOPayment('${po.PO_ID}')" 
                                         style="background: #28a745; padding: 8px 15px;">
                                     💵 Record Payment
                                 </button>
@@ -7817,7 +7910,7 @@
                                 <strong style="color: #e65100;">🆕 ${simulatedNewItems.length} New Item(s) Ready to Save</strong>
                                 <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">These items are only in simulation. Click to add them to your database.</p>
                             </div>
-                            <button class="btn" onclick="saveNewItemsToDatabase()" style="background: #ff9800;">
+                            <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveNewItemsToDatabase()" style="background: #ff9800;">
                                 💾 Save ${simulatedNewItems.length} New Item(s) to Database
                             </button>
                         </div>
@@ -14874,7 +14967,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
                 <button id="modalPrintBtn" class="btn" onclick="printInvoice()" style="display: none;">🖨️ Print Invoice</button>
                 <button id="modalEditBtn" class="btn" onclick="enableEditMode()" style="display: none;">✏️ Edit Order</button>
-                <button id="modalSaveBtn" class="btn" onclick="saveOrderChanges()" style="display: none;">💾 Save Changes</button>
+                <button id="modalSaveBtn" class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveOrderChanges()" style="display: none;">💾 Save Changes</button>
             </div>
         </div>
     </div>
