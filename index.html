@@ -745,6 +745,105 @@
                 padding: 10px !important;
                 margin-bottom: 15px !important;
             }
+            
+            /* Report Modal - Mobile Optimizations */
+            #reportSetupModal {
+                padding: 10px !important;
+            }
+            
+            #reportSetupModal > div {
+                max-height: 95vh !important;
+                height: 95vh !important;
+                overflow: hidden !important;
+            }
+            
+            #reportSetupHeader {
+                padding: 12px 15px !important;
+                flex-wrap: nowrap !important;
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 101 !important;
+            }
+            
+            #reportSetupHeader h2 {
+                font-size: 16px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: calc(100% - 50px) !important;
+            }
+            
+            #reportSetupFilters {
+                padding: 12px !important;
+                flex-shrink: 0 !important;
+                overflow-y: auto !important;
+                max-height: 30vh !important;
+            }
+            
+            #reportSetupContent {
+                padding: 12px !important;
+                flex: 1 1 auto !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                min-height: 0 !important;
+            }
+            
+            /* Report Modal Footer - Ensure buttons are visible and sticky */
+            #reportSetupModal > div > div:last-child {
+                padding: 10px 12px !important;
+                gap: 8px !important;
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                z-index: 101 !important;
+                flex-shrink: 0 !important;
+            }
+        }
+        
+        /* Portrait orientation on mobile - ensure sticky header/footer work */
+        @media (max-width: 768px) and (orientation: portrait) {
+            #reportSetupModal {
+                padding: 5px !important;
+            }
+            
+            #reportSetupModal > div {
+                max-height: 98vh !important;
+                height: 98vh !important;
+                overflow: hidden !important;
+                border-radius: 8px !important;
+            }
+            
+            #reportSetupHeader {
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 102 !important;
+                flex-shrink: 0 !important;
+                border-radius: 8px 8px 0 0 !important;
+            }
+            
+            #reportSetupFilters {
+                flex-shrink: 0 !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            
+            #reportSetupContent {
+                flex: 1 1 auto !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                min-height: 0 !important;
+            }
+            
+            #reportSetupModal > div > div:last-child {
+                position: -webkit-sticky !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                z-index: 102 !important;
+                flex-shrink: 0 !important;
+                border-radius: 0 0 8px 8px !important;
+            }
         }
         
         /* Landscape orientation on mobile devices */
@@ -8986,27 +9085,27 @@
             },
             'sales-by-customer': {
                 title: '👥 Sales by Customer',
-                filters: ['dateRange', 'customer', 'minAmount', 'transactionStatus'],
+                filters: ['customer', 'minAmount', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'sales-order-detail': {
                 title: '📋 Sales Order Detail',
-                filters: ['dateRange', 'customer', 'paymentStatus', 'transactionStatus'],
+                filters: ['customer', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'sales-by-product': {
                 title: '📦 Sales by Item',
-                filters: ['dateRange', 'item', 'transactionStatus'],
+                filters: ['item', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
-                filters: ['dateRange', 'supplier', 'poType', 'paymentStatus', 'transactionStatus'],
+                filters: ['supplier', 'poType', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'purchase-by-supplier': {
                 title: '🏭 Purchase by Supplier',
-                filters: ['dateRange', 'supplier', 'poType', 'transactionStatus'],
+                filters: ['supplier', 'poType', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'inventory-turnover': {
@@ -9036,7 +9135,7 @@
             },
             'inventory-adjustments': {
                 title: '📝 Inventory Adjustment History',
-                filters: ['dateRange', 'item', 'adjustmentType'],
+                filters: ['item', 'adjustmentType'],
                 dateLabel: 'Adjustment Date'
             },
             'profit-loss': {
@@ -9071,13 +9170,13 @@
             },
             'customer-dashboard': {
                 title: '👤 Customer Dashboard',
-                filters: ['customer', 'dateRange'],
+                filters: ['customer'],
                 dateLabel: 'Date',
                 customerRequired: true
             },
             'supplier-dashboard': {
                 title: '🏭 Supplier Dashboard',
-                filters: ['supplier', 'dateRange'],
+                filters: ['supplier'],
                 dateLabel: 'Date',
                 supplierRequired: true
             }
@@ -16459,21 +16558,21 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- Report Setup Modal -->
     <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column; position: relative;">
-            <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; position: relative; overflow: hidden;">
+            <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: sticky; top: 0; z-index: 100;">
                 <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
                 <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
             </div>
             <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
                 <!-- Filters will be populated by JavaScript -->
             </div>
-            <div id="reportSetupContent" style="padding: 20px; flex: 1; overflow-y: auto;">
+            <div id="reportSetupContent" style="padding: 20px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;">
                 <div style="text-align: center; padding: 40px; color: #888;">
                     <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
                     <p>Configure filters above and click <strong>Run Report</strong></p>
                 </div>
             </div>
-            <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: space-between; flex-shrink: 0; background: #f8f9fa; border-radius: 0 0 12px 12px; flex-wrap: wrap;">
+            <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: space-between; flex-shrink: 0; background: #f8f9fa; border-radius: 0 0 12px 12px; flex-wrap: wrap; position: sticky; bottom: 0; z-index: 100;">
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="btn btn-secondary" onclick="printReport()" title="Print Report (or Save as PDF)">🖨️ Print</button>
                 </div>
