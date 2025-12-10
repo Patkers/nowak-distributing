@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:00 - Fixed all modal positioning -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:07 - Desktop drag FIXED -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18061,28 +18061,32 @@ NOTE: Please print the attached PO document for full details.`;
                     if (e.target === header || header.contains(e.target)) {
                         isDragging = true;
                         
-                        // Get current position before converting to fixed
+                        // Get current position
                         const rect = modal.container.getBoundingClientRect();
                         
-                        // Convert from margin-based to fixed positioning
-                        modal.container.style.position = 'fixed';
-                        modal.container.style.margin = '0';
-                        modal.container.style.left = rect.left + 'px';
-                        modal.container.style.top = rect.top + 'px';
-                        
-                        // Set initial offsets based on current transform
-                        const transform = window.getComputedStyle(modal.container).transform;
-                        if (transform && transform !== 'none') {
-                            const matrix = new DOMMatrix(transform);
-                            xOffset = matrix.m41;
-                            yOffset = matrix.m42;
+                        // If not already fixed, convert to fixed positioning
+                        if (modal.container.style.position !== 'fixed') {
+                            modal.container.style.position = 'fixed';
+                            modal.container.style.margin = '0';
+                            
+                            // Preserve the current size
+                            modal.container.style.width = rect.width + 'px';
+                            modal.container.style.height = rect.height + 'px';
+                            
+                            modal.container.style.left = rect.left + 'px';
+                            modal.container.style.top = rect.top + 'px';
+                            
+                            // Reset transform-based offsets
+                            xOffset = parseInt(modal.container.style.left) || rect.left;
+                            yOffset = parseInt(modal.container.style.top) || rect.top;
                         } else {
-                            xOffset = 0;
-                            yOffset = 0;
+                            // Already fixed, get current offsets from left/top
+                            xOffset = parseInt(modal.container.style.left) || rect.left;
+                            yOffset = parseInt(modal.container.style.top) || rect.top;
                         }
                         
-                        initialX = e.clientX - xOffset;
-                        initialY = e.clientY - yOffset;
+                        initialX = e.clientX;
+                        initialY = e.clientY;
                     }
                 }
                 
@@ -18090,11 +18094,12 @@ NOTE: Please print the attached PO document for full details.`;
                     if (isDragging) {
                         e.preventDefault();
                         
-                        currentX = e.clientX - initialX;
-                        currentY = e.clientY - initialY;
+                        // Calculate new position
+                        const deltaX = e.clientX - initialX;
+                        const deltaY = e.clientY - initialY;
                         
-                        xOffset = currentX;
-                        yOffset = currentY;
+                        let newLeft = xOffset + deltaX;
+                        let newTop = yOffset + deltaY;
                         
                         // Keep modal within viewport (with some padding)
                         const rect = modal.container.getBoundingClientRect();
@@ -18102,21 +18107,22 @@ NOTE: Please print the attached PO document for full details.`;
                         const maxX = window.innerWidth - rect.width - padding;
                         const maxY = window.innerHeight - rect.height - padding;
                         
-                        xOffset = Math.max(-rect.left + padding, Math.min(xOffset, maxX - parseInt(modal.container.style.left)));
-                        yOffset = Math.max(-rect.top + padding, Math.min(yOffset, maxY - parseInt(modal.container.style.top)));
+                        newLeft = Math.max(padding, Math.min(newLeft, maxX));
+                        newTop = Math.max(padding, Math.min(newTop, maxY));
                         
-                        setTranslate(xOffset, yOffset, modal.container);
+                        // Apply position
+                        modal.container.style.left = newLeft + 'px';
+                        modal.container.style.top = newTop + 'px';
                     }
                 }
                 
                 function dragEnd(e) {
-                    initialX = currentX;
-                    initialY = currentY;
+                    if (isDragging) {
+                        // Update offsets for next drag
+                        xOffset = parseInt(modal.container.style.left) || 0;
+                        yOffset = parseInt(modal.container.style.top) || 0;
+                    }
                     isDragging = false;
-                }
-                
-                function setTranslate(xPos, yPos, el) {
-                    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
                 }
             });
         }
