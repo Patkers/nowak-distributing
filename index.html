@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-18:10 - Gradient background only, solid buttons -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-18:30 - Fixed Cubs theme buttons to blue/red -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -334,19 +334,32 @@
             border-radius: 8px !important;
             border-left: 4px solid rgba(255,255,255,0.4) !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #4a5568, #2d3748) !important;
+            color: white !important;
         }
         
         .report-btn:hover {
             transform: translateX(3px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #2d3748, #1a202c) !important;
         }
         
         .report-btn-green {
-            background: #28a745 !important;
+            background: linear-gradient(135deg, #28a745, #218838) !important;
+            color: white !important;
+        }
+        
+        .report-btn-green:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34) !important;
         }
         
         .report-btn-red {
-            background: #dc3545 !important;
+            background: linear-gradient(135deg, #dc3545, #c82333) !important;
+            color: white !important;
+        }
+        
+        .report-btn-red:hover {
+            background: linear-gradient(135deg, #c82333, #bd2130) !important;
         }
         
         /* Mobile: Stack categories vertically */
@@ -962,11 +975,18 @@
             background: linear-gradient(135deg, #0B162A 0%, #1C2B3A 100%) !important;
         }
         body.theme-bears .btn,
-        body.theme-bears .btn-small {
-            background: linear-gradient(135deg, #C83803 0%, #E04A15 100%) !important;
-        }
+        body.theme-bears .btn-small,
         body.theme-bears .btn-success {
-            background: linear-gradient(135deg, #C83803 0%, #E04A15 100%) !important;
+            background: #0B162A !important;
+            color: #C83803 !important;
+            border-left: 4px solid #C83803 !important;
+        }
+        body.theme-bears .btn:hover,
+        body.theme-bears .btn-small:hover,
+        body.theme-bears .btn-success:hover {
+            background: #1C2B3A !important;
+            color: #C83803 !important;
+            border-left-color: #E04A15 !important;
         }
         body.theme-bears .tab.active {
             color: #C83803 !important;
@@ -987,11 +1007,18 @@
             background: linear-gradient(135deg, #0E3386 0%, #142C5C 100%) !important;
         }
         body.theme-cubs .btn,
-        body.theme-cubs .btn-small {
-            background: linear-gradient(135deg, #CC3433 0%, #E04545 100%) !important;
-        }
+        body.theme-cubs .btn-small,
         body.theme-cubs .btn-success {
-            background: linear-gradient(135deg, #0E3386 0%, #1A4AA8 100%) !important;
+            background: #0E3386 !important;
+            color: #CC3433 !important;
+            border-left: 4px solid #CC3433 !important;
+        }
+        body.theme-cubs .btn:hover,
+        body.theme-cubs .btn-small:hover,
+        body.theme-cubs .btn-success:hover {
+            background: #142C5C !important;
+            color: #CC3433 !important;
+            border-left-color: #E04545 !important;
         }
         body.theme-cubs .tab.active {
             color: #CC3433 !important;
@@ -1071,19 +1098,18 @@
             background: linear-gradient(135deg, #172B27 0%, #2C4A42 100%) !important;
         }
         body.theme-packers .btn,
-        body.theme-packers .btn-small {
-            background: linear-gradient(135deg, #203731 0%, #2C4A42 100%) !important;
-            color: #FFB612 !important;
-            border: 2px solid #D4A017 !important;
-        }
-        body.theme-packers .btn:hover {
-            background: linear-gradient(135deg, #FFB612 0%, #D4A017 100%) !important;
-            color: #203731 !important;
-        }
+        body.theme-packers .btn-small,
         body.theme-packers .btn-success {
-            background: linear-gradient(135deg, #FFB612 0%, #D4A017 100%) !important;
-            color: #203731 !important;
-            border: none !important;
+            background: #203731 !important;
+            color: #FFB612 !important;
+            border-left: 4px solid #FFB612 !important;
+        }
+        body.theme-packers .btn:hover,
+        body.theme-packers .btn-small:hover,
+        body.theme-packers .btn-success:hover {
+            background: #2C4A42 !important;
+            color: #FFB612 !important;
+            border-left-color: #D4A017 !important;
         }
         body.theme-packers .tab.active {
             color: #FFB612 !important;
@@ -1106,13 +1132,17 @@
         }
         
         /* Landing Page Navigation Cards */
+        .landing-nav-card {
+            transform: translateY(0) scale(1);
+        }
+        
         .landing-nav-card:hover {
-            transform: translateY(-8px) scale(1.02);
+            transform: translateY(-8px) scale(1.02) !important;
             box-shadow: 0 12px 30px rgba(0,0,0,0.2) !important;
         }
         
         .landing-nav-card:active {
-            transform: translateY(-4px) scale(1.01);
+            transform: translateY(-4px) scale(1.01) !important;
         }
         
         /* Desktop Modal Features - Draggable & Resizable */
@@ -2750,9 +2780,10 @@
                         <span id="dashboardReports-toggle" class="report-toggle">▼</span>
                     </div>
                     <div id="dashboardReports" class="report-buttons">
-                        <button class="btn report-btn" onclick="showReport('daily-dashboard')" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">🎯 Sales Dashboard</button>
-                        <button class="btn report-btn" onclick="showReport('customer-dashboard')" style="background: linear-gradient(135deg, #2e7d32, #4caf50); color: white;">👤 Customer Dashboard</button>
-                        <button class="btn report-btn" onclick="showReport('supplier-dashboard')" style="background: linear-gradient(135deg, #1565c0, #42a5f5); color: white;">🏭 Supplier Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border: 2px solid #b91c1c !important; border-left: 2px solid #b91c1c !important;">🚨 ACTION DASHBOARD</button>
+                        <button class="btn report-btn" onclick="showReport('daily-dashboard')" style="background: linear-gradient(135deg, #667eea, #764ba2) !important; color: white !important; border-left: 4px solid #667eea !important;">🎯 Sales Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('customer-dashboard')" style="background: linear-gradient(135deg, #2e7d32, #4caf50) !important; color: white !important; border-left: 4px solid #2e7d32 !important;">👤 Customer Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('supplier-dashboard')" style="background: linear-gradient(135deg, #1565c0, #42a5f5) !important; color: white !important; border-left: 4px solid #1565c0 !important;">🏭 Supplier Dashboard</button>
                     </div>
                 </div>
                 
@@ -8585,6 +8616,12 @@
         
         // Report configuration for each report type
         const reportConfig = {
+            'action-dashboard': {
+                title: '🚨 Action Dashboard',
+                filters: [], // No filters needed - shows all critical actions
+                dateLabel: '',
+                noFilters: true // Flag to skip filter modal
+            },
             'sales-by-customer': {
                 title: '👥 Sales by Customer',
                 filters: ['dateRange', 'customer', 'minAmount', 'transactionStatus'],
@@ -8691,6 +8728,12 @@
             
             const config = reportConfig[reportType] || { title: 'Report', filters: [] };
             console.log('📱 Report config:', config);
+            
+            // If report has noFilters flag, skip modal and generate directly
+            if (config.noFilters) {
+                generateAndDisplayReport();
+                return;
+            }
             
             // Set title
             document.getElementById('reportSetupTitle').textContent = config.title;
@@ -9576,6 +9619,9 @@
                         break;
                     case 'cash-flow-summary':
                         reportHtml = await generateCashFlowSummaryModal();
+                        break;
+                    case 'action-dashboard':
+                        reportHtml = await generateActionDashboard();
                         break;
                     case 'daily-dashboard':
                         reportHtml = await generateDailyDashboardModal();
@@ -11434,6 +11480,827 @@
             `;
             
             return html;
+        }
+        
+        // ==================== ACTION DASHBOARD ====================
+        
+        async function generateActionDashboard() {
+            // Fetch all necessary data
+            const [salesResult, purchasesResult, itemsResult, customersResult, suppliersResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getPurchaseOrders'),
+                apiCall('getItems'),
+                apiCall('getCustomers'),
+                apiCall('getSuppliers')
+            ]);
+            
+            if (!salesResult?.data || !purchasesResult?.data || !itemsResult?.data || !customersResult?.data || !suppliersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const sales = salesResult.data.filter(s => s.Status !== 'Voided');
+            const purchases = purchasesResult.data.filter(p => p.Status !== 'Voided');
+            const items = itemsResult.data;
+            const customers = customersResult.data;
+            const suppliers = suppliersResult.data;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // ===== 1. PAST DUE PAYMENTS =====
+            const pastDuePayments = sales.filter(s => {
+                if (s.Payment_Status === 'Paid' || !s.Due_Date) return false;
+                const dueDate = new Date(s.Due_Date);
+                return dueDate < today;
+            }).map(s => {
+                const dueDate = new Date(s.Due_Date);
+                const daysLate = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+                const customer = customers.find(c => c.Customer_ID === s.Customer_ID);
+                const balance = parseFloat(s.Total_Amount || 0) - parseFloat(s.Amount_Paid || 0);
+                return {
+                    ...s,
+                    Customer_Name: customer?.Customer_Name || 'Unknown',
+                    Days_Late: daysLate,
+                    Balance: balance
+                };
+            }).sort((a, b) => b.Days_Late - a.Days_Late);
+            
+            // ===== 2. LATE PURCHASE ORDERS =====
+            const latePOs = purchases.filter(p => {
+                if (!p.Need_By_Date) return false;
+                const needBy = new Date(p.Need_By_Date);
+                return needBy < today && p.Status !== 'Received';
+            }).map(p => {
+                const needBy = new Date(p.Need_By_Date);
+                const daysLate = Math.floor((today - needBy) / (1000 * 60 * 60 * 24));
+                const supplier = suppliers.find(s => s.Supplier_ID === p.Supplier_ID);
+                return {
+                    ...p,
+                    Supplier_Name: supplier?.Supplier_Name || 'Unknown',
+                    Days_Late: daysLate
+                };
+            }).sort((a, b) => b.Days_Late - a.Days_Late);
+            
+            // ===== 3. NEGATIVE INVENTORY =====
+            const negativeInventory = items.filter(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                return qty < 0;
+            }).map(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                return {
+                    ...item,
+                    Qty: qty,
+                    Supplier_Name: supplier?.Supplier_Name || 'Unknown'
+                };
+            }).sort((a, b) => a.Qty - b.Qty);
+            
+            // ===== 4. LOW STOCK (NEEDS REORDER) =====
+            const lowStock = items.filter(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                const reorder = parseFloat(item.Reorder_Point || 0);
+                return qty > 0 && qty <= reorder && reorder > 0;
+            }).map(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                const reorder = parseFloat(item.Reorder_Point || 0);
+                const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                const unitsNeeded = reorder - qty;
+                return {
+                    ...item,
+                    Qty: qty,
+                    Reorder_Point: reorder,
+                    Units_Needed: unitsNeeded,
+                    Supplier_Name: supplier?.Supplier_Name || 'Unknown'
+                };
+            }).sort((a, b) => (a.Qty / a.Reorder_Point) - (b.Qty / b.Reorder_Point));
+            
+            // ===== 5. DEAD STOCK (NO SALES) =====
+            const deadStockDays = 180; // Configurable threshold
+            const deadStockDate = new Date();
+            deadStockDate.setDate(deadStockDate.getDate() - deadStockDays);
+            
+            const deadStock = items.filter(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                if (qty <= 0) return false;
+                
+                // Find last sale of this item
+                const itemSales = sales.filter(s => {
+                    const lineItems = s.Line_Items ? JSON.parse(s.Line_Items) : [];
+                    return lineItems.some(li => li.Item_ID === item.Item_ID);
+                });
+                
+                if (itemSales.length === 0) return true; // Never sold
+                
+                const lastSale = itemSales.sort((a, b) => 
+                    new Date(b.Order_Date) - new Date(a.Order_Date)
+                )[0];
+                
+                return new Date(lastSale.Order_Date) < deadStockDate;
+            }).map(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                const unitCost = parseFloat(item.Package_Cost || 0) / parseFloat(item.Units_Per_Package || 1);
+                const value = qty * unitCost;
+                
+                // Find last sale date
+                const itemSales = sales.filter(s => {
+                    const lineItems = s.Line_Items ? JSON.parse(s.Line_Items) : [];
+                    return lineItems.some(li => li.Item_ID === item.Item_ID);
+                }).sort((a, b) => new Date(b.Order_Date) - new Date(a.Order_Date));
+                
+                let daysSinceLastSale = 999;
+                if (itemSales.length > 0) {
+                    const lastSaleDate = new Date(itemSales[0].Order_Date);
+                    daysSinceLastSale = Math.floor((today - lastSaleDate) / (1000 * 60 * 60 * 24));
+                }
+                
+                const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                return {
+                    ...item,
+                    Qty: qty,
+                    Value: value,
+                    Days_Since_Sale: daysSinceLastSale,
+                    Supplier_Name: supplier?.Supplier_Name || 'Unknown'
+                };
+            }).sort((a, b) => b.Days_Since_Sale - a.Days_Since_Sale);
+            
+            const totalDeadStockValue = deadStock.reduce((sum, item) => sum + item.Value, 0);
+            
+            // ===== 6. SLOW MOVING INVENTORY =====
+            const slowMovingDays = 60; // Configurable threshold
+            const slowMovingDate = new Date();
+            slowMovingDate.setDate(slowMovingDate.getDate() - slowMovingDays);
+            
+            const slowMoving = items.filter(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                if (qty <= 0) return false;
+                
+                // Find last sale of this item
+                const itemSales = sales.filter(s => {
+                    const lineItems = s.Line_Items ? JSON.parse(s.Line_Items) : [];
+                    return lineItems.some(li => li.Item_ID === item.Item_ID);
+                });
+                
+                if (itemSales.length === 0) return false; // This is dead stock, not slow moving
+                
+                const lastSale = itemSales.sort((a, b) => 
+                    new Date(b.Order_Date) - new Date(a.Order_Date)
+                )[0];
+                
+                const lastSaleDate = new Date(lastSale.Order_Date);
+                return lastSaleDate < slowMovingDate && lastSaleDate >= deadStockDate;
+            }).map(item => {
+                const qty = parseFloat(item.Qty_On_Hand || 0);
+                
+                // Find last sale date
+                const itemSales = sales.filter(s => {
+                    const lineItems = s.Line_Items ? JSON.parse(s.Line_Items) : [];
+                    return lineItems.some(li => li.Item_ID === item.Item_ID);
+                }).sort((a, b) => new Date(b.Order_Date) - new Date(a.Order_Date));
+                
+                const lastSaleDate = new Date(itemSales[0].Order_Date);
+                const daysSinceLastSale = Math.floor((today - lastSaleDate) / (1000 * 60 * 60 * 24));
+                
+                const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                return {
+                    ...item,
+                    Qty: qty,
+                    Days_Since_Sale: daysSinceLastSale,
+                    Supplier_Name: supplier?.Supplier_Name || 'Unknown'
+                };
+            }).sort((a, b) => b.Days_Since_Sale - a.Days_Since_Sale);
+            
+            // ===== 7. DORMANT CUSTOMERS =====
+            const dormantDays = 45; // Configurable threshold
+            const dormantDate = new Date();
+            dormantDate.setDate(dormantDate.getDate() - dormantDays);
+            
+            const dormantCustomers = customers.filter(c => {
+                const customerSales = sales.filter(s => s.Customer_ID === c.Customer_ID);
+                if (customerSales.length === 0) return false; // Never bought - not dormant, just never active
+                
+                const lastSale = customerSales.sort((a, b) => 
+                    new Date(b.Order_Date) - new Date(a.Order_Date)
+                )[0];
+                
+                return new Date(lastSale.Order_Date) < dormantDate;
+            }).map(c => {
+                const customerSales = sales.filter(s => s.Customer_ID === c.Customer_ID)
+                    .sort((a, b) => new Date(b.Order_Date) - new Date(a.Order_Date));
+                
+                const lastSaleDate = new Date(customerSales[0].Order_Date);
+                const daysSinceLastOrder = Math.floor((today - lastSaleDate) / (1000 * 60 * 60 * 24));
+                
+                const totalSales = customerSales.reduce((sum, s) => 
+                    sum + parseFloat(s.Total_Amount || 0), 0
+                );
+                
+                return {
+                    ...c,
+                    Last_Order_Date: lastSaleDate,
+                    Days_Since_Order: daysSinceLastOrder,
+                    Total_Sales: totalSales
+                };
+            }).sort((a, b) => b.Total_Sales - a.Total_Sales); // Sort by best customers first
+            
+            // ===== BUILD HTML =====
+            let html = `
+                <style>
+                    .action-section {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                        border-left: 5px solid #666;
+                    }
+                    .action-section.critical { border-left-color: #dc2626; }
+                    .action-section.warning { border-left-color: #f59e0b; }
+                    .action-section.info { border-left-color: #3b82f6; }
+                    .action-section-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 15px;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #e5e7eb;
+                    }
+                    .action-section-title {
+                        font-size: 20px;
+                        font-weight: 700;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .action-count {
+                        background: #dc2626;
+                        color: white;
+                        padding: 4px 12px;
+                        border-radius: 20px;
+                        font-size: 14px;
+                        font-weight: 700;
+                    }
+                    .action-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 10px;
+                    }
+                    .action-table th {
+                        background: #f3f4f6;
+                        padding: 10px;
+                        text-align: left;
+                        font-weight: 600;
+                        font-size: 13px;
+                        color: #374151;
+                        border-bottom: 2px solid #d1d5db;
+                    }
+                    .action-table td {
+                        padding: 10px;
+                        border-bottom: 1px solid #e5e7eb;
+                        font-size: 14px;
+                    }
+                    .action-table tr:hover {
+                        background: #f9fafb;
+                    }
+                    .action-btn {
+                        padding: 6px 14px;
+                        border-radius: 6px;
+                        border: none;
+                        cursor: pointer;
+                        font-size: 13px;
+                        font-weight: 600;
+                        transition: all 0.2s;
+                    }
+                    .action-btn-primary {
+                        background: #3b82f6;
+                        color: white;
+                    }
+                    .action-btn-primary:hover {
+                        background: #2563eb;
+                    }
+                    .action-btn-success {
+                        background: #10b981;
+                        color: white;
+                    }
+                    .action-btn-success:hover {
+                        background: #059669;
+                    }
+                    .action-btn-warning {
+                        background: #f59e0b;
+                        color: white;
+                    }
+                    .action-btn-warning:hover {
+                        background: #d97706;
+                    }
+                    .action-btn-danger {
+                        background: #ef4444;
+                        color: white;
+                    }
+                    .action-btn-danger:hover {
+                        background: #dc2626;
+                    }
+                    .days-late {
+                        color: #dc2626;
+                        font-weight: 700;
+                    }
+                    .summary-box {
+                        background: #fef2f2;
+                        border: 2px solid #fecaca;
+                        border-radius: 8px;
+                        padding: 15px;
+                        margin-bottom: 15px;
+                    }
+                    .summary-item {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 8px;
+                    }
+                    .summary-label {
+                        font-weight: 600;
+                        color: #374151;
+                    }
+                    .summary-value {
+                        font-weight: 700;
+                        color: #dc2626;
+                    }
+                </style>
+                
+                <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
+                    <h2 style="margin: 0 0 10px 0; font-size: 32px; display: flex; align-items: center; gap: 15px;">
+                        🚨 ACTION DASHBOARD
+                    </h2>
+                    <p style="margin: 0; font-size: 16px; opacity: 0.95;">
+                        Critical issues requiring immediate attention
+                    </p>
+                </div>
+            `;
+            
+            // 1. PAST DUE PAYMENTS
+            html += `
+                <div class="action-section critical">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            💰 PAST DUE PAYMENTS
+                            <span class="action-count">${pastDuePayments.length}</span>
+                        </div>
+                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="alert(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
+                    </div>
+            `;
+            
+            if (pastDuePayments.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ No past due payments!</p>';
+            } else {
+                const totalPastDue = pastDuePayments.reduce((sum, p) => sum + p.Balance, 0);
+                html += `
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Past Due Amount:</span>
+                            <span class="summary-value">$${totalPastDue.toFixed(2)}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Number of Customers:</span>
+                            <span class="summary-value">${new Set(pastDuePayments.map(p => p.Customer_ID)).size}</span>
+                        </div>
+                    </div>
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Invoice</th>
+                                <th>Due Date</th>
+                                <th>Days Late</th>
+                                <th>Balance</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                pastDuePayments.slice(0, 10).forEach(p => {
+                    html += `
+                        <tr>
+                            <td>${p.Customer_Name}</td>
+                            <td>SO-${p.Sale_ID}</td>
+                            <td>${new Date(p.Due_Date).toLocaleDateString()}</td>
+                            <td class="days-late">${p.Days_Late} days</td>
+                            <td>$${p.Balance.toFixed(2)}</td>
+                            <td>
+                                <button class="action-btn action-btn-primary" onclick="viewSaleOrder('${p.Sale_ID}')">View</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                if (pastDuePayments.length > 10) {
+                    html += `<tr><td colspan="6" style="text-align: center; color: #666; padding: 15px;">... and ${pastDuePayments.length - 10} more</td></tr>`;
+                }
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 2. LATE PURCHASE ORDERS
+            html += `
+                <div class="action-section warning">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            📦 LATE PURCHASE ORDERS
+                            <span class="action-count" style="background: #f59e0b;">${latePOs.length}</span>
+                        </div>
+                    </div>
+            `;
+            
+            if (latePOs.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ No late purchase orders!</p>';
+            } else {
+                html += `
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>Supplier</th>
+                                <th>PO #</th>
+                                <th>Need By Date</th>
+                                <th>Days Late</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                latePOs.forEach(p => {
+                    html += `
+                        <tr>
+                            <td>${p.Supplier_Name}</td>
+                            <td>PO-${p.PO_ID}</td>
+                            <td>${new Date(p.Need_By_Date).toLocaleDateString()}</td>
+                            <td class="days-late">${p.Days_Late} days</td>
+                            <td>${p.Status}</td>
+                            <td>
+                                <button class="action-btn action-btn-warning" onclick="viewPurchaseOrder('${p.PO_ID}')">View</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 3. NEGATIVE INVENTORY
+            html += `
+                <div class="action-section critical">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            🔴 NEGATIVE INVENTORY
+                            <span class="action-count">${negativeInventory.length}</span>
+                        </div>
+                        ${negativeInventory.length > 0 ? '<button class="action-btn action-btn-danger" onclick="showSection(\'inventory\')">Fix Now</button>' : ''}
+                    </div>
+            `;
+            
+            if (negativeInventory.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ No negative inventory!</p>';
+            } else {
+                html += `
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Item</th>
+                                <th>Supplier</th>
+                                <th>Current Qty</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                negativeInventory.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.SKU || 'N/A'}</td>
+                            <td>${item.Item_Description}</td>
+                            <td>${item.Supplier_Name}</td>
+                            <td class="days-late">${item.Qty} units</td>
+                            <td>
+                                <button class="action-btn action-btn-danger" onclick="createInventoryAdjustment('${item.Item_ID}')">Adjust</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 4. LOW STOCK
+            html += `
+                <div class="action-section warning">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            📉 LOW STOCK - NEEDS REORDER
+                            <span class="action-count" style="background: #f59e0b;">${lowStock.length}</span>
+                        </div>
+                        ${lowStock.length > 0 ? '<button class="action-btn action-btn-success" onclick="bulkReorder()">🛒 Bulk Reorder</button>' : ''}
+                    </div>
+            `;
+            
+            if (lowStock.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ All items adequately stocked!</p>';
+            } else {
+                html += `
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllLowStock" onclick="toggleSelectAllLowStock()"></th>
+                                <th>SKU</th>
+                                <th>Item</th>
+                                <th>Supplier</th>
+                                <th>Current</th>
+                                <th>Reorder Point</th>
+                                <th>Needed</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                lowStock.forEach(item => {
+                    html += `
+                        <tr>
+                            <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
+                            <td>${item.SKU || 'N/A'}</td>
+                            <td>${item.Item_Description}</td>
+                            <td>${item.Supplier_Name}</td>
+                            <td>${item.Qty}</td>
+                            <td>${item.Reorder_Point}</td>
+                            <td style="font-weight: 700; color: #f59e0b;">${Math.ceil(item.Units_Needed)}</td>
+                            <td>
+                                <button class="action-btn action-btn-success" onclick="createPOForItem('${item.Item_ID}')">Order</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 5. DEAD STOCK
+            html += `
+                <div class="action-section critical">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            ⚠️ DEAD STOCK - NO SALES
+                            <span class="action-count">${deadStock.length}</span>
+                        </div>
+                    </div>
+            `;
+            
+            if (deadStock.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ No dead stock!</p>';
+            } else {
+                html += `
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Items:</span>
+                            <span class="summary-value">${deadStock.length}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total Units:</span>
+                            <span class="summary-value">${deadStock.reduce((sum, i) => sum + i.Qty, 0).toFixed(0)}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Capital Tied Up:</span>
+                            <span class="summary-value">$${totalDeadStockValue.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Item</th>
+                                <th>Supplier</th>
+                                <th>On Hand</th>
+                                <th>Last Sale</th>
+                                <th>Value</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                deadStock.slice(0, 10).forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.SKU || 'N/A'}</td>
+                            <td>${item.Item_Description}</td>
+                            <td>${item.Supplier_Name}</td>
+                            <td>${item.Qty}</td>
+                            <td class="days-late">${item.Days_Since_Sale === 999 ? 'Never' : item.Days_Since_Sale + ' days ago'}</td>
+                            <td>$${item.Value.toFixed(2)}</td>
+                            <td>
+                                <button class="action-btn action-btn-warning" onclick="markForClearance('${item.Item_ID}')">Clearance</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                if (deadStock.length > 10) {
+                    html += `<tr><td colspan="7" style="text-align: center; color: #666; padding: 15px;">... and ${deadStock.length - 10} more</td></tr>`;
+                }
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 6. SLOW MOVING
+            html += `
+                <div class="action-section info">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            🐌 SLOW MOVING INVENTORY
+                            <span class="action-count" style="background: #3b82f6;">${slowMoving.length}</span>
+                        </div>
+                    </div>
+            `;
+            
+            if (slowMoving.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ No slow moving items!</p>';
+            } else {
+                html += `
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Item</th>
+                                <th>Supplier</th>
+                                <th>On Hand</th>
+                                <th>Last Sale</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                slowMoving.slice(0, 10).forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.SKU || 'N/A'}</td>
+                            <td>${item.Item_Description}</td>
+                            <td>${item.Supplier_Name}</td>
+                            <td>${item.Qty}</td>
+                            <td>${item.Days_Since_Sale} days ago</td>
+                            <td>
+                                <button class="action-btn action-btn-primary" onclick="alert('Promotion feature coming soon!')">Promote</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                if (slowMoving.length > 10) {
+                    html += `<tr><td colspan="6" style="text-align: center; color: #666; padding: 15px;">... and ${slowMoving.length - 10} more</td></tr>`;
+                }
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 7. DORMANT CUSTOMERS
+            html += `
+                <div class="action-section info">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            🤝 DORMANT CUSTOMERS
+                            <span class="action-count" style="background: #3b82f6;">${dormantCustomers.length}</span>
+                        </div>
+                        ${dormantCustomers.length > 0 ? '<button class="action-btn action-btn-primary" onclick="exportDormantCustomers()">📋 Export List</button>' : ''}
+                    </div>
+            `;
+            
+            if (dormantCustomers.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ All customers active!</p>';
+            } else {
+                html += `
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Last Order</th>
+                                <th>Days Ago</th>
+                                <th>Total Sales</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                dormantCustomers.slice(0, 15).forEach(c => {
+                    html += `
+                        <tr>
+                            <td>${c.Customer_Name}</td>
+                            <td>${c.Last_Order_Date.toLocaleDateString()}</td>
+                            <td>${c.Days_Since_Order} days</td>
+                            <td>$${c.Total_Sales.toFixed(2)}</td>
+                            <td>
+                                <button class="action-btn action-btn-primary" onclick="scheduleCustoerVisit('${c.Customer_ID}')">Visit</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                if (dormantCustomers.length > 15) {
+                    html += `<tr><td colspan="5" style="text-align: center; color: #666; padding: 15px;">... and ${dormantCustomers.length - 15} more</td></tr>`;
+                }
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+            html += '</div>';
+            
+            return html;
+        }
+        
+        // Helper functions for Action Dashboard
+        function toggleSelectAllLowStock() {
+            const checkboxes = document.querySelectorAll('.lowstock-checkbox');
+            const selectAll = document.getElementById('selectAllLowStock');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+        
+        function bulkReorder() {
+            const checkboxes = document.querySelectorAll('.lowstock-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Please select items to reorder');
+                return;
+            }
+            
+            const itemIds = Array.from(checkboxes).map(cb => cb.dataset.itemId);
+            alert(`Bulk Reorder feature coming soon!\nSelected ${itemIds.length} items`);
+            // TODO: Implement bulk reorder modal
+        }
+        
+        function createPOForItem(itemId) {
+            // Navigate to purchases and create a PO with this item
+            showSection('purchases');
+            setTimeout(() => {
+                createPurchaseOrder();
+                // TODO: Pre-populate with selected item
+            }, 500);
+        }
+        
+        function createInventoryAdjustment(itemId) {
+            showSection('inventory');
+            setTimeout(() => {
+                // TODO: Open adjustment modal with this item
+            }, 500);
+        }
+        
+        function viewSaleOrder(saleId) {
+            showSection('sales');
+            // TODO: Open sale order modal
+        }
+        
+        function viewPurchaseOrder(poId) {
+            showSection('purchases');
+            // TODO: Open PO modal
+        }
+        
+        function markForClearance(itemId) {
+            if (confirm('Mark this item for clearance sale?')) {
+                alert('Clearance feature coming soon!');
+                // TODO: Implement clearance modal
+            }
+        }
+        
+        function scheduleCustomerVisit(customerId) {
+            alert('Schedule Visit feature coming soon!');
+            // TODO: Implement visit scheduling
+        }
+        
+        function exportDormantCustomers() {
+            alert('Export feature coming soon!');
+            // TODO: Implement CSV export
         }
         
         // ==================== DAILY DASHBOARD ====================
