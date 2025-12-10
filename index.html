@@ -8566,6 +8566,10 @@
             currentReport = reportType;
             reportFilters = {}; // Reset filters
             
+            // CRITICAL: Clear any existing content first
+            document.getElementById('reportSetupContent').innerHTML = '';
+            document.getElementById('reportSetupFilters').innerHTML = '';
+            
             const config = reportConfig[reportType] || { title: 'Report', filters: [] };
             console.log('📱 Report config:', config);
             
@@ -9423,6 +9427,9 @@
             console.log('📱 Report filters:', reportFilters);
             
             const container = document.getElementById('reportSetupContent');
+            
+            // CRITICAL: Clear any existing content completely
+            container.innerHTML = '';
             
             // Show loading
             container.innerHTML = '<div style="padding: 40px; text-align: center;"><div style="font-size: 24px; margin-bottom: 10px;">⏳</div>Generating report...</div>';
