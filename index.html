@@ -103,6 +103,24 @@
         }
         
         /* Section cards within main cards - consistent grey shadow edge */
+        
+        /* Sales page specific cards */
+        .sales-filter-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .sales-data-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+        }
         .section-card {
             background: white;
             border-radius: 12px;
@@ -677,6 +695,16 @@
             .oval-filter-btn {
                 font-size: 11px !important;
                 padding: 6px 12px !important;
+            }
+            
+            /* Sales page cards - reduce padding on mobile for better fit */
+            .sales-filter-card {
+                padding: 10px !important;
+                margin-bottom: 15px !important;
+            }
+            
+            .sales-data-card {
+                padding: 12px !important;
             }
         }
         
@@ -7302,42 +7330,48 @@
             });
             const balance = totalAmount - totalPaid;
             
-            // OVAL DATE FILTER BUTTONS - Above Summary Boxes
+            // CARD WRAPPER FOR OVAL BUTTONS
             let html = `
-                <div style="margin: 15px 0 20px 0; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: max-content; padding: 5px 0;">
-                        <button onclick="applySalesDateFilter('today')" class="oval-filter-btn" style="background: #e3f2fd; color: #1565c0; border: 2px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📅 Last Day
-                        </button>
-                        <button onclick="applySalesDateFilter('week')" class="oval-filter-btn" style="background: #fff3e0; color: #ef6c00; border: 2px solid #ef6c00; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📆 Last Week
-                        </button>
-                        <button onclick="applySalesDateFilter('3months')" class="oval-filter-btn" style="background: #fff9c4; color: #f57f17; border: 2px solid #f57f17; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            🗓️ Last 3 Months
-                        </button>
-                        <button onclick="applySalesDateFilter('6months')" class="oval-filter-btn" style="background: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📊 6 Months
-                        </button>
-                        <button onclick="applySalesDateFilter('9months')" class="oval-filter-btn" style="background: #e1f5fe; color: #0277bd; border: 2px solid #0277bd; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📈 9 Months
-                        </button>
-                        <button onclick="applySalesDateFilter('ytd')" class="oval-filter-btn" style="background: #f3e5f5; color: #6a1b9a; border: 2px solid #6a1b9a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📋 YTD
-                        </button>
-                        <button onclick="applySalesDateFilter('1year')" class="oval-filter-btn" style="background: #fce4ec; color: #c2185b; border: 2px solid #c2185b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📅 1 Year
-                        </button>
-                        <button onclick="applySalesDateFilter('3years')" class="oval-filter-btn" style="background: #ede7f6; color: #512da8; border: 2px solid #512da8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📊 3 Years
-                        </button>
-                        <button onclick="applySalesDateFilter('5years')" class="oval-filter-btn" style="background: #e0f2f1; color: #00695c; border: 2px solid #00695c; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            📈 5 Years
-                        </button>
-                        <button onclick="applySalesDateFilter('all')" class="oval-filter-btn active" style="background: #424242; color: white; border: 2px solid #424242; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
-                            🌐 All Time
-                        </button>
+                <div class="sales-filter-card">
+                    <div style="font-weight: 600; color: #666; margin-bottom: 10px; font-size: 14px;">📅 Quick Date Filters</div>
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: max-content; padding: 5px 0;">
+                            <button onclick="applySalesDateFilter('today')" class="oval-filter-btn" style="background: #e3f2fd; color: #1565c0; border: 3px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📅 Last Day
+                            </button>
+                            <button onclick="applySalesDateFilter('week')" class="oval-filter-btn" style="background: #fff3e0; color: #ef6c00; border: 3px solid #ef6c00; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📆 Last Week
+                            </button>
+                            <button onclick="applySalesDateFilter('3months')" class="oval-filter-btn" style="background: #fff9c4; color: #f57f17; border: 3px solid #f57f17; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                🗓️ Last 3 Months
+                            </button>
+                            <button onclick="applySalesDateFilter('6months')" class="oval-filter-btn" style="background: #e8f5e9; color: #2e7d32; border: 3px solid #2e7d32; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📊 6 Months
+                            </button>
+                            <button onclick="applySalesDateFilter('9months')" class="oval-filter-btn" style="background: #e1f5fe; color: #0277bd; border: 3px solid #0277bd; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📈 9 Months
+                            </button>
+                            <button onclick="applySalesDateFilter('ytd')" class="oval-filter-btn" style="background: #f3e5f5; color: #6a1b9a; border: 3px solid #6a1b9a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📋 YTD
+                            </button>
+                            <button onclick="applySalesDateFilter('1year')" class="oval-filter-btn" style="background: #fce4ec; color: #c2185b; border: 3px solid #c2185b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📅 1 Year
+                            </button>
+                            <button onclick="applySalesDateFilter('3years')" class="oval-filter-btn" style="background: #ede7f6; color: #512da8; border: 3px solid #512da8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📊 3 Years
+                            </button>
+                            <button onclick="applySalesDateFilter('5years')" class="oval-filter-btn" style="background: #e0f2f1; color: #00695c; border: 3px solid #00695c; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📈 5 Years
+                            </button>
+                            <button onclick="applySalesDateFilter('all')" class="oval-filter-btn active" style="background: #424242; color: white; border: 3px solid #424242; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                🌐 All Time
+                            </button>
+                        </div>
                     </div>
                 </div>
+                
+                <!-- DATA CARD WRAPPER -->
+                <div class="sales-data-card">
             `;
             
             // Summary boxes
@@ -7401,6 +7435,7 @@
             </tr>`;
 
             html += '</tbody></table>';
+            html += '</div>'; // Close data card wrapper
             document.getElementById('salesTable').innerHTML = html;
             setTimeout(() => makeSortable('salesDataTable'), 0);
         }
