@@ -5461,77 +5461,82 @@
             document.getElementById('modalTitle').textContent = `Purchase Order: ${po.PO_ID}`;
             
             let html = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                    <div>
-                        <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Supplier:</td><td>${supplierName}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${po.Invoice_Number || '-'}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">PO Date:</td><td>${new Date(po.PO_Date).toLocaleDateString()}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Bill Date:</td><td>${billDate}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${statusText}</span></td></tr>
-                        </table>
-                        ${po.Status === 'Ordered' ? `
-                        <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #c0c0c0;">
-                            <strong>⚠️ Prices Changed?</strong>
-                            <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">If supplier prices have changed, void this PO and create a new one with updated prices.</p>
-                            <button class="btn" onclick="voidPurchaseOrder('${po.PO_ID}')" style="background: #dc3545; padding: 6px 12px; font-size: 13px;">
-                                ⛔ Void This PO
-                            </button>
-                        </div>
-                        ` : ''}
-                        ${po.Status === 'Void' || po.Status === 'Cancelled' ? `
-                        <div style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #c0c0c0;">
-                            <strong>📋 Need to Reorder?</strong>
-                            <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">Copy this PO's items to create a new order with current prices.</p>
-                            <button class="btn" onclick="duplicatePO('${po.PO_ID}'); closeModal();" style="background: #17a2b8; padding: 6px 12px; font-size: 13px;">
-                                📋 Copy to New PO
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-                    <div>
-                        <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(po.Total_Amount || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(po.Amount_Paid || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${po.Payment_Status}</span></td></tr>
-                        </table>
-                        ${po.Payment_Status !== 'Paid' && po.Status !== 'Void' && po.Status !== 'Cancelled' ? `
-                        <div style="margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
-                            <div style="margin-bottom: 10px;"><strong>💵 Quick Payment</strong></div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="number" id="quickPaymentAmount" step="0.01" min="0" 
-                                       value="${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}"
-                                       style="width: 120px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) recordQuickPOPayment('${po.PO_ID}')" 
-                                        style="background: #28a745; padding: 8px 15px;">
-                                    💵 Record Payment
+                <!-- Card 1: Order & Payment Information -->
+                <div class="content-card" style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h3 style="margin-top: 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📋 Order Information</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Supplier:</td><td>${supplierName}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${po.Invoice_Number || '-'}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">PO Date:</td><td>${new Date(po.PO_Date).toLocaleDateString()}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Bill Date:</td><td>${billDate}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${statusColor === '#28a745' ? '#c3e6cb' : '#dee2e6'};">${statusText}</span></td></tr>
+                            </table>
+                            ${po.Status === 'Ordered' ? `
+                            <div class="content-card" style="margin-top: 15px; background: #fff3cd;">
+                                <strong>⚠️ Prices Changed?</strong>
+                                <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">If supplier prices have changed, void this PO and create a new one with updated prices.</p>
+                                <button class="btn" onclick="voidPurchaseOrder('${po.PO_ID}')" style="background: #dc3545; padding: 6px 12px; font-size: 13px;">
+                                    ⛔ Void This PO
                                 </button>
                             </div>
+                            ` : ''}
+                            ${po.Status === 'Void' || po.Status === 'Cancelled' ? `
+                            <div class="content-card" style="margin-top: 15px; background: #e3f2fd;">
+                                <strong>📋 Need to Reorder?</strong>
+                                <p style="margin: 5px 0 10px 0; font-size: 13px; color: #666;">Copy this PO's items to create a new order with current prices.</p>
+                                <button class="btn" onclick="duplicatePO('${po.PO_ID}'); closeModal();" style="background: #17a2b8; padding: 6px 12px; font-size: 13px;">
+                                    📋 Copy to New PO
+                                </button>
+                            </div>
+                            ` : ''}
                         </div>
-                        ` : ''}
+                        <div>
+                            <h3 style="margin-top: 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px;">💰 Payment Information</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(po.Total_Amount || 0).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(po.Amount_Paid || 0).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${po.Payment_Status === 'Paid' ? '#c3e6cb' : '#ffeaa7'};">${po.Payment_Status}</span></td></tr>
+                            </table>
+                            ${po.Payment_Status !== 'Paid' && po.Status !== 'Void' && po.Status !== 'Cancelled' ? `
+                            <div class="content-card" style="margin-top: 15px; background: #e8f5e9;">
+                                <div style="margin-bottom: 10px;"><strong>💵 Quick Payment</strong></div>
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <input type="number" id="quickPaymentAmount" step="0.01" min="0" 
+                                           value="${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}"
+                                           style="width: 120px; padding: 8px; border: 2px solid #c3e6cb; border-radius: 4px;">
+                                    <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) recordQuickPOPayment('${po.PO_ID}')" 
+                                            style="background: #28a745; padding: 8px 15px;">
+                                        💵 Record Payment
+                                    </button>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             `;
             
             if (lines.length > 0) {
                 html += `
-                    <h3 style="color: #667eea; margin-bottom: 15px; font-size: 18px;">📦 Line Items</h3>
-                    <div style="overflow-x: auto;">
-                    <table class="data-table" style="margin-bottom: 20px; font-size: 14px;">
-                        <thead>
-                            <tr style="background: #667eea; color: white;">
-                                <th style="padding: 12px 15px;">Item</th>
-                                <th style="padding: 12px 15px;">Description</th>
-                                <th style="padding: 12px 15px;">Qty</th>
-                                <th style="padding: 12px 15px;">Unit Cost</th>
-                                <th style="padding: 12px 15px;">Line Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <!-- Card 2: Line Items -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📦 Line Items</h3>
+                        <div style="overflow-x: auto;">
+                        <table class="data-table" style="margin-bottom: 0; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px 15px;">Item</th>
+                                    <th style="padding: 12px 15px;">Description</th>
+                                    <th style="padding: 12px 15px;">Qty</th>
+                                    <th style="padding: 12px 15px;">Unit Cost</th>
+                                    <th style="padding: 12px 15px;">Line Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                 `;
                 
                 lines.forEach(line => {
@@ -5552,14 +5557,16 @@
                         </tbody>
                     </table>
                     </div>
+                    </div>
                 `;
             }
             
             if (po.Notes) {
                 html += `
-                    <div style="margin-top: 20px;">
-                        <h3 style="color: var(--primary, #667eea); margin-bottom: 10px;">Notes</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #c0c0c0;">
+                    <!-- Card 3: Notes -->
+                    <div class="content-card">
+                        <h3 style="color: var(--primary, #667eea); margin-top: 0; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📝 Notes</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0;">
                             ${po.Notes}
                         </div>
                     </div>
@@ -7595,46 +7602,51 @@
             document.getElementById('modalTitle').textContent = `Sales Order: ${so.Invoice_Number || so.SO_ID}`;
             
             let html = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                    <div>
-                        <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Customer:</td><td>${customerName}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${so.Invoice_Number || '-'}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Sale Date:</td><td>${new Date(so.Sale_Date).toLocaleDateString()}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Invoice Date:</td><td>${invoiceDate}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Payment Method:</td><td>${so.Payment_Method}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${so.Status}</span></td></tr>
-                        </table>
-                    </div>
-                    <div>
-                        <h3 style="margin-top: 0; color: #667eea;">Payment Information</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(so.Total_Amount || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(so.Amount_Paid || 0).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</td></tr>
-                            <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${so.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${so.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${so.Payment_Status}</span></td></tr>
-                        </table>
+                <!-- Card 1: Order & Payment Information -->
+                <div class="content-card" style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h3 style="margin-top: 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📋 Order Information</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Customer:</td><td>${customerName}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${so.Invoice_Number || '-'}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Sale Date:</td><td>${new Date(so.Sale_Date).toLocaleDateString()}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Invoice Date:</td><td>${invoiceDate}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Payment Method:</td><td>${so.Payment_Method}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid #c3e6cb;">${so.Status}</span></td></tr>
+                            </table>
+                        </div>
+                        <div>
+                            <h3 style="margin-top: 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px;">💰 Payment Information</h3>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(so.Total_Amount || 0).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(so.Amount_Paid || 0).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${so.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${so.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${so.Payment_Status === 'Paid' ? '#c3e6cb' : '#ffeaa7'};">${so.Payment_Status}</span></td></tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
             `;
             
             if (lines.length > 0) {
                 html += `
-                    <h3 style="color: #667eea; margin-bottom: 15px; font-size: 18px;">📦 Line Items</h3>
-                    <div style="overflow-x: auto;">
-                    <table class="data-table" style="margin-bottom: 20px; font-size: 14px;">
-                        <thead>
-                            <tr style="background: #667eea; color: white;">
-                                <th style="padding: 12px 15px;">Item</th>
-                                <th style="padding: 12px 15px;">Description</th>
-                                <th style="padding: 12px 15px;">Qty</th>
-                                <th style="padding: 12px 15px;">Unit Price</th>
-                                <th style="padding: 12px 15px;">Line Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <!-- Card 2: Line Items -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📦 Line Items</h3>
+                        <div style="overflow-x: auto;">
+                        <table class="data-table" style="margin-bottom: 0; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #667eea; color: white;">
+                                    <th style="padding: 12px 15px;">Item</th>
+                                    <th style="padding: 12px 15px;">Description</th>
+                                    <th style="padding: 12px 15px;">Qty</th>
+                                    <th style="padding: 12px 15px;">Unit Price</th>
+                                    <th style="padding: 12px 15px;">Line Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                 `;
                 
                 lines.forEach(line => {
@@ -7655,14 +7667,16 @@
                         </tbody>
                     </table>
                     </div>
+                    </div>
                 `;
             }
             
             if (so.Notes) {
                 html += `
-                    <div style="margin-top: 20px;">
-                        <h3 style="color: var(--primary, #667eea); margin-bottom: 10px;">Notes</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #c0c0c0;">
+                    <!-- Card 3: Notes -->
+                    <div class="content-card">
+                        <h3 style="color: var(--primary, #667eea); margin-top: 0; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📝 Notes</h3>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0;">
                             ${so.Notes}
                         </div>
                     </div>
