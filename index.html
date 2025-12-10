@@ -121,6 +121,33 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border: 2px solid #e0e0e0;
         }
+        
+        /* Universal content cards for all tabs */
+        .content-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .filter-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .data-display-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+        }
         .section-card {
             background: white;
             border-radius: 12px;
@@ -705,6 +732,18 @@
             
             .sales-data-card {
                 padding: 12px !important;
+            }
+            
+            /* Universal content cards - reduce padding on mobile */
+            .content-card,
+            .data-display-card {
+                padding: 12px !important;
+                margin-bottom: 15px !important;
+            }
+            
+            .filter-card {
+                padding: 10px !important;
+                margin-bottom: 15px !important;
             }
         }
         
@@ -1492,7 +1531,9 @@
                 </form>
             </div>
             
-            <div id="suppliersTable"></div>
+            <div class="data-display-card">
+                <div id="suppliersTable"></div>
+            </div>
         </div>
 
         <!-- Items Tab -->
@@ -1686,7 +1727,9 @@
                 </form>
             </div>
             
-            <div id="itemsTable"></div>
+            <div class="data-display-card">
+                <div id="itemsTable"></div>
+            </div>
         </div>
 
         <!-- Customers Tab -->
@@ -1864,7 +1907,9 @@
                 </form>
             </div>
             
-            <div id="customersTable"></div>
+            <div class="data-display-card">
+                <div id="customersTable"></div>
+            </div>
         </div>
 
         <!-- Create PO Tab (Generate Only - No Database Save) -->
@@ -2123,7 +2168,9 @@
                 </form>
             </div>
             
-            <div id="purchasesTable"></div>
+            <div class="data-display-card">
+                <div id="purchasesTable"></div>
+            </div>
         </div>
 
         <!-- Sales Tab -->
@@ -2381,7 +2428,9 @@
                 </div>
             </div>
             
-            <div id="inventoryTable"></div>
+            <div class="data-display-card">
+                <div id="inventoryTable"></div>
+            </div>
         </div>
         
         <!-- PRICE SIMULATOR TAB -->
@@ -2656,7 +2705,9 @@
                 <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">🔄 Refresh Items</button>
             </div>
             
-            <div id="pricesimTable" style="overflow-x: auto;"></div>
+            <div class="data-display-card">
+                <div id="pricesimTable" style="overflow-x: auto;"></div>
+            </div>
         </div>
         
         <!-- REPORTS TAB -->
@@ -2744,7 +2795,9 @@
             </div>
             
             <!-- Report Container -->
-            <div id="reportContainer"></div>
+            <div class="data-display-card">
+                <div id="reportContainer"></div>
+            </div>
         </div>
     </div>
 
@@ -7207,10 +7260,14 @@
             const dateTo = document.getElementById('filterSaleDateTo').value;
             const statusFilter = document.getElementById('filterSaleStatus')?.value || '';
             
+            console.log('Filtering sales with dates:', dateFrom, 'to', dateTo); // Debug
+            
             const filtered = salesData.filter(so => {
                 const matchesCustomer = !customerFilter || so.Customer_ID === customerFilter;
                 const matchesInvoice = !invoiceNumberFilter || (so.Invoice_Number && so.Invoice_Number.toLowerCase().includes(invoiceNumberFilter));
-                const soDate = new Date(so.SO_Date);
+                
+                // FIX: Check both Sale_Date and SO_Date (like displaySales does)
+                const soDate = new Date(so.Sale_Date || so.SO_Date);
                 const matchesDateFrom = !dateFrom || soDate >= new Date(dateFrom);
                 const matchesDateTo = !dateTo || soDate <= new Date(dateTo);
                 
@@ -7225,6 +7282,7 @@
                 return matchesCustomer && matchesInvoice && matchesDateFrom && matchesDateTo && matchesStatus;
             });
             
+            console.log('Filtered results:', filtered.length, 'orders'); // Debug
             displaySales(filtered);
         }
         
@@ -7240,59 +7298,81 @@
         }
         
         // Apply date filter from oval buttons
-        function applySalesDateFilter(period) {
-            const now = new Date();
-            let fromDate = new Date();
-            let toDate = new Date();
+        function applySalesDateFilter(period, evt) {
+            console.log('Date filter clicked:', period); // Debug
             
-            // Calculate date ranges
+            const now = new Date();
+            let fromDate, toDate;
+            
+            // Calculate date ranges - create new Date objects to avoid mutation
             switch(period) {
                 case 'today':
                     fromDate = new Date(now);
+                    toDate = new Date(now);
                     break;
                 case 'week':
+                    fromDate = new Date(now);
                     fromDate.setDate(now.getDate() - 7);
+                    toDate = new Date(now);
                     break;
                 case '3months':
+                    fromDate = new Date(now);
                     fromDate.setMonth(now.getMonth() - 3);
+                    toDate = new Date(now);
                     break;
                 case '6months':
+                    fromDate = new Date(now);
                     fromDate.setMonth(now.getMonth() - 6);
+                    toDate = new Date(now);
                     break;
                 case '9months':
+                    fromDate = new Date(now);
                     fromDate.setMonth(now.getMonth() - 9);
+                    toDate = new Date(now);
                     break;
                 case 'ytd':
                     fromDate = new Date(now.getFullYear(), 0, 1); // Jan 1st this year
+                    toDate = new Date(now);
                     break;
                 case '1year':
+                    fromDate = new Date(now);
                     fromDate.setFullYear(now.getFullYear() - 1);
+                    toDate = new Date(now);
                     break;
                 case '3years':
+                    fromDate = new Date(now);
                     fromDate.setFullYear(now.getFullYear() - 3);
+                    toDate = new Date(now);
                     break;
                 case '5years':
+                    fromDate = new Date(now);
                     fromDate.setFullYear(now.getFullYear() - 5);
+                    toDate = new Date(now);
                     break;
                 case 'all':
                     // Show everything - set date range fields to empty
+                    console.log('Clearing date filters'); // Debug
                     document.getElementById('filterSaleDateFrom').value = '';
                     document.getElementById('filterSaleDateTo').value = '';
                     filterSales();
                     
                     // Update button active state
-                    document.querySelectorAll('.oval-filter-btn').forEach(btn => {
-                        btn.style.opacity = '0.6';
-                        btn.style.transform = 'scale(1)';
-                    });
-                    event.target.style.opacity = '1';
-                    event.target.style.transform = 'scale(1.05)';
+                    if (evt) {
+                        document.querySelectorAll('.oval-filter-btn').forEach(btn => {
+                            btn.style.opacity = '0.6';
+                            btn.style.transform = 'scale(1)';
+                        });
+                        evt.target.style.opacity = '1';
+                        evt.target.style.transform = 'scale(1.05)';
+                    }
                     return;
             }
             
             // Format dates for input fields (YYYY-MM-DD)
             const fromDateStr = fromDate.toISOString().split('T')[0];
             const toDateStr = toDate.toISOString().split('T')[0];
+            
+            console.log('Setting dates:', fromDateStr, 'to', toDateStr); // Debug
             
             // Set filter fields
             document.getElementById('filterSaleDateFrom').value = fromDateStr;
@@ -7301,13 +7381,17 @@
             // Apply filter
             filterSales();
             
+            console.log('Filter applied'); // Debug
+            
             // Update button active state
-            document.querySelectorAll('.oval-filter-btn').forEach(btn => {
-                btn.style.opacity = '0.6';
-                btn.style.transform = 'scale(1)';
-            });
-            event.target.style.opacity = '1';
-            event.target.style.transform = 'scale(1.05)';
+            if (evt) {
+                document.querySelectorAll('.oval-filter-btn').forEach(btn => {
+                    btn.style.opacity = '0.6';
+                    btn.style.transform = 'scale(1)';
+                });
+                evt.target.style.opacity = '1';
+                evt.target.style.transform = 'scale(1.05)';
+            }
         }
 
         function displaySales(orders) {
@@ -7336,34 +7420,34 @@
                     <div style="font-weight: 600; color: #666; margin-bottom: 10px; font-size: 14px;">📅 Quick Date Filters</div>
                     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: max-content; padding: 5px 0;">
-                            <button onclick="applySalesDateFilter('today')" class="oval-filter-btn" style="background: #e3f2fd; color: #1565c0; border: 3px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('today', event)" class="oval-filter-btn" style="background: #e3f2fd; color: #1565c0; border: 3px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 Last Day
                             </button>
-                            <button onclick="applySalesDateFilter('week')" class="oval-filter-btn" style="background: #fff3e0; color: #ef6c00; border: 3px solid #ef6c00; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('week', event)" class="oval-filter-btn" style="background: #fff3e0; color: #ef6c00; border: 3px solid #ef6c00; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📆 Last Week
                             </button>
-                            <button onclick="applySalesDateFilter('3months')" class="oval-filter-btn" style="background: #fff9c4; color: #f57f17; border: 3px solid #f57f17; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('3months', event)" class="oval-filter-btn" style="background: #fff9c4; color: #f57f17; border: 3px solid #f57f17; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 🗓️ Last 3 Months
                             </button>
-                            <button onclick="applySalesDateFilter('6months')" class="oval-filter-btn" style="background: #e8f5e9; color: #2e7d32; border: 3px solid #2e7d32; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('6months', event)" class="oval-filter-btn" style="background: #e8f5e9; color: #2e7d32; border: 3px solid #2e7d32; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📊 6 Months
                             </button>
-                            <button onclick="applySalesDateFilter('9months')" class="oval-filter-btn" style="background: #e1f5fe; color: #0277bd; border: 3px solid #0277bd; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('9months', event)" class="oval-filter-btn" style="background: #e1f5fe; color: #0277bd; border: 3px solid #0277bd; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📈 9 Months
                             </button>
-                            <button onclick="applySalesDateFilter('ytd')" class="oval-filter-btn" style="background: #f3e5f5; color: #6a1b9a; border: 3px solid #6a1b9a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('ytd', event)" class="oval-filter-btn" style="background: #f3e5f5; color: #6a1b9a; border: 3px solid #6a1b9a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📋 YTD
                             </button>
-                            <button onclick="applySalesDateFilter('1year')" class="oval-filter-btn" style="background: #fce4ec; color: #c2185b; border: 3px solid #c2185b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('1year', event)" class="oval-filter-btn" style="background: #fce4ec; color: #c2185b; border: 3px solid #c2185b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 1 Year
                             </button>
-                            <button onclick="applySalesDateFilter('3years')" class="oval-filter-btn" style="background: #ede7f6; color: #512da8; border: 3px solid #512da8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('3years', event)" class="oval-filter-btn" style="background: #ede7f6; color: #512da8; border: 3px solid #512da8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📊 3 Years
                             </button>
-                            <button onclick="applySalesDateFilter('5years')" class="oval-filter-btn" style="background: #e0f2f1; color: #00695c; border: 3px solid #00695c; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('5years', event)" class="oval-filter-btn" style="background: #e0f2f1; color: #00695c; border: 3px solid #00695c; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📈 5 Years
                             </button>
-                            <button onclick="applySalesDateFilter('all')" class="oval-filter-btn active" style="background: #424242; color: white; border: 3px solid #424242; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('all', event)" class="oval-filter-btn active" style="background: #424242; color: white; border: 3px solid #424242; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 🌐 All Time
                             </button>
                         </div>
