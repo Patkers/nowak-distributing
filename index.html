@@ -8459,8 +8459,8 @@
             'action-dashboard': {
                 title: '🚨 Action Dashboard',
                 filters: [], // No filters needed - shows all critical actions
-                dateLabel: '',
-                noFilters: true // Flag to skip filter modal
+                dateLabel: ''
+                // Removed noFilters flag - use Run Report button instead
             },
             'sales-by-customer': {
                 title: '👥 Sales by Customer',
@@ -8590,7 +8590,7 @@
                 
                 // Show modal FIRST
                 const modalElement = document.getElementById('reportSetupModal');
-                modalElement.style.display = 'block';
+                modalElement.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
                 document.body.classList.add('modal-open');
                 
@@ -8866,7 +8866,7 @@
                 return;
             }
             
-            modalElement.style.display = 'block';
+            modalElement.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             console.log('📱 Modal should now be visible');
@@ -11752,6 +11752,9 @@
                         </div>
                         ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="alert(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Customer invoices (sales orders)</strong> where the due date has passed and payment is not yet received. Sorted by most overdue first.
+                    </p>
             `;
             
             if (pastDuePayments.length === 0) {
@@ -11818,6 +11821,9 @@
                             <span class="action-count warning">${latePOs.length}</span>
                         </div>
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Inbound orders from suppliers</strong> where the "Need By Date" has passed and the order is not yet received. Only shows POs that have a Need By Date set.
+                    </p>
             `;
             
             if (latePOs.length === 0) {
@@ -11870,6 +11876,9 @@
                         </div>
                         ${negativeInventory.length > 0 ? '<button class="action-btn action-btn-danger" onclick="showSection(\'inventory\')">Fix Now</button>' : ''}
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Items sold before received</strong> - Qty On Hand is below zero. This indicates you sold more than you had in stock. Needs immediate correction.
+                    </p>
             `;
             
             if (negativeInventory.length === 0) {
@@ -11920,6 +11929,9 @@
                         </div>
                         ${lowStock.length > 0 ? '<button class="action-btn action-btn-success" onclick="bulkReorder()">🛒 Bulk Reorder</button>' : ''}
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Items at or below reorder point</strong> - Current qty ≤ Reorder Point (and Reorder Point > 0). Sorted by lowest stock percentage first. Ready to reorder!
+                    </p>
             `;
             
             if (lowStock.length === 0) {
@@ -11975,6 +11987,9 @@
                             <span class="action-count">${deadStock.length}</span>
                         </div>
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Items with no sales in 180+ days</strong> (or never sold). Has qty on hand but hasn't moved. Capital tied up in non-moving inventory. Top 10 shown.
+                    </p>
             `;
             
             if (deadStock.length === 0) {
@@ -12046,6 +12061,9 @@
                             <span class="action-count info">${slowMoving.length}</span>
                         </div>
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Items with sales 60-180 days ago</strong> - Moving, but slowly. Not dead yet, but approaching it. Consider promotions. Top 10 shown.
+                    </p>
             `;
             
             if (slowMoving.length === 0) {
@@ -12102,6 +12120,9 @@
                         </div>
                         ${dormantCustomers.length > 0 ? '<button class="action-btn action-btn-primary" onclick="exportDormantCustomers()">📋 Export List</button>' : ''}
                     </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Customers who haven't ordered in 45+ days</strong> - Previously active customers who have stopped buying. Sorted by highest lifetime sales (best customers first). Top 15 shown.
+                    </p>
             `;
             
             if (dormantCustomers.length === 0) {
@@ -15895,8 +15916,8 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- Report Setup Modal -->
-    <div id="reportSetupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto; padding: 20px 0;">
-        <div style="background: white; margin: 0 auto; max-width: 95%; width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; position: relative;">
+    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column; position: relative;">
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
                 <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
