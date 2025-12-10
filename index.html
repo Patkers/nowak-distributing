@@ -777,8 +777,8 @@
             #reportSetupFilters {
                 padding: 12px !important;
                 flex-shrink: 0 !important;
-                overflow-y: auto !important;
-                max-height: 30vh !important;
+                overflow: visible !important;
+                max-height: none !important;
             }
             
             #reportSetupContent {
@@ -825,7 +825,7 @@
             
             #reportSetupFilters {
                 flex-shrink: 0 !important;
-                overflow-y: auto !important;
+                overflow: visible !important;
                 -webkit-overflow-scrolling: touch !important;
             }
             
@@ -2830,13 +2830,13 @@
                         </p>
                     </div>
                 </div>
-                <!-- Button Group Card -->
-                <div class="filter-card">
-                    <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">🔄 Refresh Items</button>
-                </div>
             </div>
             
             <div class="data-display-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #e0e0e0;">
+                    <h3 style="margin: 0; color: #667eea;">📊 Items in Simulation</h3>
+                    <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white;">🔄 Refresh Items</button>
+                </div>
                 <div id="pricesimTable" style="overflow-x: auto;"></div>
             </div>
         </div>
@@ -9460,32 +9460,32 @@
                     <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
                         <span style="color: #666; font-size: 13px;">Quick Select:</span>
                         <div style="position: relative; display: inline-block;">
-                            <button type="button" class="btn" onclick="toggleDatePresetPicker()" 
+                            <button type="button" class="btn" onclick="event.stopPropagation(); toggleDatePresetPicker()" 
                                     style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
                                 <span>📅</span>
                                 <span id="datePresetLabel">Choose Period</span>
                                 <span style="opacity: 0.7;">▼</span>
                             </button>
-                            <div id="datePresetDropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 1000; margin-top: 5px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-width: 180px; overflow: hidden;">
-                                <div onclick="selectDatePreset('today', '📆 Today')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                            <div id="datePresetDropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10001; margin-top: 5px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-width: 180px; overflow: hidden;">
+                                <div onclick="event.stopPropagation(); selectDatePreset('today', '📆 Today')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>📆</span> Today
                                 </div>
-                                <div onclick="selectDatePreset('week', '📅 This Week')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                <div onclick="event.stopPropagation(); selectDatePreset('week', '📅 This Week')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>📅</span> This Week
                                 </div>
-                                <div onclick="selectDatePreset('month', '🗓️ This Month')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                <div onclick="event.stopPropagation(); selectDatePreset('month', '🗓️ This Month')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>🗓️</span> This Month
                                 </div>
-                                <div onclick="selectDatePreset('quarter', '📊 This Quarter')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                <div onclick="event.stopPropagation(); selectDatePreset('quarter', '📊 This Quarter')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>📊</span> This Quarter
                                 </div>
-                                <div onclick="selectDatePreset('year', '📈 This Year')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                <div onclick="event.stopPropagation(); selectDatePreset('year', '📈 This Year')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>📈</span> This Year
                                 </div>
-                                <div onclick="selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                <div onclick="event.stopPropagation(); selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>🗃️</span> All Time
                                 </div>
-                                <div onclick="selectDatePreset('clear', '🔄 Clear Dates')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8f9fa;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
+                                <div onclick="event.stopPropagation(); selectDatePreset('clear', '🔄 Clear Dates')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8f9fa;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
                                     <span>🔄</span> <strong>Clear Dates</strong>
                                 </div>
                             </div>
@@ -9566,14 +9566,17 @@
         
         function toggleDatePresetPicker() {
             const dropdown = document.getElementById('datePresetDropdown');
-            if (dropdown.style.display === 'none') {
+            console.log('📅 Toggle dropdown clicked, dropdown element:', dropdown);
+            if (dropdown.style.display === 'none' || dropdown.style.display === '') {
                 dropdown.style.display = 'block';
+                console.log('📅 Dropdown opened');
                 // Close when clicking outside
                 setTimeout(() => {
                     document.addEventListener('click', closeDatePresetOnClickOutside);
                 }, 10);
             } else {
                 dropdown.style.display = 'none';
+                console.log('📅 Dropdown closed');
             }
         }
         
@@ -9586,10 +9589,19 @@
         }
         
         function selectDatePreset(preset, label) {
+            console.log('📅 Date preset selected:', preset, label);
             // Update the button label
-            document.getElementById('datePresetLabel').textContent = label;
+            const labelEl = document.getElementById('datePresetLabel');
+            if (labelEl) {
+                labelEl.textContent = label;
+                console.log('📅 Button label updated to:', label);
+            }
             // Close dropdown
-            document.getElementById('datePresetDropdown').style.display = 'none';
+            const dropdown = document.getElementById('datePresetDropdown');
+            if (dropdown) {
+                dropdown.style.display = 'none';
+                console.log('📅 Dropdown closed');
+            }
             document.removeEventListener('click', closeDatePresetOnClickOutside);
             // Apply the preset
             setDatePreset(preset);
