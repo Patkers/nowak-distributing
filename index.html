@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:30 - Mobile modal lock + button debounce -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:40 - Fixed landscape scrolling + removed footer -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -652,12 +652,14 @@
         @media (max-height: 600px) and (orientation: landscape) {
             body {
                 padding: 5px;
-                height: 100vh;
+                min-height: 100vh;
+                height: auto;
             }
             
             .container {
                 max-width: 100%;
                 padding: 0 5px;
+                height: auto;
             }
             
             .header {
@@ -727,8 +729,9 @@
             
             .card {
                 padding: 8px;
-                max-height: calc(100vh - 100px) !important;
-                overflow-y: auto;
+                height: auto;
+                max-height: none !important;
+                overflow-y: visible !important;
             }
             
             /* Hide floating navigation buttons in landscape - use compact nav instead */
@@ -1124,12 +1127,6 @@
                 color: #999;
                 pointer-events: none;
                 line-height: 1;
-            }
-            
-            /* Draggable header hint */
-            .draggable-added:hover {
-                background: rgba(0, 0, 0, 0.1) !important;
-                cursor: move;
             }
             
             /* Center modals initially */
@@ -18121,7 +18118,6 @@ NOTE: Please print the attached PO document for full details.`;
                 // Make container resizable
                 if (!modal.container.classList.contains('resizable-added')) {
                     modal.container.style.resize = 'both';
-                    modal.container.style.overflow = 'auto';
                     modal.container.style.minWidth = '400px';
                     modal.container.style.minHeight = '300px';
                     modal.container.style.maxWidth = '95vw';
@@ -18240,14 +18236,5 @@ NOTE: Please print the attached PO document for full details.`;
             }
         });
     </script>
-    
-    <!-- Footer at Bottom of Page -->
-    <div style="text-align: center; padding: 30px 10px;">
-        <div style="background: white; padding: 10px 20px; border: 2px solid #333; border-radius: 8px; display: inline-block; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-            <p style="margin: 0; color: #333; font-size: 12px; font-weight: 500;">
-                Nowak Vibe Systems Inc. © 2025
-            </p>
-        </div>
-    </div>
 </body>
 </html>
