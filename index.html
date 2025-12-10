@@ -1385,8 +1385,11 @@
             <h2>Suppliers</h2>
             <div class="status" id="suppliersStatus"></div>
             
-            <button class="btn" onclick="loadSuppliers()">🔄 Refresh</button>
-            <button class="btn" onclick="showAddSupplierForm()">➕ Add Supplier</button>
+            <!-- Button Group Card -->
+            <div class="filter-card">
+                <button class="btn" onclick="loadSuppliers()">🔄 Refresh</button>
+                <button class="btn" onclick="showAddSupplierForm()">➕ Add Supplier</button>
+            </div>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -1541,10 +1544,13 @@
             <h2>Items</h2>
             <div class="status" id="itemsStatus"></div>
             
-            <button class="btn" onclick="loadItems()">🔄 Refresh</button>
-            <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
-            <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
-            <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
+            <!-- Button Group Card -->
+            <div class="filter-card">
+                <button class="btn" onclick="loadItems()">🔄 Refresh</button>
+                <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
+                <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
+                <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
+            </div>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -1737,8 +1743,11 @@
             <h2>Customers</h2>
             <div class="status" id="customersStatus"></div>
             
-            <button class="btn" onclick="loadCustomers()">🔄 Refresh</button>
-            <button class="btn" onclick="showAddCustomerForm()">➕ Add Customer</button>
+            <!-- Button Group Card -->
+            <div class="filter-card">
+                <button class="btn" onclick="loadCustomers()">🔄 Refresh</button>
+                <button class="btn" onclick="showAddCustomerForm()">➕ Add Customer</button>
+            </div>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -2035,8 +2044,11 @@
             <h2>Purchase Orders</h2>
             <div class="status" id="purchasesStatus"></div>
             
-            <button class="btn" onclick="loadPurchases()">🔄 Refresh</button>
-            <button class="btn" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
+            <!-- Button Group Card -->
+            <div class="filter-card">
+                <button class="btn" onclick="loadPurchases()">🔄 Refresh</button>
+                <button class="btn" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
+            </div>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -2093,72 +2105,78 @@
             <div id="addPurchaseForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Record New Purchase</h3>
                 <form onsubmit="addPurchase(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Supplier *</label>
-                            <select id="poSupplier" required onchange="loadSupplierItems()">
-                                <option value="">Select Supplier</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Invoice Number *</label>
-                            <input type="text" id="poInvoiceNumber" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Purchase Date *</label>
-                            <input type="date" id="poDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Due Date</label>
-                            <input type="date" id="poDueDate">
-                        </div>
-                        <div class="form-group">
-                            <label>Payment Terms</label>
-                            <select id="poPaymentTerms">
-                                <option value="Net 30">Net 30</option>
-                                <option value="Net 60">Net 60</option>
-                                <option value="COD">COD (Cash on Delivery)</option>
-                                <option value="Prepaid">Prepaid</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="poStatus">
-                                <option value="Received">Received</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Partial">Partial</option>
-                                <option value="Voided">❌ Voided</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Invoice Total *</label>
-                            <input type="number" id="poTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
-                            <small style="color: #666;">Auto-calculated from line items</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Amount Paid</label>
-                            <input type="number" id="poAmountPaid" step="0.01" min="0" value="0" placeholder="0.00">
-                            <small style="color: #666;">Enter amount if paid at time of purchase</small>
+                    <!-- Card 1: Basic Information -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Supplier *</label>
+                                <select id="poSupplier" required onchange="loadSupplierItems()">
+                                    <option value="">Select Supplier</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Invoice Number *</label>
+                                <input type="text" id="poInvoiceNumber" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Purchase Date *</label>
+                                <input type="date" id="poDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Due Date</label>
+                                <input type="date" id="poDueDate">
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Terms</label>
+                                <select id="poPaymentTerms">
+                                    <option value="Net 30">Net 30</option>
+                                    <option value="Net 60">Net 60</option>
+                                    <option value="COD">COD (Cash on Delivery)</option>
+                                    <option value="Prepaid">Prepaid</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="poStatus">
+                                    <option value="Received">Received</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Partial">Partial</option>
+                                    <option value="Voided">❌ Voided</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Invoice Total *</label>
+                                <input type="number" id="poTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
+                                <small style="color: #666;">Auto-calculated from line items</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount Paid</label>
+                                <input type="number" id="poAmountPaid" step="0.01" min="0" value="0" placeholder="0.00">
+                                <small style="color: #666;">Enter amount if paid at time of purchase</small>
+                            </div>
                         </div>
                     </div>
                     
-                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Line Items</h4>
-                    <div class="line-items-container" id="poLineItems">
-                        <div class="line-item-row">
-                            <select class="po-item" required>
-                                <option value="">Select Item</option>
-                            </select>
-                            <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
-                            <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
-                            <button type="button" class="remove-btn">✕</button>
+                    <!-- Card 2: Line Items -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <h4 style="margin-top: 0; margin-bottom: 15px;">Line Items</h4>
+                        <div class="line-items-container" id="poLineItems">
+                            <div class="line-item-row">
+                                <select class="po-item" required>
+                                    <option value="">Select Item</option>
+                                </select>
+                                <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
+                                <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
+                                <button type="button" class="remove-btn">✕</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                            <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
+                            <button type="button" class="btn" onclick="addNewItemFromPO()" style="background: #9c27b0;">➕ Add New Item to Catalog</button>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
-                        <button type="button" class="btn" onclick="addNewItemFromPO()" style="background: #9c27b0;">➕ Add New Item to Catalog</button>
-                    </div>
                     
-                    <div class="form-group" style="margin-top: 20px;">
+                    <div class="form-group">
                         <label>Notes</label>
                         <textarea id="poNotes" rows="2"></textarea>
                     </div>
@@ -2168,7 +2186,7 @@
                 </form>
             </div>
             
-            <div class="data-display-card">
+            <div class="data-display-card" style="margin-top: 30px;">
                 <div id="purchasesTable"></div>
             </div>
         </div>
@@ -2178,8 +2196,11 @@
             <h2>Sales Orders</h2>
             <div class="status" id="salesStatus"></div>
             
-            <button class="btn" onclick="loadSales()">🔄 Refresh</button>
-            <button class="btn" onclick="showAddSaleForm()">➕ Record Sale</button>
+            <!-- Button Group Card -->
+            <div class="filter-card">
+                <button class="btn" onclick="loadSales()">🔄 Refresh</button>
+                <button class="btn" onclick="showAddSaleForm()">➕ Record Sale</button>
+            </div>
             
             <!-- Filter Controls -->
             <div style="margin: 20px 0; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
@@ -2228,91 +2249,97 @@
             <div id="addSaleForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Record New Sale</h3>
                 <form onsubmit="addSale(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Customer *</label>
-                            <select id="soCustomer" required>
-                                <option value="">Select Customer</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Sale Date *</label>
-                            <input type="date" id="soDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Payment Method</label>
-                            <select id="soPayment">
-                                <option value="Cash">Cash</option>
-                                <option value="Credit Card">Credit Card</option>
-                                <option value="Check">Check</option>
-                                <option value="Invoice">Invoice</option>
-                                <option value="Terms (Net 30)">Terms (Net 30)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Due Date (if invoiced)</label>
-                            <input type="date" id="soDueDate">
-                        </div>
-                        <div class="form-group">
-                            <label>Order Total *</label>
-                            <input type="number" id="soTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
-                            <small style="color: #666;">Auto-calculated from line items</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Amount Paid</label>
-                            <input type="number" id="soAmountPaid" step="0.01" min="0" value="0" placeholder="0.00">
-                            <small style="color: #666;">Enter amount if paid at time of sale</small>
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="soStatus">
-                                <option value="Completed">Completed</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Cancelled">Cancelled</option>
-                                <option value="Voided">❌ Voided</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <h4 style="margin-top: 20px; margin-bottom: 10px;">Items Sold</h4>
-                    <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
-                        <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
-                                    <option value="">Select Item</option>
+                    <!-- Card 1: Basic Information -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Customer *</label>
+                                <select id="soCustomer" required>
+                                    <option value="">Select Customer</option>
                                 </select>
                             </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
-                                <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                            <div class="form-group">
+                                <label>Sale Date *</label>
+                                <input type="date" id="soDate" required>
                             </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
-                                <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                            <div class="form-group">
+                                <label>Payment Method</label>
+                                <select id="soPayment">
+                                    <option value="Cash">Cash</option>
+                                    <option value="Credit Card">Credit Card</option>
+                                    <option value="Check">Check</option>
+                                    <option value="Invoice">Invoice</option>
+                                    <option value="Terms (Net 30)">Terms (Net 30)</option>
+                                </select>
                             </div>
-                            <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
-                            <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
+                            <div class="form-group">
+                                <label>Due Date (if invoiced)</label>
+                                <input type="date" id="soDueDate">
+                            </div>
+                            <div class="form-group">
+                                <label>Order Total *</label>
+                                <input type="number" id="soTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
+                                <small style="color: #666;">Auto-calculated from line items</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount Paid</label>
+                                <input type="number" id="soAmountPaid" step="0.01" min="0" value="0" placeholder="0.00">
+                                <small style="color: #666;">Enter amount if paid at time of sale</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="soStatus">
+                                    <option value="Completed">Completed</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                    <option value="Voided">❌ Voided</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="addSOLineItem()">+ Add Line Item</button>
                     
-                    <!-- Summary Boxes -->
-                    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #667eea;">
+                    <!-- Card 2: Items Sold -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <h4 style="margin-top: 0; margin-bottom: 15px;">Items Sold</h4>
+                        <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
+                                        <option value="">Select Item</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
+                                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
+                                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                                </div>
+                                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
+                                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addSOLineItem()" style="margin-top: 10px;">+ Add Line Item</button>
+                    </div>
+                    
+                    <!-- Card 3: Order Summary -->
+                    <div class="content-card" style="margin-bottom: 20px;">
                         <h4 style="margin: 0 0 15px 0; color: #667eea; text-align: center;">📊 Order Summary</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
-                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
                                 <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">📦 Total Items</h3>
                                 <p style="font-size: 32px; font-weight: bold; color: #667eea; margin: 0;" id="soTotalQty">0</p>
                             </div>
-                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
                                 <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">💰 Total Amount</h3>
                                 <p style="font-size: 32px; font-weight: bold; color: #2e7d32; margin: 0;" id="soTotalAmount">$0.00</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="form-group" style="margin-top: 20px;">
+                    <div class="form-group">
                         <label>Notes</label>
                         <textarea id="soNotes" rows="2"></textarea>
                     </div>
@@ -2322,7 +2349,7 @@
                 </form>
             </div>
             
-            <div id="salesTable"></div>
+            <div id="salesTable" style="margin-top: 30px;"></div>
         </div>
 
         <!-- Inventory Tab -->
@@ -2330,13 +2357,15 @@
             <h2>Inventory Report</h2>
             <div class="status" id="inventoryStatus"></div>
             
-            <div style="margin-bottom: 15px;">
+            <!-- Button Group Card -->
+            <div class="filter-card">
                 <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
                 <button class="btn" onclick="showAdjustInventoryForm()" style="background: #f39c12;">📝 Adjust Inventory</button>
                 <button class="btn" onclick="goToAddItem()" style="background: #9c27b0;">➕ Add New Item</button>
             </div>
             
-            <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px;">
+            <!-- Quick Guide Card -->
+            <div class="content-card" style="background: #e3f2fd;">
                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSection('inventoryGuide')">
                     <strong>📖 Quick Guide</strong>
                     <span id="inventoryGuide-toggle" style="color: var(--primary, #667eea);">▼ Hide</span>
@@ -2702,7 +2731,10 @@
                         </p>
                     </div>
                 </div>
-                <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">🔄 Refresh Items</button>
+                <!-- Button Group Card -->
+                <div class="filter-card">
+                    <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">🔄 Refresh Items</button>
+                </div>
             </div>
             
             <div class="data-display-card">
@@ -7414,12 +7446,12 @@
             });
             const balance = totalAmount - totalPaid;
             
-            // CARD WRAPPER FOR OVAL BUTTONS
+            // SINGLE CARD - Buttons directly above boxes (like Inventory)
             let html = `
-                <div class="sales-filter-card">
-                    <div style="font-weight: 600; color: #666; margin-bottom: 10px; font-size: 14px;">📅 Quick Date Filters</div>
-                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap; min-width: max-content; padding: 5px 0;">
+                <div class="sales-data-card">
+                    <!-- Oval Buttons - No wrapper, directly in card -->
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 10px;">
                             <button onclick="applySalesDateFilter('today', event)" class="oval-filter-btn" style="background: #e3f2fd; color: #1565c0; border: 3px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 Last Day
                             </button>
@@ -7452,13 +7484,9 @@
                             </button>
                         </div>
                     </div>
-                </div>
-                
-                <!-- DATA CARD WRAPPER -->
-                <div class="sales-data-card">
             `;
             
-            // Summary boxes
+            // Summary boxes (directly below buttons)
             html += `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
                     <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #1976d2;">
@@ -7841,35 +7869,41 @@
             
             // BUILD STATUS TAGS FIRST (clickable filters) - above summary boxes
             let html = `
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                    ${negativeCount > 0 ? `<span onclick="filterInventoryByStatus('negative', event)" style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🚨 ${negativeCount} Negative</span>` : ''}
-                    ${outOfStockCount > 0 ? `<span onclick="filterInventoryByStatus('out', event)" style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
-                    ${lowStockCount > 0 ? `<span onclick="filterInventoryByStatus('low', event)" style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟡 ${lowStockCount} Low Stock</span>` : ''}
-                    <span onclick="filterInventoryByStatus('ok', event)" style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟢 ${inStockCount} In Stock</span>
-                    <span onclick="filterInventoryByStatus('', event)" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Show All</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${items.length}</div>
-                        <div style="font-size: 13px; color: #6c757d;">Total Items</div>
+                <div class="data-display-card">
+                    <!-- Oval Filter Buttons -->
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            ${negativeCount > 0 ? `<span onclick="filterInventoryByStatus('negative', event)" class="oval-filter-btn" style="background: #b71c1c; color: white; padding: 8px 15px; border-radius: 20px; border: 3px solid #b71c1c; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🚨 ${negativeCount} Negative</span>` : ''}
+                            ${outOfStockCount > 0 ? `<span onclick="filterInventoryByStatus('out', event)" class="oval-filter-btn" style="background: #c62828; color: white; padding: 8px 15px; border-radius: 20px; border: 3px solid #c62828; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🔴 ${outOfStockCount} Out of Stock</span>` : ''}
+                            ${lowStockCount > 0 ? `<span onclick="filterInventoryByStatus('low', event)" class="oval-filter-btn" style="background: #ef6c00; color: white; padding: 8px 15px; border-radius: 20px; border: 3px solid #ef6c00; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟡 ${lowStockCount} Low Stock</span>` : ''}
+                            <span onclick="filterInventoryByStatus('ok', event)" class="oval-filter-btn" style="background: #2e7d32; color: white; padding: 8px 15px; border-radius: 20px; border: 3px solid #2e7d32; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">🟢 ${inStockCount} In Stock</span>
+                            <span onclick="filterInventoryByStatus('', event)" class="oval-filter-btn" style="background: #6c757d; color: white; padding: 8px 15px; border-radius: 20px; border: 3px solid #6c757d; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Show All</span>
+                        </div>
                     </div>
-                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${totalQty.toLocaleString()}</div>
-                        <div style="font-size: 13px; color: #6c757d;">Total Units</div>
+                    
+                    <!-- Summary Boxes -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${items.length}</div>
+                            <div style="font-size: 13px; color: #6c757d;">Total Items</div>
+                        </div>
+                        <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${totalQty.toLocaleString()}</div>
+                            <div style="font-size: 13px; color: #6c757d;">Total Units</div>
+                        </div>
+                        <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
+                        </div>
+                        <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
+                        </div>
+                        <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'}; word-wrap: break-word; overflow-wrap: break-word;">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div style="font-size: 13px; color: #6c757d;">Net Profit</div>
+                        </div>
                     </div>
-                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
-                    </div>
-                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
-                    </div>
-                    <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'}; word-wrap: break-word; overflow-wrap: break-word;">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div style="font-size: 13px; color: #6c757d;">Net Profit</div>
-                    </div>
-                </div>
             `;
             
             // BUILD TABLE
@@ -7931,6 +7965,7 @@
             });
 
             html += '</tbody></table>';
+            html += '</div>'; // Close data-display-card
             document.getElementById('inventoryTable').innerHTML = html;
             setTimeout(() => makeSortable('inventoryDataTable'), 0);
         }
