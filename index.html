@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-17:55 - Fixed Save Sale button -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-18:10 - Gradient background only, solid buttons -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3261,6 +3261,9 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            // Apply gradient for current theme
+            applyThemeGradient();
+            
             updateConfigStatus();
             loadInvoiceSettings();
             const today = new Date().toISOString().split('T')[0];
@@ -3732,6 +3735,15 @@
             }
         }
 
+        
+        // Apply gradient for current theme (called on page load)
+        function applyThemeGradient() {
+            const themeColors = getThemeColors();
+            const gradient = `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`;
+            document.documentElement.style.setProperty('--theme-gradient', gradient);
+            document.body.style.background = gradient;
+        }
+        
         function changeTheme() {
             const theme = document.getElementById('themeSelector').value;
             const body = document.body;
@@ -3856,6 +3868,13 @@
             document.documentElement.style.setProperty('--primary', themeColors.primary);
             document.documentElement.style.setProperty('--secondary', themeColors.accent);
             document.documentElement.style.setProperty('--primary-light', hexToRgbaLight(themeColors.primary));
+            
+            // ✨ NEW: Apply dynamic gradient to ALL themes
+            const gradient = `linear-gradient(135deg, ${themeColors.primary} 0%, ${themeColors.accent} 100%)`;
+            document.documentElement.style.setProperty('--theme-gradient', gradient);
+            
+            // Apply gradient to body background
+            document.body.style.background = gradient;
             
             showStatus('configStatus', `✅ Theme changed to ${theme}!`, 'success');
         }
@@ -10348,8 +10367,8 @@
                 if (reportFilters.adjustmentType) {
                     console.log('Applying adjustment type filter:', reportFilters.adjustmentType);
                     adjustments = adjustments.filter(a => {
-                        const reason = (a.Reason || '').toUpperCase();
-                        const filterType = reportFilters.adjustmentType.toUpperCase();
+                        const reason = String(a.Reason || '').toUpperCase();
+                        const filterType = String(reportFilters.adjustmentType).toUpperCase();
                         return reason.includes(filterType);
                     });
                     console.log('After adjustment type filter:', adjustments.length);
@@ -10423,7 +10442,7 @@
                     const qtyChange = parseFloat(a.Qty_Change || a.Adjustment) || 0;
                     const qtyBefore = parseFloat(a.Qty_Before || a.Previous_Qty) || 0;
                     const qtyAfter = parseFloat(a.Qty_After || a.New_Qty) || 0;
-                    const reason = a.Reason || '-';
+                    const reason = String(a.Reason || '-');
                     const notes = a.Notes || '';
                     
                     // Color code the reason
