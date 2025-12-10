@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-16:45 - Adjustment report debugging -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-16:50 - Clear Dates button added -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8809,8 +8809,11 @@
                                 <div onclick="selectDatePreset('year', '📈 This Year')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>📈</span> This Year
                                 </div>
-                                <div onclick="selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                <div onclick="selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
                                     <span>🗃️</span> All Time
+                                </div>
+                                <div onclick="selectDatePreset('clear', '🔄 Clear Dates')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8f9fa;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
+                                    <span>🔄</span> <strong>Clear Dates</strong>
                                 </div>
                             </div>
                         </div>
@@ -8840,12 +8843,6 @@
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             console.log('📱 Modal should now be visible');
-            
-            // Auto-select "All Time" to clear date filters for mobile compatibility
-            if (config.filters.includes('dateRange')) {
-                console.log('📱 Auto-selecting All Time preset');
-                selectDatePreset('all', '🗃️ All Time');
-            }
         }
         
         function setDatePreset(preset) {
@@ -8876,13 +8873,14 @@
                     toDate = today;
                     break;
                 case 'all':
-                    // For "All Time", CLEAR the date filters completely
+                case 'clear':
+                    // For "All Time" or "Clear Dates", CLEAR the date filters completely
                     // This shows ALL records without any date filtering
                     const fromEl = document.getElementById('rptFilter_fromDate');
                     const toEl = document.getElementById('rptFilter_toDate');
                     if (fromEl) fromEl.value = '';
                     if (toEl) toEl.value = '';
-                    console.log('📅 All Time selected - cleared date filters');
+                    console.log('📅 Dates cleared - will show all records');
                     return; // Exit early, don't set dates below
             }
             
