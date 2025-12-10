@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-16:10 - Fix mobile report dates -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-16:35 - SO line items fix + summary boxes -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2264,6 +2264,21 @@
                         </div>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="addSOLineItem()">+ Add Line Item</button>
+                    
+                    <!-- Summary Boxes -->
+                    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 2px solid #667eea;">
+                        <h4 style="margin: 0 0 15px 0; color: #667eea; text-align: center;">📊 Order Summary</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">📦 Total Items</h3>
+                                <p style="font-size: 32px; font-weight: bold; color: #667eea; margin: 0;" id="soTotalQty">0</p>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">💰 Total Amount</h3>
+                                <p style="font-size: 32px; font-weight: bold; color: #2e7d32; margin: 0;" id="soTotalAmount">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="form-group" style="margin-top: 20px;">
                         <label>Notes</label>
@@ -6541,11 +6556,61 @@
         function showAddSaleForm() {
             loadSaleDropdowns();
             document.getElementById('addSaleForm').style.display = 'block';
+            
+            // Setup event listeners for the initial line item
+            setTimeout(() => {
+                const firstRow = document.querySelector('#soLineItems .line-item-row');
+                if (firstRow) {
+                    const itemSelect = firstRow.querySelector('.so-item');
+                    const qtyInput = firstRow.querySelector('.so-qty');
+                    const priceInput = firstRow.querySelector('.so-price');
+                    const removeBtn = firstRow.querySelector('.remove-btn');
+                    
+                    if (itemSelect) {
+                        itemSelect.addEventListener('change', function() {
+                            updateSOItemInfo(this);
+                        });
+                    }
+                    
+                    if (qtyInput) {
+                        qtyInput.addEventListener('input', function() {
+                            const row = this.closest('.line-item-row');
+                            const itemSelect = row.querySelector('.so-item');
+                            if (itemSelect.value) {
+                                updateSOItemInfo(itemSelect);
+                            }
+                            calculateSOTotal();
+                        });
+                    }
+                    
+                    if (priceInput) {
+                        priceInput.addEventListener('input', function() {
+                            calculateSOTotal();
+                        });
+                    }
+                    
+                    if (removeBtn) {
+                        removeBtn.addEventListener('click', function() {
+                            removeLineItem(this);
+                            calculateSOTotal();
+                        });
+                    }
+                }
+                
+                // Initialize summary boxes
+                calculateSOTotal();
+            }, 100);
         }
 
         function hideAddSaleForm() {
             document.getElementById('addSaleForm').style.display = 'none';
             document.querySelector('#addSaleForm form').reset();
+            
+            // Reset summary boxes
+            const qtyBox = document.getElementById('soTotalQty');
+            const amountBox = document.getElementById('soTotalAmount');
+            if (qtyBox) qtyBox.textContent = '0';
+            if (amountBox) amountBox.textContent = '$0.00';
         }
 
         async function loadSaleDropdowns() {
@@ -6719,15 +6784,28 @@
         
         function calculateSOTotal() {
             let total = 0;
+            let totalQty = 0;
+            
             document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
                 const qty = parseInt(row.querySelector('.so-qty')?.value) || 0;
                 const price = parseFloat(row.querySelector('.so-price')?.value) || 0;
-                total += qty * price;
+                const lineTotal = qty * price;
+                total += lineTotal;
+                totalQty += qty;
             });
+            
+            // Update hidden total field (if exists)
             const totalField = document.getElementById('soTotal');
             if (totalField) {
                 totalField.value = total.toFixed(2);
             }
+            
+            // Update summary boxes
+            const qtyBox = document.getElementById('soTotalQty');
+            const amountBox = document.getElementById('soTotalAmount');
+            
+            if (qtyBox) qtyBox.textContent = totalQty;
+            if (amountBox) amountBox.textContent = '$' + total.toFixed(2);
         }
 
         let isSavingSale = false; // Prevent double-click
@@ -6822,7 +6900,7 @@
                     amountPaid: parseFloat(document.getElementById('soAmountPaid').value) || 0,
                     status: document.getElementById('soStatus').value,
                     notes: document.getElementById('soNotes').value,
-                    lines: lineItems
+                    lineItems: lineItems  // FIXED: was "lines", backend expects "lineItems"
                 };
 
                 const result = await apiCall('createSalesOrder', data);
@@ -8762,6 +8840,12 @@
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             console.log('📱 Modal should now be visible');
+            
+            // Auto-select "All Time" to clear date filters for mobile compatibility
+            if (config.filters.includes('dateRange')) {
+                console.log('📱 Auto-selecting All Time preset');
+                selectDatePreset('all', '🗃️ All Time');
+            }
         }
         
         function setDatePreset(preset) {
@@ -8792,15 +8876,21 @@
                     toDate = today;
                     break;
                 case 'all':
-                    fromDate = new Date(2020, 0, 1); // Far back
-                    toDate = today;
-                    break;
+                    // For "All Time", CLEAR the date filters completely
+                    // This shows ALL records without any date filtering
+                    const fromEl = document.getElementById('rptFilter_fromDate');
+                    const toEl = document.getElementById('rptFilter_toDate');
+                    if (fromEl) fromEl.value = '';
+                    if (toEl) toEl.value = '';
+                    console.log('📅 All Time selected - cleared date filters');
+                    return; // Exit early, don't set dates below
             }
             
             const fromEl = document.getElementById('rptFilter_fromDate');
             const toEl = document.getElementById('rptFilter_toDate');
             if (fromEl) fromEl.value = fromDate.toISOString().split('T')[0];
             if (toEl) toEl.value = toDate.toISOString().split('T')[0];
+            console.log('📅 Date preset applied:', preset, 'From:', fromDate.toISOString().split('T')[0], 'To:', toDate.toISOString().split('T')[0]);
         }
         
         function toggleDatePresetPicker() {
@@ -9493,23 +9583,29 @@
                 return null;
             }
             
-            // Apply filters
+            // Apply filters with mobile-safe date parsing
             let filtered = allDetails;
-            if (reportFilters.fromDate) {
+            
+            // Date filters
+            if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
                 const fromDate = new Date(reportFilters.fromDate);
-                fromDate.setHours(0, 0, 0, 0);
-                filtered = filtered.filter(d => {
-                    const soDate = parseFlexibleDate(d.soDate);
-                    return soDate && soDate >= fromDate;
-                });
+                if (!isNaN(fromDate.getTime())) {
+                    fromDate.setHours(0, 0, 0, 0);
+                    filtered = filtered.filter(d => {
+                        const soDate = parseDateSafe(d.soDate);
+                        return soDate && soDate >= fromDate;
+                    });
+                }
             }
-            if (reportFilters.toDate) {
+            if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
                 const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59, 999);
-                filtered = filtered.filter(d => {
-                    const soDate = parseFlexibleDate(d.soDate);
-                    return soDate && soDate <= toDate;
-                });
+                if (!isNaN(toDate.getTime())) {
+                    toDate.setHours(23, 59, 59, 999);
+                    filtered = filtered.filter(d => {
+                        const soDate = parseDateSafe(d.soDate);
+                        return soDate && soDate <= toDate;
+                    });
+                }
             }
             if (reportFilters.customer) {
                 filtered = filtered.filter(d => d.customerId === reportFilters.customer);
@@ -9602,22 +9698,26 @@
                 return null;
             }
             
-            // Apply filters
-            if (reportFilters.fromDate) {
+            // Apply filters with mobile-safe date parsing
+            if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
                 const fromDate = new Date(reportFilters.fromDate);
-                fromDate.setHours(0, 0, 0, 0);
-                sales = sales.filter(s => {
-                    const saleDate = parseFlexibleDate(s.Sale_Date || s.SO_Date);
-                    return saleDate && saleDate >= fromDate;
-                });
+                if (!isNaN(fromDate.getTime())) {
+                    fromDate.setHours(0, 0, 0, 0);
+                    sales = sales.filter(s => {
+                        const saleDate = parseDateSafe(s.Sale_Date || s.SO_Date);
+                        return saleDate && saleDate >= fromDate;
+                    });
+                }
             }
-            if (reportFilters.toDate) {
+            if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
                 const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59, 999);
-                sales = sales.filter(s => {
-                    const saleDate = parseFlexibleDate(s.Sale_Date || s.SO_Date);
-                    return saleDate && saleDate <= toDate;
-                });
+                if (!isNaN(toDate.getTime())) {
+                    toDate.setHours(23, 59, 59, 999);
+                    sales = sales.filter(s => {
+                        const saleDate = parseDateSafe(s.Sale_Date || s.SO_Date);
+                        return saleDate && saleDate <= toDate;
+                    });
+                }
             }
             if (reportFilters.customer) {
                 sales = sales.filter(s => s.Customer_ID === reportFilters.customer);
@@ -10354,6 +10454,71 @@
             if (dateVal instanceof Date) return dateVal;
             const d = new Date(dateVal);
             return isNaN(d.getTime()) ? null : d;
+        }
+        
+        // Enhanced date parsing for mobile Safari compatibility - used by all reports
+        function parseDateSafe(dateVal) {
+            if (!dateVal) return null;
+            if (dateVal instanceof Date) return dateVal;
+            
+            try {
+                // Try standard parsing first
+                const d = new Date(dateVal);
+                if (!isNaN(d.getTime())) return d;
+                
+                // Mobile Safari fallback: Try parsing common formats manually
+                if (typeof dateVal === 'string') {
+                    // Handle YYYY-MM-DD, MM/DD/YYYY, etc.
+                    const parts = dateVal.split(/[-/]/);
+                    if (parts.length === 3) {
+                        const year = parseInt(parts[0]);
+                        const month = parseInt(parts[1]) - 1; // JS months are 0-indexed
+                        const day = parseInt(parts[2]);
+                        const d2 = new Date(year, month, day);
+                        if (!isNaN(d2.getTime())) return d2;
+                    }
+                }
+                
+                return null;
+            } catch (e) {
+                console.error('Error parsing date:', dateVal, e);
+                return null;
+            }
+        }
+        
+        // Apply date range filter with mobile-safe parsing
+        function applyDateRangeFilter(items, dateField) {
+            let filtered = items;
+            
+            try {
+                // From date
+                if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
+                    const fromDate = new Date(reportFilters.fromDate);
+                    if (!isNaN(fromDate.getTime())) {
+                        fromDate.setHours(0, 0, 0, 0);
+                        filtered = filtered.filter(item => {
+                            const itemDate = parseDateSafe(item[dateField]);
+                            return itemDate && itemDate >= fromDate;
+                        });
+                    }
+                }
+                
+                // To date
+                if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
+                    const toDate = new Date(reportFilters.toDate);
+                    if (!isNaN(toDate.getTime())) {
+                        toDate.setHours(23, 59, 59, 999);
+                        filtered = filtered.filter(item => {
+                            const itemDate = parseDateSafe(item[dateField]);
+                            return itemDate && itemDate <= toDate;
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('Error applying date filter:', e);
+            }
+            
+            return filtered;
         }
         
         // Helper to filter transactions by status
