@@ -5031,6 +5031,49 @@
                 return;
             }
 
+            // ===== VALIDATION #1: Check for Duplicate Items =====
+            const itemCounts = {};
+            lineItems.forEach(line => {
+                itemCounts[line.itemId] = (itemCounts[line.itemId] || 0) + 1;
+            });
+            
+            const duplicates = Object.entries(itemCounts).filter(([id, count]) => count > 1);
+            if (duplicates.length > 0) {
+                // Find item names for the warning message
+                const duplicateNames = duplicates.map(([itemId]) => {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    return item ? item.Item_Description : itemId;
+                }).join(', ');
+                
+                const continueWithDupes = confirm(
+                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
+                    'The following items appear on multiple lines:\n' +
+                    duplicateNames + '\n\n' +
+                    'This may be intentional (different costs), but could also be a mistake.\n\n' +
+                    '✅ Click OK to continue saving\n' +
+                    '❌ Click Cancel to review the order'
+                );
+                
+                if (!continueWithDupes) return;
+            }
+            
+            // ===== VALIDATION #2: Check for Overpayment =====
+            const amountPaid = parseFloat(document.getElementById('poAmountPaid').value) || 0;
+            if (amountPaid > calculatedTotal + 0.01) { // Allow 1 cent rounding
+                const overpayment = amountPaid - calculatedTotal;
+                const continueWithOverpay = confirm(
+                    '⚠️ OVERPAYMENT WARNING\n\n' +
+                    `Order Total: $${calculatedTotal.toFixed(2)}\n` +
+                    `Amount Paid: $${amountPaid.toFixed(2)}\n` +
+                    `Overpayment: $${overpayment.toFixed(2)}\n\n` +
+                    'You are entering MORE payment than the order total.\n\n' +
+                    '✅ Click OK to continue (will show overpaid)\n' +
+                    '❌ Click Cancel to correct the amount'
+                );
+                
+                if (!continueWithOverpay) return;
+            }
+
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
@@ -6235,6 +6278,49 @@
                 return;
             }
             
+            // ===== VALIDATION #1: Check for Duplicate Items =====
+            const itemCounts = {};
+            newLines.forEach(line => {
+                itemCounts[line.itemId] = (itemCounts[line.itemId] || 0) + 1;
+            });
+            
+            const duplicates = Object.entries(itemCounts).filter(([id, count]) => count > 1);
+            if (duplicates.length > 0) {
+                // Find item names for the warning message
+                const duplicateNames = duplicates.map(([itemId]) => {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    return item ? item.Item_Description : itemId;
+                }).join(', ');
+                
+                const continueWithDupes = confirm(
+                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
+                    'The following items appear on multiple lines:\n' +
+                    duplicateNames + '\n\n' +
+                    'This may be intentional (different costs), but could also be a mistake.\n\n' +
+                    '✅ Click OK to continue saving\n' +
+                    '❌ Click Cancel to review the order'
+                );
+                
+                if (!continueWithDupes) return;
+            }
+            
+            // ===== VALIDATION #2: Check for Overpayment =====
+            const amountPaid = parseFloat(document.getElementById('editPOAmountPaid').value) || 0;
+            if (amountPaid > totalAmount + 0.01) { // Allow 1 cent rounding
+                const overpayment = amountPaid - totalAmount;
+                const continueWithOverpay = confirm(
+                    '⚠️ OVERPAYMENT WARNING\n\n' +
+                    `Order Total: $${totalAmount.toFixed(2)}\n` +
+                    `Amount Paid: $${amountPaid.toFixed(2)}\n` +
+                    `Overpayment: $${overpayment.toFixed(2)}\n\n` +
+                    'You are entering MORE payment than the order total.\n\n' +
+                    '✅ Click OK to continue (will show overpaid)\n' +
+                    '❌ Click Cancel to correct the amount'
+                );
+                
+                if (!continueWithOverpay) return;
+            }
+            
             const data = {
                 poId: po.PO_ID,
                 supplierId: document.getElementById('editPOSupplier').value,
@@ -6443,6 +6529,49 @@
             if (newLines.length === 0) {
                 alert('Please add at least one line item');
                 return;
+            }
+            
+            // ===== VALIDATION #1: Check for Duplicate Items =====
+            const itemCounts = {};
+            newLines.forEach(line => {
+                itemCounts[line.itemId] = (itemCounts[line.itemId] || 0) + 1;
+            });
+            
+            const duplicates = Object.entries(itemCounts).filter(([id, count]) => count > 1);
+            if (duplicates.length > 0) {
+                // Find item names for the warning message
+                const duplicateNames = duplicates.map(([itemId]) => {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    return item ? item.Item_Description : itemId;
+                }).join(', ');
+                
+                const continueWithDupes = confirm(
+                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
+                    'The following items appear on multiple lines:\n' +
+                    duplicateNames + '\n\n' +
+                    'This may be intentional (different prices), but could also be a mistake.\n\n' +
+                    '✅ Click OK to continue saving\n' +
+                    '❌ Click Cancel to review the order'
+                );
+                
+                if (!continueWithDupes) return;
+            }
+            
+            // ===== VALIDATION #2: Check for Overpayment =====
+            const amountPaid = parseFloat(document.getElementById('editSOAmountPaid').value) || 0;
+            if (amountPaid > totalAmount + 0.01) { // Allow 1 cent rounding
+                const overpayment = amountPaid - totalAmount;
+                const continueWithOverpay = confirm(
+                    '⚠️ OVERPAYMENT WARNING\n\n' +
+                    `Order Total: $${totalAmount.toFixed(2)}\n` +
+                    `Amount Paid: $${amountPaid.toFixed(2)}\n` +
+                    `Overpayment: $${overpayment.toFixed(2)}\n\n` +
+                    'You are entering MORE payment than the order total.\n\n' +
+                    '✅ Click OK to continue (will show overpaid)\n' +
+                    '❌ Click Cancel to correct the amount'
+                );
+                
+                if (!continueWithOverpay) return;
             }
             
             const data = {
@@ -6831,6 +6960,49 @@
             if (lineItems.length === 0) {
                 alert('⚠️ Please add at least one item to the sale.\n\nSelect an item and enter a quantity before saving.');
                 return;
+            }
+
+            // ===== VALIDATION #1: Check for Duplicate Items =====
+            const itemCounts = {};
+            lineItems.forEach(line => {
+                itemCounts[line.itemId] = (itemCounts[line.itemId] || 0) + 1;
+            });
+            
+            const duplicates = Object.entries(itemCounts).filter(([id, count]) => count > 1);
+            if (duplicates.length > 0) {
+                // Find item names for the warning message
+                const duplicateNames = duplicates.map(([itemId]) => {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    return item ? item.Item_Description : itemId;
+                }).join(', ');
+                
+                const continueWithDupes = confirm(
+                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
+                    'The following items appear on multiple lines:\n' +
+                    duplicateNames + '\n\n' +
+                    'This may be intentional (different prices), but could also be a mistake.\n\n' +
+                    '✅ Click OK to continue saving\n' +
+                    '❌ Click Cancel to review the order'
+                );
+                
+                if (!continueWithDupes) return;
+            }
+            
+            // ===== VALIDATION #2: Check for Overpayment =====
+            const amountPaid = parseFloat(document.getElementById('soAmountPaid').value) || 0;
+            if (amountPaid > calculatedTotal + 0.01) { // Allow 1 cent rounding
+                const overpayment = amountPaid - calculatedTotal;
+                const continueWithOverpay = confirm(
+                    '⚠️ OVERPAYMENT WARNING\n\n' +
+                    `Order Total: $${calculatedTotal.toFixed(2)}\n` +
+                    `Amount Paid: $${amountPaid.toFixed(2)}\n` +
+                    `Overpayment: $${overpayment.toFixed(2)}\n\n` +
+                    'You are entering MORE payment than the order total.\n\n' +
+                    '✅ Click OK to continue (will show overpaid)\n' +
+                    '❌ Click Cancel to correct the amount'
+                );
+                
+                if (!continueWithOverpay) return;
             }
 
             // LOCK - Prevent double submit
