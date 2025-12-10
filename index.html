@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-15:50 - Forces GitHub Pages to update -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-16:10 - Fix mobile report dates -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8373,8 +8373,16 @@
         }
         
         async function showReport(reportType) {
+            // Mobile debugging - show what's happening
+            console.log('📱 showReport called with:', reportType);
+            
             // Open the report setup modal instead of running immediately
-            openReportSetup(reportType);
+            try {
+                openReportSetup(reportType);
+            } catch (e) {
+                alert('❌ Error opening report setup: ' + e.message);
+                console.error('Error in showReport:', e);
+            }
         }
         
         // Report configuration for each report type
@@ -8479,10 +8487,12 @@
         };
         
         function openReportSetup(reportType) {
+            console.log('📱 openReportSetup called with:', reportType);
             currentReport = reportType;
             reportFilters = {}; // Reset filters
             
             const config = reportConfig[reportType] || { title: 'Report', filters: [] };
+            console.log('📱 Report config:', config);
             
             // Set title
             document.getElementById('reportSetupTitle').textContent = config.title;
@@ -8492,20 +8502,17 @@
             
             // Date Range
             if (config.filters.includes('dateRange')) {
-                const today = new Date();
-                const thirtyDaysAgo = new Date(today);
-                thirtyDaysAgo.setDate(today.getDate() - 30);
-                const defaultFrom = thirtyDaysAgo.toISOString().split('T')[0];
-                const defaultTo = today.toISOString().split('T')[0];
+                // Don't set default dates - show ALL records by default
+                // User can add filters if they want to narrow it down
                 
                 filterHtml += `
                     <div class="form-group">
                         <label>📅 ${config.dateLabel || 'Date'} From</label>
-                        <input type="date" id="rptFilter_fromDate" value="${defaultFrom}">
+                        <input type="date" id="rptFilter_fromDate" value="" placeholder="All dates">
                     </div>
                     <div class="form-group">
                         <label>📅 ${config.dateLabel || 'Date'} To</label>
-                        <input type="date" id="rptFilter_toDate" value="${defaultTo}">
+                        <input type="date" id="rptFilter_toDate" value="" placeholder="All dates">
                     </div>`;
             }
             
@@ -8742,9 +8749,19 @@
                 </div>`;
             
             // Show modal
-            document.getElementById('reportSetupModal').style.display = 'block';
+            console.log('📱 About to show report setup modal...');
+            const modalElement = document.getElementById('reportSetupModal');
+            console.log('📱 Modal element:', modalElement ? 'Found' : 'NOT FOUND');
+            
+            if (!modalElement) {
+                alert('❌ ERROR: Report modal element not found in DOM!');
+                return;
+            }
+            
+            modalElement.style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
+            console.log('📱 Modal should now be visible');
         }
         
         function setDatePreset(preset) {
@@ -9288,6 +9305,8 @@
         }
         
         async function executeReport() {
+            console.log('📱 executeReport called for:', currentReport);
+            
             // Gather filter values
             reportFilters = {
                 fromDate: document.getElementById('rptFilter_fromDate')?.value || '',
@@ -9308,12 +9327,15 @@
                 adjustmentType: document.getElementById('rptFilter_adjustmentType')?.value || ''
             };
             
+            console.log('📱 Report filters:', reportFilters);
+            
             const container = document.getElementById('reportSetupContent');
             
             // Show loading
             container.innerHTML = '<div style="padding: 40px; text-align: center;"><div style="font-size: 24px; margin-bottom: 10px;">⏳</div>Generating report...</div>';
             
             try {
+                console.log('📱 About to generate report:', currentReport);
                 let reportHtml = '';
                 
                 switch(currentReport) {
@@ -9939,25 +9961,38 @@
                 
                 // Apply date filters with better error handling
                 try {
-                    if (reportFilters.fromDate) {
+                    if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
                         console.log('Applying fromDate filter:', reportFilters.fromDate);
                         const fromDate = new Date(reportFilters.fromDate);
-                        fromDate.setHours(0, 0, 0, 0);
-                        adjustments = adjustments.filter(a => {
-                            const adjDate = parseDateSafe(a.Adjustment_Date || a.Date);
-                            return adjDate && adjDate >= fromDate;
-                        });
-                        console.log('After fromDate filter:', adjustments.length);
+                        if (!isNaN(fromDate.getTime())) {
+                            fromDate.setHours(0, 0, 0, 0);
+                            adjustments = adjustments.filter(a => {
+                                const adjDate = parseDateSafe(a.Adjustment_Date || a.Date);
+                                return adjDate && adjDate >= fromDate;
+                            });
+                            console.log('After fromDate filter:', adjustments.length);
+                        } else {
+                            console.warn('Invalid fromDate:', reportFilters.fromDate);
+                        }
+                    } else {
+                        console.log('No fromDate filter - showing all dates');
                     }
-                    if (reportFilters.toDate) {
+                    
+                    if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
                         console.log('Applying toDate filter:', reportFilters.toDate);
                         const toDate = new Date(reportFilters.toDate);
-                        toDate.setHours(23, 59, 59, 999);
-                        adjustments = adjustments.filter(a => {
-                            const adjDate = parseDateSafe(a.Adjustment_Date || a.Date);
-                            return adjDate && adjDate <= toDate;
-                        });
-                        console.log('After toDate filter:', adjustments.length);
+                        if (!isNaN(toDate.getTime())) {
+                            toDate.setHours(23, 59, 59, 999);
+                            adjustments = adjustments.filter(a => {
+                                const adjDate = parseDateSafe(a.Adjustment_Date || a.Date);
+                                return adjDate && adjDate <= toDate;
+                            });
+                            console.log('After toDate filter:', adjustments.length);
+                        } else {
+                            console.warn('Invalid toDate:', reportFilters.toDate);
+                        }
+                    } else {
+                        console.log('No toDate filter - showing all dates');
                     }
                 } catch (e) {
                     console.error('Error applying date filters:', e);
