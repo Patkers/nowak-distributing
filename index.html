@@ -1079,7 +1079,8 @@
             
             /* Draggable header hint */
             .draggable-added:hover {
-                background: rgba(255, 255, 255, 0.1) !important;
+                background: rgba(0, 0, 0, 0.1) !important;
+                cursor: move;
             }
             
             /* Center modals initially */
@@ -5978,9 +5979,12 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Update Amount Paid</label>
-                            <input type="number" id="editPOAmountPaid" step="0.01" min="0" value="${parseFloat(po.Amount_Paid || 0).toFixed(2)}">
-                            <small style="color: #666;">Update if making additional payment</small>
+                            <label>💵 Amount Paid</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <span style="position: absolute; left: 12px; font-size: 16px; font-weight: bold; color: #666;">$</span>
+                                <input type="number" id="editPOAmountPaid" step="0.01" min="0" placeholder="0.00" value="${parseFloat(po.Amount_Paid || 0).toFixed(2)}" style="padding-left: 28px; font-size: 16px; font-weight: 600;">
+                            </div>
+                            <small style="color: #666;">💡 Enter numbers only (e.g., 115.46 for $115.46)</small>
                         </div>
                         <div style="color: #666; font-size: 13px; background: #fff3cd; padding: 10px; border-radius: 6px;">
                             ⚠️ Total will recalculate based on line items below
@@ -6339,9 +6343,12 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Update Amount Paid</label>
-                            <input type="number" id="editSOAmountPaid" step="0.01" min="0" value="${parseFloat(so.Amount_Paid || 0).toFixed(2)}">
-                            <small style="color: #666;">Update if receiving additional payment</small>
+                            <label>💵 Amount Paid</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <span style="position: absolute; left: 12px; font-size: 16px; font-weight: bold; color: #666;">$</span>
+                                <input type="number" id="editSOAmountPaid" step="0.01" min="0" placeholder="0.00" value="${parseFloat(so.Amount_Paid || 0).toFixed(2)}" style="padding-left: 28px; font-size: 16px; font-weight: 600;">
+                            </div>
+                            <small style="color: #666;">💡 Enter numbers only (e.g., 115.46 for $115.46)</small>
                         </div>
                         <div style="color: #666; font-size: 13px; background: #fff3cd; padding: 10px; border-radius: 6px;">
                             ⚠️ Total will recalculate based on line items below
@@ -9821,162 +9828,179 @@
         
         // Inventory Adjustments Report
         async function generateInventoryAdjustmentsModal() {
-            const [adjustmentsResult, itemsResult] = await Promise.all([
-                apiCall('getInventoryAdjustments'),
-                apiCall('getItems')
-            ]);
-            
-            if (!adjustmentsResult?.data) {
-                return `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>
-                    <p style="color: #888; text-align: center; padding: 40px;">No adjustments found. Adjustments are logged when inventory changes.</p>`;
-            }
-            
-            const items = itemsResult?.data || [];
-            let adjustments = adjustmentsResult.data;
-            
-            // Helper to get item description
-            function getItemDesc(itemId) {
-                const item = items.find(i => String(i.Item_ID) === String(itemId));
-                return item ? item.Item_Description : itemId;
-            }
-            
-            function getItemSKU(itemId) {
-                const item = items.find(i => String(i.Item_ID) === String(itemId));
-                return item ? item.SKU : '-';
-            }
-            
-            // Apply date filters
-            if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
-                fromDate.setHours(0, 0, 0, 0);
-                adjustments = adjustments.filter(a => {
-                    const adjDate = parseDate(a.Adjustment_Date || a.Date);
-                    return adjDate && adjDate >= fromDate;
-                });
-            }
-            if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
-                toDate.setHours(23, 59, 59, 999);
-                adjustments = adjustments.filter(a => {
-                    const adjDate = parseDate(a.Adjustment_Date || a.Date);
-                    return adjDate && adjDate <= toDate;
-                });
-            }
-            
-            // Apply item filter
-            if (reportFilters.item) {
-                adjustments = adjustments.filter(a => String(a.Item_ID) === String(reportFilters.item));
-            }
-            
-            // Apply adjustment type filter
-            if (reportFilters.adjustmentType) {
-                adjustments = adjustments.filter(a => {
-                    const reason = (a.Reason || '').toUpperCase();
-                    const filterType = reportFilters.adjustmentType.toUpperCase();
-                    return reason.includes(filterType);
-                });
-            }
-            
-            // Sort by date (newest first)
-            adjustments.sort((a, b) => {
-                const dateA = parseDate(a.Adjustment_Date || a.Date) || new Date(0);
-                const dateB = parseDate(b.Adjustment_Date || b.Date) || new Date(0);
-                return dateB - dateA;
-            });
-            
-            // Build filter summary
-            const filterSummary = generateFilterSummary();
-            
-            // Calculate summary stats
-            let totalPositive = 0, totalNegative = 0;
-            adjustments.forEach(a => {
-                const qty = parseFloat(a.Qty_Change || a.Adjustment) || 0;
-                if (qty > 0) totalPositive += qty;
-                else totalNegative += Math.abs(qty);
-            });
-            
-            let html = `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>`;
-            html += filterSummary;
-            
-            // Summary cards
-            html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #1565c0;">${adjustments.length}</div>
-                        <div style="font-size: 12px; color: #666;">Total Adjustments</div>
-                    </div>
-                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">+${totalPositive.toLocaleString()}</div>
-                        <div style="font-size: 12px; color: #666;">Units Added</div>
-                    </div>
-                    <div style="background: #ffebee; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #c62828;">-${totalNegative.toLocaleString()}</div>
-                        <div style="font-size: 12px; color: #666;">Units Removed</div>
-                    </div>
-                    <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #7b1fa2;">${(totalPositive - totalNegative).toLocaleString()}</div>
-                        <div style="font-size: 12px; color: #666;">Net Change</div>
-                    </div>
-                </div>
-            `;
-            
-            if (adjustments.length === 0) {
-                html += `<p style="color: #888; text-align: center; padding: 40px;">No adjustments found for the selected filters.</p>`;
-                return html;
-            }
-            
-            html += `<div style="overflow-x: auto;"><table class="data-table">
-                <thead><tr>
-                    <th>Date</th>
-                    <th>Item</th>
-                    <th>SKU</th>
-                    <th>Reason</th>
-                    <th style="text-align: right;">Before</th>
-                    <th style="text-align: right;">Change</th>
-                    <th style="text-align: right;">After</th>
-                    <th>Notes</th>
-                </tr></thead><tbody>`;
-            
-            adjustments.forEach(a => {
-                const adjDate = parseDate(a.Adjustment_Date || a.Date);
-                const dateStr = adjDate ? adjDate.toLocaleDateString() : '-';
-                const qtyChange = parseFloat(a.Qty_Change || a.Adjustment) || 0;
-                const qtyBefore = parseFloat(a.Qty_Before || a.Previous_Qty) || 0;
-                const qtyAfter = parseFloat(a.Qty_After || a.New_Qty) || 0;
-                const reason = a.Reason || '-';
-                const notes = a.Notes || '';
+            try {
+                console.log('Loading inventory adjustments report...');
                 
-                // Color code the reason
-                let reasonBadge = reason;
-                if (reason.includes('VOID')) {
-                    reasonBadge = `<span style="background: #ffcdd2; color: #c62828; padding: 2px 8px; border-radius: 10px; font-size: 11px;">🔄 ${reason}</span>`;
-                } else if (reason.includes('Sale') || reason.includes('SALE')) {
-                    reasonBadge = `<span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 11px;">📤 ${reason}</span>`;
-                } else if (reason.includes('Purchase') || reason.includes('PURCHASE') || reason.includes('Received')) {
-                    reasonBadge = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 11px;">📥 ${reason}</span>`;
-                } else if (reason.includes('Manual')) {
-                    reasonBadge = `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 11px;">✏️ ${reason}</span>`;
-                } else if (reason.includes('OUTBOUND')) {
-                    reasonBadge = `<span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 11px;">🚚 ${reason}</span>`;
+                const [adjustmentsResult, itemsResult] = await Promise.all([
+                    apiCall('getInventoryAdjustments'),
+                    apiCall('getItems')
+                ]);
+                
+                console.log('Adjustments result:', adjustmentsResult);
+                console.log('Items result:', itemsResult);
+                
+                if (!adjustmentsResult?.data) {
+                    console.log('No adjustments data returned');
+                    return `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>
+                        <p style="color: #888; text-align: center; padding: 40px;">No adjustments found. Adjustments are logged when inventory changes.</p>`;
                 }
                 
-                html += `<tr>
-                    <td>${dateStr}</td>
-                    <td>${getItemDesc(a.Item_ID)}</td>
-                    <td style="font-family: monospace; font-size: 11px;">${getItemSKU(a.Item_ID)}</td>
-                    <td>${reasonBadge}</td>
-                    <td style="text-align: right;">${qtyBefore}</td>
-                    <td style="text-align: right; font-weight: bold; color: ${qtyChange >= 0 ? '#2e7d32' : '#c62828'};">
-                        ${qtyChange >= 0 ? '+' : ''}${qtyChange}
-                    </td>
-                    <td style="text-align: right;">${qtyAfter}</td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: #666;">${notes}</td>
-                </tr>`;
-            });
-            
-            html += `</tbody></table></div>`;
-            
-            return html;
+                const items = itemsResult?.data || [];
+                let adjustments = adjustmentsResult.data;
+                
+                console.log('Total adjustments before filtering:', adjustments.length);
+                
+                // Helper to get item description
+                function getItemDesc(itemId) {
+                    const item = items.find(i => String(i.Item_ID) === String(itemId));
+                    return item ? item.Item_Description : itemId;
+                }
+                
+                function getItemSKU(itemId) {
+                    const item = items.find(i => String(i.Item_ID) === String(itemId));
+                    return item ? item.SKU : '-';
+                }
+                
+                // Apply date filters
+                if (reportFilters.fromDate) {
+                    const fromDate = new Date(reportFilters.fromDate);
+                    fromDate.setHours(0, 0, 0, 0);
+                    adjustments = adjustments.filter(a => {
+                        const adjDate = parseDate(a.Adjustment_Date || a.Date);
+                        return adjDate && adjDate >= fromDate;
+                    });
+                }
+                if (reportFilters.toDate) {
+                    const toDate = new Date(reportFilters.toDate);
+                    toDate.setHours(23, 59, 59, 999);
+                    adjustments = adjustments.filter(a => {
+                        const adjDate = parseDate(a.Adjustment_Date || a.Date);
+                        return adjDate && adjDate <= toDate;
+                    });
+                }
+                
+                // Apply item filter
+                if (reportFilters.item) {
+                    adjustments = adjustments.filter(a => String(a.Item_ID) === String(reportFilters.item));
+                }
+                
+                // Apply adjustment type filter
+                if (reportFilters.adjustmentType) {
+                    adjustments = adjustments.filter(a => {
+                        const reason = (a.Reason || '').toUpperCase();
+                        const filterType = reportFilters.adjustmentType.toUpperCase();
+                        return reason.includes(filterType);
+                    });
+                }
+                
+                console.log('Total adjustments after filtering:', adjustments.length);
+                
+                // Sort by date (newest first)
+                adjustments.sort((a, b) => {
+                    const dateA = parseDate(a.Adjustment_Date || a.Date) || new Date(0);
+                    const dateB = parseDate(b.Adjustment_Date || b.Date) || new Date(0);
+                    return dateB - dateA;
+                });
+                
+                // Build filter summary
+                const filterSummary = generateFilterSummary();
+                
+                // Calculate summary stats
+                let totalPositive = 0, totalNegative = 0;
+                adjustments.forEach(a => {
+                    const qty = parseFloat(a.Qty_Change || a.Adjustment) || 0;
+                    if (qty > 0) totalPositive += qty;
+                    else totalNegative += Math.abs(qty);
+                });
+                
+                let html = `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>`;
+                html += filterSummary;
+                
+                // Summary cards
+                html += `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #1565c0;">${adjustments.length}</div>
+                            <div style="font-size: 12px; color: #666;">Total Adjustments</div>
+                        </div>
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">+${totalPositive.toLocaleString()}</div>
+                            <div style="font-size: 12px; color: #666;">Units Added</div>
+                        </div>
+                        <div style="background: #ffebee; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #c62828;">-${totalNegative.toLocaleString()}</div>
+                            <div style="font-size: 12px; color: #666;">Units Removed</div>
+                        </div>
+                        <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #7b1fa2;">${(totalPositive - totalNegative).toLocaleString()}</div>
+                            <div style="font-size: 12px; color: #666;">Net Change</div>
+                        </div>
+                    </div>
+                `;
+                
+                if (adjustments.length === 0) {
+                    html += `<p style="color: #888; text-align: center; padding: 40px;">No adjustments found for the selected filters.</p>`;
+                    return html;
+                }
+                
+                html += `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table class="data-table" style="min-width: 100%; width: auto;">
+                    <thead><tr>
+                        <th style="white-space: nowrap;">Date</th>
+                        <th style="white-space: nowrap;">Item</th>
+                        <th style="white-space: nowrap;">SKU</th>
+                        <th style="white-space: nowrap;">Reason</th>
+                        <th style="text-align: right; white-space: nowrap;">Before</th>
+                        <th style="text-align: right; white-space: nowrap;">Change</th>
+                        <th style="text-align: right; white-space: nowrap;">After</th>
+                        <th style="white-space: nowrap;">Notes</th>
+                    </tr></thead><tbody>`;
+                
+                adjustments.forEach(a => {
+                    const adjDate = parseDate(a.Adjustment_Date || a.Date);
+                    const dateStr = adjDate ? adjDate.toLocaleDateString() : '-';
+                    const qtyChange = parseFloat(a.Qty_Change || a.Adjustment) || 0;
+                    const qtyBefore = parseFloat(a.Qty_Before || a.Previous_Qty) || 0;
+                    const qtyAfter = parseFloat(a.Qty_After || a.New_Qty) || 0;
+                    const reason = a.Reason || '-';
+                    const notes = a.Notes || '';
+                    
+                    // Color code the reason
+                    let reasonBadge = reason;
+                    if (reason.includes('VOID')) {
+                        reasonBadge = `<span style="background: #ffcdd2; color: #c62828; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">🔄 ${reason}</span>`;
+                    } else if (reason.includes('Sale') || reason.includes('SALE')) {
+                        reasonBadge = `<span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">📤 ${reason}</span>`;
+                    } else if (reason.includes('Purchase') || reason.includes('PURCHASE') || reason.includes('Received')) {
+                        reasonBadge = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">📥 ${reason}</span>`;
+                    } else if (reason.includes('Manual')) {
+                        reasonBadge = `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">✏️ ${reason}</span>`;
+                    } else if (reason.includes('OUTBOUND')) {
+                        reasonBadge = `<span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">🚚 ${reason}</span>`;
+                    }
+                    
+                    html += `<tr>
+                        <td style="white-space: nowrap;">${dateStr}</td>
+                        <td style="min-width: 150px;">${getItemDesc(a.Item_ID)}</td>
+                        <td style="font-family: monospace; font-size: 11px; white-space: nowrap;">${getItemSKU(a.Item_ID)}</td>
+                        <td>${reasonBadge}</td>
+                        <td style="text-align: right; white-space: nowrap;">${qtyBefore}</td>
+                        <td style="text-align: right; font-weight: bold; color: ${qtyChange >= 0 ? '#2e7d32' : '#c62828'}; white-space: nowrap;">
+                            ${qtyChange >= 0 ? '+' : ''}${qtyChange}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">${qtyAfter}</td>
+                        <td style="max-width: 200px; min-width: 100px; font-size: 11px; color: #666;">${notes}</td>
+                    </tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+                
+                return html;
+                
+            } catch (error) {
+                console.error('Error in generateInventoryAdjustmentsModal:', error);
+                return `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>
+                    <p style="color: red; text-align: center; padding: 40px;">Error loading adjustments: ${error.message}<br><br>Please check the browser console for details.</p>`;
+            }
         }
         
         async function generateInventoryReportModal(type) {
@@ -10973,6 +10997,8 @@
                         color: white;
                         border-radius: 12px;
                         margin-bottom: 25px;
+                        border-left: 6px solid white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                     }
                     .dash-header h2 {
                         margin: 0;
@@ -11288,6 +11314,8 @@
                         color: white;
                         border-radius: 12px;
                         margin-bottom: 25px;
+                        border-left: 6px solid white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                     }
                     .pres-header h2 {
                         margin: 0;
@@ -11586,6 +11614,8 @@
                         color: white;
                         border-radius: 12px;
                         margin-bottom: 25px;
+                        border-left: 6px solid white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                     }
                     .pres-header-supplier h2 {
                         margin: 0;
@@ -17703,12 +17733,31 @@ NOTE: Please print the attached PO document for full details.`;
                     // Don't drag if clicking on a button or input
                     if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
                     
-                    initialX = e.clientX - xOffset;
-                    initialY = e.clientY - yOffset;
-                    
                     if (e.target === header || header.contains(e.target)) {
                         isDragging = true;
+                        
+                        // Get current position before converting to fixed
+                        const rect = modal.container.getBoundingClientRect();
+                        
+                        // Convert from margin-based to fixed positioning
                         modal.container.style.position = 'fixed';
+                        modal.container.style.margin = '0';
+                        modal.container.style.left = rect.left + 'px';
+                        modal.container.style.top = rect.top + 'px';
+                        
+                        // Set initial offsets based on current transform
+                        const transform = window.getComputedStyle(modal.container).transform;
+                        if (transform && transform !== 'none') {
+                            const matrix = new DOMMatrix(transform);
+                            xOffset = matrix.m41;
+                            yOffset = matrix.m42;
+                        } else {
+                            xOffset = 0;
+                            yOffset = 0;
+                        }
+                        
+                        initialX = e.clientX - xOffset;
+                        initialY = e.clientY - yOffset;
                     }
                 }
                 
@@ -17722,13 +17771,14 @@ NOTE: Please print the attached PO document for full details.`;
                         xOffset = currentX;
                         yOffset = currentY;
                         
-                        // Keep modal within viewport
+                        // Keep modal within viewport (with some padding)
                         const rect = modal.container.getBoundingClientRect();
-                        const maxX = window.innerWidth - rect.width;
-                        const maxY = window.innerHeight - rect.height;
+                        const padding = 10;
+                        const maxX = window.innerWidth - rect.width - padding;
+                        const maxY = window.innerHeight - rect.height - padding;
                         
-                        xOffset = Math.max(0, Math.min(xOffset, maxX));
-                        yOffset = Math.max(0, Math.min(yOffset, maxY));
+                        xOffset = Math.max(-rect.left + padding, Math.min(xOffset, maxX - parseInt(modal.container.style.left)));
+                        yOffset = Math.max(-rect.top + padding, Math.min(yOffset, maxY - parseInt(modal.container.style.top)));
                         
                         setTranslate(xOffset, yOffset, modal.container);
                     }
