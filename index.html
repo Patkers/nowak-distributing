@@ -16560,6 +16560,7 @@ NOTE: Please print the attached PO document for full details.`;
             filtered.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
                 const reorder = parseInt(item.Reorder_Point) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
                 const sellPrice = parseFloat(item.Unit_Sell_Price) || 0;
                 const pkgCost = parseFloat(item.Package_Cost) || 0;
                 const unitsPer = parseInt(item.Units_Per_Package) || 1;
@@ -16575,13 +16576,16 @@ NOTE: Please print the attached PO document for full details.`;
                     stockText = `Low: ${qty}`;
                 }
                 
+                // Add On Order badge if there's quantity on order
+                const onOrderBadge = onOrder > 0 ? `<span class="item-picker-stock" style="background: #e3f2fd; color: #1976d2; border: 2px solid #90caf9; margin-left: 6px;">📦 On Order: ${onOrder}</span>` : '';
+                
                 const supplierName = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown';
                 
                 html += `
                     <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
                         <div class="item-picker-header-row">
                             <span class="item-picker-sku">${item.SKU || ''}</span>
-                            <span class="item-picker-stock ${stockClass}">${stockText}</span>
+                            <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}
                         </div>
                         <div class="item-picker-desc">${item.Item_Description || ''}</div>
                         <div class="item-picker-details">
@@ -17745,16 +17749,28 @@ NOTE: Please print the attached PO document for full details.`;
             
             filtered.forEach(s => {
                 html += `
-                    <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid #c0c0c0;">
+                    <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid #c0c0c0; cursor: pointer;">
                         <div class="item-picker-card-header">
                             <span class="item-picker-sku">${s.Supplier_ID}</span>
                         </div>
-                        <div class="item-picker-desc">${s.Supplier_Name || 'Unnamed Supplier'}</div>
-                        <div class="item-picker-details" style="flex-wrap: wrap;">
-                            ${s.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Contact</span><span class="item-picker-detail-value">${s.Contact_Name}</span></div>` : ''}
-                            ${s.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Phone</span><span class="item-picker-detail-value">${s.Phone}</span></div>` : ''}
-                            ${s.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Email</span><span class="item-picker-detail-value" style="font-size: 12px;">${s.Email}</span></div>` : ''}
+                        <div class="item-picker-desc" style="margin-bottom: 8px;">${s.Supplier_Name || 'Unnamed Supplier'}</div>
+                        <div class="item-picker-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                            ${s.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">👤 Contact</span><span class="item-picker-detail-value">${s.Contact_Name}</span></div>` : ''}
+                            ${s.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📞 Phone</span><span class="item-picker-detail-value">${s.Phone}</span></div>` : ''}
+                            ${s.Mobile ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📱 Mobile</span><span class="item-picker-detail-value">${s.Mobile}</span></div>` : ''}
+                            ${s.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📧 Email</span><span class="item-picker-detail-value" style="font-size: 13px;">${s.Email}</span></div>` : ''}
                         </div>
+                        ${s.Address || s.City || s.State || s.ZIP ? `
+                            <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <div style="font-weight: 600; color: #555; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
+                                ${s.Address ? `<div style="font-size: 13px; color: #333;">${s.Address}</div>` : ''}
+                                ${s.City || s.State || s.ZIP ? `
+                                    <div style="font-size: 13px; color: #555;">
+                                        ${s.City || ''}${s.City && (s.State || s.ZIP) ? ', ' : ''}${s.State || ''} ${s.ZIP || ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
@@ -18651,12 +18667,24 @@ NOTE: Please print the attached PO document for full details.`;
                                 <span class="item-picker-sku">${c.Customer_ID}</span>
                                 ${c.Route ? `<span class="item-picker-stock" style="background: #f0f0f0; color: #555;">Route: ${c.Route}</span>` : ''}
                             </div>
-                            <div class="item-picker-desc">${c.Customer_Name || 'Unnamed Customer'}</div>
-                            <div class="item-picker-details" style="flex-wrap: wrap;">
-                                ${c.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Contact</span><span class="item-picker-detail-value">${c.Contact_Name}</span></div>` : ''}
-                                ${c.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">Phone</span><span class="item-picker-detail-value">${c.Phone}</span></div>` : ''}
-                                ${c.Address ? `<div class="item-picker-detail" style="flex: 1 1 100%;"><span class="item-picker-detail-label">Address</span><span class="item-picker-detail-value" style="font-size: 13px;">${c.Address}</span></div>` : ''}
+                            <div class="item-picker-desc" style="margin-bottom: 8px;">${c.Customer_Name || 'Unnamed Customer'}</div>
+                            <div class="item-picker-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                                ${c.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">👤 Contact</span><span class="item-picker-detail-value">${c.Contact_Name}</span></div>` : ''}
+                                ${c.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📞 Phone</span><span class="item-picker-detail-value">${c.Phone}</span></div>` : ''}
+                                ${c.Mobile ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📱 Mobile</span><span class="item-picker-detail-value">${c.Mobile}</span></div>` : ''}
+                                ${c.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📧 Email</span><span class="item-picker-detail-value" style="font-size: 13px;">${c.Email}</span></div>` : ''}
                             </div>
+                            ${c.Address || c.City || c.State || c.Zip ? `
+                                <div style="margin-top: 10px; padding: 10px; background: ${isSelected ? '#ffffff' : '#f8f9fa'}; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                    <div style="font-weight: 600; color: #555; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
+                                    ${c.Address ? `<div style="font-size: 13px; color: #333;">${c.Address}</div>` : ''}
+                                    ${c.City || c.State || c.Zip ? `
+                                        <div style="font-size: 13px; color: #555;">
+                                            ${c.City || ''}${c.City && (c.State || c.Zip) ? ', ' : ''}${c.State || ''} ${c.Zip || ''}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -19140,6 +19168,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const sellPrice = parseFloat(item.Sell_Price) || 0;
                 const costPrice = parseFloat(item.Cost) || 0;
                 const qty = parseInt(item.Qty_On_Hand) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
                 
                 // Stock status color
                 let stockColor = '#28a745';
@@ -19152,11 +19181,14 @@ NOTE: Please print the attached PO document for full details.`;
                     stockBg = '#fff3e0';
                 }
                 
+                // Add On Order badge if there's quantity on order
+                const onOrderBadge = onOrder > 0 ? `<span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #90caf9; margin-left: 4px;">📦 ${onOrder} On Order</span>` : '';
+                
                 html += `
                     <div class="item-picker-card" onclick="selectItemForReport('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
                         <div class="item-picker-card-header">
                             <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
-                            <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>
+                            <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>${onOrderBadge}
                         </div>
                         <div class="item-picker-desc">${item.Item_Description || 'No Description'}</div>
                         <div class="item-picker-details">
