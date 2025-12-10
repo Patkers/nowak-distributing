@@ -2592,10 +2592,17 @@
             
             <!-- Items Table -->
             <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="pricesimSelectAll" onchange="toggleAllPriceSimItems()" style="width: 18px; height: 18px;">
-                    <strong>Select All Visible Items</strong>
-                </label>
+                <div>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px;">
+                        <input type="checkbox" id="pricesimSelectAll" onchange="toggleAllPriceSimItems()" style="width: 18px; height: 18px;">
+                        <strong>Select All Visible Items</strong>
+                    </label>
+                    <div style="background: #e3f2fd; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #1976d2;">
+                        <p style="margin: 0; font-size: 13px; color: #1565c0;">
+                            <strong>💡 Tip:</strong> Check the items you want to update, then click Preview Changes
+                        </p>
+                    </div>
+                </div>
                 <button class="btn" onclick="loadPriceSimItems()" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">🔄 Refresh Items</button>
             </div>
             
@@ -6672,7 +6679,17 @@
 
         function showAddSaleForm() {
             loadSaleDropdowns();
+            
+            // FIX #1: Clear any previous line items and errors before showing
+            const lineItemsContainer = document.getElementById('soLineItems');
+            if (lineItemsContainer) {
+                lineItemsContainer.innerHTML = '';
+            }
+            
             document.getElementById('addSaleForm').style.display = 'block';
+            
+            // Add fresh line item
+            addSOLineItem();
             
             // Setup event listeners for the initial line item
             setTimeout(() => {
@@ -6728,6 +6745,15 @@
             const amountBox = document.getElementById('soTotalAmount');
             if (qtyBox) qtyBox.textContent = '0';
             if (amountBox) amountBox.textContent = '$0.00';
+            
+            // FIX #1: Clear all error messages and line items
+            const lineItemsContainer = document.getElementById('soLineItems');
+            if (lineItemsContainer) {
+                // Remove all line items completely
+                lineItemsContainer.innerHTML = '';
+                // Add back one fresh line item
+                addSOLineItem();
+            }
         }
 
         async function loadSaleDropdowns() {
@@ -7574,23 +7600,23 @@
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #212529;">${items.length}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${items.length}</div>
                         <div style="font-size: 13px; color: #6c757d;">Total Items</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #212529;">${totalQty.toLocaleString()}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #212529; word-wrap: break-word; overflow-wrap: break-word;">${totalQty.toLocaleString()}</div>
                         <div style="font-size: 13px; color: #6c757d;">Total Units</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #dc3545;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: #28a745;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
                     </div>
                     <div style="background: #f8f9fa; border: 2px solid #dee2e6; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
-                        <div style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'};">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'}; word-wrap: break-word; overflow-wrap: break-word;">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                         <div style="font-size: 13px; color: #6c757d;">Net Profit</div>
                     </div>
                 </div>
@@ -7649,7 +7675,7 @@
                     <td>$${costValue.toFixed(2)}</td>
                     <td style="color: #2e7d32; font-weight: bold;">$${sellValue.toFixed(2)}</td>
                     <td style="color: ${netProfit >= 0 ? '#1565c0' : '#c62828'}; font-weight: bold;">$${netProfit.toFixed(2)}</td>
-                    <td style="font-size: 11px; color: #666;">${lastUpdated}</td>
+                    <td style="font-size: 13px; color: #666;">${lastUpdated}</td>
                     <td><span style="${statusStyle} padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap;">${status}</span></td>
                 </tr>`;
             });
@@ -7888,7 +7914,25 @@
                 return;
             }
             
-            let html = `
+            // FIX #8: Show new items notification at TOP before table
+            let html = '';
+            if (simulatedNewItems.length > 0) {
+                html += `
+                    <div style="margin-bottom: 15px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 2px solid #ff9800;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <strong style="color: #e65100;">🆕 ${simulatedNewItems.length} New Item(s) Ready to Save</strong>
+                                <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">These items are only in simulation. Click to add them to your database.</p>
+                            </div>
+                            <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveNewItemsToDatabase()" style="background: #ff9800;">
+                                💾 Save ${simulatedNewItems.length} New Item(s) to Database
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
                 <table class="data-table" id="pricesimDataTable">
                     <thead>
                         <tr>
@@ -7958,23 +8002,6 @@
             });
             
             html += '</tbody></table>';
-            
-            // Add save new items button if there are simulated items
-            if (simulatedNewItems.length > 0) {
-                html += `
-                    <div style="margin-top: 15px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 2px solid #ff9800;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <div>
-                                <strong style="color: #e65100;">🆕 ${simulatedNewItems.length} New Item(s) Ready to Save</strong>
-                                <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">These items are only in simulation. Click to add them to your database.</p>
-                            </div>
-                            <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveNewItemsToDatabase()" style="background: #ff9800;">
-                                💾 Save ${simulatedNewItems.length} New Item(s) to Database
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
             
             document.getElementById('pricesimTable').innerHTML = html;
             
@@ -8150,13 +8177,36 @@
             const result = await apiCall('bulkUpdateSellPrices', { updates });
             
             if (result?.status === 'success') {
-                showStatus('pricesimStatus', `✅ Successfully updated ${count} items!`, 'success');
+                showStatus('pricesimStatus', `✅ Successfully updated ${count} items! Screen refreshed with new prices.`, 'success');
+                
+                // FIX #10: RESET ALL CONTROLS TO PREVENT DOUBLE-APPLY
+                // Reset percentage slider
+                document.getElementById('pricesimPercent').value = '0';
+                updatePercentLabel();
+                
+                // Reset flat amount
+                document.getElementById('pricesimFlat').value = '0';
+                
+                // Uncheck "Select All"
+                document.getElementById('pricesimSelectAll').checked = false;
+                
+                // Uncheck all individual items
+                document.querySelectorAll('.pricesim-check').forEach(cb => {
+                    cb.checked = false;
+                });
+                
+                // Hide apply section
+                document.getElementById('pricesimApplySection').style.display = 'none';
+                document.getElementById('pricesimSummary').style.display = 'none';
+                document.getElementById('pricesimInventoryImpact').style.display = 'none';
+                
                 // Reload items to show new prices
                 await loadPriceSimItems();
-                // Reset adjustment
-                document.getElementById('pricesimPercent').value = '0';
-                document.getElementById('pricesimFlat').value = '0';
-                document.getElementById('pricesimApplySection').style.display = 'none';
+                
+                // Show prominent warning message
+                setTimeout(() => {
+                    showStatus('pricesimStatus', '⚠️ Prices updated successfully! Controls have been reset. Adjust settings before applying again.', 'success');
+                }, 100);
             } else {
                 showStatus('pricesimStatus', '❌ Error: ' + (result?.message || 'Failed to update'), 'error');
             }
@@ -8331,7 +8381,8 @@
                 itemId: itemId,
                 adjustment: adjustment,
                 reference: 'MANUAL',
-                reason: reason + (notes ? ' - ' + notes : '')
+                reason: reason + (notes ? ' - ' + notes : ''),
+                user: 'Manual' // FIX #7: Add user field for audit trail
             };
             
             const result = await apiCall('adjustInventory', data);
@@ -14918,11 +14969,24 @@
                 }
             }
             
+            // FIX #5: Add null checking to prevent errors
             // Switch to Items tab
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector('.tab[onclick*="items"]').classList.add('active');
+            
+            // Find the items tab more reliably
+            const itemsTab = document.querySelector('.tab[onclick*="showSection"][onclick*="items"]') || 
+                             document.querySelector('.tab[onclick*="items"]');
+            
+            if (itemsTab) {
+                itemsTab.classList.add('active');
+            }
+            
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-            document.getElementById('items').classList.add('active');
+            
+            const itemsCard = document.getElementById('items');
+            if (itemsCard) {
+                itemsCard.classList.add('active');
+            }
             
             // Call editItemById which handles the edit form
             editItemById(itemId);
@@ -18724,13 +18788,13 @@ NOTE: Please print the attached PO document for full details.`;
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h1 { text-align: center; color: #333; }
                         .important-notice {
-                            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
-                            color: white;
+                            background: #FFE4E1; /* Light pink background */
+                            color: #8B0000; /* Dark red text for contrast */
                             padding: 20px 25px;
                             margin: 25px 0;
                             border-radius: 12px;
-                            border-left: 6px solid #d63031;
-                            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+                            border-left: 6px solid #DC143C; /* Crimson left border */
+                            box-shadow: 0 4px 15px rgba(220, 20, 60, 0.2);
                             font-size: 16px;
                             font-weight: 600;
                         }
