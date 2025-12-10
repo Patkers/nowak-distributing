@@ -8716,7 +8716,7 @@
             },
             'daily-dashboard': {
                 title: '🎯 Sales Dashboard',
-                filters: ['dateRange', 'customer'],
+                filters: ['quickDateOnly', 'customer'],
                 dateLabel: 'Date'
             },
             'customer-dashboard': {
@@ -8791,6 +8791,13 @@
                         <label>📅 ${config.dateLabel || 'Date'} To</label>
                         <input type="date" id="rptFilter_toDate" value="" placeholder="All dates">
                     </div>`;
+            }
+            
+            // Quick Date Only - just hidden fields for Sales Dashboard
+            if (config.filters.includes('quickDateOnly')) {
+                filterHtml += `
+                    <input type="hidden" id="rptFilter_fromDate" value="">
+                    <input type="hidden" id="rptFilter_toDate" value="">`;
             }
             
             // Customer dropdown - use card picker
@@ -8980,8 +8987,8 @@
             
             filterHtml += '</div>';
             
-            // Add quick date presets if dateRange filter exists
-            if (config.filters.includes('dateRange')) {
+            // Add quick date presets if dateRange or quickDateOnly filter exists
+            if (config.filters.includes('dateRange') || config.filters.includes('quickDateOnly')) {
                 filterHtml += `
                     <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
                         <span style="color: #666; font-size: 13px;">Quick Select:</span>
@@ -18716,6 +18723,43 @@ NOTE: Please print the attached PO document for full details.`;
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h1 { text-align: center; color: #333; }
+                        .important-notice {
+                            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+                            color: white;
+                            padding: 20px 25px;
+                            margin: 25px 0;
+                            border-radius: 12px;
+                            border-left: 6px solid #d63031;
+                            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+                            font-size: 16px;
+                            font-weight: 600;
+                        }
+                        .important-notice h2 {
+                            margin: 0 0 12px 0;
+                            font-size: 22px;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+                        .important-notice p {
+                            margin: 8px 0;
+                            line-height: 1.6;
+                            font-size: 15px;
+                        }
+                        .important-notice ul {
+                            margin: 12px 0;
+                            padding-left: 25px;
+                        }
+                        .important-notice li {
+                            margin: 6px 0;
+                            line-height: 1.5;
+                        }
+                        .important-notice .highlight {
+                            background: rgba(255, 255, 255, 0.2);
+                            padding: 2px 8px;
+                            border-radius: 4px;
+                            font-weight: 700;
+                        }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
                         th { background: #667eea; color: white; padding: 8px; text-align: left; border: 1px solid #ddd; }
                         td { padding: 6px; border: 1px solid #ddd; }
@@ -18759,6 +18803,10 @@ NOTE: Please print the attached PO document for full details.`;
                         }
                         @media print {
                             .action-buttons { display: none; }
+                            .important-notice { 
+                                page-break-inside: avoid; 
+                                page-break-after: auto;
+                            }
                         }
                     </style>
                 </head>
@@ -18771,6 +18819,23 @@ NOTE: Please print the attached PO document for full details.`;
 
                     <h1>Nowak Distributing - Items Report</h1>
                     <p style="text-align: center; color: #666;">Generated: ${new Date().toLocaleString()} | Total Items: ${cachedItems.length}</p>
+                    
+                    <!-- PROMINENT NOTICE AT TOP -->
+                    <div class="important-notice">
+                        <h2>⚠️ CRITICAL: DO NOT MODIFY ITEM_ID COLUMN!</h2>
+                        <p>When editing this report in Excel:</p>
+                        <ul>
+                            <li>✅ <span class="highlight">DO</span> edit: Prices, Quantities, SKUs, Descriptions, etc.</li>
+                            <li>❌ <span class="highlight">DO NOT</span> edit: Item_ID column (first column)</li>
+                            <li>❌ <span class="highlight">DO NOT</span> delete: Item_ID column</li>
+                            <li>❌ <span class="highlight">DO NOT</span> change: Item_ID values</li>
+                        </ul>
+                        <p><strong>📌 Item_ID is the SYSTEM KEY that matches rows to items in your database.</strong></p>
+                        <p><strong>🔥 Changing Item_ID will cause data corruption!</strong></p>
+                        <p style="margin-top: 15px; padding-top: 15px; border-top: 2px solid rgba(255,255,255,0.3);">
+                            <strong>REMINDER:</strong> Click 🖨️ Print → Save as PDF → Upload to ilovepdf.com/pdf_to_excel → Edit in Excel → Upload back
+                        </p>
+                    </div>
                     
                     <table>
                         <thead>
