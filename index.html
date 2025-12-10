@@ -5597,7 +5597,10 @@
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(po.Total_Amount || 0).toFixed(2)}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(po.Amount_Paid || 0).toFixed(2)}</td></tr>
-                                <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(() => {
+                                    const balance = parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0);
+                                    return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
+                                })()}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${po.Payment_Status === 'Paid' ? '#c3e6cb' : '#ffeaa7'};">${po.Payment_Status}</span></td></tr>
                             </table>
                             ${po.Payment_Status !== 'Paid' && po.Status !== 'Void' && po.Status !== 'Cancelled' ? `
@@ -5605,7 +5608,10 @@
                                 <div style="margin-bottom: 10px;"><strong>💵 Quick Payment</strong></div>
                                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                     <input type="number" id="quickPaymentAmount" step="0.01" min="0" 
-                                           value="${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}"
+                                           value="${(() => {
+                                               const balance = parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0);
+                                               return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
+                                           })()}"
                                            style="width: 120px; padding: 8px; border: 2px solid #c3e6cb; border-radius: 4px;">
                                     <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) recordQuickPOPayment('${po.PO_ID}')" 
                                             style="background: #28a745; padding: 8px 15px;">
@@ -6293,7 +6299,10 @@
                                 <strong>Previously Paid:</strong> $${parseFloat(po.Amount_Paid || 0).toFixed(2)}
                             </div>
                             <div>
-                                <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0)).toFixed(2)}</span>
+                                <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(() => {
+                                    const balance = parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0);
+                                    return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
+                                })()}</span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -6402,8 +6411,9 @@
             // Get previously paid amount
             const previouslyPaid = parseFloat(document.getElementById('editSOAmountPaid')?.value) || 0;
             
-            // Calculate balance due
-            const balanceDue = newTotal - previouslyPaid;
+            // Calculate balance due and fix rounding errors
+            let balanceDue = newTotal - previouslyPaid;
+            if (Math.abs(balanceDue) < 0.01) balanceDue = 0;
             
             // Update the display fields using IDs
             const currentTotalDiv = document.getElementById('editSOCurrentTotal');
@@ -6700,7 +6710,10 @@
                                 <strong>Previously Paid:</strong> $${parseFloat(so.Amount_Paid || 0).toFixed(2)}
                             </div>
                             <div id="editSOBalanceDue">
-                                <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</span>
+                                <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(() => {
+                                    const balance = parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0);
+                                    return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
+                                })()}</span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -6867,7 +6880,8 @@
         }
         
         function recordPurchasePayment(poId, total, amountPaid) {
-            const remaining = total - amountPaid;
+            let remaining = total - amountPaid;
+            if (Math.abs(remaining) < 0.01) remaining = 0;
             
             // Create better formatted prompt
             let message = `💰 Record Payment for ${poId}\n\n`;
@@ -7721,7 +7735,10 @@
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Total Amount:</td><td style="font-size: 18px; color: #2c3e50;">$${parseFloat(so.Total_Amount || 0).toFixed(2)}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Amount Paid:</td><td style="color: #27ae60;">$${parseFloat(so.Amount_Paid || 0).toFixed(2)}</td></tr>
-                                <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0)).toFixed(2)}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Balance Due:</td><td style="color: #e74c3c; font-size: 16px; font-weight: bold;">$${(() => {
+                                    const balance = parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0);
+                                    return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
+                                })()}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${so.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${so.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${so.Payment_Status === 'Paid' ? '#c3e6cb' : '#ffeaa7'};">${so.Payment_Status}</span></td></tr>
                             </table>
                         </div>
@@ -7792,7 +7809,8 @@
         }
         
         function recordSalesPayment(soId, total, amountPaid) {
-            const remaining = total - amountPaid;
+            let remaining = total - amountPaid;
+            if (Math.abs(remaining) < 0.01) remaining = 0;
             
             // Create better formatted prompt
             let message = `💰 Record Payment for ${soId}\n\n`;
@@ -9085,27 +9103,27 @@
             },
             'sales-by-customer': {
                 title: '👥 Sales by Customer',
-                filters: ['customer', 'minAmount', 'transactionStatus'],
+                filters: ['quickDateOnly', 'customer', 'minAmount', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'sales-order-detail': {
                 title: '📋 Sales Order Detail',
-                filters: ['customer', 'paymentStatus', 'transactionStatus'],
+                filters: ['quickDateOnly', 'customer', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'sales-by-product': {
                 title: '📦 Sales by Item',
-                filters: ['item', 'transactionStatus'],
+                filters: ['quickDateOnly', 'item', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
-                filters: ['supplier', 'poType', 'paymentStatus', 'transactionStatus'],
+                filters: ['quickDateOnly', 'supplier', 'poType', 'paymentStatus', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'purchase-by-supplier': {
                 title: '🏭 Purchase by Supplier',
-                filters: ['supplier', 'poType', 'transactionStatus'],
+                filters: ['quickDateOnly', 'supplier', 'poType', 'transactionStatus'],
                 dateLabel: 'PO Date'
             },
             'inventory-turnover': {
@@ -9135,7 +9153,7 @@
             },
             'inventory-adjustments': {
                 title: '📝 Inventory Adjustment History',
-                filters: ['item', 'adjustmentType'],
+                filters: ['quickDateOnly', 'item', 'adjustmentType'],
                 dateLabel: 'Adjustment Date'
             },
             'profit-loss': {
@@ -12013,7 +12031,8 @@
                 const dueDate = new Date(s.Due_Date);
                 const daysLate = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
                 const customer = customers.find(c => c.Customer_ID === s.Customer_ID);
-                const balance = parseFloat(s.Total_Amount || 0) - parseFloat(s.Amount_Paid || 0);
+                let balance = parseFloat(s.Total_Amount || 0) - parseFloat(s.Amount_Paid || 0);
+                if (Math.abs(balance) < 0.01) balance = 0;
                 return {
                     ...s,
                     Customer_Name: customer?.Customer_Name || 'Unknown',
