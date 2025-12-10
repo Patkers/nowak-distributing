@@ -1886,7 +1886,7 @@
             <div style="max-width: 100%; overflow: hidden;">
                 <h2>📝 Create Purchase Order</h2>
                 <p style="color: #666; margin-bottom: 20px;">
-                    Create an OUTBOUND purchase order to track items on order from suppliers. Use <strong>"Save as OUTBOUND PO"</strong> to save to database and mark items as "On Order", or use <strong>"Print PO (No Save)"</strong> to just generate a printable document.
+                    Create an OUTGOING purchase order to track items on order from suppliers. Use <strong>"Save as OUTGOING PO"</strong> to save to database and mark items as "On Order", or use <strong>"Print PO (No Save)"</strong> to just generate a printable document.
                 </p>
                 
                 <div id="createPOForm">
@@ -1964,7 +1964,7 @@
                 </div>
                 
                 <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
-                    <button class="btn" onclick="saveOutboundPO()" style="flex: 1; min-width: 200px;">💾 Save as OUTBOUND PO</button>
+                    <button class="btn" onclick="saveOutgoingPO()" style="flex: 1; min-width: 200px;">💾 Save as OUTGOING PO</button>
                     <button class="btn" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
                     <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                 </div>
@@ -2229,13 +2229,22 @@
                     
                     <h4 style="margin-top: 20px; margin-bottom: 10px;">Items Sold</h4>
                     <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
-                        <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center;">
-                            <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
-                                <option value="">Select Item</option>
-                            </select>
-                            <input type="number" class="so-qty" placeholder="Qty" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
-                            <input type="number" class="so-price" placeholder="Price" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white;">
-                            <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px;">✕</button>
+                        <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                                <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
+                                    <option value="">Select Item</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
+                                <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
+                                <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                            </div>
+                            <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
                             <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
                         </div>
                     </div>
@@ -5015,7 +5024,7 @@
                 status: document.getElementById('poStatus').value,
                 notes: document.getElementById('poNotes').value,
                 lineItems: lineItems,
-                poType: 'INBOUND'
+                poType: 'INCOMING'
             };
 
             const result = await apiCall('createPurchaseOrder', data);
@@ -5174,7 +5183,7 @@
                     <td>${dueDate}</td>
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
-                        ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutboundPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
+                        ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutgoingPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
                         ${po.Status === 'Void' || po.Status === 'Cancelled' ? `<button class="btn-small" onclick="duplicatePO('${po.PO_ID}')" style="background: #17a2b8; color: white;">📋 Copy to New PO</button>` : ''}
                         <button class="btn-small" onclick="viewPurchaseOrder('${po.PO_ID}')" style="background: #17a2b8; color: white; padding: 6px 12px;">View/Print</button>
                     </td>
@@ -6571,17 +6580,27 @@
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;';
             newRow.innerHTML = `
-                <select class="so-item" required>
-                    <option value="">Select Item</option>
-                    ${cachedItems.map(item => {
-                        console.log('Item:', item.Item_Description, 'Unit_Sell_Price:', item.Unit_Sell_Price); // DEBUG
-                        return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
-                    }).join('')}
-                </select>
-                <input type="number" class="so-qty" placeholder="# of Units" min="1" required>
-                <input type="number" class="so-price" placeholder="Price per Unit" step="0.01" min="0" required>
-                <button type="button" class="remove-btn">✕</button>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
+                        <option value="">Select Item</option>
+                        ${cachedItems.map(item => {
+                            console.log('Item:', item.Item_Description, 'Unit_Sell_Price:', item.Unit_Sell_Price); // DEBUG
+                            return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
+                        }).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
+                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
+                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                </div>
+                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
                 <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
             `;
             container.appendChild(newRow);
@@ -8523,7 +8542,7 @@
                     </div>`;
             }
             
-            // PO Type (Inbound/Outbound)
+            // PO Type (Incoming/Outgoing)
             if (config.filters.includes('poType')) {
                 filterHtml += `
                     <div class="form-group">
@@ -8612,7 +8631,7 @@
                             <option value="Manual">✏️ Manual Adjustments</option>
                             <option value="Sale">📤 Sales (Out)</option>
                             <option value="Purchase">📥 Purchases (In)</option>
-                            <option value="OUTBOUND">🚚 Outbound/Returns</option>
+                            <option value="OUTGOING">🚚 Outgoing/Returns</option>
                         </select>
                     </div>`;
             }
@@ -9656,7 +9675,7 @@
             
             // Filter by PO Type
             if (reportFilters.poType) {
-                purchases = purchases.filter(p => (p.PO_Type || 'INBOUND') === reportFilters.poType);
+                purchases = purchases.filter(p => (p.PO_Type || 'INCOMING') === reportFilters.poType);
             }
             
             // Apply transaction status filter
@@ -9668,8 +9687,8 @@
             }
             
             // Show PO type filter in header
-            const poTypeLabel = reportFilters.poType === 'INBOUND' ? '📥 Inbound Only' : 
-                               reportFilters.poType === 'OUTBOUND' ? '📤 Outbound Only' : '📋 All Types';
+            const poTypeLabel = reportFilters.poType === 'INCOMING' ? '📥 Incoming Only' : 
+                               reportFilters.poType === 'OUTGOING' ? '📤 Outgoing Only' : '📋 All Types';
             
             let html = `<h3 style="margin-top: 0;">Purchase Order Detail</h3>`;
             html += `<p style="color: #666; margin-bottom: 20px;">${purchases.length} orders found | ${poTypeLabel}</p>`;
@@ -9689,15 +9708,15 @@
                 .forEach(p => {
                     const amt = parseFloat(p.Total_Amount) || 0;
                     total += amt;
-                    const poType = p.PO_Type || 'INBOUND';
-                    const typeStyle = poType === 'OUTBOUND' 
+                    const poType = p.PO_Type || 'INCOMING';
+                    const typeStyle = poType === 'OUTGOING' 
                         ? 'background: #e3f2fd; color: #1565c0;' 
                         : 'background: #e8f5e9; color: #2e7d32;';
                     html += `<tr>
                         <td>${p.PO_Number || p.Invoice_Number || '-'}</td>
                         <td>${p.PO_Date || '-'}</td>
                         <td>${getSupplierName(p.Supplier_ID)}</td>
-                        <td><span style="${typeStyle} padding: 3px 8px; border-radius: 4px; font-size: 11px;">${poType === 'OUTBOUND' ? '📤 Out' : '📥 In'}</span></td>
+                        <td><span style="${typeStyle} padding: 3px 8px; border-radius: 4px; font-size: 11px;">${poType === 'OUTGOING' ? '📤 Out' : '📥 In'}</span></td>
                         <td style="text-align: right;">$${amt.toFixed(2)}</td>
                         <td>${p.Status || '-'}</td>
                     </tr>`;
@@ -9755,7 +9774,7 @@
             
             // Filter by PO Type
             if (reportFilters.poType) {
-                purchases = purchases.filter(p => (p.PO_Type || 'INBOUND') === reportFilters.poType);
+                purchases = purchases.filter(p => (p.PO_Type || 'INCOMING') === reportFilters.poType);
             }
             
             // Apply transaction status filter
@@ -9778,8 +9797,8 @@
             });
             
             // Show PO type filter in header
-            const poTypeLabel = reportFilters.poType === 'INBOUND' ? '📥 Inbound Only' : 
-                               reportFilters.poType === 'OUTBOUND' ? '📤 Outbound Only' : '📋 All Types';
+            const poTypeLabel = reportFilters.poType === 'INCOMING' ? '📥 Incoming Only' : 
+                               reportFilters.poType === 'OUTGOING' ? '📤 Outgoing Only' : '📋 All Types';
             
             let html = `<h3 style="margin-top: 0;">Purchase by Supplier</h3>`;
             html += `<p style="color: #666; margin-bottom: 20px;">${Object.keys(bySupplier).length} suppliers | ${purchases.length} orders | ${poTypeLabel}</p>`;
@@ -9974,7 +9993,7 @@
                         reasonBadge = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">📥 ${reason}</span>`;
                     } else if (reason.includes('Manual')) {
                         reasonBadge = `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">✏️ ${reason}</span>`;
-                    } else if (reason.includes('OUTBOUND')) {
+                    } else if (reason.includes('OUTGOING')) {
                         reasonBadge = `<span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap;">🚚 ${reason}</span>`;
                     }
                     
@@ -10362,9 +10381,9 @@
             let totalCOGS = 0;
             
             if (cogsMethod === 'actual') {
-                // COGS from actual purchase orders (INBOUND POs only)
+                // COGS from actual purchase orders (INCOMING POs only)
                 purchasesInPeriod.forEach(p => {
-                    if (p.PO_Type !== 'OUTBOUND') {
+                    if (p.PO_Type !== 'OUTGOING') {
                         totalCOGS += parseFloat(p.Total_Amount) || 0;
                     }
                 });
@@ -10421,7 +10440,7 @@
                             </tr>
                             <tr>
                                 <td style="padding: 12px; padding-left: 30px; color: #666;">
-                                    ${cogsMethod === 'actual' ? `Purchase Orders (${purchasesInPeriod.filter(p => p.PO_Type !== 'OUTBOUND').length})` : 'Standard unit costs × units sold'}
+                                    ${cogsMethod === 'actual' ? `Purchase Orders (${purchasesInPeriod.filter(p => p.PO_Type !== 'OUTGOING').length})` : 'Standard unit costs × units sold'}
                                 </td>
                                 <td style="padding: 12px; text-align: right;">$${totalCOGS.toFixed(2)}</td>
                             </tr>
@@ -11515,8 +11534,8 @@
             const supplier = suppliersResult.data.find(s => s.Supplier_ID === supplierId);
             const supplierName = supplier?.Supplier_Name || 'Supplier';
             
-            // Get all POs for this supplier (exclude OUTBOUND)
-            let allSupplierPOs = poResult.data.filter(p => p.Supplier_ID === supplierId && p.PO_Type !== 'OUTBOUND');
+            // Get all POs for this supplier (exclude OUTGOING)
+            let allSupplierPOs = poResult.data.filter(p => p.Supplier_ID === supplierId && p.PO_Type !== 'OUTGOING');
             
             // Apply date filter if provided
             let filteredPOs = allSupplierPOs;
@@ -13545,7 +13564,7 @@
             return totalCost;
         }
         
-        // ==================== OUTBOUND PO FUNCTIONS ====================
+        // ==================== OUTGOING PO FUNCTIONS ====================
         
         // Void a PO (when supplier prices changed)
         async function voidPurchaseOrder(poId) {
@@ -13649,8 +13668,8 @@
             }
         }
         
-        async function receiveOutboundPO(poId) {
-            // Load the OUTBOUND PO
+        async function receiveOutgoingPO(poId) {
+            // Load the OUTGOING PO
             const result = await apiCall('getPurchaseOrders');
             if (!result || result.status !== 'success') {
                 alert('Error loading purchase order');
@@ -13689,7 +13708,7 @@
             
             let html = `
                 <div style="max-height: 70vh; overflow-y: auto;">
-                    <h2>📦 Receive OUTBOUND PO</h2>
+                    <h2>📦 Receive OUTGOING PO</h2>
                     <p><strong>PO:</strong> ${po.PO_ID} | <strong>Supplier:</strong> ${getSupplierName(po.Supplier_ID)}</p>
                     <p><strong>Order Date:</strong> ${new Date(po.PO_Date).toLocaleDateString()}</p>
                     
@@ -13965,7 +13984,7 @@
             }
             
             try {
-                // Call API to convert OUTBOUND to INBOUND
+                // Call API to convert OUTGOING to INCOMING
                 const data = {
                     poId: poId,
                     invoiceNumber: invoiceNumber,
@@ -13974,7 +13993,7 @@
                     lines: receivedLines
                 };
                 
-                const result = await apiCall('receiveOutboundPO', data);
+                const result = await apiCall('receiveOutgoingPO', data);
                 
                 if (result && result.status === 'success') {
                     alert('✅ Items received successfully! Inventory has been updated.');
@@ -13998,11 +14017,11 @@
             }
         }
         
-        let isSavingOutboundPO = false; // Prevent double-click
+        let isSavingOutgoingPO = false; // Prevent double-click
         
-        async function saveOutboundPO() {
+        async function saveOutgoingPO() {
             // Prevent double-click
-            if (isSavingOutboundPO) {
+            if (isSavingOutgoingPO) {
                 console.log('Already saving PO, ignoring duplicate click');
                 return;
             }
@@ -14044,10 +14063,10 @@
             }
             
             // LOCK - Prevent double submit
-            isSavingOutboundPO = true;
+            isSavingOutgoingPO = true;
             
             // Disable the button visually
-            const saveBtn = document.querySelector('button[onclick="saveOutboundPO()"]');
+            const saveBtn = document.querySelector('button[onclick="saveOutgoingPO()"]');
             if (saveBtn) {
                 saveBtn.disabled = true;
                 saveBtn.textContent = '⏳ Saving...';
@@ -14089,25 +14108,25 @@
             // Generate PO number: PO-120725-001
             const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
             
-            // Create OUTBOUND PO
+            // Create OUTGOING PO
             const data = {
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
                 purchaseDate: poDate,
                 dueDate: null,
                 paymentTerms: 'Net 30',
-                status: 'Ordered', // OUTBOUND status
+                status: 'Ordered', // OUTGOING status
                 totalAmount: total,
                 amountPaid: 0,
                 notes: notes || '',
                 lineItems: lineItems,  // Fixed: was 'lines', backend expects 'lineItems'
-                poType: 'OUTBOUND' // New field to distinguish
+                poType: 'OUTGOING' // New field to distinguish
             };
             
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                alert(`✅ OUTBOUND PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
+                alert(`✅ OUTGOING PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
                 clearCreatePOForm();
                 
                 // Refresh items to update Qty_On_Order
@@ -14117,20 +14136,20 @@
                 if (confirm('Would you like to print this PO?')) {
                     // Need to reload the PO we just created to print it
                     // For now, just tell them to go to Purchases tab
-                    alert('Go to Purchases tab to view and print your OUTBOUND PO');
+                    alert('Go to Purchases tab to view and print your OUTGOING PO');
                 }
             } else {
-                alert('❌ Error creating OUTBOUND PO: ' + (result?.message || 'Unknown error'));
+                alert('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
             }
             } finally {
                 // UNLOCK - Always reset even if error
-                isSavingOutboundPO = false;
+                isSavingOutgoingPO = false;
                 
                 // Re-enable button
-                const saveBtn = document.querySelector('button[onclick="saveOutboundPO()"]');
+                const saveBtn = document.querySelector('button[onclick="saveOutgoingPO()"]');
                 if (saveBtn) {
                     saveBtn.disabled = false;
-                    saveBtn.textContent = '💾 Save as OUTBOUND PO';
+                    saveBtn.textContent = '💾 Save as OUTGOING PO';
                 }
             }
         }
@@ -14737,15 +14756,15 @@ NOTE: Please print the attached PO document for full details.`;
                     </div>
                     <div style="font-size: 13px; color: #6c757d; margin-top: 5px;">Show both inbound and outbound POs</div>
                 </div>
-                <div class="item-picker-card" onclick="selectPOType('INBOUND', 'Inbound (Purchases)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
+                <div class="item-picker-card" onclick="selectPOType('INCOMING', 'Incoming (Purchases)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
-                        <span style="font-size: 24px; margin-right: 12px;">📥</span> Inbound (Purchases)
+                        <span style="font-size: 24px; margin-right: 12px;">📥</span> Incoming (Purchases)
                     </div>
                     <div style="font-size: 13px; color: #388e3c; margin-top: 5px;">Products received from suppliers</div>
                 </div>
-                <div class="item-picker-card" onclick="selectPOType('OUTBOUND', 'Outbound (Returns/Transfers)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
+                <div class="item-picker-card" onclick="selectPOType('OUTGOING', 'Outgoing (Returns/Transfers)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #1565c0;">
-                        <span style="font-size: 24px; margin-right: 12px;">📤</span> Outbound (Returns/Transfers)
+                        <span style="font-size: 24px; margin-right: 12px;">📤</span> Outgoing (Returns/Transfers)
                     </div>
                     <div style="font-size: 13px; color: #1976d2; margin-top: 5px;">Products sent back to suppliers or transferred out</div>
                 </div>
