@@ -3876,18 +3876,14 @@
             loadSales();
             loadInventory();
             
-            // Initialize navigation background color to match default active tab (suppliers)
+            // Initialize navigation background to match content card white background
             const navContainer = document.querySelector('.nav-container');
-            const activeCard = document.querySelector('.landing-nav-card.active-nav-card');
-            if (navContainer && activeCard) {
-                const inlineStyle = activeCard.getAttribute('style');
-                const borderMatch = inlineStyle.match(/border:\s*\d+px\s+solid\s+(#[0-9a-fA-F]{6})/);
-                
-                if (borderMatch && borderMatch[1]) {
-                    const themeColor = borderMatch[1];
-                    navContainer.style.background = themeColor;
-                    navContainer.style.borderLeftColor = themeColor;
-                }
+            const firstCard = document.querySelector('.card'); // Get first card to read white background
+            if (navContainer && firstCard) {
+                const computedStyle = window.getComputedStyle(firstCard);
+                const cardBackground = computedStyle.backgroundColor; // Get white from theme
+                navContainer.style.background = cardBackground;
+                navContainer.style.borderLeft = '5px solid #c0c0c0'; // Hardcoded gray border
             }
             
             // Attach event listeners to the first Create PO line item
@@ -4045,19 +4041,13 @@
                 targetCard.style.display = 'block';
             }
             
-            // Change navigation container background to match active card's theme color
+            // Make navigation background match the content card's white background (from theme)
             const navContainer = document.querySelector('.nav-container');
-            if (navContainer && activeNavCard) {
-                // Parse the color from the inline style attribute
-                const inlineStyle = activeNavCard.getAttribute('style');
-                // Extract the border color using regex: "border: 2px solid #XXXXXX"
-                const borderMatch = inlineStyle.match(/border:\s*\d+px\s+solid\s+(#[0-9a-fA-F]{6})/);
-                
-                if (borderMatch && borderMatch[1]) {
-                    const themeColor = borderMatch[1];
-                    navContainer.style.background = themeColor;
-                    navContainer.style.borderLeftColor = themeColor;
-                }
+            if (navContainer && targetCard) {
+                const computedStyle = window.getComputedStyle(targetCard);
+                const cardBackground = computedStyle.backgroundColor; // Get white background from theme
+                navContainer.style.background = cardBackground;
+                navContainer.style.borderLeft = '5px solid #c0c0c0'; // Hardcoded gray border
             }
             
             // Add to history (avoid duplicates of current tab)
