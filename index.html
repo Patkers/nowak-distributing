@@ -6808,13 +6808,6 @@
             }
         }
         
-        function enableEditMode() {
-            if (currentEditingType === 'purchase') {
-                enablePurchaseOrderEdit();
-            } else if (currentEditingType === 'sales') {
-                enableSalesOrderEdit();
-            }
-        }
         
         async function enablePurchaseOrderEdit() {
             const po = currentEditingOrder;
@@ -7302,6 +7295,13 @@
             const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
             const lines = linesResult?.data || [];
             
+            console.log('=== SALES ORDER EDIT DEBUG ===');
+            console.log('SO_ID:', so.SO_ID);
+            console.log('Lines Result:', linesResult);
+            console.log('Lines Array:', lines);
+            console.log('Lines Length:', lines.length);
+            console.log('Cached Items Length:', cachedItems.length);
+            
             document.getElementById('modalTitle').textContent = `Edit Sales Order: ${so.Invoice_Number || so.SO_ID}`;
             
             // Build customer dropdown
@@ -7377,15 +7377,21 @@
                     </div>
                 </div>
                 
-                <h3 style="color: #667eea; margin-bottom: 15px;">Line Items</h3>
+                <h3 style="color: #667eea; margin-bottom: 15px;">Line Items <span style="color: #999; font-size: 14px;">(${lines.length} items)</span></h3>
                 <div id="editSOLineItems">
             `;
             
             // Add existing line items as editable rows
+            console.log('Starting to add line items...');
             lines.forEach((line, index) => {
+                console.log(`Adding line ${index}:`, line);
                 const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
-                html += createEditableLineItem('SO', line, index, item);
+                console.log(`Found item for line ${index}:`, item);
+                const lineHTML = createEditableLineItem('SO', line, index, item);
+                console.log(`Generated HTML length for line ${index}:`, lineHTML.length);
+                html += lineHTML;
             });
+            console.log('Finished adding all line items');
             
             html += `
                 </div>
@@ -7397,6 +7403,7 @@
                 </div>
             `;
             
+            console.log('Final HTML length:', html.length);
             document.getElementById('modalContent').innerHTML = html;
             
             // Attach event listeners to all SO line items in the edit modal
