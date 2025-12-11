@@ -1260,6 +1260,12 @@
                     <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Inventory</h3>
                 </div>
 
+                <!-- Inventory Flow Card -->
+                <div class="landing-nav-card" onclick="switchTab('invflow')" style="background: rgba(255,255,255,0.95); color: #c2410c; padding: 8px 6px; border: 2px solid #c2410c; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">🔄</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Inv Flow</h3>
+                </div>
+
                 <!-- Price Simulator Card -->
                 <div class="landing-nav-card" onclick="switchTab('pricesim')" style="background: rgba(255,255,255,0.95); color: #1e40af; padding: 8px 6px; border: 2px solid #1e40af; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
                     <div style="font-size: 24px; margin-bottom: 2px;">🎯</div>
@@ -2810,6 +2816,109 @@
             </div>
         </div>
         
+        <!-- INVENTORY FLOW DASHBOARD TAB -->
+        <div id="invflow" class="card">
+            <h2>🔄 Inventory Flow Dashboard</h2>
+            <p style="color: #666; margin-bottom: 20px;">Real-time visibility into inventory movement: what's coming in, what's going out, and what needs attention</p>
+            
+            <!-- Critical Alerts Section -->
+            <div class="content-card" style="margin-bottom: 20px; border-left: 4px solid #dc2626;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #dc2626;">🚨 Critical Alerts</h3>
+                    <button class="btn-small" onclick="refreshInventoryFlow()" style="background: #dc2626; color: white;">🔄 Refresh</button>
+                </div>
+                <div id="invflowAlerts">
+                    <!-- Alerts populated by JavaScript -->
+                    <div style="text-align: center; padding: 20px; color: #999;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
+                        <div>Loading alerts...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Metrics -->
+            <div class="content-card" style="margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px 0; color: #667eea;">📊 Summary Metrics</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <!-- Total On Order -->
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid #1976d2;">
+                        <div style="font-size: 36px; margin-bottom: 8px;">📦</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #0d47a1;" id="invflowTotalOnOrder">0</div>
+                        <div style="font-size: 14px; color: #1565c0; margin-top: 4px;">Total On Order</div>
+                    </div>
+                    
+                    <!-- Total Backorder -->
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 12px; border: 2px solid #f57c00;">
+                        <div style="font-size: 36px; margin-bottom: 8px;">⚠️</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #e65100;" id="invflowTotalBackorder">0</div>
+                        <div style="font-size: 14px; color: #ef6c00; margin-top: 4px;">Total Backorder</div>
+                    </div>
+                    
+                    <!-- Expected This Week -->
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12px; border: 2px solid #388e3c;">
+                        <div style="font-size: 36px; margin-bottom: 8px;">📅</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #1b5e20;" id="invflowPOsThisWeek">0</div>
+                        <div style="font-size: 14px; color: #2e7d32; margin-top: 4px;">POs This Week</div>
+                    </div>
+                    
+                    <!-- Total Value Pending -->
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-radius: 12px; border: 2px solid #7b1fa2;">
+                        <div style="font-size: 36px; margin-bottom: 8px;">💰</div>
+                        <div style="font-size: 32px; font-weight: bold; color: #4a148c;" id="invflowTotalValue">$0</div>
+                        <div style="font-size: 14px; color: #6a1b9a; margin-top: 4px;">Value Pending</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Items On Backorder Section -->
+            <div class="content-card" style="margin-bottom: 20px; border-left: 4px solid #f57c00;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #f57c00;">⚠️ Items On Backorder <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 14px; margin-left: 8px;" id="invflowBackorderCount">0</span></h3>
+                    <button class="btn-small" onclick="switchTab('createpo')" style="background: #f57c00; color: white;">+ Create PO</button>
+                </div>
+                <div id="invflowBackorderItems">
+                    <!-- Backorder items populated by JavaScript -->
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #666;">No items on backorder</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">All customer orders can be fulfilled!</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Arrivals Section -->
+            <div class="content-card" style="margin-bottom: 20px; border-left: 4px solid #1976d2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #1976d2;">📦 Pending Arrivals <span style="background: #2196f3; color: white; padding: 2px 8px; border-radius: 12px; font-size: 14px; margin-left: 8px;" id="invflowPendingCount">0</span></h3>
+                    <button class="btn-small" onclick="switchTab('purchases')" style="background: #1976d2; color: white;">View All POs</button>
+                </div>
+                <div id="invflowPendingPOs">
+                    <!-- Pending POs populated by JavaScript -->
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+                        <div style="font-size: 16px; color: #666;">No pending arrivals</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">No purchase orders expected</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Critical Items Section -->
+            <div class="content-card" style="border-left: 4px solid #dc2626;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; color: #dc2626;">🔴 Critical Items <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 14px; margin-left: 8px;" id="invflowCriticalCount">0</span></h3>
+                    <button class="btn-small" onclick="viewCriticalItemsReport()" style="background: #dc2626; color: white;">📋 View Report</button>
+                </div>
+                <div id="invflowCriticalItems">
+                    <!-- Critical items populated by JavaScript -->
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #666;">No critical items</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">All items have adequate stock levels</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- REPORTS TAB -->
         <div id="reports" class="card">
             <h2>📈 Business Reports</h2>
@@ -3541,6 +3650,11 @@
             // Load price sim items when switching to that tab
             if (tabName === 'pricesim') {
                 loadPriceSimItems();
+            }
+            
+            // Refresh Inventory Flow Dashboard when switching to that tab
+            if (tabName === 'invflow') {
+                refreshInventoryFlow();
             }
             
             // Scroll to top when switching tabs
@@ -16612,13 +16726,26 @@ NOTE: Please print the attached PO document for full details.`;
                     expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
                 }
                 
+                // Add Top Seller badge if applicable
+                let topSellerBadge = '';
+                if (item.Top_Seller_Rank) {
+                    const rank = parseInt(item.Top_Seller_Rank);
+                    if (rank === 1) {
+                        topSellerBadge = `<span class="item-picker-stock" style="background: #ffd700; color: #000; border: 2px solid #ffed4e; margin-left: 6px; font-weight: bold;">🥇 #1 Best Seller</span>`;
+                    } else if (rank <= 10) {
+                        topSellerBadge = `<span class="item-picker-stock" style="background: #fff9c4; color: #f57f17; border: 2px solid #fbc02d; margin-left: 6px; font-weight: bold;">🏆 Top 10 Best Seller</span>`;
+                    } else if (rank <= 25) {
+                        topSellerBadge = `<span class="item-picker-stock" style="background: #e3f2fd; color: #1565c0; border: 2px solid #64b5f6; margin-left: 6px;">⭐ Top 25 Best Seller</span>`;
+                    }
+                }
+                
                 const supplierName = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown';
                 
                 html += `
                     <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
                         <div class="item-picker-header-row" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px;">
                             <span class="item-picker-sku">${item.SKU || ''}</span>
-                            <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}${backorderBadge}
+                            <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}${backorderBadge}${topSellerBadge}
                         </div>
                         ${expectedDateBadge ? `<div style="margin-bottom: 8px;">${expectedDateBadge}</div>` : ''}
                         <div class="item-picker-desc">${item.Item_Description || ''}</div>
@@ -16643,6 +16770,479 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
         };
+        
+        // ============================================================================
+        // INVENTORY FLOW DASHBOARD FUNCTIONS
+        // ============================================================================
+        
+        /**
+         * Refresh the entire Inventory Flow Dashboard
+         */
+        async function refreshInventoryFlow() {
+            showStatus('Loading inventory flow data...', 'info');
+            
+            // Make sure we have all the data loaded
+            if (!cachedItems || cachedItems.length === 0) {
+                await loadItems();
+            }
+            if (!cachedPurchaseOrders || cachedPurchaseOrders.length === 0) {
+                await loadPurchaseOrders();
+            }
+            if (!cachedSalesOrders || cachedSalesOrders.length === 0) {
+                await loadSalesOrders();
+            }
+            
+            // Calculate and display all sections
+            calculateInvFlowMetrics();
+            renderInvFlowAlerts();
+            renderInvFlowBackorderItems();
+            renderInvFlowPendingPOs();
+            renderInvFlowCriticalItems();
+            
+            showStatus('Inventory flow dashboard updated!', 'success');
+        }
+        
+        /**
+         * Calculate summary metrics for inventory flow
+         */
+        function calculateInvFlowMetrics() {
+            const items = cachedItems || [];
+            const pos = cachedPurchaseOrders || [];
+            
+            // Total On Order
+            const totalOnOrder = items.reduce((sum, item) => {
+                return sum + (parseInt(item.Qty_On_Order) || 0);
+            }, 0);
+            
+            // Total Backorder
+            const totalBackorder = items.reduce((sum, item) => {
+                return sum + (parseInt(item.Qty_On_Backorder) || 0);
+            }, 0);
+            
+            // POs This Week
+            const now = new Date();
+            const endOfWeek = new Date(now);
+            endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
+            
+            const posThisWeek = pos.filter(po => {
+                if (['Received', 'Cancelled', 'Voided'].includes(po.Status)) return false;
+                if (!po.Need_By_Date) return false;
+                const needBy = new Date(po.Need_By_Date);
+                return needBy <= endOfWeek;
+            }).length;
+            
+            // Total Value Pending
+            const totalValue = pos.filter(po => {
+                return !['Received', 'Cancelled', 'Voided'].includes(po.Status);
+            }).reduce((sum, po) => {
+                return sum + (parseFloat(po.Total_Amount) || 0);
+            }, 0);
+            
+            // Update display
+            document.getElementById('invflowTotalOnOrder').textContent = totalOnOrder.toLocaleString();
+            document.getElementById('invflowTotalBackorder').textContent = totalBackorder.toLocaleString();
+            document.getElementById('invflowPOsThisWeek').textContent = posThisWeek;
+            document.getElementById('invflowTotalValue').textContent = '$' + totalValue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+        }
+        
+        /**
+         * Render critical alerts
+         */
+        function renderInvFlowAlerts() {
+            const items = cachedItems || [];
+            const pos = cachedPurchaseOrders || [];
+            
+            const alerts = [];
+            
+            // Count items on backorder
+            const backorderItems = items.filter(item => (parseInt(item.Qty_On_Backorder) || 0) > 0);
+            if (backorderItems.length > 0) {
+                alerts.push({
+                    type: 'warning',
+                    icon: '⚠️',
+                    text: `${backorderItems.length} item${backorderItems.length > 1 ? 's' : ''} on backorder (Customers waiting!)`,
+                    action: () => {
+                        const backorderSection = document.getElementById('invflowBackorderItems');
+                        backorderSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+            
+            // Count overdue POs
+            const now = new Date();
+            const overduePOs = pos.filter(po => {
+                if (['Received', 'Cancelled', 'Voided'].includes(po.Status)) return false;
+                if (!po.Need_By_Date) return false;
+                return new Date(po.Need_By_Date) < now;
+            });
+            if (overduePOs.length > 0) {
+                alerts.push({
+                    type: 'danger',
+                    icon: '📦',
+                    text: `${overduePOs.length} overdue PO${overduePOs.length > 1 ? 's' : ''} (Expected last week or earlier)`,
+                    action: () => switchTab('purchases')
+                });
+            }
+            
+            // Count critical gap items (backorder > on order)
+            const gapItems = items.filter(item => {
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                return backorder > 0 && backorder > onOrder;
+            });
+            if (gapItems.length > 0) {
+                alerts.push({
+                    type: 'danger',
+                    icon: '🔴',
+                    text: `${gapItems.length} item${gapItems.length > 1 ? 's' : ''}: Backorder > On Order (Not enough ordered!)`,
+                    action: () => {
+                        const criticalSection = document.getElementById('invflowCriticalItems');
+                        criticalSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+            
+            // Count out of stock with no PO
+            const outOfStockNoPO = items.filter(item => {
+                const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                return qtyOnHand === 0 && onOrder === 0 && backorder > 0;
+            });
+            if (outOfStockNoPO.length > 0) {
+                alerts.push({
+                    type: 'danger',
+                    icon: '🚨',
+                    text: `${outOfStockNoPO.length} item${outOfStockNoPO.length > 1 ? 's' : ''} out of stock with NO purchase order!`,
+                    action: () => switchTab('createpo')
+                });
+            }
+            
+            // Render alerts
+            const alertsContainer = document.getElementById('invflowAlerts');
+            
+            if (alerts.length === 0) {
+                alertsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 30px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 18px; color: #2e7d32; font-weight: 600;">All Clear!</div>
+                        <div style="font-size: 14px; color: #388e3c; margin-top: 8px;">No critical issues detected</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            alerts.forEach(alert => {
+                const bgColor = alert.type === 'danger' ? '#ffebee' : '#fff3e0';
+                const borderColor = alert.type === 'danger' ? '#ef4444' : '#f59e0b';
+                const textColor = alert.type === 'danger' ? '#b91c1c' : '#d97706';
+                
+                html += `
+                    <div onclick="(${alert.action.toString()})()" style="padding: 15px 20px; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='translateX(0)'">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 24px;">${alert.icon}</span>
+                            <span style="font-size: 15px; font-weight: 600; color: ${textColor};">${alert.text}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            alertsContainer.innerHTML = html;
+        }
+        
+        /**
+         * Render items on backorder
+         */
+        function renderInvFlowBackorderItems() {
+            const items = cachedItems || [];
+            const backorderItems = items.filter(item => (parseInt(item.Qty_On_Backorder) || 0) > 0)
+                .sort((a, b) => (parseInt(b.Qty_On_Backorder) || 0) - (parseInt(a.Qty_On_Backorder) || 0));
+            
+            document.getElementById('invflowBackorderCount').textContent = backorderItems.length;
+            
+            const container = document.getElementById('invflowBackorderItems');
+            
+            if (backorderItems.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #666;">No items on backorder</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">All customer orders can be fulfilled!</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            backorderItems.slice(0, 10).forEach(item => {
+                const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const expectedDate = item.Expected_Restock_Date;
+                
+                // Determine urgency
+                const gap = backorder - onOrder;
+                const isUrgent = gap > 0 || onOrder === 0;
+                
+                html += `
+                    <div style="padding: 15px; border: 2px solid ${isUrgent ? '#ef4444' : '#f59e0b'}; border-radius: 8px; margin-bottom: 12px; background: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="font-weight: 600; font-size: 16px; color: #333; margin-bottom: 6px;">${item.Item_Description || item.SKU}</div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="background: ${qtyOnHand === 0 ? '#fee2e2' : '#fff7ed'}; color: ${qtyOnHand === 0 ? '#dc2626' : '#ea580c'}; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        Stock: ${qtyOnHand}
+                                    </span>
+                                    <span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        On Order: ${onOrder}
+                                    </span>
+                                    <span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        ⚠️ Backorder: ${backorder}
+                                    </span>
+                                    ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">⚠️ Gap: ${gap}</span>` : ''}
+                                </div>
+                                ${expectedDate ? `
+                                    <div style="margin-top: 8px; font-size: 13px; color: #555;">
+                                        📅 Expected: ${new Date(expectedDate).toLocaleDateString()}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                ${isUrgent ? `
+                                    <button class="btn-small" onclick="switchTab('createpo')" style="background: #ef4444; color: white; font-size: 12px;">⚠️ CREATE PO</button>
+                                ` : ''}
+                                <button class="btn-small" onclick="viewItemDetails('${item.Item_ID}')" style="font-size: 12px;">View</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (backorderItems.length > 10) {
+                html += `
+                    <div style="text-align: center; padding: 15px; color: #666; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                        <strong>+${backorderItems.length - 10} more items on backorder</strong>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        /**
+         * Render pending purchase orders
+         */
+        function renderInvFlowPendingPOs() {
+            const pos = (cachedPurchaseOrders || []).filter(po => {
+                return !['Received', 'Cancelled', 'Voided'].includes(po.Status);
+            }).sort((a, b) => {
+                if (!a.Need_By_Date) return 1;
+                if (!b.Need_By_Date) return -1;
+                return new Date(a.Need_By_Date) - new Date(b.Need_By_Date);
+            });
+            
+            document.getElementById('invflowPendingCount').textContent = pos.length;
+            
+            const container = document.getElementById('invflowPendingPOs');
+            
+            if (pos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+                        <div style="font-size: 16px; color: #666;">No pending arrivals</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">No purchase orders expected</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const now = new Date();
+            let html = '';
+            
+            pos.slice(0, 10).forEach(po => {
+                const needByDate = po.Need_By_Date ? new Date(po.Need_By_Date) : null;
+                const isOverdue = needByDate && needByDate < now;
+                const daysUntil = needByDate ? Math.ceil((needByDate - now) / (1000 * 60 * 60 * 24)) : null;
+                
+                let dateText = 'No date specified';
+                let dateBg = '#f8f9fa';
+                let dateColor = '#666';
+                
+                if (needByDate) {
+                    if (isOverdue) {
+                        dateText = `📅 Overdue ${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''}`;
+                        dateBg = '#ffebee';
+                        dateColor = '#c62828';
+                    } else if (daysUntil === 0) {
+                        dateText = '📅 Today';
+                        dateBg = '#fff3e0';
+                        dateColor = '#f57c00';
+                    } else if (daysUntil === 1) {
+                        dateText = '📅 Tomorrow';
+                        dateBg = '#e8f5e9';
+                        dateColor = '#2e7d32';
+                    } else if (daysUntil <= 7) {
+                        dateText = `📅 ${daysUntil} days`;
+                        dateBg = '#e8f5e9';
+                        dateColor = '#2e7d32';
+                    } else {
+                        dateText = `📅 ${needByDate.toLocaleDateString()}`;
+                        dateBg = '#e3f2fd';
+                        dateColor = '#1976d2';
+                    }
+                }
+                
+                const supplierName = getSupplierName(po.Supplier_ID);
+                const totalAmount = parseFloat(po.Total_Amount) || 0;
+                
+                html += `
+                    <div style="padding: 15px; border: 2px solid ${isOverdue ? '#ef4444' : '#1976d2'}; border-radius: 8px; margin-bottom: 12px; background: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1; min-width: 250px;">
+                                <div style="font-weight: 600; font-size: 16px; color: #333; margin-bottom: 6px;">
+                                    PO #${po.PO_ID} - ${supplierName}
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                                    <span style="background: ${dateBg}; color: ${dateColor}; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        ${dateText}
+                                    </span>
+                                    <span style="background: #f3e5f5; color: #7b1fa2; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        💰 ${totalAmount.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-small" onclick="viewPODetails('${po.PO_ID}')" style="font-size: 12px;">View PO</button>
+                                <button class="btn-small" onclick="receivePO('${po.PO_ID}')" style="background: #2e7d32; color: white; font-size: 12px;">Receive</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (pos.length > 10) {
+                html += `
+                    <div style="text-align: center; padding: 15px; color: #666; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                        <strong>+${pos.length - 10} more pending POs</strong> - <a href="#" onclick="switchTab('purchases'); return false;" style="color: #1976d2;">View All</a>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        /**
+         * Render critical items (low stock + high demand)
+         */
+        function renderInvFlowCriticalItems() {
+            const items = cachedItems || [];
+            const criticalItems = items.filter(item => {
+                const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                const reorderPoint = parseInt(item.Reorder_Point) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                
+                // Critical if: low stock AND (has backorders OR backorder > on order)
+                return qtyOnHand <= reorderPoint && (backorder > 0 || (backorder > 0 && backorder > onOrder));
+            }).sort((a, b) => {
+                const gapA = (parseInt(a.Qty_On_Backorder) || 0) - (parseInt(a.Qty_On_Order) || 0);
+                const gapB = (parseInt(b.Qty_On_Backorder) || 0) - (parseInt(b.Qty_On_Order) || 0);
+                return gapB - gapA;
+            });
+            
+            document.getElementById('invflowCriticalCount').textContent = criticalItems.length;
+            
+            const container = document.getElementById('invflowCriticalItems');
+            
+            if (criticalItems.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #666;">No critical items</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">All items have adequate stock levels</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            criticalItems.slice(0, 10).forEach(item => {
+                const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const gap = backorder - onOrder;
+                
+                html += `
+                    <div style="padding: 15px; border: 2px solid #ef4444; border-radius: 8px; margin-bottom: 12px; background: #fff5f5;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="font-weight: 600; font-size: 16px; color: #333; margin-bottom: 6px;">${item.Item_Description || item.SKU}</div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        🔴 Stock: ${qtyOnHand}
+                                    </span>
+                                    <span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        Backorder: ${backorder}
+                                    </span>
+                                    <span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        On Order: ${onOrder}
+                                    </span>
+                                    ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">⚠️ GAP: -${gap}!</span>` : ''}
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn-small" onclick="switchTab('createpo')" style="background: #ef4444; color: white; font-size: 12px; font-weight: 600;">⚠️ ORDER MORE!</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (criticalItems.length > 10) {
+                html += `
+                    <div style="text-align: center; padding: 15px; color: #666; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                        <strong>+${criticalItems.length - 10} more critical items</strong>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        /**
+         * View critical items report (placeholder - can be expanded later)
+         */
+        function viewCriticalItemsReport() {
+            alert('Critical Items Report - This would open a detailed report showing all critical items with full details, trends, and recommendations.');
+        }
+        
+        /**
+         * View item details (placeholder - can link to existing item view)
+         */
+        function viewItemDetails(itemId) {
+            switchTab('items');
+            // Could add auto-filtering or highlighting of the specific item
+        }
+        
+        /**
+         * View PO details (placeholder - can link to existing PO view)
+         */
+        function viewPODetails(poId) {
+            switchTab('purchases');
+            // Could add auto-filtering or opening the PO modal
+        }
+        
+        /**
+         * Receive PO (placeholder - can link to existing receive function)
+         */
+        function receivePO(poId) {
+            if (confirm(`Receive Purchase Order ${poId}?`)) {
+                // Call existing receive PO function
+                alert('This would trigger the PO receiving process.');
+                switchTab('purchases');
+            }
+        }
     </script>
     
     <!-- Order View/Edit Modal -->
@@ -16696,19 +17296,23 @@ NOTE: Please print the attached PO document for full details.`;
     <div id="itemPickerModal" class="item-picker-overlay">
         <div class="item-picker-container">
             <div class="item-picker-header">
-                <h3>📦 Select Item</h3>
-                <button class="item-picker-close" onclick="closeItemPicker()">&times;</button>
+                <h3>📦 Select Item(s)</h3>
+                <button class="item-picker-close" onclick="closeItemPicker(); closeItemPickerForReport();">&times;</button>
             </div>
             <div class="item-picker-search">
-                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="window.filterItemPicker()" onkeyup="window.filterItemPicker()">
+                <input type="text" id="itemPickerSearch" placeholder="🔍 Search by SKU or description..." oninput="window.filterItemPicker(); filterItemPickerForReport();" onkeyup="window.filterItemPicker(); filterItemPickerForReport();">
             </div>
             <div id="itemPickerSupplierFilter" class="item-picker-filter">
                 <select id="itemPickerSupplier" onchange="window.filterItemPicker()">
                     <option value="">All Suppliers</option>
                 </select>
             </div>
-            <div id="itemPickerList" class="item-picker-list">
+            <div id="itemPickerList" class="item-picker-list" style="max-height: calc(100% - 240px);">
                 <!-- Items will be populated by JavaScript -->
+            </div>
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+                <div id="itemSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
+                <button class="btn" onclick="closeItemPicker(); closeItemPickerForReport();" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
@@ -16717,14 +17321,18 @@ NOTE: Please print the attached PO document for full details.`;
     <div id="supplierPickerModal" class="item-picker-overlay">
         <div class="item-picker-container">
             <div class="item-picker-header">
-                <h3>🏭 Select Supplier</h3>
+                <h3>🏭 Select Supplier(s)</h3>
                 <button class="item-picker-close" onclick="closeSupplierPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers..." oninput="filterSupplierPicker()" onkeyup="filterSupplierPicker()">
             </div>
-            <div id="supplierPickerList" class="item-picker-list">
+            <div id="supplierPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
                 <!-- Suppliers will be populated by JavaScript -->
+            </div>
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+                <div id="supplierSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
+                <button class="btn" onclick="closeSupplierPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
@@ -17707,6 +18315,15 @@ NOTE: Please print the attached PO document for full details.`;
                 tagName: 'REPORT_FILTER',
                 value: document.getElementById('rptFilter_supplier').value
             };
+            
+            // Initialize selected suppliers from current value
+            const currentValue = document.getElementById('rptFilter_supplier').value;
+            if (currentValue) {
+                selectedSuppliersForReport = currentValue.split(',').filter(v => v);
+            } else {
+                selectedSuppliersForReport = [];
+            }
+            
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
             document.getElementById('supplierPickerModal').style.display = 'block';
@@ -17750,28 +18367,32 @@ NOTE: Please print the attached PO document for full details.`;
                     (s.Contact_Name && s.Contact_Name.toLowerCase().includes(search));
             });
             
-            // Check if this is a filter dropdown, filter text input, or report filter (needs "All/Clear" option)
-            const isFilter = supplierPickerIsFilter || window.supplierPickerIsFilter || 
-                (supplierPickerCallback && supplierPickerCallback.tagName === 'REPORT_FILTER') ||
-                (supplierPickerCallback && (supplierPickerCallback.id.startsWith('filter') || supplierPickerCallback.id === 'pricesimSupplier'));
+            // Check if this is a report filter (multi-select enabled)
+            const isReportFilter = supplierPickerCallback && supplierPickerCallback.tagName === 'REPORT_FILTER';
             
             let html = '';
             
-            // Add "All Suppliers" or "Clear Filter" option for filters
-            if (isFilter && !search) {
-                const clearText = supplierPickerIsFilter ? 'Clear Filter' : 'All Suppliers';
-                const clearDesc = supplierPickerIsFilter ? 'Remove supplier filter' : 'Show items from all suppliers';
+            // Add multi-select controls for report filters
+            if (isReportFilter && !search) {
                 html += `
-                    <div class="item-picker-card" onclick="selectSupplierFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
-                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
-                            <span style="font-size: 18px; margin-right: 8px;">📋</span> ${clearText}
+                    <div class="item-picker-card" style="border-left: 4px solid #6c757d; background: #e3f2fd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="item-picker-desc" style="font-weight: bold; color: #1976d2;">
+                                    <span style="font-size: 18px; margin-right: 8px;">📋</span> All Suppliers
+                                </div>
+                                <div style="font-size: 12px; color: #555;">Select specific suppliers below, or leave all unchecked for all suppliers</div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="selectAllSuppliers()" class="oval-action-btn oval-action-primary" style="font-size: 11px; padding: 4px 10px;">✓ Select All</button>
+                                <button onclick="clearAllSuppliers()" class="oval-action-btn oval-action-warning" style="font-size: 11px; padding: 4px 10px;">✗ Clear All</button>
+                            </div>
                         </div>
-                        <div style="font-size: 12px; color: #6c757d;">${clearDesc}</div>
                     </div>
                 `;
             }
             
-            if (filtered.length === 0 && !isFilter) {
+            if (filtered.length === 0 && !isReportFilter) {
                 listContainer.innerHTML = `
                     <div class="item-picker-empty">
                         <div class="item-picker-empty-icon">🏭</div>
@@ -17782,34 +18403,100 @@ NOTE: Please print the attached PO document for full details.`;
             }
             
             filtered.forEach(s => {
+                const isSelected = selectedSuppliersForReport.includes(s.Supplier_ID);
+                const clickHandler = isReportFilter 
+                    ? `onclick="toggleSupplierSelection('${s.Supplier_ID}')"` 
+                    : `onclick="selectSupplierFromPicker('${s.Supplier_ID}')"`;
+                const checkboxHtml = isReportFilter 
+                    ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSupplierSelection('${s.Supplier_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
+                    : '';
+                
                 html += `
-                    <div class="item-picker-card supplier-card" onclick="selectSupplierFromPicker('${s.Supplier_ID}')" style="border-left: 4px solid #c0c0c0; cursor: pointer;">
-                        <div class="item-picker-card-header">
-                            <span class="item-picker-sku">${s.Supplier_ID}</span>
-                        </div>
-                        <div class="item-picker-desc" style="margin-bottom: 8px;">${s.Supplier_Name || 'Unnamed Supplier'}</div>
-                        <div class="item-picker-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-                            ${s.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">👤 Contact</span><span class="item-picker-detail-value">${s.Contact_Name}</span></div>` : ''}
-                            ${s.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📞 Phone</span><span class="item-picker-detail-value">${s.Phone}</span></div>` : ''}
-                            ${s.Mobile ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📱 Mobile</span><span class="item-picker-detail-value">${s.Mobile}</span></div>` : ''}
-                            ${s.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📧 Email</span><span class="item-picker-detail-value" style="font-size: 13px;">${s.Email}</span></div>` : ''}
-                        </div>
-                        ${s.Address || s.City || s.State || s.ZIP ? `
-                            <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
-                                <div style="font-weight: 600; color: #555; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
-                                ${s.Address ? `<div style="font-size: 13px; color: #333;">${s.Address}</div>` : ''}
-                                ${s.City || s.State || s.ZIP ? `
-                                    <div style="font-size: 13px; color: #555;">
-                                        ${s.City || ''}${s.City && (s.State || s.ZIP) ? ', ' : ''}${s.State || ''} ${s.ZIP || ''}
-                                    </div>
-                                ` : ''}
+                    <div class="item-picker-card supplier-card" ${clickHandler} style="border-left: 4px solid ${isSelected ? '#10b981' : '#c0c0c0'}; ${isSelected ? 'background: #d1fae5;' : ''} display: flex; align-items: start; gap: 12px; cursor: pointer;">
+                        ${checkboxHtml}
+                        <div style="flex: 1;">
+                            <div class="item-picker-card-header">
+                                <span class="item-picker-sku">${s.Supplier_ID}</span>
                             </div>
-                        ` : ''}
+                            <div class="item-picker-desc" style="margin-bottom: 8px;">${s.Supplier_Name || 'Unnamed Supplier'}</div>
+                            <div class="item-picker-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                                ${s.Contact_Name ? `<div class="item-picker-detail"><span class="item-picker-detail-label">👤 Contact</span><span class="item-picker-detail-value">${s.Contact_Name}</span></div>` : ''}
+                                ${s.Phone ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📞 Phone</span><span class="item-picker-detail-value">${s.Phone}</span></div>` : ''}
+                                ${s.Mobile ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📱 Mobile</span><span class="item-picker-detail-value">${s.Mobile}</span></div>` : ''}
+                                ${s.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📧 Email</span><span class="item-picker-detail-value" style="font-size: 13px;">${s.Email}</span></div>` : ''}
+                            </div>
+                            ${s.Address || s.City || s.State || s.ZIP ? `
+                                <div style="margin-top: 10px; padding: 10px; background: ${isSelected ? '#ffffff' : '#f8f9fa'}; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                    <div style="font-weight: 600; color: #555; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
+                                    ${s.Address ? `<div style="font-size: 13px; color: #333;">${s.Address}</div>` : ''}
+                                    ${s.City || s.State || s.ZIP ? `
+                                        <div style="font-size: 13px; color: #555;">
+                                            ${s.City || ''}${s.City && (s.State || s.ZIP) ? ', ' : ''}${s.State || ''} ${s.ZIP || ''}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
             });
             
             listContainer.innerHTML = html;
+        }
+        
+        // Toggle supplier selection for multi-select
+        function toggleSupplierSelection(supplierId) {
+            const index = selectedSuppliersForReport.indexOf(supplierId);
+            if (index > -1) {
+                selectedSuppliersForReport.splice(index, 1);
+            } else {
+                selectedSuppliersForReport.push(supplierId);
+            }
+            renderSupplierPickerList();
+            updateSupplierSelectionDisplay();
+        }
+        
+        // Select all suppliers
+        function selectAllSuppliers() {
+            const search = document.getElementById('supplierPickerSearch').value.toLowerCase().trim();
+            let suppliers = cachedSuppliers || [];
+            let filtered = suppliers.filter(s => {
+                return !search || 
+                    (s.Supplier_Name && s.Supplier_Name.toLowerCase().includes(search)) ||
+                    (s.Supplier_ID && s.Supplier_ID.toLowerCase().includes(search));
+            });
+            selectedSuppliersForReport = filtered.map(s => s.Supplier_ID);
+            renderSupplierPickerList();
+            updateSupplierSelectionDisplay();
+        }
+        
+        // Clear all supplier selections
+        function clearAllSuppliers() {
+            selectedSuppliersForReport = [];
+            renderSupplierPickerList();
+            updateSupplierSelectionDisplay();
+        }
+        
+        // Update the display field with selection count
+        function updateSupplierSelectionDisplay() {
+            const displayInput = document.getElementById('rptFilter_supplier_display');
+            const hiddenInput = document.getElementById('rptFilter_supplier');
+            const countDiv = document.getElementById('supplierSelectionCount');
+            
+            if (selectedSuppliersForReport.length === 0) {
+                displayInput.value = '';
+                hiddenInput.value = '';
+                if (countDiv) countDiv.textContent = 'No suppliers selected (all will be shown)';
+            } else if (selectedSuppliersForReport.length === 1) {
+                const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === selectedSuppliersForReport[0]);
+                displayInput.value = supplier ? supplier.Supplier_Name : selectedSuppliersForReport[0];
+                hiddenInput.value = selectedSuppliersForReport[0];
+                if (countDiv) countDiv.textContent = '1 supplier selected';
+            } else {
+                displayInput.value = `${selectedSuppliersForReport.length} suppliers selected`;
+                hiddenInput.value = selectedSuppliersForReport.join(',');
+                if (countDiv) countDiv.textContent = `${selectedSuppliersForReport.length} suppliers selected`;
+            }
         }
         
         function selectSupplierFromPicker(supplierId) {
@@ -17868,6 +18555,61 @@ NOTE: Please print the attached PO document for full details.`;
             }
             supplierPickerIsFilter = false;
             closeSupplierPicker();
+        }
+        
+        // Toggle supplier selection for multi-select
+        function toggleSupplierSelection(supplierId) {
+            const index = selectedSuppliersForReport.indexOf(supplierId);
+            if (index > -1) {
+                selectedSuppliersForReport.splice(index, 1);
+            } else {
+                selectedSuppliersForReport.push(supplierId);
+            }
+            renderSupplierPickerList();
+            updateSupplierSelectionDisplay();
+        }
+        
+        // Select all suppliers
+        function selectAllSuppliers() {
+            const search = document.getElementById('supplierPickerSearch').value.toLowerCase().trim();
+            let suppliers = cachedSuppliers || [];
+            let filtered = suppliers.filter(s => {
+                return !search || 
+                    (s.Supplier_Name && s.Supplier_Name.toLowerCase().includes(search)) ||
+                    (s.Supplier_ID && s.Supplier_ID.toLowerCase().includes(search));
+            });
+            selectedSuppliersForReport = filtered.map(s => s.Supplier_ID);
+            renderSupplierPickerList();
+            updateSupplierSelectionDisplay();
+        }
+        
+        // Clear all supplier selections
+        function clearAllSuppliers() {
+            selectedSuppliersForReport = [];
+            renderSupplierPickerList();
+            updateSupplierSelectionDisplay();
+        }
+        
+        // Update the display field with selection count
+        function updateSupplierSelectionDisplay() {
+            const displayInput = document.getElementById('rptFilter_supplier_display');
+            const hiddenInput = document.getElementById('rptFilter_supplier');
+            const countDiv = document.getElementById('supplierSelectionCount');
+            
+            if (selectedSuppliersForReport.length === 0) {
+                displayInput.value = '';
+                hiddenInput.value = '';
+                if (countDiv) countDiv.textContent = 'No suppliers selected (all will be shown)';
+            } else if (selectedSuppliersForReport.length === 1) {
+                const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === selectedSuppliersForReport[0]);
+                displayInput.value = supplier ? supplier.Supplier_Name : selectedSuppliersForReport[0];
+                hiddenInput.value = selectedSuppliersForReport[0];
+                if (countDiv) countDiv.textContent = '1 supplier selected';
+            } else {
+                displayInput.value = `${selectedSuppliersForReport.length} suppliers selected`;
+                hiddenInput.value = selectedSuppliersForReport.join(',');
+                if (countDiv) countDiv.textContent = `${selectedSuppliersForReport.length} suppliers selected`;
+            }
         }
         
         function attachSupplierPickerToSelects() {
@@ -18693,13 +19435,27 @@ NOTE: Please print the attached PO document for full details.`;
                     ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleCustomerSelection('${c.Customer_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
                     : '';
                 
+                // Add Top Customer badge if applicable
+                let topCustomerBadge = '';
+                if (c.Top_Customer_Rank) {
+                    const rank = parseInt(c.Top_Customer_Rank);
+                    if (rank === 1) {
+                        topCustomerBadge = `<span class="item-picker-stock" style="background: #ffd700; color: #000; border: 2px solid #ffed4e; font-weight: bold;">🥇 #1 Top Customer</span>`;
+                    } else if (rank <= 10) {
+                        topCustomerBadge = `<span class="item-picker-stock" style="background: #fff9c4; color: #f57f17; border: 2px solid #fbc02d; font-weight: bold;">⭐ Top 10 Customer</span>`;
+                    } else if (rank <= 25) {
+                        topCustomerBadge = `<span class="item-picker-stock" style="background: #e3f2fd; color: #1565c0; border: 2px solid #64b5f6;">⭐ Top 25 Customer</span>`;
+                    }
+                }
+                
                 html += `
                     <div class="item-picker-card customer-card" ${clickHandler} style="border-left: 4px solid ${isSelected ? '#10b981' : '#c0c0c0'}; ${isSelected ? 'background: #d1fae5;' : ''} display: flex; align-items: start; gap: 12px; cursor: pointer;">
                         ${checkboxHtml}
                         <div style="flex: 1;">
-                            <div class="item-picker-card-header">
+                            <div class="item-picker-card-header" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
                                 <span class="item-picker-sku">${c.Customer_ID}</span>
                                 ${c.Route ? `<span class="item-picker-stock" style="background: #f0f0f0; color: #555;">Route: ${c.Route}</span>` : ''}
+                                ${topCustomerBadge}
                             </div>
                             <div class="item-picker-desc" style="margin-bottom: 8px;">${c.Customer_Name || 'Unnamed Customer'}</div>
                             <div class="item-picker-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
@@ -19141,6 +19897,14 @@ NOTE: Please print the attached PO document for full details.`;
         // ==================== ITEM PICKER (for reports) ====================
         
         function openItemPickerForReport() {
+            // Initialize selected items from current value
+            const currentValue = document.getElementById('rptFilter_item').value;
+            if (currentValue) {
+                selectedItemsForReport = currentValue.split(',').filter(v => v);
+            } else {
+                selectedItemsForReport = [];
+            }
+            
             document.getElementById('itemPickerSearch').value = '';
             renderItemPickerListForReport();
             document.getElementById('itemPickerModal').style.display = 'block';
@@ -19173,15 +19937,25 @@ NOTE: Please print the attached PO document for full details.`;
             
             let html = '';
             
-            // Add "All Items" option at top
-            html += `
-                <div class="item-picker-card" onclick="selectItemForReport('', 'All Items')" style="border-left: 4px solid #28a745; background: #e8f5e9;">
-                    <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
-                        <span style="font-size: 18px; margin-right: 8px;">📊</span> All Items
+            // Add multi-select controls at top
+            if (!search) {
+                html += `
+                    <div class="item-picker-card" style="border-left: 4px solid #6c757d; background: #e3f2fd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="item-picker-desc" style="font-weight: bold; color: #1976d2;">
+                                    <span style="font-size: 18px; margin-right: 8px;">📋</span> All Items
+                                </div>
+                                <div style="font-size: 12px; color: #555;">Select specific items below, or leave all unchecked for all items</div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="selectAllItems()" class="oval-action-btn oval-action-primary" style="font-size: 11px; padding: 4px 10px;">✓ Select All</button>
+                                <button onclick="clearAllItems()" class="oval-action-btn oval-action-warning" style="font-size: 11px; padding: 4px 10px;">✗ Clear All</button>
+                            </div>
+                        </div>
                     </div>
-                    <div style="font-size: 12px; color: #388e3c;">Show report for all products</div>
-                </div>
-            `;
+                `;
+            }
             
             if (filtered.length === 0 && search) {
                 listContainer.innerHTML = html + `
@@ -19248,22 +20022,41 @@ NOTE: Please print the attached PO document for full details.`;
                     expectedDateBadge = `<div style="margin-top: 6px;"><span style="background: ${dateBg}; color: ${dateColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid ${dateColor === '#2e7d32' ? '#81c784' : dateColor === '#e65100' ? '#ffb74d' : '#e57373'};">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span></div>`;
                 }
                 
+                // Add Top Seller badge if applicable
+                let topSellerBadge = '';
+                if (item.Top_Seller_Rank) {
+                    const rank = parseInt(item.Top_Seller_Rank);
+                    if (rank === 1) {
+                        topSellerBadge = `<span style="background: #ffd700; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #ffed4e; margin-left: 4px;">🥇 #1 Best Seller</span>`;
+                    } else if (rank <= 10) {
+                        topSellerBadge = `<span style="background: #fff9c4; color: #f57f17; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #fbc02d; margin-left: 4px;">🏆 Top 10 Best Seller</span>`;
+                    } else if (rank <= 25) {
+                        topSellerBadge = `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #64b5f6; margin-left: 4px;">⭐ Top 25 Best Seller</span>`;
+                    }
+                }
+                
+                const isSelected = selectedItemsForReport.includes(item.Item_ID);
+                const checkboxHtml = `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleItemSelection('${item.Item_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">`;
+                
                 html += `
-                    <div class="item-picker-card" onclick="selectItemForReport('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
-                        <div class="item-picker-card-header" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
-                            <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
-                            <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>${onOrderBadge}${backorderBadge}
-                        </div>
-                        ${expectedDateBadge}
-                        <div class="item-picker-desc">${item.Item_Description || 'No Description'}</div>
-                        <div class="item-picker-details">
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Supplier</span>
-                                <span class="item-picker-detail-value">${supplierName}</span>
+                    <div class="item-picker-card" onclick="toggleItemSelection('${item.Item_ID}')" style="border-left: 4px solid ${isSelected ? '#10b981' : stockColor}; ${isSelected ? 'background: #d1fae5;' : ''} display: flex; align-items: start; gap: 12px; cursor: pointer;">
+                        ${checkboxHtml}
+                        <div style="flex: 1;">
+                            <div class="item-picker-card-header" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+                                <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
+                                <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>${onOrderBadge}${backorderBadge}${topSellerBadge}
                             </div>
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Sell</span>
-                                <span class="item-picker-detail-value item-picker-price">$${sellPrice.toFixed(2)}</span>
+                            ${expectedDateBadge}
+                            <div class="item-picker-desc">${item.Item_Description || 'No Description'}</div>
+                            <div class="item-picker-details">
+                                <div class="item-picker-detail">
+                                    <span class="item-picker-detail-label">Supplier</span>
+                                    <span class="item-picker-detail-value">${supplierName}</span>
+                                </div>
+                                <div class="item-picker-detail">
+                                    <span class="item-picker-detail-label">Sell</span>
+                                    <span class="item-picker-detail-value item-picker-price">$${sellPrice.toFixed(2)}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -19271,6 +20064,61 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             listContainer.innerHTML = html;
+        }
+        
+        // Toggle item selection for multi-select
+        function toggleItemSelection(itemId) {
+            const index = selectedItemsForReport.indexOf(itemId);
+            if (index > -1) {
+                selectedItemsForReport.splice(index, 1);
+            } else {
+                selectedItemsForReport.push(itemId);
+            }
+            renderItemPickerListForReport();
+            updateItemSelectionDisplay();
+        }
+        
+        // Select all items
+        function selectAllItems() {
+            const search = document.getElementById('itemPickerSearch').value.toLowerCase().trim();
+            let items = cachedItems || [];
+            let filtered = items.filter(item => {
+                return !search || 
+                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search)) ||
+                    (item.SKU && item.SKU.toLowerCase().includes(search));
+            });
+            selectedItemsForReport = filtered.map(item => item.Item_ID);
+            renderItemPickerListForReport();
+            updateItemSelectionDisplay();
+        }
+        
+        // Clear all item selections
+        function clearAllItems() {
+            selectedItemsForReport = [];
+            renderItemPickerListForReport();
+            updateItemSelectionDisplay();
+        }
+        
+        // Update the display field with selection count
+        function updateItemSelectionDisplay() {
+            const displayInput = document.getElementById('rptFilter_item_display');
+            const hiddenInput = document.getElementById('rptFilter_item');
+            const countDiv = document.getElementById('itemSelectionCount');
+            
+            if (selectedItemsForReport.length === 0) {
+                displayInput.value = '';
+                hiddenInput.value = '';
+                if (countDiv) countDiv.textContent = 'No items selected (all will be shown)';
+            } else if (selectedItemsForReport.length === 1) {
+                const item = (cachedItems || []).find(i => i.Item_ID === selectedItemsForReport[0]);
+                displayInput.value = item ? item.Item_Description : selectedItemsForReport[0];
+                hiddenInput.value = selectedItemsForReport[0];
+                if (countDiv) countDiv.textContent = '1 item selected';
+            } else {
+                displayInput.value = `${selectedItemsForReport.length} items selected`;
+                hiddenInput.value = selectedItemsForReport.join(',');
+                if (countDiv) countDiv.textContent = `${selectedItemsForReport.length} items selected`;
+            }
         }
         
         function selectItemForReport(itemId, itemName) {
