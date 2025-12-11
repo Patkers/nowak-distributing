@@ -2603,19 +2603,67 @@
                     <!-- Card 2: Line Items -->
                     <div class="content-card" style="margin-bottom: 20px;">
                         <h4 style="margin-top: 0; margin-bottom: 15px;">Line Items</h4>
-                        <div class="line-items-container" id="poLineItems">
-                            <div class="line-item-row">
-                                <select class="po-item" required>
-                                    <option value="">Select Item</option>
-                                </select>
-                                <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
-                                <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
-                                <button type="button" class="remove-btn">✕</button>
+                        <div class="line-items-container" id="poLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                                    <select class="po-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                                        <option value="">Select item...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                                    <input type="number" class="po-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                                </div>
+                                <div style="margin-top: 26px;">
+                                    <div class="po-units" style="text-align: center; font-size: 12px; color: #666; padding: 6px; line-height: 1.2;">
+                                        <div style="font-weight: 600;">Units/Case:</div>
+                                        <div style="font-size: 14px; font-weight: bold; color: #333;">-</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 26px;">
+                                    <div class="po-totalunits" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 6px; border: 2px solid #f9a825; line-height: 1.2;">
+                                        <div style="color: #ef6c00; font-weight: 600;">Total Units:</div>
+                                        <div style="font-size: 18px; font-weight: bold; color: #f9a825;">-</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 26px;">
+                                    <div class="po-cost" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 6px; border: 2px solid #28a745; line-height: 1.2;">
+                                        <div style="color: #2e7d32; font-weight: 600;">Catalog Cost:</div>
+                                        <div style="font-size: 16px; font-weight: bold; color: #28a745;">-</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 26px;">
+                                    <div class="po-linetotal" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-radius: 6px; border: 2px solid #e91e63; line-height: 1.2;">
+                                        <div style="color: #c2185b; font-weight: 600;">Line Total:</div>
+                                        <div style="font-size: 16px; font-weight: bold; color: #e91e63;">$0.00</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-danger" onclick="this.closest('.line-item-row').remove(); updatePOTotals();" style="width: 100%; padding: 10px; font-size: 18px; margin-top: 26px; min-height: 52px;">🗑️</button>
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
                             <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
-                            <button type="button" class="btn" onclick="addNewItemFromPO()" style="background: #9c27b0;">➕ Add New Item to Catalog</button>
+                            <button type="button" class="btn" onclick="addNewItemFromPO()" style="background: #f9a825; color: white;">➕ Add New Item to Catalog</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 3: Order Summary -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: var(--primary, #667eea);">💰 Order Summary</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--primary, #667eea);">
+                                <div style="font-size: 14px; color: #1565c0; margin-bottom: 8px; font-weight: 600;">Total Cases</div>
+                                <div style="font-size: 32px; font-weight: bold; color: var(--primary, #667eea);" id="poTotalCases">0</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 12px; border: 2px solid #f9a825;">
+                                <div style="font-size: 14px; color: #ef6c00; margin-bottom: 8px; font-weight: 600;">Total Units</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #f9a825;" id="poTotalUnits">0</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12px; border: 2px solid #28a745;">
+                                <div style="font-size: 14px; color: #2e7d32; margin-bottom: 8px; font-weight: 600;">Total Cost</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #28a745;" id="poTotalAmount">$0.00</div>
+                            </div>
                         </div>
                     </div>
                     
@@ -2745,23 +2793,43 @@
                     <div class="content-card" style="margin-bottom: 20px;">
                         <h4 style="margin-top: 0; margin-bottom: 15px;">Items Sold</h4>
                         <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
-                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
+                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
                                 <div>
                                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
-                                        <option value="">Select Item</option>
+                                    <select class="so-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                                        <option value="">Select item...</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
-                                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                                    <input type="number" class="so-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
                                 </div>
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
-                                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                                <div style="margin-top: 26px;">
+                                    <div class="so-units" style="text-align: center; font-size: 12px; color: #666; padding: 6px; line-height: 1.2;">
+                                        <div style="font-weight: 600;">Units/Case:</div>
+                                        <div style="font-size: 14px; font-weight: bold; color: #333;">-</div>
+                                    </div>
                                 </div>
-                                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
-                                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
+                                <div style="margin-top: 26px;">
+                                    <div class="so-totalunits" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 6px; border: 2px solid #f9a825; line-height: 1.2;">
+                                        <div style="color: #ef6c00; font-weight: 600;">Total Units:</div>
+                                        <div style="font-size: 18px; font-weight: bold; color: #f9a825;">-</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 26px;">
+                                    <div class="so-price" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 6px; border: 2px solid #28a745; line-height: 1.2;">
+                                        <div style="color: #2e7d32; font-weight: 600;">Sale Price:</div>
+                                        <div style="font-size: 16px; font-weight: bold; color: #28a745;">-</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 26px;">
+                                    <div class="so-linetotal" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-radius: 6px; border: 2px solid #e91e63; line-height: 1.2;">
+                                        <div style="color: #c2185b; font-weight: 600;">Line Total:</div>
+                                        <div style="font-size: 16px; font-weight: bold; color: #e91e63;">$0.00</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-danger" onclick="this.closest('.line-item-row').remove(); updateSOTotals();" style="width: 100%; padding: 10px; font-size: 18px; margin-top: 26px; min-height: 52px;">🗑️</button>
+                                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: 5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
                             </div>
                         </div>
                         <button type="button" class="btn btn-secondary" onclick="addSOLineItem()" style="margin-top: 10px;">+ Add Line Item</button>
@@ -2769,15 +2837,19 @@
                     
                     <!-- Card 3: Order Summary -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #667eea; text-align: center;">📊 Order Summary</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
-                            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
-                                <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">📦 Total Items</h3>
-                                <p style="font-size: 32px; font-weight: bold; color: #667eea; margin: 0;" id="soTotalQty">0</p>
+                        <h4 style="margin: 0 0 15px 0; color: var(--primary, #667eea);">💰 Order Summary</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--primary, #667eea);">
+                                <div style="font-size: 14px; color: #1565c0; margin-bottom: 8px; font-weight: 600;">Total Cases</div>
+                                <div style="font-size: 32px; font-weight: bold; color: var(--primary, #667eea);" id="soTotalCases">0</div>
                             </div>
-                            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
-                                <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">💰 Total Amount</h3>
-                                <p style="font-size: 32px; font-weight: bold; color: #2e7d32; margin: 0;" id="soTotalAmount">$0.00</p>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 12px; border: 2px solid #f9a825;">
+                                <div style="font-size: 14px; color: #ef6c00; margin-bottom: 8px; font-weight: 600;">Total Units</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #f9a825;" id="soTotalUnits">0</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12px; border: 2px solid #28a745;">
+                                <div style="font-size: 14px; color: #2e7d32; margin-bottom: 8px; font-weight: 600;">Total Amount</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #28a745;" id="soTotalAmount">$0.00</div>
                             </div>
                         </div>
                     </div>
@@ -3876,15 +3948,8 @@
             loadSales();
             loadInventory();
             
-            // Initialize navigation background to match content card white background
-            const navContainer = document.querySelector('.nav-container');
-            const firstCard = document.querySelector('.card'); // Get first card to read white background
-            if (navContainer && firstCard) {
-                const computedStyle = window.getComputedStyle(firstCard);
-                const cardBackground = computedStyle.backgroundColor; // Get white from theme
-                navContainer.style.background = cardBackground;
-                navContainer.style.borderLeft = '5px solid #c0c0c0'; // Hardcoded gray border
-            }
+            // Initialize navigation background (will be updated again after theme loads)
+            refreshNavigationBackground();
             
             // Attach event listeners to the first Create PO line item
             const firstCreatePORow = document.querySelector('#createPOLineItems div.line-item-row');
@@ -4041,14 +4106,8 @@
                 targetCard.style.display = 'block';
             }
             
-            // Make navigation background match the content card's white background (from theme)
-            const navContainer = document.querySelector('.nav-container');
-            if (navContainer && targetCard) {
-                const computedStyle = window.getComputedStyle(targetCard);
-                const cardBackground = computedStyle.backgroundColor; // Get white background from theme
-                navContainer.style.background = cardBackground;
-                navContainer.style.borderLeft = '5px solid #c0c0c0'; // Hardcoded gray border
-            }
+            // Refresh navigation background to match content card (calls shared function)
+            refreshNavigationBackground();
             
             // Add to history (avoid duplicates of current tab)
             if (navigationHistory[navigationHistory.length - 1] !== tabName) {
@@ -4498,7 +4557,22 @@
             // Apply gradient to body background
             document.body.style.background = gradient;
             
+            // Refresh navigation background to match new theme
+            refreshNavigationBackground();
+            
             showStatus('configStatus', `✅ Theme changed to ${theme}!`, 'success');
+        }
+        
+        // Refresh navigation background to match theme
+        function refreshNavigationBackground() {
+            const navContainer = document.querySelector('.nav-container');
+            const firstCard = document.querySelector('.card');
+            if (navContainer && firstCard) {
+                const computedStyle = window.getComputedStyle(firstCard);
+                const cardBackground = computedStyle.backgroundColor;
+                navContainer.style.background = cardBackground;
+                navContainer.style.borderLeft = '5px solid #c0c0c0';
+            }
         }
         
         // Convert hex to light background color
@@ -4728,6 +4802,9 @@
                 document.documentElement.style.setProperty('--primary', themeColors.primary);
                 document.documentElement.style.setProperty('--secondary', themeColors.accent);
                 document.documentElement.style.setProperty('--primary-light', hexToRgbaLight(themeColors.primary));
+                
+                // Refresh navigation background to match loaded theme
+                refreshNavigationBackground();
                 
                 // Update theme preview in settings
                 if (typeof updateThemePreview === 'function') {
@@ -6873,8 +6950,10 @@
             const itemOptions = cachedItems
                 .filter(i => type === 'PO' ? i.Supplier_ID === currentEditingOrder.Supplier_ID : true)
                 .map(i => {
-                    const priceAttr = type === 'PO' ? `data-cost="${i.Package_Cost}"` : `data-price="${i.Unit_Sell_Price}"`;
-                    return `<option value="${i.Item_ID}" ${priceAttr} ${i.Item_ID === line.Item_ID ? 'selected' : ''}>${i.Item_Description}</option>`;
+                    const unitsPerCase = i.Units_Per_Case || 1;
+                    const cost = i.Package_Cost || 0;
+                    const price = i.Unit_Sell_Price || 0;
+                    return `<option value="${i.Item_ID}" data-units="${unitsPerCase}" data-cost="${cost}" data-price="${price}" ${i.Item_ID === line.Item_ID ? 'selected' : ''}>${i.Item_Description}</option>`;
                 })
                 .join('');
             
@@ -6885,16 +6964,53 @@
             const originalQty = parseFloat(line[qtyField]) || 0;
             const originalPrice = parseFloat(line[priceField]) || 0;
             
+            // Get item details for computed displays
+            const selectedItem = item || cachedItems.find(i => i.Item_ID === line.Item_ID);
+            const unitsPerCase = selectedItem ? (selectedItem.Units_Per_Case || 1) : 1;
+            const totalUnits = originalQty * unitsPerCase;
+            const lineTotal = originalQty * originalPrice;
+            
+            const priceLabel = type === 'PO' ? 'Catalog Cost' : 'Sale Price';
+            
             return `
-                <div class="edit-line-item" data-type="${type}" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                    <select class="edit-item" required>
-                        <option value="">Select Item</option>
-                        ${itemOptions}
-                    </select>
-                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}">
-                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}">
-                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="$${(originalQty * originalPrice).toFixed(2)}">
-                    <button type="button" class="remove-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
+                <div class="edit-line-item" data-type="${type}" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end; padding: 10px; background: white; border-radius: 8px; border: 2px solid #e0e0e0;">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                        <select class="edit-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                            <option value="">Select item...</option>
+                            ${itemOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                        <input type="number" class="edit-qty" placeholder="0" min="1" required value="${originalQty}" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="edit-units" style="text-align: center; font-size: 12px; color: #666; padding: 6px; line-height: 1.2;">
+                            <div style="font-weight: 600;">Units/Case:</div>
+                            <div style="font-size: 14px; font-weight: bold; color: #333;" data-units="${unitsPerCase}">${unitsPerCase}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="edit-totalunits" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 6px; border: 2px solid #f9a825; line-height: 1.2;">
+                            <div style="color: #ef6c00; font-weight: 600;">Total Units:</div>
+                            <div style="font-size: 18px; font-weight: bold; color: #f9a825;">${totalUnits}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="edit-price-display" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 6px; border: 2px solid #28a745; line-height: 1.2;">
+                            <div style="color: #2e7d32; font-weight: 600;">${priceLabel}:</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #28a745;">$${originalPrice.toFixed(2)}</div>
+                        </div>
+                        <input type="hidden" class="edit-price" value="${originalPrice}">
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="edit-total" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-radius: 6px; border: 2px solid #e91e63; line-height: 1.2;">
+                            <div style="color: #c2185b; font-weight: 600;">Line Total:</div>
+                            <div style="font-size: 16px; font-weight: bold; color: #e91e63;">$${lineTotal.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="remove-btn btn-danger" style="width: 100%; padding: 10px; font-size: 18px; min-height: 52px; border: none; border-radius: 8px; cursor: pointer;">🗑️</button>
                 </div>
             `;
         }
@@ -6903,8 +7019,26 @@
             const row = input.closest('.edit-line-item');
             const qty = parseFloat(row.querySelector('.edit-qty').value) || 0;
             const price = parseFloat(row.querySelector('.edit-price').value) || 0;
-            const total = qty * price;
-            row.querySelector('.edit-total').value = '$' + total.toFixed(2);
+            
+            // Get units per case from the item data
+            const unitsDiv = row.querySelector('.edit-units div[data-units]');
+            const unitsPerCase = parseFloat(unitsDiv ? unitsDiv.getAttribute('data-units') : 1) || 1;
+            const totalUnits = qty * unitsPerCase;
+            
+            // Calculate line total
+            const lineTotal = qty * price;
+            
+            // Update Total Units display
+            const totalUnitsDiv = row.querySelector('.edit-totalunits div:last-child');
+            if (totalUnitsDiv) {
+                totalUnitsDiv.textContent = totalUnits;
+            }
+            
+            // Update Line Total display
+            const lineTotalDiv = row.querySelector('.edit-total div:last-child');
+            if (lineTotalDiv) {
+                lineTotalDiv.textContent = '$' + lineTotal.toFixed(2);
+            }
             
             // Update payment info if this is a sales order
             if (row.getAttribute('data-type') === 'SO') {
