@@ -2025,7 +2025,7 @@
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px; width: 100%; position: relative;">
                     <div style="min-width: 700px; width: 100%; max-width: 100%;">
                         <!-- Header Row -->
-                        <div style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 14px;">
+                        <div style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 16px;">
                             <div>Item</div>
                             <div style="text-align: center;">Cases</div>
                             <div style="text-align: center;">Units/Case</div>
@@ -16561,6 +16561,8 @@ NOTE: Please print the attached PO document for full details.`;
                 const qty = parseInt(item.Qty_On_Hand) || 0;
                 const reorder = parseInt(item.Reorder_Point) || 0;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const onBackorder = parseInt(item.Qty_On_Backorder) || 0;
+                const expectedDate = item.Expected_Restock_Date;
                 const sellPrice = parseFloat(item.Unit_Sell_Price) || 0;
                 const pkgCost = parseFloat(item.Package_Cost) || 0;
                 const unitsPer = parseInt(item.Units_Per_Package) || 1;
@@ -16579,14 +16581,46 @@ NOTE: Please print the attached PO document for full details.`;
                 // Add On Order badge if there's quantity on order
                 const onOrderBadge = onOrder > 0 ? `<span class="item-picker-stock" style="background: #e3f2fd; color: #1976d2; border: 2px solid #90caf9; margin-left: 6px;">📦 On Order: ${onOrder}</span>` : '';
                 
+                // Add Backorder badge if there's quantity on backorder
+                const backorderBadge = onBackorder > 0 ? `<span class="item-picker-stock" style="background: #fff3e0; color: #e65100; border: 2px solid #ffb74d; margin-left: 6px;">⚠️ Backorder: ${onBackorder}</span>` : '';
+                
+                // Add Expected Date badge if available
+                let expectedDateBadge = '';
+                if (expectedDate && onOrder > 0) {
+                    const expDate = new Date(expectedDate);
+                    const today = new Date();
+                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                    let dateColor = '#2e7d32';
+                    let dateBg = '#e8f5e9';
+                    let dateBorder = '#81c784';
+                    
+                    if (daysUntil < 0) {
+                        dateColor = '#c62828';
+                        dateBg = '#ffebee';
+                        dateBorder = '#e57373';
+                    } else if (daysUntil <= 3) {
+                        dateColor = '#e65100';
+                        dateBg = '#fff3e0';
+                        dateBorder = '#ffb74d';
+                    }
+                    
+                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                     daysUntil === 0 ? 'Today' : 
+                                     daysUntil === 1 ? 'Tomorrow' : 
+                                     `${daysUntil} days`;
+                    
+                    expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
+                }
+                
                 const supplierName = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown';
                 
                 html += `
                     <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
-                        <div class="item-picker-header-row">
+                        <div class="item-picker-header-row" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px;">
                             <span class="item-picker-sku">${item.SKU || ''}</span>
-                            <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}
+                            <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}${backorderBadge}
                         </div>
+                        ${expectedDateBadge ? `<div style="margin-bottom: 8px;">${expectedDateBadge}</div>` : ''}
                         <div class="item-picker-desc">${item.Item_Description || ''}</div>
                         <div class="item-picker-details">
                             <div class="item-picker-detail">
@@ -19169,6 +19203,8 @@ NOTE: Please print the attached PO document for full details.`;
                 const costPrice = parseFloat(item.Cost) || 0;
                 const qty = parseInt(item.Qty_On_Hand) || 0;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const onBackorder = parseInt(item.Qty_On_Backorder) || 0;
+                const expectedDate = item.Expected_Restock_Date;
                 
                 // Stock status color
                 let stockColor = '#28a745';
@@ -19184,12 +19220,41 @@ NOTE: Please print the attached PO document for full details.`;
                 // Add On Order badge if there's quantity on order
                 const onOrderBadge = onOrder > 0 ? `<span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #90caf9; margin-left: 4px;">📦 ${onOrder} On Order</span>` : '';
                 
+                // Add Backorder badge if there's quantity on backorder
+                const backorderBadge = onBackorder > 0 ? `<span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #ffb74d; margin-left: 4px;">⚠️ ${onBackorder} Backorder</span>` : '';
+                
+                // Add Expected Date badge if available
+                let expectedDateBadge = '';
+                if (expectedDate && onOrder > 0) {
+                    const expDate = new Date(expectedDate);
+                    const today = new Date();
+                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                    let dateColor = '#2e7d32';
+                    let dateBg = '#e8f5e9';
+                    
+                    if (daysUntil < 0) {
+                        dateColor = '#c62828';
+                        dateBg = '#ffebee';
+                    } else if (daysUntil <= 3) {
+                        dateColor = '#e65100';
+                        dateBg = '#fff3e0';
+                    }
+                    
+                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                     daysUntil === 0 ? 'Today' : 
+                                     daysUntil === 1 ? 'Tomorrow' : 
+                                     `${daysUntil} days`;
+                    
+                    expectedDateBadge = `<div style="margin-top: 6px;"><span style="background: ${dateBg}; color: ${dateColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid ${dateColor === '#2e7d32' ? '#81c784' : dateColor === '#e65100' ? '#ffb74d' : '#e57373'};">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span></div>`;
+                }
+                
                 html += `
                     <div class="item-picker-card" onclick="selectItemForReport('${item.Item_ID}', '${(item.Item_Description || '').replace(/'/g, "\\'")}')" style="border-left: 4px solid ${stockColor};">
-                        <div class="item-picker-card-header">
+                        <div class="item-picker-card-header" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
                             <span class="item-picker-sku">${item.SKU || 'No SKU'}</span>
-                            <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>${onOrderBadge}
+                            <span style="background: ${stockBg}; color: ${stockColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">${qty} in stock</span>${onOrderBadge}${backorderBadge}
                         </div>
+                        ${expectedDateBadge}
                         <div class="item-picker-desc">${item.Item_Description || 'No Description'}</div>
                         <div class="item-picker-details">
                             <div class="item-picker-detail">
