@@ -2875,7 +2875,7 @@
             <div class="content-card" style="margin-bottom: 20px; border-left: 4px solid #dc2626;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #dc2626;">🚨 Critical Alerts</h3>
-                    <button class="btn-small" onclick="refreshInventoryFlow()" style="background: #dc2626; color: white;">🔄 Refresh</button>
+                    <button class="btn-small" onclick="refreshInventoryFlowWithTimeout()" style="background: #dc2626; color: white;">🔄 Refresh</button>
                 </div>
                 <div id="invflowAlerts">
                     <!-- Alerts populated by JavaScript -->
@@ -3453,6 +3453,30 @@
         let selectedSuppliersForReport = [];
         let selectedItemsForReport = [];
         
+        // ==================== MULTI-SELECT FILTER HELPER ====================
+        /**
+         * Check if a value matches a filter that might contain comma-separated values
+         * @param {string} value - The value to check (e.g., "C001")
+         * @param {string} filter - The filter (might be "C001" or "C001,C002,C003")
+         * @returns {boolean} - True if value matches filter
+         */
+        function matchesFilter(value, filter) {
+            if (!filter || filter === '') return true;
+            
+            // Convert to string for consistent comparison
+            const strValue = String(value);
+            const strFilter = String(filter);
+            
+            // Check if filter contains multiple values (comma-separated)
+            if (strFilter.includes(',')) {
+                const allowedValues = strFilter.split(',').map(v => v.trim());
+                return allowedValues.includes(strValue);
+            }
+            
+            // Single value comparison
+            return strValue === strFilter;
+        }
+        
         // ==================== BUTTON DEBOUNCE SYSTEM ====================
         // Prevents double-clicks/taps from submitting forms twice
         let buttonDebounceMap = new Map();
@@ -3704,7 +3728,7 @@
             
             // Refresh Inventory Flow Dashboard when switching to that tab
             if (tabName === 'invflow') {
-                refreshInventoryFlow();
+                refreshInventoryFlowWithTimeout();
             }
             
             // Scroll to top when switching tabs
@@ -10417,7 +10441,7 @@
                 }
             }
             if (reportFilters.customer) {
-                filtered = filtered.filter(d => d.customerId === reportFilters.customer);
+                filtered = filtered.filter(d => matchesFilter(d.customerId, reportFilters.customer));
             }
             if (reportFilters.minAmount) {
                 filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
@@ -10529,7 +10553,7 @@
                 }
             }
             if (reportFilters.customer) {
-                sales = sales.filter(s => s.Customer_ID === reportFilters.customer);
+                sales = sales.filter(s => matchesFilter(s.Customer_ID, reportFilters.customer));
             }
             if (reportFilters.paymentStatus) {
                 sales = sales.filter(s => s.Payment_Status === reportFilters.paymentStatus);
@@ -10609,7 +10633,7 @@
             
             // APPLY ITEM FILTER if specified
             if (reportFilters.item) {
-                filteredLines = filteredLines.filter(line => line.Item_ID === reportFilters.item);
+                filteredLines = filteredLines.filter(line => matchesFilter(line.Item_ID, reportFilters.item));
             }
             
             // Calculate units sold per item
@@ -10762,7 +10786,7 @@
                 });
             }
             if (reportFilters.supplier) {
-                purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
+                purchases = purchases.filter(p => matchesFilter(p.Supplier_ID, reportFilters.supplier));
             }
             if (reportFilters.paymentStatus) {
                 purchases = purchases.filter(p => p.Payment_Status === reportFilters.paymentStatus);
@@ -10864,7 +10888,7 @@
                 });
             }
             if (reportFilters.supplier) {
-                purchases = purchases.filter(p => p.Supplier_ID === reportFilters.supplier);
+                purchases = purchases.filter(p => matchesFilter(p.Supplier_ID, reportFilters.supplier));
             }
             
             // Filter by PO Type
@@ -11068,7 +11092,7 @@
                 // Apply item filter
                 if (reportFilters.item) {
                     console.log('Applying item filter:', reportFilters.item);
-                    adjustments = adjustments.filter(a => String(a.Item_ID) === String(reportFilters.item));
+                    adjustments = adjustments.filter(a => matchesFilter(a.Item_ID, reportFilters.item));
                     console.log('After item filter:', adjustments.length);
                 }
                 
@@ -11206,7 +11230,7 @@
             
             // Apply filters
             if (reportFilters.supplier) {
-                items = items.filter(i => i.Supplier_ID === reportFilters.supplier);
+                items = items.filter(i => matchesFilter(i.Supplier_ID, reportFilters.supplier));
             }
             if (reportFilters.stockStatus) {
                 items = items.filter(i => {
@@ -11284,7 +11308,7 @@
             let unpaid = salesResult.data.filter(s => s.Payment_Status !== 'Paid');
             
             if (reportFilters.customer) {
-                unpaid = unpaid.filter(s => s.Customer_ID === reportFilters.customer);
+                unpaid = unpaid.filter(s => matchesFilter(s.Customer_ID, reportFilters.customer));
             }
             
             let html = `<h3 style="margin-top: 0;">Accounts Receivable</h3>`;
@@ -11340,7 +11364,7 @@
             let unpaid = poResult.data.filter(p => p.Payment_Status !== 'Paid' && p.Status !== 'Void');
             
             if (reportFilters.supplier) {
-                unpaid = unpaid.filter(p => p.Supplier_ID === reportFilters.supplier);
+                unpaid = unpaid.filter(p => matchesFilter(p.Supplier_ID, reportFilters.supplier));
             }
             
             let html = `<h3 style="margin-top: 0;">Accounts Payable</h3>`;
@@ -11940,7 +11964,7 @@
             
             // Filter by supplier if selected
             if (reportFilters.supplier) {
-                items = items.filter(i => i.Supplier_ID === reportFilters.supplier);
+                items = items.filter(i => matchesFilter(i.Supplier_ID, reportFilters.supplier));
             }
             
             const today = new Date().toLocaleDateString();
@@ -13146,7 +13170,7 @@
             
             // Filter by customer if selected
             if (reportFilters.customer) {
-                salesInPeriod = salesInPeriod.filter(s => s.Customer_ID === reportFilters.customer);
+                salesInPeriod = salesInPeriod.filter(s => matchesFilter(s.Customer_ID, reportFilters.customer));
             }
             
             // Calculate metrics
@@ -14121,7 +14145,7 @@
                 filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
             }
             if (reportFilters.customer) {
-                filtered = filtered.filter(d => d.customerId === reportFilters.customer);
+                filtered = filtered.filter(d => matchesFilter(d.customerId, reportFilters.customer));
             }
             if (reportFilters.minAmount) {
                 filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
@@ -14290,10 +14314,10 @@
                 filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
             }
             if (reportFilters.customer) {
-                filtered = filtered.filter(d => d.customerId === reportFilters.customer);
+                filtered = filtered.filter(d => matchesFilter(d.customerId, reportFilters.customer));
             }
             if (reportFilters.item) {
-                filtered = filtered.filter(d => d.itemId === reportFilters.item);
+                filtered = filtered.filter(d => matchesFilter(d.itemId, reportFilters.item));
             }
             if (reportFilters.paymentStatus) {
                 filtered = filtered.filter(d => d.paymentStatus === reportFilters.paymentStatus);
@@ -14455,7 +14479,7 @@
             let filtered = productData;
             
             if (reportFilters.item) {
-                filtered = filtered.filter(p => p.id === reportFilters.item);
+                filtered = filtered.filter(p => matchesFilter(p.id, reportFilters.item));
             }
             if (reportFilters.supplier) {
                 filtered = filtered.filter(p => p.supplierId === reportFilters.supplier);
@@ -16851,48 +16875,116 @@ NOTE: Please print the attached PO document for full details.`;
         /**
          * Refresh the entire Inventory Flow Dashboard
          */
+        // Wrapper function with timeout to prevent hanging
+        async function refreshInventoryFlowWithTimeout() {
+            const timeoutMs = 30000; // 30 seconds timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Dashboard loading timed out after 30 seconds. This usually means the backend is not responding or data is too large.')), timeoutMs);
+            });
+            
+            try {
+                await Promise.race([
+                    refreshInventoryFlow(),
+                    timeoutPromise
+                ]);
+            } catch (error) {
+                console.error('Dashboard timeout or error:', error);
+                showStatus('Dashboard failed to load: ' + error.message, 'error');
+                
+                const alertsDiv = document.getElementById('invflowAlerts');
+                if (alertsDiv) {
+                    alertsDiv.innerHTML = `
+                        <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 12px; padding: 20px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="font-size: 32px;">⏱️</div>
+                                <div>
+                                    <h4 style="margin: 0 0 8px 0; color: #dc2626;">Dashboard Loading Issue</h4>
+                                    <p style="margin: 0; color: #991b1b;">${error.message}</p>
+                                    <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 12px;">Open browser console (F12) to see what step failed</p>
+                                    <button onclick="refreshInventoryFlowWithTimeout()" style="margin-top: 12px; background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                                        🔄 Try Again
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
         async function refreshInventoryFlow() {
+            console.log('🔄 Starting refreshInventoryFlow...');
             try {
                 showStatus('Loading inventory flow data...', 'info');
                 
                 // Make sure we have all the data loaded
+                console.log('📦 Checking cached data...');
+                console.log('- cachedItems:', cachedItems ? cachedItems.length : 'null/undefined');
+                console.log('- cachedPurchaseOrders:', cachedPurchaseOrders ? cachedPurchaseOrders.length : 'null/undefined');
+                console.log('- cachedSalesOrders:', cachedSalesOrders ? cachedSalesOrders.length : 'null/undefined');
+                
                 if (!cachedItems || cachedItems.length === 0) {
+                    console.log('⏳ Loading items...');
                     await loadItems();
+                    console.log('✅ Items loaded:', cachedItems ? cachedItems.length : '0');
                 }
                 if (!cachedPurchaseOrders || cachedPurchaseOrders.length === 0) {
+                    console.log('⏳ Loading purchase orders...');
                     await loadPurchaseOrders();
+                    console.log('✅ Purchase orders loaded:', cachedPurchaseOrders ? cachedPurchaseOrders.length : '0');
                 }
                 if (!cachedSalesOrders || cachedSalesOrders.length === 0) {
+                    console.log('⏳ Loading sales orders...');
                     await loadSalesOrders();
+                    console.log('✅ Sales orders loaded:', cachedSalesOrders ? cachedSalesOrders.length : '0');
                 }
                 
-                // Calculate and display all sections
+                console.log('📊 Calculating metrics...');
                 calculateInvFlowMetrics();
-                renderInvFlowAlerts();
-                renderInvFlowBackorderItems();
-                renderInvFlowPendingPOs();
-                renderInvFlowCriticalItems();
+                console.log('✅ Metrics calculated');
                 
+                console.log('🚨 Rendering alerts...');
+                renderInvFlowAlerts();
+                console.log('✅ Alerts rendered');
+                
+                console.log('📦 Rendering backorder items...');
+                renderInvFlowBackorderItems();
+                console.log('✅ Backorder items rendered');
+                
+                console.log('🚚 Rendering pending POs...');
+                renderInvFlowPendingPOs();
+                console.log('✅ Pending POs rendered');
+                
+                console.log('⚠️ Rendering critical items...');
+                renderInvFlowCriticalItems();
+                console.log('✅ Critical items rendered');
+                
+                console.log('🎉 Dashboard refresh complete!');
                 showStatus('Inventory flow dashboard updated!', 'success');
             } catch (error) {
-                console.error('Error refreshing inventory flow:', error);
+                console.error('❌ Error refreshing inventory flow:', error);
+                console.error('Error stack:', error.stack);
                 showStatus('Error loading dashboard: ' + error.message, 'error');
                 
                 // Show error in alerts section
-                document.getElementById('invflowAlerts').innerHTML = `
-                    <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 12px; padding: 20px;">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="font-size: 32px;">❌</div>
-                            <div>
-                                <h4 style="margin: 0 0 8px 0; color: #dc2626;">Error Loading Dashboard</h4>
-                                <p style="margin: 0; color: #991b1b;">${error.message}</p>
-                                <button onclick="refreshInventoryFlow()" style="margin-top: 12px; background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                                    🔄 Try Again
-                                </button>
+                const alertsDiv = document.getElementById('invflowAlerts');
+                if (alertsDiv) {
+                    alertsDiv.innerHTML = `
+                        <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 12px; padding: 20px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="font-size: 32px;">❌</div>
+                                <div>
+                                    <h4 style="margin: 0 0 8px 0; color: #dc2626;">Error Loading Dashboard</h4>
+                                    <p style="margin: 0; color: #991b1b;">${error.message}</p>
+                                    <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 12px;">Check browser console (F12) for details</p>
+                                    <button onclick="refreshInventoryFlowWithTimeout()" style="margin-top: 12px; background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                                        🔄 Try Again
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }
         }
         
