@@ -38,14 +38,20 @@
 
         .header {
             text-align: center;
-            color: white;
+            color: var(--primary, #667eea);
+            margin: 10px;
             margin-bottom: 10px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 3px solid var(--primary, #667eea);
         }
 
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: none;
         }
 
         .tabs {
@@ -84,7 +90,7 @@
             border-radius: 16px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            display: none;
+            display: none !important;
             /* Contain content in landscape mode */
             overflow-x: auto;
             max-width: 100%;
@@ -93,7 +99,7 @@
         }
 
         .card.active {
-            display: block;
+            display: block !important;
             animation: fadeIn 0.3s;
         }
         
@@ -821,9 +827,27 @@
             
             /* ========== PURCHASE ORDER ENTRY LINE ITEMS MOBILE ========== */
             
-            /* Make PO entry line items container not use grid */
+            /* Remove horizontal scroll wrapper on mobile */
+            #poLineItemsWrapper {
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+            }
+            
+            #poLineItemsInner {
+                overflow: visible !important;
+                min-width: 100% !important;
+                width: 100% !important;
+            }
+            
+            /* Hide the grid header on mobile */
+            #poLineItemsHeader {
+                display: none !important;
+            }
+            
+            /* Make line items container not use grid */
             #poLineItems {
                 border: none !important;
+                border-radius: 0 !important;
                 padding: 0 !important;
                 background: transparent !important;
             }
@@ -868,7 +892,41 @@
                 font-size: 16px !important;
             }
             
+            /* Computed line total - add label */
+            #poLineItems .po-linetotal {
+                font-size: 18px !important;
+                padding: 12px !important;
+                font-weight: bold !important;
+                border-radius: 8px !important;
+            }
+            
+            #poLineItems .po-linetotal::before {
+                content: "Line Total: ";
+                font-weight: 600;
+                font-size: 14px;
+                color: #555;
+                display: block;
+                margin-bottom: 4px;
+            }
+            
             /* ========== SALES ORDER LINE ITEMS MOBILE RESPONSIVE ========== */
+            
+            /* Remove horizontal scroll wrapper on mobile */
+            #soLineItemsWrapper {
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+            }
+            
+            #soLineItemsInner {
+                overflow: visible !important;
+                min-width: 100% !important;
+                width: 100% !important;
+            }
+            
+            /* Hide the grid header on mobile */
+            #soLineItemsHeader {
+                display: none !important;
+            }
             
             /* Make SO line items container not use grid border */
             #soLineItems {
@@ -925,6 +983,23 @@
                 margin-top: 0 !important;
                 padding: 14px !important;
                 font-size: 16px !important;
+            }
+            
+            /* Computed line total - add label */
+            #soLineItems .so-linetotal {
+                font-size: 18px !important;
+                padding: 12px !important;
+                font-weight: bold !important;
+                border-radius: 8px !important;
+            }
+            
+            #soLineItems .so-linetotal::before {
+                content: "Line Total: ";
+                font-weight: 600;
+                font-size: 14px;
+                color: #555;
+                display: block;
+                margin-bottom: 4px;
             }
             
             /* Make Add Sale Form summary cards stack */
@@ -1225,7 +1300,9 @@
             }
             
             .header {
+                margin: 5px;
                 margin-bottom: 5px;
+                padding: 10px;
             }
             
             .header h1 {
@@ -1262,21 +1339,39 @@
             /* Navigation cards - compact size for landscape */
             .landing-nav-card {
                 flex: 0 0 auto !important;
-                min-width: 60px !important;
-                max-width: 60px !important;
-                padding: 4px 3px !important;
+                min-width: 70px !important;
+                width: 70px !important;
+                max-width: 70px !important;
+                min-height: 65px !important;
+                height: 65px !important;
+                padding: 6px 4px !important;
                 margin: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             
             .landing-nav-card div[style*="font-size: 24px"] {
-                font-size: 18px !important;
-                margin-bottom: 2px !important;
+                font-size: 22px !important;
+                margin-bottom: 3px !important;
             }
             
             .landing-nav-card h3 {
-                font-size: 8px !important;
+                font-size: 9px !important;
                 line-height: 1.2 !important;
                 margin: 0 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 100% !important;
+            }
+            
+            /* Navigation container on mobile - 2 rows of 5 */
+            .nav-container > div[style*="grid-template-columns"] {
+                grid-template-columns: repeat(5, 1fr) !important;
+                gap: 6px !important;
+                justify-items: center !important;
             }
             
             .tabs {
@@ -1536,44 +1631,44 @@
         
         /* Navigation Container - Themed */
         .nav-container {
-            background: #fffbf0; /* Cream/yellow default */
+            background: white; /* White to match card backgrounds */
         }
         
-        /* Theme-specific navigation backgrounds */
+        /* Theme-specific navigation backgrounds - all white to match cards */
         body.theme-purple .nav-container {
-            background: #f3f0ff; /* Light lavender for purple theme */
+            background: white;
         }
         
         body.theme-orange .nav-container {
-            background: #fff7ed; /* Light peach for orange theme */
+            background: white;
         }
         
         body.theme-green .nav-container {
-            background: #f0fdf4; /* Light mint for green theme */
+            background: white;
         }
         
         body.theme-blue .nav-container {
-            background: #eff6ff; /* Light sky for blue theme */
+            background: white;
         }
         
         body.theme-red .nav-container {
-            background: #fef2f2; /* Light rose for red theme */
+            background: white;
         }
         
         body.theme-teal .nav-container {
-            background: #f0fdfa; /* Light cyan for teal theme */
+            background: white;
         }
         
         body.theme-pink .nav-container {
-            background: #fdf2f8; /* Light pink for pink theme */
+            background: white;
         }
         
         body.theme-indigo .nav-container {
-            background: #eef2ff; /* Light indigo for indigo theme */
+            background: white;
         }
         
         body.theme-yellow .nav-container {
-            background: #fefce8; /* Light yellow for yellow theme */
+            background: white;
         }
         
         /* Desktop Modal Features - Draggable & Resizable */
@@ -1663,7 +1758,7 @@
 
         <!-- Navigation Cards - Always Visible at Top -->
         <!-- Navigation Cards - Card Styled with Theme Background - V14 -->
-        <div class="nav-container" style="position: static; z-index: 100; padding: 20px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid var(--primary, #667eea);">
+        <div class="nav-container" style="position: static; z-index: 100; padding: 20px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 3px solid var(--primary, #667eea);">
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
                 
                 <!-- Suppliers Card -->
@@ -2688,25 +2783,44 @@
                     <div class="content-card" style="margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--accent, #764ba2) 100%); color: white; padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0;">
                             <h4 style="margin: 0;">📦 Line Items</h4>
-                            <button type="button" class="btn" onclick="addPOLineItem()" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 8px 16px; font-size: 14px;">+ Add Item</button>
+                            <button type="button" class="btn" onclick="addPOLineItem()" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 8px 16px; font-size: 14px;">+ Add Line Item</button>
                         </div>
-                        <div class="line-items-container" id="poLineItems" style="border: 2px solid #667eea; border-radius: 8px; padding: 10px; background: #fafafa;">
-                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                    <select class="po-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
-                                        <option value="">Select Item</option>
-                                    </select>
+                        
+                        <!-- Wrapper for horizontal scroll on mobile -->
+                        <div id="poLineItemsWrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; position: relative;">
+                            <div id="poLineItemsInner" style="min-width: 600px; width: 100%; max-width: 100%;">
+                                <!-- Header Row -->
+                                <div id="poLineItemsHeader" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 16px;">
+                                    <div>Item</div>
+                                    <div style="text-align: center;">Quantity</div>
+                                    <div style="text-align: center;">Unit Cost</div>
+                                    <div style="text-align: right;">Line Total</div>
+                                    <div style="text-align: center;">Del</div>
                                 </div>
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
-                                    <input type="number" class="po-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                                
+                                <!-- Line Items Container -->
+                                <div class="line-items-container" id="poLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 10px; background: #fafafa;">
+                                    <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                                            <select class="po-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                                                <option value="">Select Item</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
+                                            <input type="number" class="po-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Unit Cost</label>
+                                            <input type="number" class="po-cost" placeholder="0.00" step="0.01" min="0" required style="width: 100%; padding: 14px 10px; border: 2px solid #28a745; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: #e8f5e9;">
+                                        </div>
+                                        <div style="margin-top: 26px;">
+                                            <div class="po-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                                        </div>
+                                        <button type="button" class="remove-btn" onclick="this.closest('.line-item-row').remove(); calculatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">🗑️</button>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Unit Cost</label>
-                                    <input type="number" class="po-cost" placeholder="0.00" step="0.01" min="0" required style="width: 100%; padding: 14px 10px; border: 2px solid #28a745; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: #e8f5e9;">
-                                </div>
-                                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; padding: 10px;">🗑️</button>
                             </div>
                         </div>
                         <div style="margin-top: 15px;">
@@ -2840,30 +2954,47 @@
                     <div class="content-card" style="margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--accent, #764ba2) 100%); color: white; padding: 15px; margin: -20px -20px 15px -20px; border-radius: 12px 12px 0 0;">
                             <h4 style="margin: 0;">📦 Items Sold</h4>
-                            <button type="button" class="btn" onclick="addSOLineItem()" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 8px 16px; font-size: 14px;">+ Add Item</button>
+                            <button type="button" class="btn" onclick="addSOLineItem()" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 8px 16px; font-size: 14px;">+ Add Line Item</button>
                         </div>
-                        <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
-                            <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
-                                        <option value="">Select Item</option>
-                                    </select>
+                        
+                        <!-- Wrapper for horizontal scroll on mobile -->
+                        <div id="soLineItemsWrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; position: relative;">
+                            <div id="soLineItemsInner" style="min-width: 600px; width: 100%; max-width: 100%;">
+                                <!-- Header Row -->
+                                <div id="soLineItemsHeader" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 16px;">
+                                    <div>Item</div>
+                                    <div style="text-align: center;">Quantity</div>
+                                    <div style="text-align: center;">Price</div>
+                                    <div style="text-align: right;">Line Total</div>
+                                    <div style="text-align: center;">Del</div>
                                 </div>
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
-                                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                                
+                                <!-- Line Items Container -->
+                                <div class="line-items-container" id="soLineItems" style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 8px 8px; padding: 10px; background: #fafafa;">
+                                    <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                                            <select class="so-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                                                <option value="">Select Item</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
+                                            <input type="number" class="so-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
+                                            <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="width: 100%; padding: 14px 10px; border: 2px solid #28a745; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: #e8f5e9;">
+                                        </div>
+                                        <div style="margin-top: 26px;">
+                                            <div class="so-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                                        </div>
+                                        <button type="button" class="remove-btn" onclick="this.closest('.line-item-row').remove(); calculateSOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">🗑️</button>
+                                        <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
-                                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #28a745; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: #e8f5e9; width: 100%;">
-                                </div>
-                                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; padding: 10px;">🗑️</button>
-                                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
                             </div>
                         </div>
-                    </div>
-                        <button type="button" class="btn btn-secondary" onclick="addSOLineItem()" style="margin-top: 10px;">+ Add Line Item</button>
                     </div>
                     
                     <!-- Card 3: Order Summary -->
@@ -4115,11 +4246,17 @@
                 }
             });
             
-            // Hide all content sections and show the selected one
-            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            // FORCE hide all content sections first
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('active');
+                card.style.display = 'none';
+            });
+            
+            // Show ONLY the selected tab
             const targetCard = document.getElementById(tabName);
             if (targetCard) {
                 targetCard.classList.add('active');
+                targetCard.style.display = 'block';
             }
             
             // Add to history (avoid duplicates of current tab)
