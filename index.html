@@ -7158,6 +7158,8 @@
         async function enableSalesOrderEdit() {
             const so = currentEditingOrder;
             
+            console.log('🔧 EDIT MODE: Starting edit for SO_ID:', so.SO_ID);
+            
             // Load items and customers if not cached
             if (cachedItems.length === 0) {
                 const itemsResult = await apiCall('getItems');
@@ -7165,16 +7167,23 @@
                     cachedItems = itemsResult.data;
                 }
             }
+            console.log('📦 Cached items:', cachedItems.length);
+            
             if (cachedCustomers.length === 0) {
                 const custResult = await apiCall('getCustomers');
                 if (custResult && custResult.status === 'success') {
                     cachedCustomers = custResult.data;
                 }
             }
+            console.log('👥 Cached customers:', cachedCustomers.length);
             
             // Get line items
+            console.log('🔍 Fetching line items for SO_ID:', so.SO_ID);
             const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+            console.log('📊 Line items result:', linesResult);
             const lines = linesResult?.data || [];
+            console.log('✅ Line items count:', lines.length);
+            console.log('📋 Line items:', lines);
             
             document.getElementById('modalTitle').textContent = `Edit Sales Order: ${so.Invoice_Number || so.SO_ID}`;
             
