@@ -1205,9 +1205,12 @@
             #reportSetupModal,
             #howToGuideModal,
             #uploadItemsModal,
-            #itemPickerModal {
+            #itemPickerModal,
+            #customerPickerModal,
+            #supplierPickerModal {
                 padding: 0 !important;
                 overflow: hidden !important; /* Prevent outer scroll */
+                z-index: 99999 !important;  /* Ensure way above sticky elements */
             }
             
             /* Lock inner modal content - prevent movement */
@@ -1230,6 +1233,7 @@
                 border-radius: 0 !important;
                 overflow-y: auto !important; /* Content scrolls, but modal doesn't move */
                 -webkit-overflow-scrolling: touch !important;
+                z-index: 100000 !important; /* Ensure content is on top */
             }
         }
     </style>
@@ -2117,8 +2121,8 @@
                         </div>
                     </div>
                     
-                    <!-- Card 3: Order Summary -->
-                    <div class="content-card" style="margin-bottom: 20px;">
+                    <!-- Card 3: Order Summary - STICKY -->
+                    <div class="content-card" style="margin-bottom: 20px; position: sticky; top: 80px; z-index: 10; background: white;">
                         <h4 style="margin: 0 0 15px 0; color: var(--primary, #667eea);">💰 Order Summary</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                             <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--primary, #667eea);">
@@ -12592,6 +12596,29 @@
                         Critical issues requiring immediate attention
                     </p>
                 </div>
+                
+                <!-- STICKY ACTION BUTTONS -->
+                <div style="position: sticky; top: 75px; z-index: 50; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06); border: 2px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div style="font-weight: 700; color: #334155; font-size: 16px;">
+                            ⚡ Quick Actions
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="oval-action-btn oval-action-primary" onclick="switchTab('createpo'); closeModal();" style="font-size: 14px; padding: 10px 20px;">
+                                📦 Create PO
+                            </button>
+                            <button class="oval-action-btn oval-action-success" onclick="switchTab('sales'); closeModal(); setTimeout(() => showAddSaleForm(), 100);" style="font-size: 14px; padding: 10px 20px;">
+                                💰 Record Sale
+                            </button>
+                            <button class="oval-action-btn oval-action-info" onclick="switchTab('inventory'); closeModal();" style="font-size: 14px; padding: 10px 20px;">
+                                📋 View Inventory
+                            </button>
+                            <button class="oval-action-btn oval-action-warning" onclick="switchTab('purchases'); closeModal();" style="font-size: 14px; padding: 10px 20px;">
+                                📥 Receive PO
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `;
             
             // 1. PAST DUE PAYMENTS
@@ -17610,7 +17637,7 @@ NOTE: Please print the attached PO document for full details.`;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.85);
-            z-index: 20000;
+            z-index: 99999 !important;  /* Way above sticky elements (999) */
             padding: 0;
         }
         
@@ -17622,6 +17649,8 @@ NOTE: Please print the attached PO document for full details.`;
             flex-direction: column;
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
+            z-index: 100000 !important;  /* Ensure it's on top */
         }
         
         @media (min-width: 768px) {
