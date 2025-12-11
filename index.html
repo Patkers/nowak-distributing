@@ -3976,8 +3976,7 @@
                 console.log('Attaching listeners to first SO line item'); // DEBUG
                 const itemSelect = firstSORow.querySelector('.so-item');
                 const qtyInput = firstSORow.querySelector('.so-qty');
-                const priceInput = firstSORow.querySelector('.so-price');
-                const removeBtn = firstSORow.querySelector('.remove-btn');
+                const removeBtn = firstSORow.querySelector('.btn-danger');
                 
                 if (itemSelect) {
                     itemSelect.addEventListener('change', function() {
@@ -3988,26 +3987,20 @@
                 
                 if (qtyInput) {
                     qtyInput.addEventListener('input', function() {
-                        // Update stock info when quantity changes
+                        console.log('First row QTY changed'); // DEBUG
                         const row = this.closest('.line-item-row');
-                        const itemSelect = row.querySelector('.so-item');
-                        if (itemSelect.value) {
-                            updateSOItemInfo(itemSelect);
-                        }
-                        calculateSOTotal();
-                    });
-                }
-                
-                if (priceInput) {
-                    priceInput.addEventListener('input', function() {
+                        updateSOLineCalculations(row);
                         calculateSOTotal();
                     });
                 }
                 
                 if (removeBtn) {
                     removeBtn.addEventListener('click', function() {
-                        removeLineItem(this);
+                        this.closest('.line-item-row').remove();
                         calculateSOTotal();
+                    });
+                }
+            }
                     });
                 }
                 console.log('First SO row listeners attached!'); // DEBUG
@@ -5754,66 +5747,169 @@
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
             newRow.innerHTML = `
-                <select class="po-item" required>
-                    <option value="">Select Item</option>
-                    ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package}" data-cost="${item.Package_Cost}" data-uom="${item.Purchase_UOM}">${item.Item_Description}</option>`).join('')}
-                </select>
-                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required>
-                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required>
-                <button type="button" class="remove-btn">✕</button>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                    <select class="po-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                        <option value="">Select item...</option>
+                        ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package || 1}" data-cost="${item.Package_Cost || 0}" data-uom="${item.Purchase_UOM}">${item.Item_Description}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                    <input type="number" class="po-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                </div>
+                <div style="margin-top: 26px;">
+                    <div class="po-units" style="text-align: center; font-size: 12px; color: #666; padding: 6px; line-height: 1.2;">
+                        <div style="font-weight: 600;">Units/Case:</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #333;">-</div>
+                    </div>
+                </div>
+                <div style="margin-top: 26px;">
+                    <div class="po-totalunits" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 6px; border: 2px solid #f9a825; line-height: 1.2;">
+                        <div style="color: #ef6c00; font-weight: 600;">Total Units:</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #f9a825;">-</div>
+                    </div>
+                </div>
+                <div style="margin-top: 26px;">
+                    <div class="po-cost" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 6px; border: 2px solid #28a745; line-height: 1.2;">
+                        <div style="color: #2e7d32; font-weight: 600;">Catalog Cost:</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #28a745;">-</div>
+                    </div>
+                </div>
+                <div style="margin-top: 26px;">
+                    <div class="po-linetotal" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-radius: 6px; border: 2px solid #e91e63; line-height: 1.2;">
+                        <div style="color: #c2185b; font-weight: 600;">Line Total:</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #e91e63;">$0.00</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-danger" style="width: 100%; padding: 10px; font-size: 18px; min-height: 52px; border: none; border-radius: 8px; cursor: pointer;">🗑️</button>
             `;
             container.appendChild(newRow);
             
             // Attach event listeners programmatically (CSP-safe)
             const itemSelect = newRow.querySelector('.po-item');
             const qtyInput = newRow.querySelector('.po-qty');
-            const costInput = newRow.querySelector('.po-cost');
-            const removeBtn = newRow.querySelector('.remove-btn');
+            const removeBtn = newRow.querySelector('.btn-danger');
             
             itemSelect.addEventListener('change', function() {
                 updatePOItemInfo(this);
             });
             
             qtyInput.addEventListener('input', function() {
-                calculatePOTotal();
-            });
-            
-            costInput.addEventListener('input', function() {
-                calculatePOTotal();
+                const row = this.closest('.line-item-row');
+                updatePOLineCalculations(row);
+                updatePOTotals();
             });
             
             removeBtn.addEventListener('click', function() {
-                removeLineItem(this);
-                calculatePOTotal();
+                this.closest('.line-item-row').remove();
+                updatePOTotals();
             });
         }
         
         function updatePOItemInfo(selectElement) {
             const option = selectElement.options[selectElement.selectedIndex];
-            const cost = option.getAttribute('data-cost');
             
-            const row = selectElement.parentElement;
-            const costInput = row.querySelector('.po-cost');
-            
-            if (cost) {
-                costInput.value = cost;
+            if (!option.value) {
+                return;
             }
             
-            calculatePOTotal();
+            const cost = parseFloat(option.getAttribute('data-cost')) || 0;
+            const unitsPerCase = parseFloat(option.getAttribute('data-units')) || 0;
+            
+            const row = selectElement.closest('.line-item-row');
+            const costDiv = row.querySelector('.po-cost div:last-child');
+            const unitsDiv = row.querySelector('.po-units div:last-child');
+            
+            // Update cost display
+            if (costDiv && cost > 0) {
+                costDiv.textContent = '$' + cost.toFixed(2);
+            }
+            
+            // Update units/case display
+            if (unitsDiv && unitsPerCase > 0) {
+                unitsDiv.textContent = unitsPerCase;
+            }
+            
+            // Update line totals when item changes
+            updatePOLineCalculations(row);
+            updatePOTotals();
         }
         
-        function calculatePOTotal() {
+        // New function to update individual PO line calculations
+        function updatePOLineCalculations(row) {
+            const qtyInput = row.querySelector('.po-qty');
+            const qty = parseFloat(qtyInput?.value) || 0;
+            
+            // Get cost from display
+            const costDiv = row.querySelector('.po-cost div:last-child');
+            const costText = costDiv ? costDiv.textContent.replace('$', '').replace('-', '0').trim() : '0';
+            const cost = parseFloat(costText) || 0;
+            
+            // Get units per case
+            const unitsDiv = row.querySelector('.po-units div:last-child');
+            const unitsPerCase = unitsDiv ? parseInt(unitsDiv.textContent.replace('-', '0')) : 0;
+            
+            // Calculate totals
+            const totalUnits = qty * unitsPerCase;
+            const lineTotal = qty * cost;
+            
+            // Update Total Units display
+            const totalUnitsDiv = row.querySelector('.po-totalunits div:last-child');
+            if (totalUnitsDiv) {
+                totalUnitsDiv.textContent = totalUnits > 0 ? totalUnits : '-';
+            }
+            
+            // Update Line Total display
+            const lineTotalDiv = row.querySelector('.po-linetotal div:last-child');
+            if (lineTotalDiv) {
+                lineTotalDiv.textContent = lineTotal > 0 ? '$' + lineTotal.toFixed(2) : '$0.00';
+            }
+        }
+        
+        function updatePOTotals() {
             let total = 0;
+            let totalCases = 0;
+            let totalUnits = 0;
+            
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
                 const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
-                const cost = parseFloat(row.querySelector('.po-cost')?.value) || 0;
-                total += qty * cost;
+                const costDiv = row.querySelector('.po-cost div:last-child');
+                const cost = costDiv ? parseFloat(costDiv.textContent.replace('$', '').replace('-', '0')) : 0;
+                
+                // Get units per case
+                const unitsDiv = row.querySelector('.po-units div:last-child');
+                const unitsPerCase = unitsDiv ? parseInt(unitsDiv.textContent.replace('-', '0')) : 0;
+                
+                const lineTotal = qty * cost;
+                const lineUnits = qty * unitsPerCase;
+                
+                total += lineTotal;
+                totalCases += qty;
+                totalUnits += lineUnits;
             });
+            
+            // Update hidden total field (if exists)
             const totalField = document.getElementById('poTotal');
             if (totalField) {
                 totalField.value = total.toFixed(2);
             }
+            
+            // Update Order Summary boxes
+            const casesBox = document.getElementById('poTotalCases');
+            const unitsBox = document.getElementById('poTotalUnits');
+            const amountBox = document.getElementById('poTotalAmount');
+            
+            if (casesBox) casesBox.textContent = totalCases;
+            if (unitsBox) unitsBox.textContent = totalUnits;
+            if (amountBox) amountBox.textContent = '$' + total.toFixed(2);
+        }
+        
+        // Alias for compatibility
+        function calculatePOTotal() {
+            updatePOTotals();
         }
         
         function calculatePOLine(qtyInput) {
@@ -7650,11 +7746,13 @@
             document.querySelector('#addSaleForm form').reset();
             
             // Reset summary boxes
-            const qtyBox = document.getElementById('soTotalQty');
+            const casesBox = document.getElementById('soTotalCases');
+            const unitsBox = document.getElementById('soTotalUnits');
             const amountBox = document.getElementById('soTotalAmount');
-            if (qtyBox) qtyBox.textContent = '0';
+            if (casesBox) casesBox.textContent = '0';
+            if (unitsBox) unitsBox.textContent = '0';
             if (amountBox) amountBox.textContent = '$0.00';
-            
+        }
             // FIX #1: Clear all error messages and line items
             const lineItemsContainer = document.getElementById('soLineItems');
             if (lineItemsContainer) {
@@ -7702,6 +7800,7 @@
         }
 
         function addSOLineItem() {
+            console.log('=== addSOLineItem v2 CALLED ==='); // DEBUG
             const container = document.getElementById('soLineItems');
             
             // Get all items once
@@ -7710,97 +7809,128 @@
                 return;
             }
             
+            console.log('Creating line item with', cachedItems.length, 'items available'); // DEBUG
+            
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
-            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
             newRow.innerHTML = `
                 <div>
                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
-                        <option value="">Select Item</option>
+                    <select class="so-item" required style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                        <option value="">Select item...</option>
                         ${cachedItems.map(item => {
-                            console.log('Item:', item.Item_Description, 'Unit_Sell_Price:', item.Unit_Sell_Price); // DEBUG
-                            return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
+                            return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price || 0}" data-stock="${item.Qty_On_Hand || 0}" data-units="${item.Units_Per_Case || 1}">${item.Item_Description}</option>`;
                         }).join('')}
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
-                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                    <input type="number" class="so-qty" placeholder="0" min="1" required style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
                 </div>
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
-                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                <div style="margin-top: 26px;">
+                    <div class="so-units" style="text-align: center; font-size: 12px; color: #666; padding: 6px; line-height: 1.2;">
+                        <div style="font-weight: 600;">Units/Case:</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #333;">-</div>
+                    </div>
                 </div>
-                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
-                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
+                <div style="margin-top: 26px;">
+                    <div class="so-totalunits" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 6px; border: 2px solid #f9a825; line-height: 1.2;">
+                        <div style="color: #ef6c00; font-weight: 600;">Total Units:</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #f9a825;">-</div>
+                    </div>
+                </div>
+                <div style="margin-top: 26px;">
+                    <div class="so-price" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 6px; border: 2px solid #28a745; line-height: 1.2;">
+                        <div style="color: #2e7d32; font-weight: 600;">Sale Price:</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #28a745;">-</div>
+                    </div>
+                </div>
+                <div style="margin-top: 26px;">
+                    <div class="so-linetotal" style="text-align: center; font-size: 12px; padding: 10px; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-radius: 6px; border: 2px solid #e91e63; line-height: 1.2;">
+                        <div style="color: #c2185b; font-weight: 600;">Line Total:</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #e91e63;">$0.00</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-danger" style="width: 100%; padding: 10px; font-size: 18px; min-height: 52px; border: none; border-radius: 8px; cursor: pointer;">🗑️</button>
+                <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: 5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
             `;
             container.appendChild(newRow);
+            console.log('✓ Line item HTML created and appended'); // DEBUG
             
             // Attach event listeners programmatically (CSP-safe)
             const itemSelect = newRow.querySelector('.so-item');
             const qtyInput = newRow.querySelector('.so-qty');
-            const priceInput = newRow.querySelector('.so-price');
-            const removeBtn = newRow.querySelector('.remove-btn');
+            const removeBtn = newRow.querySelector('.btn-danger');
             
-            console.log('Attaching listeners to:', itemSelect); // DEBUG
+            console.log('Attaching event listeners...'); // DEBUG
             
             itemSelect.addEventListener('change', function() {
-                console.log('CHANGE EVENT FIRED!'); // DEBUG
+                console.log('📍 Item select CHANGE event triggered!'); // DEBUG
                 updateSOItemInfo(this);
             });
             
             qtyInput.addEventListener('input', function() {
-                // Update stock info when quantity changes
+                console.log('📍 Quantity INPUT event triggered!'); // DEBUG
                 const row = this.closest('.line-item-row');
-                const itemSelect = row.querySelector('.so-item');
-                if (itemSelect.value) {
-                    updateSOItemInfo(itemSelect);
-                }
-                calculateSOTotal();
-            });
-            
-            priceInput.addEventListener('input', function() {
+                updateSOLineCalculations(row);
                 calculateSOTotal();
             });
             
             removeBtn.addEventListener('click', function() {
-                removeLineItem(this);
+                console.log('📍 Delete button CLICK event triggered!'); // DEBUG
+                this.closest('.line-item-row').remove();
                 calculateSOTotal();
             });
             
-            console.log('Event listeners attached successfully!'); // DEBUG
+            console.log('✓ Event listeners attached successfully'); // DEBUG
+            console.log('=== addSOLineItem v2 COMPLETE ==='); // DEBUG
         }
         
         function updateSOItemInfo(selectElement) {
-            console.log('updateSOItemInfo called!'); // DEBUG
+            console.log('=== updateSOItemInfo v2 CALLED ==='); // NEW DEBUG
             const option = selectElement.options[selectElement.selectedIndex];
             console.log('Selected option:', option); // DEBUG
-            console.log('Option text:', option.text); // DEBUG
-            console.log('data-price attribute:', option.getAttribute('data-price')); // DEBUG
-            console.log('data-stock attribute:', option.getAttribute('data-stock')); // DEBUG
             
-            const price = option.getAttribute('data-price');
+            if (!option.value) {
+                console.log('No option selected, skipping'); // DEBUG
+                return;
+            }
+            
+            const price = parseFloat(option.getAttribute('data-price')) || 0;
             const stock = parseFloat(option.getAttribute('data-stock')) || 0;
+            const unitsPerCase = parseFloat(option.getAttribute('data-units')) || 0;
+            
+            console.log('Price:', price, 'Stock:', stock, 'Units/Case:', unitsPerCase); // DEBUG
             
             const row = selectElement.closest('.line-item-row');
-            const priceInput = row.querySelector('.so-price');
+            const priceDiv = row.querySelector('.so-price div:last-child');
+            const unitsDiv = row.querySelector('.so-units div:last-child');
             const qtyInput = row.querySelector('.so-qty');
             const stockInfoDiv = row.querySelector('.so-stock-info');
             
-            if (price) {
-                console.log('Setting price to:', price); // DEBUG
-                priceInput.value = price;
-            } else {
-                console.log('NO PRICE FOUND!'); // DEBUG
+            // Update price display
+            if (priceDiv && price > 0) {
+                priceDiv.textContent = '$' + price.toFixed(2);
+                console.log('✓ Updated price display to:', price); // DEBUG
             }
+            
+            // Update units/case display
+            if (unitsDiv && unitsPerCase > 0) {
+                unitsDiv.textContent = unitsPerCase;
+                console.log('✓ Updated units/case to:', unitsPerCase); // DEBUG
+            }
+            
+            // Update line totals when item changes
+            updateSOLineCalculations(row);
+            console.log('✓ Called updateSOLineCalculations'); // DEBUG
             
             // Show stock info
             if (stockInfoDiv && option.value) {
                 stockInfoDiv.style.display = 'block';
                 
                 const qty = parseFloat(qtyInput.value) || 0;
-                const remaining = stock - qty;
+                const remaining = stock - (qty * unitsPerCase);
                 
                 let message = `📦 Current Stock: ${stock} units`;
                 let bgColor = '#e3f2fd';
@@ -7832,19 +7962,78 @@
             }
             
             calculateSOTotal();
+            console.log('✓ Called calculateSOTotal'); // DEBUG
+            console.log('=== updateSOItemInfo v2 COMPLETE ==='); // DEBUG
+        }
+        
+        // New function to update individual line calculations
+        function updateSOLineCalculations(row) {
+            console.log('=== updateSOLineCalculations CALLED ==='); // DEBUG
+            const qtyInput = row.querySelector('.so-qty');
+            const qty = parseFloat(qtyInput?.value) || 0;
+            console.log('Quantity:', qty); // DEBUG
+            
+            // Get price from display
+            const priceDiv = row.querySelector('.so-price div:last-child');
+            const priceText = priceDiv ? priceDiv.textContent.replace('$', '').replace('-', '0').trim() : '0';
+            const price = parseFloat(priceText) || 0;
+            console.log('Price from div:', priceText, '→', price); // DEBUG
+            
+            // Get units per case
+            const unitsDiv = row.querySelector('.so-units div:last-child');
+            const unitsPerCase = unitsDiv ? parseInt(unitsDiv.textContent.replace('-', '0')) : 0;
+            console.log('Units/Case from div:', unitsPerCase); // DEBUG
+            
+            // Calculate totals
+            const totalUnits = qty * unitsPerCase;
+            const lineTotal = qty * price;
+            console.log('Calculated Total Units:', totalUnits, 'Line Total:', lineTotal); // DEBUG
+            
+            // Update Total Units display
+            const totalUnitsDiv = row.querySelector('.so-totalunits div:last-child');
+            if (totalUnitsDiv) {
+                totalUnitsDiv.textContent = totalUnits > 0 ? totalUnits : '-';
+                console.log('✓ Updated Total Units display'); // DEBUG
+            }
+            
+            // Update Line Total display
+            const lineTotalDiv = row.querySelector('.so-linetotal div:last-child');
+            if (lineTotalDiv) {
+                lineTotalDiv.textContent = lineTotal > 0 ? '$' + lineTotal.toFixed(2) : '$0.00';
+                console.log('✓ Updated Line Total display'); // DEBUG
+            }
+            console.log('=== updateSOLineCalculations COMPLETE ==='); // DEBUG
         }
         
         function calculateSOTotal() {
+            console.log('=== calculateSOTotal CALLED ==='); // DEBUG
             let total = 0;
-            let totalQty = 0;
+            let totalCases = 0;
+            let totalUnits = 0;
             
-            document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
+            const rows = document.querySelectorAll('#soLineItems .line-item-row');
+            console.log('Found', rows.length, 'line item rows'); // DEBUG
+            
+            rows.forEach((row, index) => {
                 const qty = parseInt(row.querySelector('.so-qty')?.value) || 0;
-                const price = parseFloat(row.querySelector('.so-price')?.value) || 0;
+                const priceDiv = row.querySelector('.so-price div:last-child');
+                const price = priceDiv ? parseFloat(priceDiv.textContent.replace('$', '').replace('-', '0')) : 0;
+                
+                // Get units per case from the item
+                const unitsDiv = row.querySelector('.so-units div:last-child');
+                const unitsPerCase = unitsDiv ? parseInt(unitsDiv.textContent.replace('-', '0')) : 0;
+                
                 const lineTotal = qty * price;
+                const lineUnits = qty * unitsPerCase;
+                
+                console.log(`Row ${index}: Qty=${qty}, Price=${price}, Units/Case=${unitsPerCase}, LineTotal=${lineTotal}, LineUnits=${lineUnits}`); // DEBUG
+                
                 total += lineTotal;
-                totalQty += qty;
+                totalCases += qty;
+                totalUnits += lineUnits;
             });
+            
+            console.log('TOTALS: Cases=', totalCases, 'Units=', totalUnits, 'Amount=', total); // DEBUG
             
             // Update hidden total field (if exists)
             const totalField = document.getElementById('soTotal');
@@ -7852,12 +8041,31 @@
                 totalField.value = total.toFixed(2);
             }
             
-            // Update summary boxes
-            const qtyBox = document.getElementById('soTotalQty');
+            // Update Order Summary boxes
+            const casesBox = document.getElementById('soTotalCases');
+            const unitsBox = document.getElementById('soTotalUnits');
             const amountBox = document.getElementById('soTotalAmount');
             
-            if (qtyBox) qtyBox.textContent = totalQty;
-            if (amountBox) amountBox.textContent = '$' + total.toFixed(2);
+            console.log('Updating summary boxes:', {casesBox: !!casesBox, unitsBox: !!unitsBox, amountBox: !!amountBox}); // DEBUG
+            
+            if (casesBox) {
+                casesBox.textContent = totalCases;
+                console.log('✓ Set soTotalCases to:', totalCases); // DEBUG
+            }
+            if (unitsBox) {
+                unitsBox.textContent = totalUnits;
+                console.log('✓ Set soTotalUnits to:', totalUnits); // DEBUG
+            }
+            if (amountBox) {
+                amountBox.textContent = '$' + total.toFixed(2);
+                console.log('✓ Set soTotalAmount to:', total.toFixed(2)); // DEBUG
+            }
+            console.log('=== calculateSOTotal COMPLETE ==='); // DEBUG
+        }
+        
+        // Alias for compatibility
+        function updateSOTotals() {
+            calculateSOTotal();
         }
 
         let isSavingSale = false; // Prevent double-click
