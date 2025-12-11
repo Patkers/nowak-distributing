@@ -607,6 +607,18 @@
                 padding: 10px;
             }
             
+            /* Floating Settings Gear - smaller on mobile */
+            div[onclick="switchTab('config')"][style*="position: fixed"][style*="top: 20px"] {
+                width: 45px !important;
+                height: 45px !important;
+                top: 15px !important;
+                right: 15px !important;
+            }
+            
+            div[onclick="switchTab('config')"][style*="position: fixed"] span {
+                font-size: 20px !important;
+            }
+            
             .header h1 {
                 font-size: 1.8em;
             }
@@ -676,6 +688,18 @@
         
         /* Phones (480px and below) */
         @media (max-width: 480px) {
+            /* Floating Settings Gear - even smaller on small phones */
+            div[onclick="switchTab('config')"][style*="position: fixed"][style*="top: 20px"] {
+                width: 40px !important;
+                height: 40px !important;
+                top: 10px !important;
+                right: 10px !important;
+            }
+            
+            div[onclick="switchTab('config')"][style*="position: fixed"] span {
+                font-size: 18px !important;
+            }
+            
             .header h1 {
                 font-size: 1.5em;
             }
@@ -821,6 +845,18 @@
                 padding: 5px;
                 min-height: 100vh;
                 height: auto;
+            }
+            
+            /* Floating Settings Gear - compact in landscape */
+            div[onclick="switchTab('config')"][style*="position: fixed"][style*="top: 20px"] {
+                width: 35px !important;
+                height: 35px !important;
+                top: 8px !important;
+                right: 8px !important;
+            }
+            
+            div[onclick="switchTab('config')"][style*="position: fixed"] span {
+                font-size: 16px !important;
             }
             
             .container {
@@ -1213,6 +1249,11 @@
             <p>Professional Inventory & Order Management System</p>
         </div>
 
+        <!-- Floating Settings Gear Icon - Top Right Corner -->
+        <div onclick="switchTab('config')" style="position: fixed; top: 20px; right: 20px; z-index: 1001; background: var(--primary, #667eea); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='rotate(90deg) scale(1.1)'" onmouseout="this.style.transform='rotate(0deg) scale(1)'" title="Settings">
+            <span style="font-size: 24px;">⚙️</span>
+        </div>
+
         <!-- Navigation Cards - Always Visible at Top -->
         <!-- Navigation Cards - LOCKED (Not Sticky) - V13 -->
         <div style="position: static; z-index: 100; background: var(--bg-color, #f5f5f5); padding: 5px; margin: 0px 5px 5px 5px; border: 3px solid var(--primary, #667eea); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
@@ -1276,12 +1317,6 @@
                 <div class="landing-nav-card" onclick="switchTab('reports')" style="background: rgba(255,255,255,0.95); color: #4c1d95; padding: 8px 6px; border: 2px solid #4c1d95; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
                     <div style="font-size: 24px; margin-bottom: 2px;">📈</div>
                     <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Reports</h3>
-                </div>
-
-                <!-- Settings Card -->
-                <div class="landing-nav-card" onclick="switchTab('config')" style="background: rgba(255,255,255,0.95); color: #52525b; padding: 8px 6px; border: 2px solid #52525b; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 24px; margin-bottom: 2px;">⚙️</div>
-                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Settings</h3>
                 </div>
             </div>
         </div>
@@ -16779,90 +16814,256 @@ NOTE: Please print the attached PO document for full details.`;
          * Refresh the entire Inventory Flow Dashboard
          */
         async function refreshInventoryFlow() {
-            showStatus('Loading inventory flow data...', 'info');
-            
-            // Make sure we have all the data loaded
-            if (!cachedItems || cachedItems.length === 0) {
-                await loadItems();
+            try {
+                showStatus('Loading inventory flow data...', 'info');
+                
+                // Make sure we have all the data loaded
+                if (!cachedItems || cachedItems.length === 0) {
+                    await loadItems();
+                }
+                if (!cachedPurchaseOrders || cachedPurchaseOrders.length === 0) {
+                    await loadPurchaseOrders();
+                }
+                if (!cachedSalesOrders || cachedSalesOrders.length === 0) {
+                    await loadSalesOrders();
+                }
+                
+                // Calculate and display all sections
+                calculateInvFlowMetrics();
+                renderInvFlowAlerts();
+                renderInvFlowBackorderItems();
+                renderInvFlowPendingPOs();
+                renderInvFlowCriticalItems();
+                
+                showStatus('Inventory flow dashboard updated!', 'success');
+            } catch (error) {
+                console.error('Error refreshing inventory flow:', error);
+                showStatus('Error loading dashboard: ' + error.message, 'error');
+                
+                // Show error in alerts section
+                document.getElementById('invflowAlerts').innerHTML = `
+                    <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 12px; padding: 20px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="font-size: 32px;">❌</div>
+                            <div>
+                                <h4 style="margin: 0 0 8px 0; color: #dc2626;">Error Loading Dashboard</h4>
+                                <p style="margin: 0; color: #991b1b;">${error.message}</p>
+                                <button onclick="refreshInventoryFlow()" style="margin-top: 12px; background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                                    🔄 Try Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
-            if (!cachedPurchaseOrders || cachedPurchaseOrders.length === 0) {
-                await loadPurchaseOrders();
-            }
-            if (!cachedSalesOrders || cachedSalesOrders.length === 0) {
-                await loadSalesOrders();
-            }
-            
-            // Calculate and display all sections
-            calculateInvFlowMetrics();
-            renderInvFlowAlerts();
-            renderInvFlowBackorderItems();
-            renderInvFlowPendingPOs();
-            renderInvFlowCriticalItems();
-            
-            showStatus('Inventory flow dashboard updated!', 'success');
         }
         
         /**
          * Calculate summary metrics for inventory flow
          */
         function calculateInvFlowMetrics() {
-            const items = cachedItems || [];
-            const pos = cachedPurchaseOrders || [];
-            
-            // Total On Order
-            const totalOnOrder = items.reduce((sum, item) => {
-                return sum + (parseInt(item.Qty_On_Order) || 0);
-            }, 0);
-            
-            // Total Backorder
-            const totalBackorder = items.reduce((sum, item) => {
-                return sum + (parseInt(item.Qty_On_Backorder) || 0);
-            }, 0);
-            
-            // POs This Week
-            const now = new Date();
-            const endOfWeek = new Date(now);
-            endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
-            
-            const posThisWeek = pos.filter(po => {
-                if (['Received', 'Cancelled', 'Voided'].includes(po.Status)) return false;
-                if (!po.Need_By_Date) return false;
-                const needBy = new Date(po.Need_By_Date);
-                return needBy <= endOfWeek;
-            }).length;
-            
-            // Total Value Pending
-            const totalValue = pos.filter(po => {
-                return !['Received', 'Cancelled', 'Voided'].includes(po.Status);
-            }).reduce((sum, po) => {
-                return sum + (parseFloat(po.Total_Amount) || 0);
-            }, 0);
-            
-            // Update display
-            document.getElementById('invflowTotalOnOrder').textContent = totalOnOrder.toLocaleString();
-            document.getElementById('invflowTotalBackorder').textContent = totalBackorder.toLocaleString();
-            document.getElementById('invflowPOsThisWeek').textContent = posThisWeek;
-            document.getElementById('invflowTotalValue').textContent = '$' + totalValue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            try {
+                const items = cachedItems || [];
+                const pos = cachedPurchaseOrders || [];
+                
+                // Total On Order - check if field exists and has data
+                const totalOnOrder = items.reduce((sum, item) => {
+                    const qty = item.Qty_On_Order;
+                    if (qty === undefined || qty === null || qty === '') return sum;
+                    return sum + (parseInt(qty) || 0);
+                }, 0);
+                
+                // Total Backorder - check if field exists and has data
+                const totalBackorder = items.reduce((sum, item) => {
+                    const qty = item.Qty_On_Backorder;
+                    if (qty === undefined || qty === null || qty === '') return sum;
+                    return sum + (parseInt(qty) || 0);
+                }, 0);
+                
+                // POs This Week
+                const now = new Date();
+                const endOfWeek = new Date(now);
+                endOfWeek.setDate(now.getDate() + (7 - now.getDay()));
+                
+                const posThisWeek = pos.filter(po => {
+                    if (!po || !po.Status) return false;
+                    if (['Received', 'Cancelled', 'Voided'].includes(po.Status)) return false;
+                    if (!po.Need_By_Date) return false;
+                    try {
+                        const needBy = new Date(po.Need_By_Date);
+                        return needBy <= endOfWeek;
+                    } catch (e) {
+                        return false;
+                    }
+                }).length;
+                
+                // Total Value Pending
+                const totalValue = pos.filter(po => {
+                    if (!po || !po.Status) return false;
+                    return !['Received', 'Cancelled', 'Voided'].includes(po.Status);
+                }).reduce((sum, po) => {
+                    return sum + (parseFloat(po.Total_Amount) || 0);
+                }, 0);
+                
+                // Update display - use safe defaults
+                const totalOnOrderEl = document.getElementById('invflowTotalOnOrder');
+                const totalBackorderEl = document.getElementById('invflowTotalBackorder');
+                const posThisWeekEl = document.getElementById('invflowPOsThisWeek');
+                const totalValueEl = document.getElementById('invflowTotalValue');
+                
+                if (totalOnOrderEl) totalOnOrderEl.textContent = totalOnOrder.toLocaleString();
+                if (totalBackorderEl) totalBackorderEl.textContent = totalBackorder.toLocaleString();
+                if (posThisWeekEl) posThisWeekEl.textContent = posThisWeek;
+                if (totalValueEl) totalValueEl.textContent = '$' + totalValue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                
+            } catch (error) {
+                console.error('Error calculating metrics:', error);
+                // Set all to 0 on error
+                document.getElementById('invflowTotalOnOrder').textContent = '0';
+                document.getElementById('invflowTotalBackorder').textContent = '0';
+                document.getElementById('invflowPOsThisWeek').textContent = '0';
+                document.getElementById('invflowTotalValue').textContent = '$0';
+            }
         }
         
         /**
          * Render critical alerts
          */
         function renderInvFlowAlerts() {
-            const items = cachedItems || [];
-            const pos = cachedPurchaseOrders || [];
-            
-            const alerts = [];
-            
-            // Count items on backorder
-            const backorderItems = items.filter(item => (parseInt(item.Qty_On_Backorder) || 0) > 0);
-            if (backorderItems.length > 0) {
-                alerts.push({
-                    type: 'warning',
-                    icon: '⚠️',
-                    text: `${backorderItems.length} item${backorderItems.length > 1 ? 's' : ''} on backorder (Customers waiting!)`,
-                    action: () => {
-                        const backorderSection = document.getElementById('invflowBackorderItems');
+            try {
+                const items = cachedItems || [];
+                const pos = cachedPurchaseOrders || [];
+                
+                const alerts = [];
+                
+                // Count items on backorder - with safety checks
+                const backorderItems = items.filter(item => {
+                    const qty = item.Qty_On_Backorder;
+                    if (qty === undefined || qty === null || qty === '') return false;
+                    return (parseInt(qty) || 0) > 0;
+                });
+                if (backorderItems.length > 0) {
+                    alerts.push({
+                        type: 'warning',
+                        icon: '⚠️',
+                        text: `${backorderItems.length} item${backorderItems.length > 1 ? 's' : ''} on backorder (Customers waiting!)`,
+                        action: () => {
+                            const backorderSection = document.getElementById('invflowBackorderItems');
+                            if (backorderSection) backorderSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }
+                
+                // Count overdue POs - with safety checks
+                const now = new Date();
+                const overduePOs = pos.filter(po => {
+                    if (!po || !po.Status) return false;
+                    if (['Received', 'Cancelled', 'Voided'].includes(po.Status)) return false;
+                    if (!po.Need_By_Date) return false;
+                    try {
+                        return new Date(po.Need_By_Date) < now;
+                    } catch (e) {
+                        return false;
+                    }
+                });
+                if (overduePOs.length > 0) {
+                    alerts.push({
+                        type: 'danger',
+                        icon: '📦',
+                        text: `${overduePOs.length} overdue PO${overduePOs.length > 1 ? 's' : ''} (Expected last week or earlier)`,
+                        action: () => switchTab('purchases')
+                    });
+                }
+                
+                // Count critical gap items (backorder > on order) - with safety checks
+                const gapItems = items.filter(item => {
+                    const backorder = item.Qty_On_Backorder;
+                    const onOrder = item.Qty_On_Order;
+                    if (backorder === undefined || backorder === null || backorder === '') return false;
+                    if (onOrder === undefined || onOrder === null || onOrder === '') return false;
+                    const backorderQty = parseInt(backorder) || 0;
+                    const onOrderQty = parseInt(onOrder) || 0;
+                    return backorderQty > 0 && backorderQty > onOrderQty;
+                });
+                if (gapItems.length > 0) {
+                    alerts.push({
+                        type: 'danger',
+                        icon: '🔴',
+                        text: `${gapItems.length} item${gapItems.length > 1 ? 's' : ''}: Backorder > On Order (Not enough ordered!)`,
+                        action: () => {
+                            const criticalSection = document.getElementById('invflowCriticalItems');
+                            if (criticalSection) criticalSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }
+                
+                // Count out of stock with no PO - with safety checks
+                const outOfStockNoPO = items.filter(item => {
+                    const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                    const onOrder = item.Qty_On_Order;
+                    const backorder = item.Qty_On_Backorder;
+                    const onOrderQty = (onOrder === undefined || onOrder === null || onOrder === '') ? 0 : (parseInt(onOrder) || 0);
+                    const backorderQty = (backorder === undefined || backorder === null || backorder === '') ? 0 : (parseInt(backorder) || 0);
+                    return qtyOnHand === 0 && onOrderQty === 0 && backorderQty > 0;
+                });
+                if (outOfStockNoPO.length > 0) {
+                    alerts.push({
+                        type: 'danger',
+                        icon: '🚨',
+                        text: `${outOfStockNoPO.length} item${outOfStockNoPO.length > 1 ? 's' : ''} out of stock with NO purchase order!`,
+                        action: () => switchTab('createpo')
+                    });
+                }
+                
+                // Render alerts
+                const alertsContainer = document.getElementById('invflowAlerts');
+                if (!alertsContainer) {
+                    console.error('invflowAlerts container not found');
+                    return;
+                }
+                
+                if (alerts.length === 0) {
+                    alertsContainer.innerHTML = `
+                        <div style="text-align: center; padding: 30px; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                            <div style="font-size: 18px; color: #2e7d32; font-weight: 600;">All Clear!</div>
+                            <div style="font-size: 14px; color: #388e3c; margin-top: 8px;">No critical issues detected</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                alerts.forEach(alert => {
+                    const bgColor = alert.type === 'danger' ? '#ffebee' : '#fff3e0';
+                    const borderColor = alert.type === 'danger' ? '#ef4444' : '#f59e0b';
+                    const textColor = alert.type === 'danger' ? '#b91c1c' : '#d97706';
+                    
+                    html += `
+                        <div onclick="(${alert.action.toString()})()" style="padding: 15px 20px; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateX(5px)'" onmouseout="this.style.transform='translateX(0)'">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 24px;">${alert.icon}</span>
+                                <span style="font-size: 15px; font-weight: 600; color: ${textColor};">${alert.text}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                alertsContainer.innerHTML = html;
+            } catch (error) {
+                console.error('Error rendering alerts:', error);
+                const alertsContainer = document.getElementById('invflowAlerts');
+                if (alertsContainer) {
+                    alertsContainer.innerHTML = `
+                        <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 20px; text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                            <div style="color: #991b1b; font-weight: 600;">Error loading alerts</div>
+                            <div style="color: #b91c1c; font-size: 13px; margin-top: 8px;">${error.message}</div>
+                        </div>
+                    `;
+                }
+            }
+        }
                         backorderSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 });
