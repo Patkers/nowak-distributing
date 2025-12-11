@@ -1487,45 +1487,10 @@
         
         /* Navigation Container - Themed */
         .nav-container {
-            background: #fffbf0; /* Cream/yellow default */
+            /* Background will be set dynamically by JavaScript */
         }
         
-        /* Theme-specific navigation backgrounds */
-        body.theme-purple .nav-container {
-            background: #f3f0ff; /* Light lavender for purple theme */
-        }
-        
-        body.theme-orange .nav-container {
-            background: #fff7ed; /* Light peach for orange theme */
-        }
-        
-        body.theme-green .nav-container {
-            background: #f0fdf4; /* Light mint for green theme */
-        }
-        
-        body.theme-blue .nav-container {
-            background: #eff6ff; /* Light sky for blue theme */
-        }
-        
-        body.theme-red .nav-container {
-            background: #fef2f2; /* Light rose for red theme */
-        }
-        
-        body.theme-teal .nav-container {
-            background: #f0fdfa; /* Light cyan for teal theme */
-        }
-        
-        body.theme-pink .nav-container {
-            background: #fdf2f8; /* Light pink for pink theme */
-        }
-        
-        body.theme-indigo .nav-container {
-            background: #eef2ff; /* Light indigo for indigo theme */
-        }
-        
-        body.theme-yellow .nav-container {
-            background: #fefce8; /* Light yellow for yellow theme */
-        }
+        /* Theme-specific navigation backgrounds - REMOVED - now dynamic */
         
         /* Desktop Modal Features - Draggable & Resizable */
         @media (min-width: 769px) {
@@ -1614,7 +1579,7 @@
 
         <!-- Navigation Cards - Always Visible at Top -->
         <!-- Navigation Cards - Card Styled with Theme Background - V14 -->
-        <div class="nav-container" style="position: static; z-index: 100; padding: 20px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid var(--primary, #667eea);">
+        <div class="nav-container" style="position: static; z-index: 100; padding: 20px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
                 
                 <!-- Suppliers Card -->
@@ -3915,10 +3880,14 @@
             const navContainer = document.querySelector('.nav-container');
             const activeCard = document.querySelector('.landing-nav-card.active-nav-card');
             if (navContainer && activeCard) {
-                const computedStyle = window.getComputedStyle(activeCard);
-                const themeColor = computedStyle.borderTopColor || computedStyle.color;
-                navContainer.style.background = themeColor;
-                navContainer.style.borderLeftColor = themeColor;
+                const inlineStyle = activeCard.getAttribute('style');
+                const borderMatch = inlineStyle.match(/border:\s*\d+px\s+solid\s+(#[0-9a-fA-F]{6})/);
+                
+                if (borderMatch && borderMatch[1]) {
+                    const themeColor = borderMatch[1];
+                    navContainer.style.background = themeColor;
+                    navContainer.style.borderLeftColor = themeColor;
+                }
             }
             
             // Attach event listeners to the first Create PO line item
@@ -4079,12 +4048,16 @@
             // Change navigation container background to match active card's theme color
             const navContainer = document.querySelector('.nav-container');
             if (navContainer && activeNavCard) {
-                // Get the theme color from the active nav card's border or text color
-                const computedStyle = window.getComputedStyle(activeNavCard);
-                const themeColor = computedStyle.borderTopColor || computedStyle.color;
+                // Parse the color from the inline style attribute
+                const inlineStyle = activeNavCard.getAttribute('style');
+                // Extract the border color using regex: "border: 2px solid #XXXXXX"
+                const borderMatch = inlineStyle.match(/border:\s*\d+px\s+solid\s+(#[0-9a-fA-F]{6})/);
                 
-                navContainer.style.background = themeColor;
-                navContainer.style.borderLeftColor = themeColor;
+                if (borderMatch && borderMatch[1]) {
+                    const themeColor = borderMatch[1];
+                    navContainer.style.background = themeColor;
+                    navContainer.style.borderLeftColor = themeColor;
+                }
             }
             
             // Add to history (avoid duplicates of current tab)
