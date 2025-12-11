@@ -772,15 +772,29 @@
             
             /* Report Modal - Mobile Optimizations */
             #reportSetupModal {
-                padding: 10px !important;
+                padding: 0 !important;
+                overflow: hidden !important;
             }
             
             #reportSetupModal > div {
-                max-height: 95vh !important;
-                height: 95vh !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
             }
             
             #reportSetupHeader {
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 10 !important;
                 padding: 12px 15px !important;
                 flex-wrap: nowrap !important;
             }
@@ -795,7 +809,7 @@
             
             #reportSetupFilters {
                 padding: 12px !important;
-                margin-top: 60px !important;
+                margin-top: 0 !important;
             }
             
             #reportSetupContent {
@@ -805,29 +819,49 @@
             
             /* Report Modal Footer - Ensure buttons are visible */
             #reportSetupFooter {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
                 padding: 10px 12px !important;
                 gap: 8px !important;
+                z-index: 10 !important;
             }
         }
         
         /* Portrait orientation on mobile - ensure header/footer stay fixed */
         @media (max-width: 768px) and (orientation: portrait) {
             #reportSetupModal {
-                padding: 5px !important;
+                padding: 0 !important;
+                overflow: hidden !important;
             }
             
             #reportSetupModal > div {
-                max-height: 98vh !important;
-                height: 98vh !important;
-                border-radius: 8px !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
             }
             
             #reportSetupHeader {
-                border-radius: 8px 8px 0 0 !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 10 !important;
+                background: var(--primary, #667eea) !important;
+                border-radius: 0 !important;
             }
             
             #reportSetupFilters {
-                margin-top: 55px !important;
+                margin-top: 0 !important;
             }
             
             #reportSetupContent {
@@ -835,7 +869,13 @@
             }
             
             #reportSetupFooter {
-                border-radius: 0 0 8px 8px !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                border-radius: 0 !important;
+                z-index: 10 !important;
             }
         }
         
@@ -12620,29 +12660,6 @@
                         Critical issues requiring immediate attention
                     </p>
                 </div>
-                
-                <!-- STICKY ACTION BUTTONS -->
-                <div style="position: sticky; top: 75px; z-index: 50; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 16px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06); border: 2px solid #e2e8f0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                        <div style="font-weight: 700; color: #334155; font-size: 16px;">
-                            ⚡ Quick Actions
-                        </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button class="oval-action-btn oval-action-primary" onclick="switchTab('createpo'); closeModal();" style="font-size: 14px; padding: 10px 20px;">
-                                📦 Create PO
-                            </button>
-                            <button class="oval-action-btn oval-action-success" onclick="switchTab('sales'); closeModal(); setTimeout(() => showAddSaleForm(), 100);" style="font-size: 14px; padding: 10px 20px;">
-                                💰 Record Sale
-                            </button>
-                            <button class="oval-action-btn oval-action-info" onclick="switchTab('inventory'); closeModal();" style="font-size: 14px; padding: 10px 20px;">
-                                📋 View Inventory
-                            </button>
-                            <button class="oval-action-btn oval-action-warning" onclick="switchTab('purchases'); closeModal();" style="font-size: 14px; padding: 10px 20px;">
-                                📥 Receive PO
-                            </button>
-                        </div>
-                    </div>
-                </div>
             `;
             
             // 1. PAST DUE PAYMENTS
@@ -17509,7 +17526,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- Report Setup Modal -->
-    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center;">
         <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; position: relative;">
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; position: absolute; top: 0; left: 0; right: 0; z-index: 100;">
                 <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
@@ -18001,7 +18018,10 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         /* Z-index hierarchy - detail modals above report modals */
-        #reportSetupModal { z-index: 10000 !important; }
+        #reportSetupModal { 
+            z-index: 10000 !important; 
+            padding: 20px; /* Desktop padding, overridden on mobile */
+        }
         #orderModal { z-index: 10500 !important; } /* Higher so it appears above reports */
         #itemPickerModal,
         #supplierPickerModal,
