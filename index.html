@@ -4662,6 +4662,28 @@
             window.scrollTo(0, 0);
         }
         
+        // Help Center guide section navigation
+        function scrollToGuideSection(sectionId) {
+            // First switch to guides tab if not already there
+            switchTab('guides');
+            
+            // Hide all guide sections
+            document.querySelectorAll('.guide-content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show the selected section
+            const targetSection = document.getElementById('guide-' + sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                
+                // Scroll to the section after a brief delay for DOM update
+                setTimeout(() => {
+                    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+        
         function goBack() {
             // Remove current tab from history
             if (navigationHistory.length > 1) {
