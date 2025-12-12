@@ -144,13 +144,15 @@
                 const salesData = await salesResp.json();
                 
                 if (salesData.status === 'success') {
-                    showTest('3. Sales Orders Fetch', 'success', `✅ Fetched ${salesData.data.length} sales orders\n\nRaw data: ${JSON.stringify(salesData.data[0], null, 2).substring(0, 300)}...`);
+                    // Filter out any empty/undefined rows
+                    const validOrders = (salesData.data || []).filter(order => order && order.SO_ID);
+                    const sampleData = validOrders.length > 0 ? JSON.stringify(validOrders[0], null, 2).substring(0, 300) : 'No valid orders found';
+                    showTest('3. Sales Orders Fetch', 'success', `✅ Fetched ${salesData.data.length} sales orders (${validOrders.length} valid)\n\nRaw data: ${sampleData}...`);
+                    // Store filtered data for next tests
+                    window.testSalesData = validOrders;
                 } else {
-                    throw new Error(salesData.message);
+                    throw new Error(salesData.message || 'Unknown error');
                 }
-                
-                // Store for next tests
-                window.testSalesData = salesData.data;
                 
             } catch (error) {
                 showTest('3. Sales Orders Fetch', 'error', `❌ FAILED: ${error.message}\n\nStack: ${error.stack}`);
@@ -253,6 +255,15 @@
             showStatus('🔄 Testing table rendering...');
             try {
                 showTest('6. Table Rendering', 'pending', 'Creating table row HTML...');
+                
+                // Check if we have valid test data
+                if (!window.testSalesData || window.testSalesData.length === 0) {
+                    showTest('6. Table Rendering', 'error', `❌ No valid sales orders to test with.\n\nThe SalesOrders table may be empty or data format is unexpected.`);
+                    showStatus('❌ No sales data available for rendering test');
+                    document.getElementById('printBtn').classList.add('show');
+                    return;
+                }
+                
                 const order = window.testSalesData[0];
                 
                 // Test with NEW formatting methods
@@ -272,10 +283,10 @@
                 
                 const html = `
                     <tr>
-                        <td>${order.Invoice_Number || ''}</td>
+                        <td>${order.Invoice_Number || order.SO_ID || ''}</td>
                         <td>${order.Customer_ID || ''}</td>
                         <td>${formatDateSafe(order.Sale_Date)}</td>
-                        <td>$${parseFloat(order.Total_Amount).toFixed(2)}</td>
+                        <td>$${parseFloat(order.Total_Amount || 0).toFixed(2)}</td>
                     </tr>
                 `;
                 
