@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V7b - Added debug logging for API calls -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9 - Fixed ALL multi-select filters (customer/supplier/item) across all pages -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3793,7 +3793,7 @@
     </div>
 
     <script>
-        let API_URL = localStorage.getItem('apiUrl') || 'https://script.google.com/macros/s/AKfycbwUYTRxFdSS78WZ8gK44580wLDO_C7uUozj_3ruyiNbJHZi_pH7tUDC-ojszeddEwX8Dg/exec';
+        let API_URL = localStorage.getItem('apiUrl') || 'https://script.google.com/macros/s/AKfycbyCcX93pMAfO3hOsrQjDuSnMMMmL0l9EnLFHnn0BBQ_RjGelL-Jp-0OcSRTgf72rIAITA/exec';
         let cachedSuppliers = [];
         let cachedItems = [];
         let cachedCustomers = [];
@@ -5294,7 +5294,8 @@
                 const matchesSearch = !searchFilter || 
                     (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
-                const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
+                // Use matchesFilter for multi-select support
+                const matchesSupplier = matchesFilter(item.Supplier_ID, supplierFilter);
                 
                 // Active/Archived status filter
                 const isArchived = item.Status === 'Archived';
@@ -5956,7 +5957,8 @@
                 const matchesPO = !poFilter || 
                     (po.PO_ID && po.PO_ID.toLowerCase().includes(poFilter)) ||
                     (po.Invoice_Number && po.Invoice_Number.toLowerCase().includes(poFilter));
-                const matchesSupplier = !supplierFilter || po.Supplier_ID === supplierFilter;
+                // Use matchesFilter for multi-select support
+                const matchesSupplier = matchesFilter(po.Supplier_ID, supplierFilter);
                 
                 // Handle exclude-voided option
                 let matchesStatus = true;
@@ -5967,8 +5969,23 @@
                 }
                 
                 const poDate = new Date(po.PO_Date);
-                const matchesDateFrom = !dateFrom || poDate >= new Date(dateFrom);
-                const matchesDateTo = !dateTo || poDate <= new Date(dateTo);
+                
+                // Date FROM comparison (start of day)
+                let matchesDateFrom = true;
+                if (dateFrom) {
+                    const fromDateObj = new Date(dateFrom);
+                    fromDateObj.setHours(0, 0, 0, 0);
+                    matchesDateFrom = poDate >= fromDateObj;
+                }
+                
+                // Date TO comparison (end of day - 23:59:59)
+                let matchesDateTo = true;
+                if (dateTo) {
+                    const toDateObj = new Date(dateTo);
+                    toDateObj.setHours(23, 59, 59, 999);
+                    matchesDateTo = poDate <= toDateObj;
+                }
+                
                 const matchesPaymentStatus = !paymentStatusFilter || (po.Payment_Status === paymentStatusFilter);
                 return matchesPO && matchesSupplier && matchesStatus && matchesDateFrom && matchesDateTo && matchesPaymentStatus;
             });
@@ -7503,6 +7520,9 @@
         // ==================== SALES ====================
 
         function showAddSaleForm() {
+            // MOBILE FIX: Always reset the save lock when opening form
+            isSavingSale = false;
+            
             loadSaleDropdowns();
             
             // FIX #1: Clear any previous line items and errors before showing
@@ -7564,6 +7584,14 @@
         function hideAddSaleForm() {
             document.getElementById('addSaleForm').style.display = 'none';
             document.querySelector('#addSaleForm form').reset();
+            
+            // MOBILE FIX: Always reset save lock and button state
+            isSavingSale = false;
+            const submitBtn = document.querySelector('#addSaleForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💾 Save Sale';
+            }
             
             // Reset summary boxes
             const qtyBox = document.getElementById('soTotalQty');
@@ -8007,13 +8035,28 @@
             console.log('Filtering sales with dates:', dateFrom, 'to', dateTo); // Debug
             
             const filtered = salesData.filter(so => {
-                const matchesCustomer = !customerFilter || so.Customer_ID === customerFilter;
+                // Use matchesFilter for multi-select support
+                const matchesCustomer = matchesFilter(so.Customer_ID, customerFilter);
                 const matchesInvoice = !invoiceNumberFilter || (so.Invoice_Number && so.Invoice_Number.toLowerCase().includes(invoiceNumberFilter));
                 
                 // FIX: Check both Sale_Date and SO_Date (like displaySales does)
                 const soDate = new Date(so.Sale_Date || so.SO_Date);
-                const matchesDateFrom = !dateFrom || soDate >= new Date(dateFrom);
-                const matchesDateTo = !dateTo || soDate <= new Date(dateTo);
+                
+                // Date FROM comparison (start of day)
+                let matchesDateFrom = true;
+                if (dateFrom) {
+                    const fromDateObj = new Date(dateFrom);
+                    fromDateObj.setHours(0, 0, 0, 0);
+                    matchesDateFrom = soDate >= fromDateObj;
+                }
+                
+                // Date TO comparison (end of day - 23:59:59)
+                let matchesDateTo = true;
+                if (dateTo) {
+                    const toDateObj = new Date(dateTo);
+                    toDateObj.setHours(23, 59, 59, 999);
+                    matchesDateTo = soDate <= toDateObj;
+                }
                 
                 // Status filter
                 let matchesStatus = true;
@@ -8509,8 +8552,8 @@
                     (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
                 
-                // Supplier filter
-                const matchesSupplier = !supplierFilter || item.Supplier_ID === supplierFilter;
+                // Supplier filter - use matchesFilter for multi-select support
+                const matchesSupplier = matchesFilter(item.Supplier_ID, supplierFilter);
                 
                 // Stock status filter - calculate dynamically based on qty vs reorder point
                 let matchesStock = true;
@@ -8890,7 +8933,8 @@
                 const matchSearch = !search || 
                     (item.SKU && item.SKU.toString().toLowerCase().includes(search)) ||
                     (item.Item_Description && item.Item_Description.toLowerCase().includes(search));
-                const matchSupplier = !supplier || item.Supplier_ID === supplier;
+                // Use matchesFilter for multi-select support
+                const matchSupplier = matchesFilter(item.Supplier_ID, supplier);
                 
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
                 const reorder = parseFloat(item.Reorder_Point) || 0;
@@ -14889,7 +14933,7 @@
                 filtered = filtered.filter(p => matchesFilter(p.id, reportFilters.item));
             }
             if (reportFilters.supplier) {
-                filtered = filtered.filter(p => p.supplierId === reportFilters.supplier);
+                filtered = filtered.filter(p => matchesFilter(p.supplierId, reportFilters.supplier));
             }
             if (reportFilters.minAmount) {
                 filtered = filtered.filter(p => p.margin >= reportFilters.minAmount);
@@ -15020,10 +15064,10 @@
                 filtered = filtered.filter(d => new Date(d.poDate) <= toDate);
             }
             if (reportFilters.supplier) {
-                filtered = filtered.filter(d => d.supplierId === reportFilters.supplier);
+                filtered = filtered.filter(d => matchesFilter(d.supplierId, reportFilters.supplier));
             }
             if (reportFilters.item) {
-                filtered = filtered.filter(d => d.itemId === reportFilters.item);
+                filtered = filtered.filter(d => matchesFilter(d.itemId, reportFilters.item));
             }
             if (reportFilters.paymentStatus) {
                 filtered = filtered.filter(d => d.paymentStatus === reportFilters.paymentStatus);
@@ -15135,7 +15179,7 @@
                 purchases = purchases.filter(po => new Date(po.PO_Date) <= toDate);
             }
             if (reportFilters.supplier) {
-                purchases = purchases.filter(po => po.Supplier_ID === reportFilters.supplier);
+                purchases = purchases.filter(po => matchesFilter(po.Supplier_ID, reportFilters.supplier));
             }
             if (reportFilters.minAmount) {
                 purchases = purchases.filter(po => parseFloat(po.Total_Amount || po.Invoice_Total || 0) >= reportFilters.minAmount);
@@ -15284,9 +15328,9 @@
                 };
             });
             
-            // APPLY FILTERS
+            // APPLY FILTERS - use matchesFilter for multi-select support
             if (reportFilters.supplier) {
-                turnoverData = turnoverData.filter(item => item.supplierId === reportFilters.supplier);
+                turnoverData = turnoverData.filter(item => matchesFilter(item.supplierId, reportFilters.supplier));
             }
             if (reportFilters.turnoverStatus) {
                 turnoverData = turnoverData.filter(item => item.status === reportFilters.turnoverStatus);
@@ -15419,12 +15463,12 @@
                 };
             });
             
-            // APPLY FILTERS
+            // APPLY FILTERS - use matchesFilter for multi-select support
             if (reportFilters.supplier) {
-                marginData = marginData.filter(item => item.supplierId === reportFilters.supplier);
+                marginData = marginData.filter(item => matchesFilter(item.supplierId, reportFilters.supplier));
             }
             if (reportFilters.item) {
-                marginData = marginData.filter(item => item.id === reportFilters.item);
+                marginData = marginData.filter(item => matchesFilter(item.id, reportFilters.item));
             }
             if (reportFilters.minAmount) {
                 marginData = marginData.filter(item => item.marginPercent >= reportFilters.minAmount);
@@ -15565,9 +15609,9 @@
                     };
                 });
             
-            // APPLY FILTERS
+            // APPLY FILTERS - use matchesFilter for multi-select support
             if (reportFilters.customer) {
-                receivables = receivables.filter(r => r.customerId === reportFilters.customer);
+                receivables = receivables.filter(r => matchesFilter(r.customerId, reportFilters.customer));
             }
             if (reportFilters.minAmount) {
                 receivables = receivables.filter(r => r.balance >= reportFilters.minAmount);
@@ -15713,9 +15757,9 @@
                     };
                 });
             
-            // APPLY FILTERS
+            // APPLY FILTERS - use matchesFilter for multi-select support
             if (reportFilters.supplier) {
-                payables = payables.filter(p => p.supplierId === reportFilters.supplier);
+                payables = payables.filter(p => matchesFilter(p.supplierId, reportFilters.supplier));
             }
             if (reportFilters.minAmount) {
                 payables = payables.filter(p => p.balance >= reportFilters.minAmount);
@@ -15826,12 +15870,12 @@
             // Store raw data
             rawReportData['simple-inventory'] = { inventory, suppliers };
             
-            // APPLY FILTERS
+            // APPLY FILTERS - use matchesFilter for multi-select support
             if (reportFilters.supplier) {
-                inventory = inventory.filter(item => item.Supplier_ID === reportFilters.supplier);
+                inventory = inventory.filter(item => matchesFilter(item.Supplier_ID, reportFilters.supplier));
             }
             if (reportFilters.item) {
-                inventory = inventory.filter(item => item.Item_ID === reportFilters.item);
+                inventory = inventory.filter(item => matchesFilter(item.Item_ID, reportFilters.item));
             }
             if (reportFilters.stockStatus) {
                 if (reportFilters.stockStatus === 'negative') {
@@ -16802,13 +16846,6 @@
                 
                 // Refresh items to update Qty_On_Order
                 await loadItems();
-                
-                // Ask if they want to print
-                if (confirm('Would you like to print this PO?')) {
-                    // Need to reload the PO we just created to print it
-                    // For now, just tell them to go to Purchases tab
-                    alert('Go to Purchases tab to view and print your OUTGOING PO');
-                }
             } else {
                 alert('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
             }
@@ -17140,8 +17177,8 @@ NOTE: Please print the attached PO document for full details.`;
                 const desc = String(item.Item_Description || '').toLowerCase();
                 const matchesSearch = !search || sku.includes(search) || desc.includes(search);
                 
-                // Supplier filter (convert both to string for comparison)
-                const matchesSupplier = !supplier || String(item.Supplier_ID) === String(supplier);
+                // Supplier filter - use matchesFilter for multi-select support
+                const matchesSupplier = matchesFilter(item.Supplier_ID, supplier);
                 
                 // Hide archived items UNLESS this is a filter input
                 const isArchived = item.Status === 'Archived';
