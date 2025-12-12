@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9e - Date filters now include future-dated orders -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9g - Removed duplicate totals row from sales table -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6695,10 +6695,17 @@
         }
         .signature {
             margin-top: 40px;
-            padding-top: 10px;
-            border-top: 1px solid #000;
-            width: 300px;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        .signature-label {
             white-space: nowrap;
+        }
+        .signature-line {
+            flex: 0 0 250px;
+            border-bottom: 1px solid #000;
+            height: 20px;
         }
     </style>
 </head>
@@ -6789,7 +6796,8 @@
     </div>
 
     <div class="signature">
-        Signature: ___________________________
+        <span class="signature-label">Signature:</span>
+        <div class="signature-line"></div>
     </div>
 
     <p style="clear: both; text-align: center; margin-top: 40px; font-size: 9pt; color: #999;">
@@ -8313,14 +8321,6 @@
                     </td>
                 </tr>`;
             });
-
-            // Add totals row
-            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>$${totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
-                <td>$${totalPaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
-                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</strong></td>
-            </tr>`;
 
             html += '</tbody></table>';
             html += '</div>'; // Close data card wrapper
