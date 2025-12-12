@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9g - Removed duplicate totals row from sales table -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9i - Added Time column, fixed date sorting, fixed mobile invoice -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -453,10 +453,27 @@
             background: #f8f9ff;
             font-weight: 600;
             color: #667eea;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .data-table tr:hover {
             background: #f8f9ff;
+        }
+        
+        /* Scrollable table wrapper */
+        .table-scroll-wrapper {
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .table-scroll-wrapper .data-table {
+            margin-top: 0;
         }
 
         .status {
@@ -5244,7 +5261,7 @@
             // Calculate totals
             let totalQty = 0;
             
-            let html = '<table class="data-table" id="itemsDataTable"><thead><tr>';
+            let html = '<div class="table-scroll-wrapper"><table class="data-table" id="itemsDataTable"><thead><tr>';
             html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Sell Price</th><th>Qty</th><th>On Order</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -5292,14 +5309,7 @@
                 </tr>`;
             });
 
-            // Add totals row
-            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="8" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>${totalQty.toLocaleString()}</td>
-                <td colspan="3"></td>
-            </tr>`;
-
-            html += '</tbody></table>';
+            html += '</tbody></table></div>'; // Close table and scroll wrapper
             document.getElementById('itemsTable').innerHTML = html;
             setTimeout(() => makeSortable('itemsDataTable'), 0);
         }
@@ -6067,7 +6077,7 @@
                 </div>
             `;
             
-            html += '<table class="data-table" id="purchasesDataTable"><thead><tr>';
+            html += '<div class="table-scroll-wrapper"><table class="data-table" id="purchasesDataTable"><thead><tr>';
             html += '<th>Invoice #</th><th>Supplier</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
@@ -6100,15 +6110,7 @@
                 </tr>`;
             });
 
-            // Add totals row
-            html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
-                <td colspan="4" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>$${totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
-                <td>$${totalPaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
-                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</strong></td>
-            </tr>`;
-
-            html += '</tbody></table>';
+            html += '</tbody></table></div>'; // Close table and scroll wrapper
             document.getElementById('purchasesTable').innerHTML = html;
             setTimeout(() => makeSortable('purchasesDataTable'), 0);
         }
@@ -6592,12 +6594,48 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice ${so.Invoice_Number || so.SO_ID}</title>
     <style>
         @media print {
             @page { margin: 0.5in; }
             body { margin: 0; }
             .no-print { display: none; }
+        }
+        /* Mobile responsive styles for invoice */
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 10px !important;
+                font-size: 10pt !important;
+            }
+            .invoice-header h1 {
+                font-size: 20pt !important;
+            }
+            .invoice-info {
+                flex-direction: column !important;
+            }
+            .info-box {
+                margin-bottom: 15px !important;
+                width: 100% !important;
+            }
+            .info-box p {
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+            }
+            table.items th, table.items td {
+                padding: 6px 4px !important;
+                font-size: 9pt !important;
+            }
+            table.items .desc { 
+                word-wrap: break-word !important;
+                max-width: 120px !important;
+            }
+            .totals {
+                width: 60% !important;
+            }
+            .signature-line {
+                flex: 0 0 150px !important;
+            }
         }
         body {
             font-family: Arial, sans-serif;
@@ -8016,6 +8054,35 @@
             }
         }
         
+        function formatTimeSafe(dateValue) {
+            if (!dateValue) return '-';
+            try {
+                const date = new Date(dateValue);
+                if (isNaN(date.getTime())) return '-';
+                // Format time in 12-hour format
+                let hours = date.getHours();
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; // 0 becomes 12
+                return `${hours}:${minutes} ${ampm}`;
+            } catch (e) {
+                return '-';
+            }
+        }
+        
+        // Get sortable date string (YYYY-MM-DD) for proper sorting
+        function getSortableDate(dateValue) {
+            if (!dateValue) return '';
+            try {
+                const date = new Date(dateValue);
+                if (isNaN(date.getTime())) return '';
+                return date.toISOString();
+            } catch (e) {
+                return '';
+            }
+        }
+        
         async function loadSales() {
             document.getElementById('salesTable').innerHTML = '<div class="loading">Loading sales...</div>';
             
@@ -8291,8 +8358,8 @@
                 </div>
             `;
             
-            html += '<table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
+            html += '<div class="table-scroll-wrapper"><table class="data-table" id="salesDataTable"><thead><tr>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Time</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -8301,6 +8368,7 @@
                 const amountPaid = parseFloat(so.Amount_Paid) || 0;
                 const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
                 const invoiceNum = so.Invoice_Number || so.SO_ID;
+                const saleDateTime = so.Sale_Date || so.SO_Date;
                 
                 // Color code payment status badge
                 let paymentBadge = '';
@@ -8311,10 +8379,11 @@
                 html += `<tr style="cursor: pointer;" onclick="viewSalesOrder('${so.SO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${invoiceNum}</strong></td>
                     <td>${getCustomerName(so.Customer_ID)}</td>
-                    <td>${formatDateSafe(so.Sale_Date || so.SO_Date)}</td>
+                    <td data-sort="${getSortableDate(saleDateTime)}">${formatDateSafe(saleDateTime)}</td>
+                    <td>${formatTimeSafe(saleDateTime)}</td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
-                    <td>${dueDate}</td>
+                    <td data-sort="${getSortableDate(so.Due_Date)}">${dueDate}</td>
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
                         <button class="btn-small" onclick="viewSalesOrder('${so.SO_ID}')" style="background: #28a745; color: white; padding: 6px 12px;">View/Print</button>
@@ -8322,7 +8391,7 @@
                 </tr>`;
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>'; // Close table and scroll wrapper
             html += '</div>'; // Close data card wrapper
             document.getElementById('salesTable').innerHTML = html;
             setTimeout(() => makeSortable('salesDataTable'), 0);
@@ -9685,6 +9754,20 @@
                 const bCell = b.cells[columnIndex];
                 
                 if (!aCell || !bCell) return 0;
+                
+                // Check for data-sort attribute first (for dates)
+                const aSortVal = aCell.dataset.sort;
+                const bSortVal = bCell.dataset.sort;
+                
+                if (aSortVal !== undefined && bSortVal !== undefined) {
+                    // Use data-sort values for comparison
+                    if (!aSortVal && !bSortVal) return 0;
+                    if (!aSortVal) return 1;
+                    if (!bSortVal) return -1;
+                    return newDir === 'asc' 
+                        ? aSortVal.localeCompare(bSortVal)
+                        : bSortVal.localeCompare(aSortVal);
+                }
                 
                 const aCellText = (aCell.textContent || '').trim();
                 const bCellText = (bCell.textContent || '').trim();
