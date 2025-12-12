@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9d - Fixed $0 in dashboard/reports by calculating line totals -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9e - Date filters now include future-dated orders -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -8116,52 +8116,46 @@
             console.log('Date filter clicked:', period); // Debug
             
             const now = new Date();
-            let fromDate, toDate;
+            let fromDate = null;
+            let toDate = null; // Leave null to include future-dated orders
             
-            // Calculate date ranges - create new Date objects to avoid mutation
+            // Calculate date ranges - only set fromDate, leave toDate open
             switch(period) {
                 case 'today':
                     fromDate = new Date(now);
-                    toDate = new Date(now);
+                    toDate = new Date(now); // Today only - both dates same
                     break;
                 case 'week':
                     fromDate = new Date(now);
                     fromDate.setDate(now.getDate() - 7);
-                    toDate = new Date(now);
+                    // No toDate - include future orders
                     break;
                 case '3months':
                     fromDate = new Date(now);
                     fromDate.setMonth(now.getMonth() - 3);
-                    toDate = new Date(now);
                     break;
                 case '6months':
                     fromDate = new Date(now);
                     fromDate.setMonth(now.getMonth() - 6);
-                    toDate = new Date(now);
                     break;
                 case '9months':
                     fromDate = new Date(now);
                     fromDate.setMonth(now.getMonth() - 9);
-                    toDate = new Date(now);
                     break;
                 case 'ytd':
                     fromDate = new Date(now.getFullYear(), 0, 1); // Jan 1st this year
-                    toDate = new Date(now);
                     break;
                 case '1year':
                     fromDate = new Date(now);
                     fromDate.setFullYear(now.getFullYear() - 1);
-                    toDate = new Date(now);
                     break;
                 case '3years':
                     fromDate = new Date(now);
                     fromDate.setFullYear(now.getFullYear() - 3);
-                    toDate = new Date(now);
                     break;
                 case '5years':
                     fromDate = new Date(now);
                     fromDate.setFullYear(now.getFullYear() - 5);
-                    toDate = new Date(now);
                     break;
                 case 'all':
                     // Show everything - set date range fields to empty
@@ -8183,10 +8177,10 @@
             }
             
             // Format dates for input fields using LOCAL time (global helper)
-            const fromDateStr = formatLocalDate(fromDate);
-            const toDateStr = formatLocalDate(toDate);
+            const fromDateStr = fromDate ? formatLocalDate(fromDate) : '';
+            const toDateStr = toDate ? formatLocalDate(toDate) : '';
             
-            console.log('Setting dates:', fromDateStr, 'to', toDateStr); // Debug
+            console.log('Setting dates:', fromDateStr, 'to', toDateStr || '(open)'); // Debug
             
             // Set filter fields
             document.getElementById('filterSaleDateFrom').value = fromDateStr;
