@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9q - Fixed PO receive with logging -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9r - Added date filter buttons to Purchases -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6055,6 +6055,83 @@
             document.getElementById('filterPurchasePaymentStatus').value = '';
             displayPurchases(purchasesData);
         }
+        
+        function applyPurchasesDateFilter(period, evt) {
+            console.log('Purchase date filter clicked:', period);
+            
+            const now = new Date();
+            let fromDate = null;
+            let toDate = null;
+            
+            switch(period) {
+                case 'today':
+                    fromDate = new Date(now);
+                    toDate = new Date(now);
+                    break;
+                case 'week':
+                    fromDate = new Date(now);
+                    fromDate.setDate(now.getDate() - 7);
+                    break;
+                case '3months':
+                    fromDate = new Date(now);
+                    fromDate.setMonth(now.getMonth() - 3);
+                    break;
+                case '6months':
+                    fromDate = new Date(now);
+                    fromDate.setMonth(now.getMonth() - 6);
+                    break;
+                case '9months':
+                    fromDate = new Date(now);
+                    fromDate.setMonth(now.getMonth() - 9);
+                    break;
+                case 'ytd':
+                    fromDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                case '1year':
+                    fromDate = new Date(now);
+                    fromDate.setFullYear(now.getFullYear() - 1);
+                    break;
+                case '3years':
+                    fromDate = new Date(now);
+                    fromDate.setFullYear(now.getFullYear() - 3);
+                    break;
+                case '5years':
+                    fromDate = new Date(now);
+                    fromDate.setFullYear(now.getFullYear() - 5);
+                    break;
+                case 'all':
+                    document.getElementById('filterPurchaseDateFrom').value = '';
+                    document.getElementById('filterPurchaseDateTo').value = '';
+                    filterPurchases();
+                    
+                    if (evt) {
+                        document.querySelectorAll('.oval-filter-btn-po').forEach(btn => {
+                            btn.style.opacity = '0.6';
+                            btn.style.transform = 'scale(1)';
+                        });
+                        evt.target.style.opacity = '1';
+                        evt.target.style.transform = 'scale(1.05)';
+                    }
+                    return;
+            }
+            
+            const fromDateStr = fromDate ? formatLocalDate(fromDate) : '';
+            const toDateStr = toDate ? formatLocalDate(toDate) : '';
+            
+            document.getElementById('filterPurchaseDateFrom').value = fromDateStr;
+            document.getElementById('filterPurchaseDateTo').value = toDateStr;
+            
+            filterPurchases();
+            
+            if (evt) {
+                document.querySelectorAll('.oval-filter-btn-po').forEach(btn => {
+                    btn.style.opacity = '0.6';
+                    btn.style.transform = 'scale(1)';
+                });
+                evt.target.style.opacity = '1';
+                evt.target.style.transform = 'scale(1.05)';
+            }
+        }
 
         function displayPurchases(orders) {
             if (!orders || orders.length === 0) {
@@ -6072,8 +6149,48 @@
             });
             const balance = totalAmount - totalPaid;
             
-            // Summary boxes
+            // Date filter buttons (matching Sales page style)
             let html = `
+                <div class="purchases-data-card">
+                    <!-- Oval Buttons - Date filters -->
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 10px;">
+                            <button onclick="applyPurchasesDateFilter('today', event)" class="oval-filter-btn-po" style="background: #e3f2fd; color: #1565c0; border: 3px solid #1565c0; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📅 Last Day
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('week', event)" class="oval-filter-btn-po" style="background: #fff3e0; color: #ef6c00; border: 3px solid #ef6c00; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📆 Last Week
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('3months', event)" class="oval-filter-btn-po" style="background: #fff9c4; color: #f57f17; border: 3px solid #f57f17; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                🗓️ Last 3 Months
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('6months', event)" class="oval-filter-btn-po" style="background: #e8f5e9; color: #2e7d32; border: 3px solid #2e7d32; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📊 6 Months
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('9months', event)" class="oval-filter-btn-po" style="background: #e1f5fe; color: #0277bd; border: 3px solid #0277bd; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📈 9 Months
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('ytd', event)" class="oval-filter-btn-po" style="background: #f3e5f5; color: #6a1b9a; border: 3px solid #6a1b9a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📋 YTD
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('1year', event)" class="oval-filter-btn-po" style="background: #fce4ec; color: #c2185b; border: 3px solid #c2185b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📅 1 Year
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('3years', event)" class="oval-filter-btn-po" style="background: #ede7f6; color: #512da8; border: 3px solid #512da8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📊 3 Years
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('5years', event)" class="oval-filter-btn-po" style="background: #e0f2f1; color: #00695c; border: 3px solid #00695c; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📈 5 Years
+                            </button>
+                            <button onclick="applyPurchasesDateFilter('all', event)" class="oval-filter-btn-po active" style="background: #424242; color: white; border: 3px solid #424242; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                🌐 All Time
+                            </button>
+                        </div>
+                    </div>
+            `;
+            
+            // Summary boxes
+            html += `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
                     <div style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #f57c00;">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Total Purchases</div>
@@ -6091,6 +6208,7 @@
                         <div style="font-size: 12px; color: #888;">${balance > 0 ? 'to pay' : 'all paid!'}</div>
                     </div>
                 </div>
+            </div>
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="purchasesDataTable"><thead><tr>';
