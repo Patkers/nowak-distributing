@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9i - Added Time column, fixed date sorting, fixed mobile invoice -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9j - Nav bar now matches body/theme background -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1504,7 +1504,10 @@
         
         /* Navigation Container - Uses dynamic CSS variable to match card theme */
         .nav-container {
-            background: var(--card-bg, #f3f0ff); /* Use CSS variable with fallback */
+            background: var(--primary, #667eea); /* Match body background exactly */
+            border-radius: 0;
+            margin: 0;
+            padding: 10px 20px 20px 20px;
         }
         
         /* Desktop Modal Features - Draggable & Resizable */
@@ -1593,8 +1596,8 @@
         </div>
 
         <!-- Navigation Cards - Always Visible at Top -->
-        <!-- Navigation Cards - Card Styled with Theme Background - V14 -->
-        <div class="nav-container" style="position: static; z-index: 100; padding: 20px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid var(--primary, #667eea);">
+        <!-- Navigation Cards - Seamless with body background - V9j -->
+        <div class="nav-container">
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
                 
                 <!-- Suppliers Card -->
