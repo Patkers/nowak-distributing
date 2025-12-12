@@ -1580,8 +1580,14 @@
         <div class="nav-container" style="position: static; z-index: 100; padding: 20px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid var(--primary, #667eea);">
             <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
                 
+                <!-- Reports Card - FIRST -->
+                <div class="landing-nav-card active-nav-card" onclick="switchTab('reports')" style="background: rgba(255,255,255,0.95); color: #4c1d95; padding: 8px 6px; border: 2px solid #4c1d95; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📈</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Reports</h3>
+                </div>
+
                 <!-- Suppliers Card -->
-                <div class="landing-nav-card active-nav-card" onclick="switchTab('suppliers')" style="background: rgba(255,255,255,0.95); color: #1e3a8a; padding: 8px 6px; border: 2px solid #1e3a8a; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                <div class="landing-nav-card" onclick="switchTab('suppliers')" style="background: rgba(255,255,255,0.95); color: #1e3a8a; padding: 8px 6px; border: 2px solid #1e3a8a; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
                     <div style="font-size: 24px; margin-bottom: 2px;">🏭</div>
                     <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Suppliers</h3>
                 </div>
@@ -1622,22 +1628,16 @@
                     <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Inventory</h3>
                 </div>
 
-                <!-- Inventory Flow Card -->
-                <div class="landing-nav-card" onclick="switchTab('invflow')" style="background: rgba(255,255,255,0.95); color: #c2410c; padding: 8px 6px; border: 2px solid #c2410c; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 24px; margin-bottom: 2px;">🔄</div>
-                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Inv Flow</h3>
-                </div>
-
                 <!-- Price Simulator Card -->
                 <div class="landing-nav-card" onclick="switchTab('pricesim')" style="background: rgba(255,255,255,0.95); color: #1e40af; padding: 8px 6px; border: 2px solid #1e40af; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
                     <div style="font-size: 24px; margin-bottom: 2px;">🎯</div>
                     <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Price Sim</h3>
                 </div>
 
-                <!-- Reports Card -->
-                <div class="landing-nav-card" onclick="switchTab('reports')" style="background: rgba(255,255,255,0.95); color: #4c1d95; padding: 8px 6px; border: 2px solid #4c1d95; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
-                    <div style="font-size: 24px; margin-bottom: 2px;">📈</div>
-                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Reports</h3>
+                <!-- Help/Guides Card -->
+                <div class="landing-nav-card" onclick="switchTab('guides')" style="background: rgba(255,255,255,0.95); color: #059669; padding: 8px 6px; border: 2px solid #059669; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">📚</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Help</h3>
                 </div>
             </div>
         </div>
@@ -3335,7 +3335,10 @@
                     </div>
                     <div id="dashboardReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border-left: 4px solid #b91c1c !important;">🚨 ACTION DASHBOARD</button>
+                        <button class="btn report-btn" onclick="showReport('business-overview')" style="background: linear-gradient(135deg, #059669, #10b981) !important; color: white !important; font-weight: 700; border-left: 4px solid #047857 !important;">📊 BUSINESS OVERVIEW</button>
+                        <button class="btn report-btn" onclick="switchTab('invflow')" style="background: linear-gradient(135deg, #c2410c, #ea580c) !important; color: white !important; font-weight: 700; border-left: 4px solid #9a3412 !important;">🔄 INVENTORY FLOW</button>
                         <button class="btn report-btn" onclick="showReport('daily-dashboard')">🎯 Sales Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('product-dashboard')">📦 Product Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('customer-dashboard')">👤 Customer Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('supplier-dashboard')">🏭 Supplier Dashboard</button>
                     </div>
@@ -3407,6 +3410,575 @@
             <div class="data-display-card">
                 <div id="reportContainer"></div>
             </div>
+        </div>
+        
+        <!-- HELP & GUIDES TAB -->
+        <div id="guides" class="card">
+            <!-- Premium Header -->
+            <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 35px; border-radius: 16px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(5, 150, 105, 0.3), 0 4px 12px rgba(0,0,0,0.1); border: 2px solid rgba(255, 255, 255, 0.1);">
+                <h2 style="margin: 0 0 10px 0; font-size: 32px; display: flex; align-items: center; gap: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    📚 Help Center & User Guides
+                </h2>
+                <p style="margin: 0; font-size: 16px; opacity: 0.95;">
+                    Everything you need to master the Nowak Distributing ERP system
+                </p>
+            </div>
+            
+            <!-- Quick Start Banner -->
+            <div onclick="scrollToGuideSection('quick-start')" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 16px; padding: 25px; margin-bottom: 30px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(245, 158, 11, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(245, 158, 11, 0.3)';">
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="font-size: 48px;">⚡</div>
+                    <div>
+                        <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 22px;">New Here? Start with the 5-Minute Quick Start Guide</h3>
+                        <p style="margin: 0; color: #374151; font-size: 15px;">Get up and running in minutes with our streamlined setup guide</p>
+                    </div>
+                    <div style="margin-left: auto; font-size: 24px; color: #1f2937;">→</div>
+                </div>
+            </div>
+            
+            <!-- Guide Navigation Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                
+                <!-- Quick Start Card -->
+                <div onclick="scrollToGuideSection('quick-start')" class="guide-nav-card" style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#059669'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="font-size: 36px; margin-bottom: 12px;">🚀</div>
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937;">Quick Start Guide</h4>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">5-minute setup to get running</p>
+                    <div style="margin-top: 12px; color: #059669; font-weight: 600; font-size: 13px;">START HERE →</div>
+                </div>
+                
+                <!-- Feature Overview Card -->
+                <div onclick="scrollToGuideSection('features')" class="guide-nav-card" style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#8b5cf6'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="font-size: 36px; margin-bottom: 12px;">✨</div>
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937;">Feature Overview</h4>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">What's new & all features</p>
+                    <div style="margin-top: 12px; color: #8b5cf6; font-weight: 600; font-size: 13px;">EXPLORE →</div>
+                </div>
+                
+                <!-- FAQ Card -->
+                <div onclick="scrollToGuideSection('faq')" class="guide-nav-card" style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#f59e0b'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="font-size: 36px; margin-bottom: 12px;">❓</div>
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937;">FAQ</h4>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">Most asked questions answered</p>
+                    <div style="margin-top: 12px; color: #f59e0b; font-weight: 600; font-size: 13px;">GET ANSWERS →</div>
+                </div>
+                
+                <!-- How-To Guides Card -->
+                <div onclick="scrollToGuideSection('how-to')" class="guide-nav-card" style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#10b981'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="font-size: 36px; margin-bottom: 12px;">📋</div>
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937;">How-To Guides</h4>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">Step-by-step task instructions</p>
+                    <div style="margin-top: 12px; color: #10b981; font-weight: 600; font-size: 13px;">VIEW ALL →</div>
+                </div>
+                
+                <!-- Mobile App Guide Card -->
+                <div onclick="scrollToGuideSection('mobile')" class="guide-nav-card" style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#ec4899'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="font-size: 36px; margin-bottom: 12px;">📱</div>
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937;">Mobile Access Guide</h4>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">Android, iPhone & tablet setup</p>
+                    <div style="margin-top: 12px; color: #ec4899; font-weight: 600; font-size: 13px;">SETUP MOBILE →</div>
+                </div>
+                
+                <!-- Troubleshooting Card -->
+                <div onclick="scrollToGuideSection('troubleshooting')" class="guide-nav-card" style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#ef4444'; this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="font-size: 36px; margin-bottom: 12px;">🔧</div>
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937;">Troubleshooting</h4>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">Fix common issues quickly</p>
+                    <div style="margin-top: 12px; color: #ef4444; font-weight: 600; font-size: 13px;">GET HELP →</div>
+                </div>
+                
+            </div>
+            
+            <!-- GUIDE CONTENT SECTIONS -->
+            <div id="guide-content-container" style="background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;">
+            
+                <!-- ==================== QUICK START GUIDE ==================== -->
+                <div id="guide-quick-start" class="guide-content-section" style="padding: 40px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #059669;">
+                        <span style="font-size: 48px;">🚀</span>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 28px;">Quick Start Guide</h2>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Get up and running in 5 minutes</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #059669;">
+                        <h4 style="margin: 0 0 10px 0; color: #065f46;">👋 Welcome to Nowak Distributing ERP!</h4>
+                        <p style="margin: 0; color: #047857;">This quick start guide will have you managing your snack distribution business like a pro in just 5 minutes. Follow these simple steps to get started.</p>
+                    </div>
+                    
+                    <div style="display: grid; gap: 20px;">
+                        <!-- Step 1 -->
+                        <div style="display: flex; gap: 20px; align-items: flex-start; padding: 25px; background: #f8fafc; border-radius: 12px; border-left: 5px solid #3b82f6;">
+                            <div style="background: #3b82f6; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; flex-shrink: 0;">1</div>
+                            <div>
+                                <h4 style="margin: 0 0 10px 0; color: #1e40af;">Add Your Suppliers</h4>
+                                <p style="margin: 0; color: #475569;">Click <strong>Suppliers</strong> in the navigation → Click <strong>+ Add Supplier</strong> → Enter supplier info (Better Made, Brimhall, Kim's Processing) → Save</p>
+                                <div style="margin-top: 10px; padding: 10px; background: #dbeafe; border-radius: 6px; font-size: 13px; color: #1e40af;">
+                                    💡 <strong>Pro Tip:</strong> Add phone numbers and emails so you can quickly contact suppliers when placing orders.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2 -->
+                        <div style="display: flex; gap: 20px; align-items: flex-start; padding: 25px; background: #f8fafc; border-radius: 12px; border-left: 5px solid #8b5cf6;">
+                            <div style="background: #8b5cf6; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; flex-shrink: 0;">2</div>
+                            <div>
+                                <h4 style="margin: 0 0 10px 0; color: #6d28d9;">Add Your Products (Items)</h4>
+                                <p style="margin: 0; color: #475569;">Click <strong>Items</strong> → Click <strong>+ Add Item</strong> → Select supplier, enter SKU, description, package cost, sell price, and units per package → Save</p>
+                                <div style="margin-top: 10px; padding: 10px; background: #ede9fe; border-radius: 6px; font-size: 13px; color: #6d28d9;">
+                                    💡 <strong>Pro Tip:</strong> The unit cost calculates automatically from package cost ÷ units per package.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3 -->
+                        <div style="display: flex; gap: 20px; align-items: flex-start; padding: 25px; background: #f8fafc; border-radius: 12px; border-left: 5px solid #10b981;">
+                            <div style="background: #10b981; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; flex-shrink: 0;">3</div>
+                            <div>
+                                <h4 style="margin: 0 0 10px 0; color: #047857;">Add Your Customers</h4>
+                                <p style="margin: 0; color: #475569;">Click <strong>Customers</strong> → Click <strong>+ Add Customer</strong> → Enter business name, contact info, and payment terms → Save</p>
+                                <div style="margin-top: 10px; padding: 10px; background: #d1fae5; border-radius: 6px; font-size: 13px; color: #047857;">
+                                    💡 <strong>Pro Tip:</strong> Set payment terms (Net 30, COD, etc.) to track when payments are due.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 4 -->
+                        <div style="display: flex; gap: 20px; align-items: flex-start; padding: 25px; background: #f8fafc; border-radius: 12px; border-left: 5px solid #f59e0b;">
+                            <div style="background: #f59e0b; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; flex-shrink: 0;">4</div>
+                            <div>
+                                <h4 style="margin: 0 0 10px 0; color: #b45309;">Create Your First Purchase Order</h4>
+                                <p style="margin: 0; color: #475569;">Click <strong>Create PO</strong> → Select supplier → Add items and quantities → Set dates → Click <strong>Submit PO</strong></p>
+                                <div style="margin-top: 10px; padding: 10px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #b45309;">
+                                    💡 <strong>Pro Tip:</strong> Use the "Add All Items" button to quickly add every item from that supplier.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 5 -->
+                        <div style="display: flex; gap: 20px; align-items: flex-start; padding: 25px; background: #f8fafc; border-radius: 12px; border-left: 5px solid #ec4899;">
+                            <div style="background: #ec4899; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; flex-shrink: 0;">5</div>
+                            <div>
+                                <h4 style="margin: 0 0 10px 0; color: #be185d;">Create Your First Sales Order</h4>
+                                <p style="margin: 0; color: #475569;">Click <strong>Sales</strong> → Click <strong>+ Create Invoice</strong> → Select customer → Add items → Save & Print invoice</p>
+                                <div style="margin-top: 10px; padding: 10px; background: #fce7f3; border-radius: 6px; font-size: 13px; color: #be185d;">
+                                    💡 <strong>Pro Tip:</strong> Use the Pick List report to see what items you need to gather for delivery.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 12px; color: white; text-align: center;">
+                        <h3 style="margin: 0 0 10px 0;">🎉 You're Ready to Go!</h3>
+                        <p style="margin: 0; opacity: 0.95;">Now explore the Reports section to see your business analytics and dashboards.</p>
+                        <button onclick="switchTab('reports')" style="margin-top: 15px; background: white; color: #059669; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px;">View Reports →</button>
+                    </div>
+                </div>
+                
+                <!-- ==================== FEATURE OVERVIEW ==================== -->
+                <div id="guide-features" class="guide-content-section" style="padding: 40px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #8b5cf6;">
+                        <span style="font-size: 48px;">✨</span>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 28px;">Feature Overview & What's New</h2>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">All features and recent updates</p>
+                        </div>
+                    </div>
+                    
+                    <!-- What's New Section -->
+                    <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 12px; padding: 25px; margin-bottom: 30px; border: 2px solid #c4b5fd;">
+                        <h4 style="margin: 0 0 15px 0; color: #7c3aed;">🆕 Latest Updates</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #6d28d9;">
+                            <li style="margin-bottom: 8px;"><strong>Number Formatting:</strong> All dollar amounts and quantities now display with commas for easier reading</li>
+                            <li style="margin-bottom: 8px;"><strong>Inventory Flow Dashboard:</strong> Real-time visibility into inventory movement</li>
+                            <li style="margin-bottom: 8px;"><strong>Partial PO Receiving:</strong> Receive partial shipments and track remaining quantities</li>
+                            <li style="margin-bottom: 8px;"><strong>Enhanced Dashboards:</strong> Premium styling with gradient headers throughout</li>
+                            <li style="margin-bottom: 8px;"><strong>Pick List Report:</strong> Efficiently gather items for delivery routes</li>
+                            <li><strong>13 Theme Options:</strong> Including Chicago sports teams and Green Bay Packers</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Feature Categories -->
+                    <h3 style="color: #1f2937; margin-bottom: 20px;">📋 Complete Feature List</h3>
+                    
+                    <div style="display: grid; gap: 20px;">
+                        <!-- Master Data -->
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border-left: 5px solid #3b82f6;">
+                            <h4 style="margin: 0 0 15px 0; color: #1e40af;">🗂️ Master Data Management</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Supplier Management</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Item/Product Catalog</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Customer Database</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Search & Filter</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Bulk Operations</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Archive/Restore</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Purchasing -->
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border-left: 5px solid #10b981;">
+                            <h4 style="margin: 0 0 15px 0; color: #047857;">📥 Purchasing Features</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Create Purchase Orders</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Receive Full/Partial Shipments</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Track Payment Status</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Print PO Documents</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Edit Line Items</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Auto-Update Inventory</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sales -->
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border-left: 5px solid #f59e0b;">
+                            <h4 style="margin: 0 0 15px 0; color: #b45309;">💰 Sales & Invoicing</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Create Sales Orders</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Print Professional Invoices</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Payment Tracking</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Quick Item Picker</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Auto-Calculate Totals</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Pick List Generation</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Reporting -->
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border-left: 5px solid #8b5cf6;">
+                            <h4 style="margin: 0 0 15px 0; color: #6d28d9;">📈 Reports & Dashboards</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Action Dashboard</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Business Overview</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Sales Dashboard</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Inventory Flow Dashboard</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Customer & Product Analytics</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Accounts Receivable/Payable</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Profit & Loss Statement</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Supplier Performance</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ==================== FAQ ==================== -->
+                <div id="guide-faq" class="guide-content-section" style="padding: 40px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #f59e0b;">
+                        <span style="font-size: 48px;">❓</span>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 28px;">Frequently Asked Questions</h2>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Quick answers to common questions</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; gap: 15px;">
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">How do I change the app's theme/colors?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">Click the ⚙️ gear icon in the top-right corner to open Settings. Under "Theme Selection," you'll find 13 different themes including Chicago sports teams (Bears, Bulls, Cubs, White Sox, Blackhawks, Fire) and the Green Bay Packers.</p>
+                            </div>
+                        </details>
+                        
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">How does inventory tracking work?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">Inventory is automatically updated when you:<br><br>
+                                • <strong>Receive a PO:</strong> Inventory increases by the received quantity<br>
+                                • <strong>Create a Sales Order:</strong> Inventory decreases by the sold quantity<br>
+                                • <strong>Manual Adjustment:</strong> Use the Inventory tab to manually adjust quantities with reason tracking</p>
+                            </div>
+                        </details>
+                        
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">Can I receive a partial shipment on a PO?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">Yes! When viewing a PO, click "Receive PO" and you can enter the actual quantities received for each line item. If you receive less than ordered, the PO will show status "Partially Received" and track the remaining quantity.</p>
+                            </div>
+                        </details>
+                        
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">How do I print an invoice for a customer?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">Go to <strong>Sales</strong> → Find the order → Click <strong>View</strong> → Click <strong>🖨️ Print Invoice</strong>. The invoice will open in a print-friendly format with your business name and all order details.</p>
+                            </div>
+                        </details>
+                        
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">What is the Action Dashboard?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">The Action Dashboard shows items that need your immediate attention:<br><br>
+                                • <strong>Past Due Payments:</strong> Customer invoices that haven't been paid<br>
+                                • <strong>Late POs:</strong> Purchase orders past their expected date<br>
+                                • <strong>Low Stock Items:</strong> Items below reorder point<br>
+                                • <strong>Dead Stock:</strong> Items with no recent sales</p>
+                            </div>
+                        </details>
+                        
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">Where is my data stored?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">All data is stored securely in Google Sheets connected to Google Apps Script. This means:<br><br>
+                                • Your data is in your Google account<br>
+                                • It's backed up automatically by Google<br>
+                                • You can access it from any device<br>
+                                • You can export to Excel anytime</p>
+                            </div>
+                        </details>
+                        
+                        <details style="background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <summary style="padding: 20px; cursor: pointer; font-weight: 600; color: #1f2937; background: #f8fafc;">Can I use this on my phone?</summary>
+                            <div style="padding: 20px; background: white; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0; color: #475569;">Yes! The ERP is fully responsive and works on any device. See the <strong>Mobile Access Guide</strong> section for detailed instructions on adding it to your home screen for quick access.</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+                
+                <!-- ==================== HOW-TO GUIDES ==================== -->
+                <div id="guide-how-to" class="guide-content-section" style="padding: 40px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #10b981;">
+                        <span style="font-size: 48px;">📋</span>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 28px;">How-To Guides</h2>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Step-by-step instructions for common tasks</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        
+                        <!-- Supplier Tasks -->
+                        <div style="background: #eff6ff; border-radius: 12px; padding: 25px;">
+                            <h4 style="margin: 0 0 15px 0; color: #1e40af;">🏭 Supplier Tasks</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #475569; line-height: 2;">
+                                <li>How to add a new supplier</li>
+                                <li>How to edit supplier information</li>
+                                <li>How to view supplier purchase history</li>
+                                <li>How to archive/restore a supplier</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Item Tasks -->
+                        <div style="background: #f0fdf4; border-radius: 12px; padding: 25px;">
+                            <h4 style="margin: 0 0 15px 0; color: #166534;">📦 Item/Product Tasks</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #475569; line-height: 2;">
+                                <li>How to add a new item</li>
+                                <li>How to update item pricing</li>
+                                <li>How to set reorder points</li>
+                                <li>How to archive discontinued items</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Customer Tasks -->
+                        <div style="background: #fef3c7; border-radius: 12px; padding: 25px;">
+                            <h4 style="margin: 0 0 15px 0; color: #b45309;">👥 Customer Tasks</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #475569; line-height: 2;">
+                                <li>How to add a new customer</li>
+                                <li>How to set payment terms</li>
+                                <li>How to view customer order history</li>
+                                <li>How to track outstanding balances</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Purchase Order Tasks -->
+                        <div style="background: #ede9fe; border-radius: 12px; padding: 25px;">
+                            <h4 style="margin: 0 0 15px 0; color: #6d28d9;">📝 Purchase Order Tasks</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #475569; line-height: 2;">
+                                <li>How to create a purchase order</li>
+                                <li>How to receive a shipment</li>
+                                <li>How to receive partial shipments</li>
+                                <li>How to record payment to supplier</li>
+                                <li>How to print/email a PO</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Sales Tasks -->
+                        <div style="background: #fce7f3; border-radius: 12px; padding: 25px;">
+                            <h4 style="margin: 0 0 15px 0; color: #be185d;">💰 Sales & Invoice Tasks</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #475569; line-height: 2;">
+                                <li>How to create a sales order/invoice</li>
+                                <li>How to use the quick item picker</li>
+                                <li>How to print an invoice</li>
+                                <li>How to record customer payment</li>
+                                <li>How to generate a pick list</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Inventory Tasks -->
+                        <div style="background: #f1f5f9; border-radius: 12px; padding: 25px;">
+                            <h4 style="margin: 0 0 15px 0; color: #475569;">📊 Inventory Tasks</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #475569; line-height: 2;">
+                                <li>How to view current inventory levels</li>
+                                <li>How to make manual adjustments</li>
+                                <li>How to track low stock items</li>
+                                <li>How to use Inventory Flow Dashboard</li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- ==================== MOBILE ACCESS GUIDE ==================== -->
+                <div id="guide-mobile" class="guide-content-section" style="padding: 40px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #ec4899;">
+                        <span style="font-size: 48px;">📱</span>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 28px;">Mobile Access Guide</h2>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Access the ERP from any phone or tablet</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); border-radius: 12px; padding: 25px; margin-bottom: 30px; border: 2px solid #f9a8d4;">
+                        <p style="margin: 0; color: #9d174d;">📱 The Nowak Distributing ERP works perfectly on mobile devices! For the best experience, add it to your home screen to launch it like a native app.</p>
+                    </div>
+                    
+                    <!-- Android Instructions -->
+                    <div style="background: #f0fdf4; border-radius: 12px; padding: 25px; margin-bottom: 25px; border-left: 5px solid #22c55e;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">🤖</span>
+                            <h3 style="margin: 0; color: #166534;">Android Setup (Samsung, Google Pixel, etc.)</h3>
+                        </div>
+                        
+                        <div style="display: grid; gap: 15px;">
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #22c55e; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</div>
+                                <div><strong>Open Chrome Browser</strong> - Navigate to the ERP website</div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #22c55e; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</div>
+                                <div><strong>Tap the Menu (⋮)</strong> - Three dots in top-right corner</div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #22c55e; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</div>
+                                <div><strong>Tap "Add to Home screen"</strong></div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #22c55e; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">4</div>
+                                <div><strong>Name it "Nowak ERP"</strong> and tap "Add" - Done! 🎉</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- iPhone Instructions -->
+                    <div style="background: #f1f5f9; border-radius: 12px; padding: 25px; border-left: 5px solid #6b7280;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">🍎</span>
+                            <h3 style="margin: 0; color: #374151;">iPhone & iPad Setup</h3>
+                        </div>
+                        
+                        <div style="display: grid; gap: 15px;">
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #6b7280; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</div>
+                                <div><strong>Open Safari Browser</strong> (required for iOS)</div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #6b7280; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</div>
+                                <div><strong>Tap the Share Button (⬆️)</strong> at bottom of Safari</div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #6b7280; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</div>
+                                <div><strong>Tap "Add to Home Screen"</strong></div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                                <div style="background: #6b7280; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">4</div>
+                                <div><strong>Name it "Nowak ERP"</strong> and tap "Add"</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile Tips -->
+                    <div style="margin-top: 25px; padding: 20px; background: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b;">
+                        <h4 style="margin: 0 0 10px 0; color: #b45309;">📱 Mobile Tips</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #92400e;">
+                            <li>Turn your phone sideways (landscape) for better table viewing</li>
+                            <li>Use pinch-to-zoom on reports and invoices</li>
+                            <li>The navigation grid works great with one-handed scrolling</li>
+                            <li>All printing works through your phone's print system</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- ==================== TROUBLESHOOTING ==================== -->
+                <div id="guide-troubleshooting" class="guide-content-section" style="padding: 40px; display: none;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #ef4444;">
+                        <span style="font-size: 48px;">🔧</span>
+                        <div>
+                            <h2 style="margin: 0; color: #1f2937; font-size: 28px;">Troubleshooting Guide</h2>
+                            <p style="margin: 5px 0 0 0; color: #6b7280;">Fix common issues quickly</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; gap: 20px;">
+                        
+                        <div style="background: #fef2f2; border-radius: 12px; padding: 25px; border-left: 5px solid #ef4444;">
+                            <h4 style="margin: 0 0 15px 0; color: #b91c1c;">❌ Data Not Loading / "Loading..." Stuck</h4>
+                            <p style="margin: 0 0 15px 0; color: #7f1d1d;"><strong>Cause:</strong> Connection to Google Sheets backend may have timed out.</p>
+                            <p style="margin: 0; color: #7f1d1d;"><strong>Solution:</strong></p>
+                            <ol style="margin: 10px 0 0 0; padding-left: 20px; color: #991b1b;">
+                                <li>Refresh the page (Ctrl+R or ⌘+R)</li>
+                                <li>Wait 10-15 seconds for data to load</li>
+                                <li>If still stuck, check your internet connection</li>
+                                <li>Clear browser cache: Settings → Privacy → Clear browsing data</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #fef2f2; border-radius: 12px; padding: 25px; border-left: 5px solid #ef4444;">
+                            <h4 style="margin: 0 0 15px 0; color: #b91c1c;">❌ Changes Not Saving</h4>
+                            <p style="margin: 0 0 15px 0; color: #7f1d1d;"><strong>Cause:</strong> Form validation failed or network issue.</p>
+                            <p style="margin: 0; color: #7f1d1d;"><strong>Solution:</strong></p>
+                            <ol style="margin: 10px 0 0 0; padding-left: 20px; color: #991b1b;">
+                                <li>Check for red error messages on the form</li>
+                                <li>Make sure all required fields (marked with *) are filled</li>
+                                <li>Look for the green "Success" message after saving</li>
+                                <li>If no message appears, refresh and try again</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #fef2f2; border-radius: 12px; padding: 25px; border-left: 5px solid #ef4444;">
+                            <h4 style="margin: 0 0 15px 0; color: #b91c1c;">❌ Print Not Working</h4>
+                            <p style="margin: 0 0 15px 0; color: #7f1d1d;"><strong>Cause:</strong> Browser popup blocker or print dialog issue.</p>
+                            <p style="margin: 0; color: #7f1d1d;"><strong>Solution:</strong></p>
+                            <ol style="margin: 10px 0 0 0; padding-left: 20px; color: #991b1b;">
+                                <li>Allow popups for this site if prompted</li>
+                                <li>Try Ctrl+P (or ⌘+P on Mac) after clicking Print</li>
+                                <li>Make sure you have a printer selected</li>
+                                <li>For PDF: Select "Save as PDF" in the print dialog</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #fef2f2; border-radius: 12px; padding: 25px; border-left: 5px solid #ef4444;">
+                            <h4 style="margin: 0 0 15px 0; color: #b91c1c;">❌ Page Looks Wrong / Broken Layout</h4>
+                            <p style="margin: 0 0 15px 0; color: #7f1d1d;"><strong>Cause:</strong> Cached old version of the page.</p>
+                            <p style="margin: 0; color: #7f1d1d;"><strong>Solution:</strong></p>
+                            <ol style="margin: 10px 0 0 0; padding-left: 20px; color: #991b1b;">
+                                <li>Hard refresh: Ctrl+Shift+R (or ⌘+Shift+R on Mac)</li>
+                                <li>Clear cache: Ctrl+Shift+Delete → Clear cached images/files</li>
+                                <li>Try a different browser (Chrome, Firefox, Edge)</li>
+                            </ol>
+                        </div>
+                        
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding: 25px; background: #f0f9ff; border-radius: 12px; text-align: center;">
+                        <h4 style="margin: 0 0 10px 0; color: #0369a1;">Still Having Issues?</h4>
+                        <p style="margin: 0; color: #0c4a6e;">Contact your system administrator or check the browser console (F12) for error messages.</p>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Glossary Quick Reference -->
+            <div style="margin-top: 40px; background: #f8fafc; border-radius: 16px; padding: 30px;">
+                <h3 style="margin: 0 0 20px 0; color: #1f2937;">📖 Quick Glossary</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>PO</strong> - Purchase Order (order to supplier)</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>SO</strong> - Sales Order (invoice to customer)</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>SKU</strong> - Stock Keeping Unit (product code)</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>COGS</strong> - Cost of Goods Sold</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>AR</strong> - Accounts Receivable (money owed to you)</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>AP</strong> - Accounts Payable (money you owe)</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>Net 30</strong> - Payment due in 30 days</div>
+                    <div style="padding: 12px; background: white; border-radius: 8px;"><strong>COD</strong> - Cash On Delivery</div>
+                </div>
+            </div>
+            
         </div>
     </div>
 
@@ -13065,7 +13637,7 @@
                         <tr>
                             <td>${p.Customer_Name}</td>
                             <td>SO-${p.Sale_ID}</td>
-                            <td>${new Date(p.Due_Date).toLocalizedString()}</td>
+                            <td>${new Date(p.Due_Date).toLocaleDateString()}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>$${p.Balance.toFixed(2)}</td>
                             <td>
@@ -13515,8 +14087,9 @@
         // ==================== DAILY DASHBOARD ====================
         
         async function generateDailyDashboardModal() {
-            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : new Date();
-            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : new Date();
+            // If no date filter, use very wide range (all time)
+            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : new Date('2000-01-01');
+            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : new Date('2099-12-31');
             fromDate.setHours(0, 0, 0, 0);
             
             // Fetch all data
