@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9x - Fixed screen movement on orientation change -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V10a - Fixed orientation handler locking screen -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1507,7 +1507,7 @@
         
         /* Navigation Container - Uses dynamic CSS variable to match card theme */
         .nav-container {
-            background: var(--primary, #667eea) !important; /* Force same as body background */
+            background: transparent !important; /* Transparent to show body background */
             border-radius: 0;
             margin: 0 -20px; /* Extend to edges to blend with body */
             padding: 10px 40px 20px 40px;
@@ -2671,7 +2671,7 @@
                                 </select>
                                 <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
                                 <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
-                                <button type="button" class="remove-btn">✕</button>
+                                <button type="button" class="remove-btn">🗑️</button>
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
@@ -2821,7 +2821,7 @@
                                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
                                     <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
                                 </div>
-                                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
+                                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">🗑️</button>
                                 <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; display: none; border-radius: 6px; border: 2px solid #e0e0e0; background: white;"></div>
                             </div>
                         </div>
@@ -5793,7 +5793,7 @@
                 </select>
                 <input type="number" class="po-qty" placeholder="# of Packages" min="1" required>
                 <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required>
-                <button type="button" class="remove-btn">✕</button>
+                <button type="button" class="remove-btn">🗑️</button>
             `;
             container.appendChild(newRow);
             
@@ -7187,7 +7187,7 @@
                     <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}">
                     <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}">
                     <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="$${(originalQty * originalPrice).toFixed(2)}">
-                    <button type="button" class="remove-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">✕</button>
+                    <button type="button" class="remove-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">🗑️</button>
                 </div>
             `;
         }
@@ -7895,7 +7895,7 @@
                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
                     <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
                 </div>
-                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">✕</button>
+                <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">🗑️</button>
                 <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
             `;
             container.appendChild(newRow);
@@ -18738,37 +18738,14 @@ NOTE: Please print the attached PO document for full details.`;
         
         /* ========== MOBILE MODAL FIXES ========== */
         
-        /* Prevent screen movement on orientation change */
+        /* Prevent horizontal scroll only */
         html, body {
-            overscroll-behavior: none;
+            overscroll-behavior-x: none;
         }
         
         @media (max-width: 768px) {
-            html {
+            html, body {
                 overflow-x: hidden;
-                width: 100%;
-                position: relative;
-            }
-            
-            body {
-                overflow-x: hidden;
-                width: 100%;
-                position: relative;
-                min-height: 100vh;
-                min-height: -webkit-fill-available;
-            }
-            
-            .section, .card {
-                position: relative !important;
-                overflow-x: hidden;
-            }
-            
-            /* Prevent container from moving */
-            .container {
-                position: relative !important;
-                overflow-x: hidden;
-                width: 100% !important;
-                max-width: 100% !important;
             }
         }
         
@@ -22183,32 +22160,20 @@ NOTE: Please print the attached PO document for full details.`;
             // Prevent screen from becoming "loose" when rotating device
             
             function lockViewport() {
-                // Reset scroll position
-                window.scrollTo(0, 0);
-                
-                // Force body to recalculate
-                document.body.style.minHeight = window.innerHeight + 'px';
-                
-                // Ensure container doesn't overflow
-                const container = document.querySelector('.container');
-                if (container) {
-                    container.style.position = 'relative';
-                    container.style.overflow = 'hidden';
-                }
-                
-                // If in a card/section, ensure it's properly displayed
-                const activeCard = document.querySelector('.card[style*="display: block"]');
-                if (activeCard) {
-                    activeCard.style.position = 'relative';
-                }
-                
-                // Re-lock body if modal is open
+                // Only re-lock if a modal is actually open
                 const modalsOpen = document.querySelectorAll('.modal[style*="display: block"], #orderModal[style*="display: block"], #reportSetupModal[style*="display: block"]');
                 if (modalsOpen.length > 0) {
                     document.body.classList.add('modal-open');
                     document.body.style.overflow = 'hidden';
                     document.body.style.position = 'fixed';
                     document.body.style.width = '100%';
+                } else {
+                    // Make sure body is NOT locked when no modal is open
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.position = '';
+                    document.body.style.width = '';
+                    document.body.style.minHeight = '';
                 }
             }
             
