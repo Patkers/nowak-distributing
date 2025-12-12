@@ -5997,17 +5997,17 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
                     <div style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #f57c00;">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Total Purchases</div>
-                        <div style="font-size: 28px; font-weight: bold; color: #f57c00;">$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #f57c00;">$${totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
                         <div style="font-size: 12px; color: #888;">${orders.length} orders</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #388e3c;">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Paid</div>
-                        <div style="font-size: 28px; font-weight: bold; color: #388e3c;">$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #388e3c;">$${totalPaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
                         <div style="font-size: 12px; color: #888;">${((totalPaid/totalAmount)*100 || 0).toFixed(0)}% paid</div>
                     </div>
                     <div style="background: linear-gradient(135deg, ${balance > 0 ? '#ffebee, #ffcdd2' : '#e8f5e9, #c8e6c9'}); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid ${balance > 0 ? '#c62828' : '#388e3c'};">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Outstanding</div>
-                        <div style="font-size: 28px; font-weight: bold; color: ${balance > 0 ? '#c62828' : '#388e3c'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${balance > 0 ? '#c62828' : '#388e3c'};">$${balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
                         <div style="font-size: 12px; color: #888;">${balance > 0 ? 'to pay' : 'all paid!'}</div>
                     </div>
                 </div>
@@ -6018,7 +6018,7 @@
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
-                const dueDate = po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-';
+                const dueDate = formatDateSafe(po.Due_Date);
                 const paymentStatus = po.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(po.Amount_Paid) || 0;
                 const total = parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
@@ -6032,7 +6032,7 @@
                 html += `<tr style="cursor: pointer;" onclick="viewPurchaseOrder('${po.PO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
                     <td>${getSupplierName(po.Supplier_ID)}</td>
-                    <td>${new Date(po.PO_Date).toLocaleDateString()}</td>
+                    <td>${formatDateSafe(po.PO_Date)}</td>
                     <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : po.Status === 'Void' || po.Status === 'Cancelled' ? '#dc3545' : po.Status === 'Partial' ? '#17a2b8' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status === 'Void' ? '⛔ VOID' : po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status || 'Received'}</span></td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
@@ -6049,9 +6049,9 @@
             // Add totals row
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
                 <td colspan="4" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td>$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                <td>$${totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
+                <td>$${totalPaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
+                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</strong></td>
             </tr>`;
 
             html += '</tbody></table>';
@@ -7921,6 +7921,22 @@
 
         let salesData = []; // Cache for filtering
         
+        // Helper function for mobile-safe date formatting
+        function formatDateSafe(dateValue) {
+            if (!dateValue) return '-';
+            try {
+                const date = new Date(dateValue);
+                if (isNaN(date.getTime())) return '-';
+                // Use manual formatting instead of toLocaleDateString for mobile compatibility
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const year = date.getFullYear();
+                return `${month}/${day}/${year}`;
+            } catch (e) {
+                return '-';
+            }
+        }
+        
         async function loadSales() {
             document.getElementById('salesTable').innerHTML = '<div class="loading">Loading sales...</div>';
             
@@ -8165,17 +8181,17 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 20px 0;">
                     <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #1976d2;">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Total Sales</div>
-                        <div style="font-size: 28px; font-weight: bold; color: #1976d2;">$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #1976d2;">$${totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
                         <div style="font-size: 12px; color: #888;">${orders.length} orders</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid #388e3c;">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Collected</div>
-                        <div style="font-size: 28px; font-weight: bold; color: #388e3c;">$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #388e3c;">$${totalPaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
                         <div style="font-size: 12px; color: #888;">${((totalPaid/totalAmount)*100 || 0).toFixed(0)}% collected</div>
                     </div>
                     <div style="background: linear-gradient(135deg, ${balance > 0 ? '#ffebee, #ffcdd2' : '#e8f5e9, #c8e6c9'}); padding: 20px; border-radius: 12px; text-align: center; border-left: 4px solid ${balance > 0 ? '#c62828' : '#388e3c'};">
                         <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Outstanding</div>
-                        <div style="font-size: 28px; font-weight: bold; color: ${balance > 0 ? '#c62828' : '#388e3c'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${balance > 0 ? '#c62828' : '#388e3c'};">$${balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
                         <div style="font-size: 12px; color: #888;">${balance > 0 ? 'to collect' : 'all paid!'}</div>
                     </div>
                 </div>
@@ -8186,7 +8202,7 @@
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
-                const dueDate = so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-';
+                const dueDate = formatDateSafe(so.Due_Date);
                 const paymentStatus = so.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(so.Amount_Paid) || 0;
                 const total = parseFloat(so.Total_Amount || so.Order_Total) || 0;
@@ -8201,7 +8217,7 @@
                 html += `<tr style="cursor: pointer;" onclick="viewSalesOrder('${so.SO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${invoiceNum}</strong></td>
                     <td>${getCustomerName(so.Customer_ID)}</td>
-                    <td>${new Date(so.Sale_Date || so.SO_Date).toLocaleDateString()}</td>
+                    <td>${formatDateSafe(so.Sale_Date || so.SO_Date)}</td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td>${dueDate}</td>
@@ -8215,9 +8231,9 @@
             // Add totals row
             html += `<tr style="background: #f0f0f0; font-weight: bold; border-top: 3px solid #667eea;">
                 <td colspan="3" style="text-align: right; padding-right: 20px;">TOTALS:</td>
-                <td>$${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td>$${totalPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                <td>$${totalAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
+                <td>$${totalPaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>
+                <td colspan="3" style="text-align: left;">Balance: <strong style="color: ${balance > 0 ? '#dc3545' : '#28a745'};">$${balance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</strong></td>
             </tr>`;
 
             html += '</tbody></table>';
