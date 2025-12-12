@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Mobile Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .test {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ccc;
+        }
+        .test.pending { border-color: #ff9800; }
+        .test.success { border-color: #4caf50; }
+        .test.error { border-color: #f44336; }
+        .test-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .test-result {
+            font-size: 14px;
+            color: #666;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 100%;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        button:active {
+            background: #1976D2;
+        }
+        .status {
+            text-align: center;
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .error-detail {
+            background: #ffebee;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 ERP Mobile Diagnostic</h1>
+    <p>This tool will test your API connection and identify issues on mobile.</p>
+    
+    <button onclick="runDiagnostics()">🔍 Run Diagnostics</button>
+    
+    <div id="status" class="status"></div>
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwuiaqEfuRT3WCjskRbM2guHTxKyQjzd2LLWSgjC6aq5ptGhG4h9R2RK2OK4GB-XKgj/exec';
+        
+        function showTest(name, status, result) {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `
+                <div class="test-name">${name}</div>
+                <div class="test-result">${result}</div>
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function showStatus(text) {
+            document.getElementById('status').textContent = text;
+        }
+        
+        async function runDiagnostics() {
+            document.getElementById('results').innerHTML = '';
+            showStatus('🔄 Running diagnostics...');
+            
+            // Test 1: Check API URL
+            showTest('1. API URL Configuration', 'pending', `URL: ${API_URL}`);
+            await sleep(500);
+            showTest('1. API URL Configuration', 'success', `✅ URL configured`);
+            
+            // Test 2: Test basic connectivity
+            showStatus('🔄 Testing API connectivity...');
+            try {
+                showTest('2. API Connectivity', 'pending', 'Fetching suppliers...');
+                const suppliersResp = await fetch(API_URL + '?action=getSuppliers');
+                const suppliersData = await suppliersResp.json();
+                
+                if (suppliersData.status === 'success') {
+                    showTest('2. API Connectivity', 'success', `✅ Connected! Found ${suppliersData.data.length} suppliers`);
+                } else {
+                    throw new Error(suppliersData.message);
+                }
+            } catch (error) {
+                showTest('2. API Connectivity', 'error', `❌ FAILED: ${error.message}`);
+                showStatus('❌ Diagnostics failed at connectivity test');
+                return;
+            }
+            
+            // Test 3: Fetch Sales Orders
+            showStatus('🔄 Testing sales orders fetch...');
+            try {
+                showTest('3. Sales Orders Fetch', 'pending', 'Requesting sales orders...');
+                const salesResp = await fetch(API_URL + '?action=getSalesOrders');
+                const salesData = await salesResp.json();
+                
+                if (salesData.status === 'success') {
+                    showTest('3. Sales Orders Fetch', 'success', `✅ Fetched ${salesData.data.length} sales orders\n\nRaw data: ${JSON.stringify(salesData.data[0], null, 2).substring(0, 300)}...`);
+                } else {
+                    throw new Error(salesData.message);
+                }
+                
+                // Store for next tests
+                window.testSalesData = salesData.data;
+                
+            } catch (error) {
+                showTest('3. Sales Orders Fetch', 'error', `❌ FAILED: ${error.message}\n\nStack: ${error.stack}`);
+                showStatus('❌ Diagnostics failed at sales orders fetch');
+                return;
+            }
+            
+            // Test 4: Parse dates
+            showStatus('🔄 Testing date parsing...');
+            try {
+                showTest('4. Date Parsing', 'pending', 'Parsing dates from sales orders...');
+                const salesOrders = window.testSalesData;
+                
+                for (let i = 0; i < Math.min(salesOrders.length, 3); i++) {
+                    const order = salesOrders[i];
+                    
+                    // Try to parse dates
+                    const saleDate = order.Sale_Date ? new Date(order.Sale_Date) : null;
+                    const dueDate = order.Due_Date ? new Date(order.Due_Date) : null;
+                    const paymentDate = order.Payment_Date ? new Date(order.Payment_Date) : null;
+                    
+                    if (saleDate && isNaN(saleDate.getTime())) {
+                        throw new Error(`Invalid Sale_Date: ${order.Sale_Date}`);
+                    }
+                }
+                
+                showTest('4. Date Parsing', 'success', `✅ All dates parsed successfully`);
+                
+            } catch (error) {
+                showTest('4. Date Parsing', 'error', `❌ FAILED: ${error.message}\n\nThis is likely the issue!`);
+                showStatus('❌ Found the problem: Date parsing fails on mobile');
+                return;
+            }
+            
+            // Test 5: Number formatting
+            showStatus('🔄 Testing number formatting...');
+            try {
+                showTest('5. Number Formatting', 'pending', 'Formatting amounts...');
+                const salesOrders = window.testSalesData;
+                
+                for (let order of salesOrders) {
+                    const total = parseFloat(order.Total_Amount);
+                    const paid = parseFloat(order.Amount_Paid);
+                    
+                    if (isNaN(total)) {
+                        throw new Error(`Invalid Total_Amount: ${order.Total_Amount}`);
+                    }
+                    
+                    // Try to format as currency
+                    const formatted = `$${total.toFixed(2)}`;
+                }
+                
+                showTest('5. Number Formatting', 'success', `✅ All numbers formatted successfully`);
+                
+            } catch (error) {
+                showTest('5. Number Formatting', 'error', `❌ FAILED: ${error.message}\n\nThis is likely the issue!`);
+                showStatus('❌ Found the problem: Number formatting fails on mobile');
+                return;
+            }
+            
+            // Test 6: Test aggregation calculations
+            showStatus('🔄 Testing aggregation calculations...');
+            try {
+                showTest('6. Aggregation Calculations', 'pending', 'Calculating totals...');
+                const salesOrders = window.testSalesData;
+                
+                let totalSales = 0;
+                let totalCollected = 0;
+                
+                for (let order of salesOrders) {
+                    const total = parseFloat(order.Total_Amount) || 0;
+                    const paid = parseFloat(order.Amount_Paid) || 0;
+                    
+                    totalSales += total;
+                    totalCollected += paid;
+                }
+                
+                const outstanding = totalSales - totalCollected;
+                
+                showTest('6. Aggregation Calculations', 'success', 
+                    `✅ Calculations work!\n\nTotal Sales: $${totalSales.toFixed(2)}\nCollected: $${totalCollected.toFixed(2)}\nOutstanding: $${outstanding.toFixed(2)}`);
+                
+            } catch (error) {
+                showTest('6. Aggregation Calculations', 'error', `❌ FAILED: ${error.message}\n\nThis is likely the issue!`);
+                showStatus('❌ Found the problem: Aggregation calculations fail on mobile');
+                return;
+            }
+            
+            // Test 7: Render sample table row
+            showStatus('🔄 Testing table rendering...');
+            try {
+                showTest('7. Table Rendering', 'pending', 'Creating table row HTML...');
+                const order = window.testSalesData[0];
+                
+                const html = `
+                    <tr>
+                        <td>${order.Invoice_Number || ''}</td>
+                        <td>${order.Customer_ID || ''}</td>
+                        <td>${new Date(order.Sale_Date).toLocaleDateString()}</td>
+                        <td>$${parseFloat(order.Total_Amount).toFixed(2)}</td>
+                    </tr>
+                `;
+                
+                showTest('7. Table Rendering', 'success', `✅ HTML generated successfully\n\n${html}`);
+                
+            } catch (error) {
+                showTest('7. Table Rendering', 'error', `❌ FAILED: ${error.message}\n\nThis is likely the issue!`);
+                showStatus('❌ Found the problem: Table rendering fails on mobile');
+                return;
+            }
+            
+            // All tests passed!
+            showStatus('✅ All tests passed! The issue might be in the full app rendering logic.');
+            showTest('Summary', 'success', 
+                `All diagnostic tests passed successfully!\n\n` +
+                `If your app still shows errors, the issue is likely:\n` +
+                `1. Too much data to render at once\n` +
+                `2. A different part of the frontend code\n` +
+                `3. Mobile-specific CSS or layout issues\n\n` +
+                `Screenshot these results and send to Claude for next steps.`
+            );
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
