@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9v - Added inventory columns to Sales by Item report -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9x - Fixed screen movement on orientation change -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,12 +23,15 @@
             margin: 0;
             /* Minimal pull-to-refresh prevention */
             overscroll-behavior-y: contain;
+            /* Prevent horizontal scroll/movement */
+            overflow-x: hidden;
         }
         
         html {
-            /* Allow normal scrolling */
+            /* Allow normal scrolling but prevent horizontal */
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
 
         .container {
@@ -6224,15 +6227,18 @@
 
             orders.forEach(po => {
                 const dueDate = formatDateSafe(po.Due_Date);
-                const paymentStatus = po.Payment_Status || 'Unpaid';
                 const amountPaid = parseFloat(po.Amount_Paid) || 0;
                 const total = parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
                 
-                // Color code payment status
+                // Calculate payment status from actual amounts (not stored status)
                 let paymentBadge = '';
-                if (paymentStatus === 'Paid') paymentBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Paid</span>';
-                else if (paymentStatus === 'Partial') paymentBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Partial</span>';
-                else paymentBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Unpaid</span>';
+                if (amountPaid >= total - 0.01 && total > 0) {
+                    paymentBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Paid</span>';
+                } else if (amountPaid > 0) {
+                    paymentBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Partial</span>';
+                } else {
+                    paymentBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Unpaid</span>';
+                }
                 
                 html += `<tr style="cursor: pointer;" onclick="viewPurchaseOrder('${po.PO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
@@ -6246,7 +6252,6 @@
                     <td onclick="event.stopPropagation();">
                         ${po.Status === 'Ordered' ? `<button class="btn-small" onclick="receiveOutgoingPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
                         ${po.Status === 'Void' || po.Status === 'Cancelled' ? `<button class="btn-small" onclick="duplicatePO('${po.PO_ID}')" style="background: #17a2b8; color: white;">📋 Copy to New PO</button>` : ''}
-                        <button class="btn-small" onclick="viewPurchaseOrder('${po.PO_ID}')" style="background: #17a2b8; color: white; padding: 6px 12px;">View/Print</button>
                     </td>
                 </tr>`;
             });
@@ -8500,7 +8505,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Time</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Time</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -8526,9 +8531,6 @@
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td data-sort="${getSortableDate(so.Due_Date)}">${dueDate}</td>
                     <td>${paymentBadge}</td>
-                    <td onclick="event.stopPropagation();">
-                        <button class="btn-small" onclick="viewSalesOrder('${so.SO_ID}')" style="background: #28a745; color: white; padding: 6px 12px;">View/Print</button>
-                    </td>
                 </tr>`;
             });
 
@@ -16715,7 +16717,7 @@
             window.receiveLineCounter = lines.length;
             
             let html = `
-                <div style="max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+                <div class="receive-modal-content">
                     <h2 style="position: sticky; top: 0; background: white; padding: 10px 0; margin: 0 0 10px 0; z-index: 10;">📦 Receive PO</h2>
                     <p><strong>PO:</strong> ${po.PO_ID} | <strong>Supplier:</strong> ${getSupplierName(po.Supplier_ID)}</p>
                     <p><strong>Order Date:</strong> ${formatDateSafe(po.PO_Date)}</p>
@@ -18735,6 +18737,55 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         /* ========== MOBILE MODAL FIXES ========== */
+        
+        /* Prevent screen movement on orientation change */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        @media (max-width: 768px) {
+            html {
+                overflow-x: hidden;
+                width: 100%;
+                position: relative;
+            }
+            
+            body {
+                overflow-x: hidden;
+                width: 100%;
+                position: relative;
+                min-height: 100vh;
+                min-height: -webkit-fill-available;
+            }
+            
+            .section, .card {
+                position: relative !important;
+                overflow-x: hidden;
+            }
+            
+            /* Prevent container from moving */
+            .container {
+                position: relative !important;
+                overflow-x: hidden;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+        
+        /* Receive modal content */
+        .receive-modal-content {
+            max-height: 70vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (max-width: 768px) {
+            .receive-modal-content {
+                max-height: none !important;
+                height: auto !important;
+                overflow-y: visible !important;
+            }
+        }
         
         /* When any modal is open, prevent body scrolling */
         body.modal-open {
@@ -22127,6 +22178,52 @@ NOTE: Please print the attached PO document for full details.`;
                 attachCustomerPickerToSelects();
                 attachStatusPickerToSelects();
             }, 1000);
+            
+            // ==================== ORIENTATION CHANGE FIX ====================
+            // Prevent screen from becoming "loose" when rotating device
+            
+            function lockViewport() {
+                // Reset scroll position
+                window.scrollTo(0, 0);
+                
+                // Force body to recalculate
+                document.body.style.minHeight = window.innerHeight + 'px';
+                
+                // Ensure container doesn't overflow
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.position = 'relative';
+                    container.style.overflow = 'hidden';
+                }
+                
+                // If in a card/section, ensure it's properly displayed
+                const activeCard = document.querySelector('.card[style*="display: block"]');
+                if (activeCard) {
+                    activeCard.style.position = 'relative';
+                }
+                
+                // Re-lock body if modal is open
+                const modalsOpen = document.querySelectorAll('.modal[style*="display: block"], #orderModal[style*="display: block"], #reportSetupModal[style*="display: block"]');
+                if (modalsOpen.length > 0) {
+                    document.body.classList.add('modal-open');
+                    document.body.style.overflow = 'hidden';
+                    document.body.style.position = 'fixed';
+                    document.body.style.width = '100%';
+                }
+            }
+            
+            // Handle orientation change
+            window.addEventListener('orientationchange', function() {
+                setTimeout(lockViewport, 100);
+                setTimeout(lockViewport, 300); // Double-check after animation
+            });
+            
+            // Handle resize (also triggered by orientation on some devices)
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(lockViewport, 150);
+            });
         });
         
         // ==================== HOW-TO GUIDE FUNCTIONS ====================
