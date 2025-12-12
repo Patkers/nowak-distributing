@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V10a - Fixed orientation handler locking screen -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V10f - Fixed mobile scrolling, Product Dashboard with dateRange -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -90,6 +90,7 @@
             display: none;
             /* Contain content in landscape mode */
             overflow-x: auto;
+            overflow-y: visible; /* Let page scroll handle vertical */
             max-width: 100%;
             border-left: 5px solid #c0c0c0;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -473,6 +474,17 @@
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             margin-top: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* On mobile, don't restrict table height - let page scroll naturally */
+        @media (max-width: 768px) {
+            .table-scroll-wrapper {
+                max-height: none !important;
+                overflow-y: visible !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
         }
         
         .table-scroll-wrapper .data-table {
@@ -656,6 +668,8 @@
             .card {
                 padding: 15px;
                 border-radius: 12px;
+                overflow-x: hidden; /* Prevent horizontal issues on mobile */
+                overflow-y: visible; /* Let page scroll */
             }
             
             /* Stack form fields vertically on mobile */
@@ -685,6 +699,7 @@
                 display: block;
                 overflow-x: auto;
                 white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
             }
             
             .data-table th,
@@ -3366,6 +3381,7 @@
                     <div id="dashboardReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border-left: 4px solid #b91c1c !important;">🚨 ACTION DASHBOARD</button>
                         <button class="btn report-btn" onclick="showReport('daily-dashboard')">🎯 Sales Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('product-dashboard')">📦 Product Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('customer-dashboard')">👤 Customer Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('supplier-dashboard')">🏭 Supplier Dashboard</button>
                     </div>
@@ -8505,7 +8521,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Time</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -8526,7 +8542,6 @@
                     <td><strong>${invoiceNum}</strong></td>
                     <td>${getCustomerName(so.Customer_ID)}</td>
                     <td data-sort="${getSortableDate(saleDateTime)}">${formatDateSafe(saleDateTime)}</td>
-                    <td>${formatTimeSafe(saleDateTime)}</td>
                     <td>$${total.toFixed(2)}</td>
                     <td>$${amountPaid.toFixed(2)}</td>
                     <td data-sort="${getSortableDate(so.Due_Date)}">${dueDate}</td>
@@ -10068,16 +10083,21 @@
                 filters: ['quickDateOnly', 'customer'],
                 dateLabel: 'Date'
             },
+            'product-dashboard': {
+                title: '📦 Product Dashboard',
+                filters: ['dateRange', 'topN'],
+                dateLabel: 'Date Range'
+            },
             'customer-dashboard': {
                 title: '👤 Customer Dashboard',
-                filters: ['customer'],
-                dateLabel: 'Date',
+                filters: ['customer', 'dateRange'],
+                dateLabel: 'Date Range',
                 customerRequired: true
             },
             'supplier-dashboard': {
                 title: '🏭 Supplier Dashboard',
-                filters: ['supplier'],
-                dateLabel: 'Date',
+                filters: ['supplier', 'dateRange'],
+                dateLabel: 'Date Range',
                 supplierRequired: true
             }
         };
@@ -10218,6 +10238,22 @@
                             <option value="out">🔴 Out of Stock</option>
                             <option value="low">🟡 Low Stock</option>
                             <option value="ok">🟢 In Stock</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Top N Products
+            if (config.filters.includes('topN')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>🔢 Show Top/Bottom</label>
+                        <select id="rptFilter_topN">
+                            <option value="5">Top 5</option>
+                            <option value="10" selected>Top 10</option>
+                            <option value="15">Top 15</option>
+                            <option value="20">Top 20</option>
+                            <option value="25">Top 25</option>
+                            <option value="50">Top 50</option>
                         </select>
                     </div>`;
             }
@@ -10954,6 +10990,7 @@
                 paymentStatus: document.getElementById('rptFilter_paymentStatus')?.value || '',
                 poType: document.getElementById('rptFilter_poType')?.value || '',
                 stockStatus: document.getElementById('rptFilter_stockStatus')?.value || '',
+                topN: parseInt(document.getElementById('rptFilter_topN')?.value) || 10,
                 turnoverStatus: document.getElementById('rptFilter_turnoverStatus')?.value || '',
                 aging: document.getElementById('rptFilter_aging')?.value || '',
                 minAmount: parseFloat(document.getElementById('rptFilter_minAmount')?.value) || 0,
@@ -11032,6 +11069,9 @@
                         break;
                     case 'daily-dashboard':
                         reportHtml = await generateDailyDashboardModal();
+                        break;
+                    case 'product-dashboard':
+                        reportHtml = await generateProductDashboardModal();
                         break;
                     case 'customer-dashboard':
                         if (!reportFilters.customer) {
@@ -14167,6 +14207,476 @@
                                 </div>
                             </div>
                         `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // ==================== PRODUCT PERFORMANCE DASHBOARD ====================
+        
+        async function generateProductDashboardModal() {
+            const topN = reportFilters.topN || 10;
+            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : null;
+            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : null;
+            if (toDate) toDate.setHours(23, 59, 59, 999);
+            if (fromDate) fromDate.setHours(0, 0, 0, 0);
+            
+            // Fetch all data
+            const [salesResult, itemsResult, suppliersResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getItems'),
+                apiCall('getSuppliers')
+            ]);
+            
+            if (!salesResult?.data || !itemsResult?.data || !suppliersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const items = itemsResult.data;
+            const suppliers = suppliersResult.data;
+            let sales = salesResult.data.filter(so => so.Status !== 'Voided');
+            
+            // Date range label
+            let dateLabel = 'All Time';
+            if (fromDate && toDate) {
+                dateLabel = `${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+            } else if (fromDate) {
+                dateLabel = `Since ${fromDate.toLocaleDateString()}`;
+            } else if (toDate) {
+                dateLabel = `Through ${toDate.toLocaleDateString()}`;
+            }
+            
+            // Gather all line items with date filtering
+            const productStats = {};
+            
+            for (const so of sales) {
+                const soDate = parseDate(so.Sale_Date || so.SO_Date);
+                
+                // Date filtering
+                if (fromDate && (!soDate || soDate < fromDate)) continue;
+                if (toDate && (!soDate || soDate > toDate)) continue;
+                
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data) {
+                    linesResult.data.forEach(line => {
+                        const itemId = line.Item_ID;
+                        const qty = parseInt(line.Quantity) || 0;
+                        const unitPrice = parseFloat(line.Unit_Price) || 0;
+                        const revenue = qty * unitPrice;
+                        
+                        if (!productStats[itemId]) {
+                            const item = items.find(i => i.Item_ID === itemId);
+                            const supplier = suppliers.find(s => s.Supplier_ID === item?.Supplier_ID);
+                            const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                            const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                            const unitCost = pkgCost / unitsPerPkg;
+                            
+                            productStats[itemId] = {
+                                itemId: itemId,
+                                name: item?.Item_Description || itemId,
+                                sku: item?.SKU || '-',
+                                supplier: supplier?.Supplier_Name || 'Unknown',
+                                supplierId: item?.Supplier_ID || '',
+                                unitCost: unitCost,
+                                unitPrice: parseFloat(item?.Unit_Sell_Price) || 0,
+                                qtyOnHand: parseInt(item?.Qty_On_Hand) || 0,
+                                reorderPoint: parseInt(item?.Reorder_Point) || 0,
+                                qtySold: 0,
+                                revenue: 0,
+                                cost: 0,
+                                orders: 0
+                            };
+                        }
+                        
+                        productStats[itemId].qtySold += qty;
+                        productStats[itemId].revenue += revenue;
+                        productStats[itemId].cost += qty * productStats[itemId].unitCost;
+                        productStats[itemId].orders++;
+                    });
+                }
+            }
+            
+            // Calculate profit and margin for each product
+            Object.values(productStats).forEach(p => {
+                p.profit = p.revenue - p.cost;
+                p.margin = p.revenue > 0 ? (p.profit / p.revenue) * 100 : 0;
+            });
+            
+            // Get all products sorted by revenue for top sellers
+            const allProducts = Object.values(productStats);
+            const topSellers = [...allProducts].sort((a, b) => b.revenue - a.revenue).slice(0, topN);
+            
+            // Bottom sellers - products with inventory but low/no sales
+            const productsWithInventory = items
+                .filter(item => (parseInt(item.Qty_On_Hand) || 0) > 0)
+                .map(item => {
+                    const stats = productStats[item.Item_ID];
+                    const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                    return {
+                        itemId: item.Item_ID,
+                        name: item.Item_Description || item.Item_ID,
+                        sku: item.SKU || '-',
+                        supplier: supplier?.Supplier_Name || 'Unknown',
+                        qtyOnHand: parseInt(item.Qty_On_Hand) || 0,
+                        qtySold: stats?.qtySold || 0,
+                        revenue: stats?.revenue || 0
+                    };
+                })
+                .sort((a, b) => a.qtySold - b.qtySold)
+                .slice(0, topN);
+            
+            // Overall stats
+            const totalRevenue = allProducts.reduce((sum, p) => sum + p.revenue, 0);
+            const totalCost = allProducts.reduce((sum, p) => sum + p.cost, 0);
+            const totalProfit = totalRevenue - totalCost;
+            const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+            const totalUnitsSold = allProducts.reduce((sum, p) => sum + p.qtySold, 0);
+            const uniqueProducts = allProducts.length;
+            
+            // Supplier breakdown
+            const supplierStats = {};
+            allProducts.forEach(p => {
+                if (!supplierStats[p.supplierId]) {
+                    supplierStats[p.supplierId] = {
+                        name: p.supplier,
+                        revenue: 0,
+                        profit: 0,
+                        products: 0,
+                        units: 0
+                    };
+                }
+                supplierStats[p.supplierId].revenue += p.revenue;
+                supplierStats[p.supplierId].profit += p.profit;
+                supplierStats[p.supplierId].products++;
+                supplierStats[p.supplierId].units += p.qtySold;
+            });
+            const supplierBreakdown = Object.values(supplierStats).sort((a, b) => b.revenue - a.revenue);
+            
+            // Calculate bar widths for charts
+            const maxTopRevenue = topSellers.length > 0 ? topSellers[0].revenue : 1;
+            const maxSupplierRevenue = supplierBreakdown.length > 0 ? supplierBreakdown[0].revenue : 1;
+            
+            let html = `
+                <style>
+                    .prod-dash-header {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #7c3aed, #a78bfa);
+                        color: white;
+                        border-radius: 12px;
+                        margin-bottom: 25px;
+                        border-left: 6px solid white;
+                    }
+                    .prod-dash-header h2 { margin: 0; font-size: 28px; }
+                    .prod-dash-header p { margin: 8px 0 0 0; opacity: 0.9; }
+                    
+                    .prod-kpi-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .prod-kpi-card {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        text-align: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    }
+                    .prod-kpi-card .icon { font-size: 28px; margin-bottom: 8px; }
+                    .prod-kpi-card .value { font-size: 28px; font-weight: bold; color: #333; }
+                    .prod-kpi-card .label { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
+                    
+                    .prod-section {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    }
+                    .prod-section h3 {
+                        margin: 0 0 15px 0;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #e0e0e0;
+                        color: #333;
+                    }
+                    
+                    .prod-bar-chart {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                    }
+                    .prod-bar-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .prod-bar-label {
+                        width: 180px;
+                        font-size: 13px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .prod-bar-container {
+                        flex: 1;
+                        height: 28px;
+                        background: #f0f0f0;
+                        border-radius: 14px;
+                        overflow: hidden;
+                        position: relative;
+                    }
+                    .prod-bar-fill {
+                        height: 100%;
+                        border-radius: 14px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-end;
+                        padding-right: 10px;
+                        color: white;
+                        font-size: 12px;
+                        font-weight: 600;
+                        min-width: 60px;
+                    }
+                    .prod-bar-value {
+                        width: 90px;
+                        text-align: right;
+                        font-weight: 600;
+                        font-size: 13px;
+                    }
+                    
+                    .bottom-seller-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                        gap: 15px;
+                    }
+                    .bottom-seller-card {
+                        background: #fff5f5;
+                        border: 1px solid #fed7d7;
+                        border-left: 4px solid #f56565;
+                        border-radius: 8px;
+                        padding: 15px;
+                    }
+                    .bottom-seller-card .name {
+                        font-weight: 600;
+                        color: #333;
+                        margin-bottom: 5px;
+                    }
+                    .bottom-seller-card .sku {
+                        font-size: 11px;
+                        color: #888;
+                        margin-bottom: 10px;
+                    }
+                    .bottom-seller-card .stats {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 13px;
+                    }
+                    .bottom-seller-card .stat-box {
+                        text-align: center;
+                    }
+                    .bottom-seller-card .stat-value {
+                        font-weight: bold;
+                        font-size: 16px;
+                    }
+                    .bottom-seller-card .stat-label {
+                        font-size: 10px;
+                        color: #666;
+                        text-transform: uppercase;
+                    }
+                    
+                    .supplier-pie-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 10px;
+                        border-bottom: 1px solid #f0f0f0;
+                    }
+                    .supplier-pie-row:last-child { border-bottom: none; }
+                    .supplier-color {
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 4px;
+                    }
+                    .supplier-name { flex: 1; font-weight: 500; }
+                    .supplier-rev { font-weight: 600; color: #2e7d32; }
+                    .supplier-pct { color: #666; font-size: 12px; width: 50px; text-align: right; }
+                </style>
+                
+                <div class="prod-dash-header">
+                    <h2>📦 Product Performance Dashboard</h2>
+                    <p>${dateLabel} • Top ${topN} Analysis</p>
+                </div>
+                
+                <div class="prod-kpi-grid">
+                    <div class="prod-kpi-card" style="border-top: 4px solid #3b82f6;">
+                        <div class="icon">📊</div>
+                        <div class="value">${uniqueProducts}</div>
+                        <div class="label">Products Sold</div>
+                    </div>
+                    <div class="prod-kpi-card" style="border-top: 4px solid #10b981;">
+                        <div class="icon">💰</div>
+                        <div class="value">$${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="label">Total Revenue</div>
+                    </div>
+                    <div class="prod-kpi-card" style="border-top: 4px solid #8b5cf6;">
+                        <div class="icon">📈</div>
+                        <div class="value">$${totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                        <div class="label">Gross Profit</div>
+                    </div>
+                    <div class="prod-kpi-card" style="border-top: 4px solid #f59e0b;">
+                        <div class="icon">🎯</div>
+                        <div class="value">${avgMargin.toFixed(1)}%</div>
+                        <div class="label">Avg Margin</div>
+                    </div>
+                    <div class="prod-kpi-card" style="border-top: 4px solid #ec4899;">
+                        <div class="icon">📦</div>
+                        <div class="value">${totalUnitsSold.toLocaleString()}</div>
+                        <div class="label">Units Sold</div>
+                    </div>
+                </div>
+                
+                <div class="prod-section">
+                    <h3>🏆 Top ${topN} Best Sellers by Revenue</h3>
+                    <div class="prod-bar-chart">
+                        ${topSellers.map((p, i) => {
+                            const barWidth = (p.revenue / maxTopRevenue) * 100;
+                            const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6'];
+                            const color = colors[i % colors.length];
+                            return `
+                                <div class="prod-bar-row">
+                                    <div class="prod-bar-label" title="${p.name}">${i + 1}. ${p.name}</div>
+                                    <div class="prod-bar-container">
+                                        <div class="prod-bar-fill" style="width: ${Math.max(barWidth, 5)}%; background: ${color};">
+                                            ${p.qtySold} units
+                                        </div>
+                                    </div>
+                                    <div class="prod-bar-value" style="color: ${color};">$${p.revenue.toFixed(2)}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <div style="overflow-x: auto; margin-top: 20px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>SKU</th>
+                                    <th>Product</th>
+                                    <th>Supplier</th>
+                                    <th style="text-align: right;">Units</th>
+                                    <th style="text-align: right;">Revenue</th>
+                                    <th style="text-align: right;">Profit</th>
+                                    <th style="text-align: right;">Margin</th>
+                                    <th style="text-align: center;">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topSellers.map((p, i) => {
+                                    let stockIcon = p.qtyOnHand <= 0 ? '🔴' : p.qtyOnHand <= p.reorderPoint ? '🟡' : '🟢';
+                                    return `
+                                        <tr>
+                                            <td><strong>${i + 1}</strong></td>
+                                            <td>${p.sku}</td>
+                                            <td>${p.name}</td>
+                                            <td>${p.supplier}</td>
+                                            <td style="text-align: right;"><strong>${p.qtySold.toLocaleString()}</strong></td>
+                                            <td style="text-align: right;">$${p.revenue.toFixed(2)}</td>
+                                            <td style="text-align: right; color: ${p.profit >= 0 ? '#2e7d32' : '#c62828'};">$${p.profit.toFixed(2)}</td>
+                                            <td style="text-align: right;">${p.margin.toFixed(1)}%</td>
+                                            <td style="text-align: center;">${stockIcon} ${p.qtyOnHand}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="prod-section">
+                    <h3>📉 Bottom ${topN} Sellers (With Inventory)</h3>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Products that have stock but aren't selling well - consider promotions or markdowns</p>
+                    
+                    ${productsWithInventory.length === 0 ? 
+                        '<p style="text-align: center; color: #888; padding: 20px;">No products with inventory found</p>' :
+                        `<div class="bottom-seller-grid">
+                            ${productsWithInventory.map(p => `
+                                <div class="bottom-seller-card">
+                                    <div class="name">${p.name}</div>
+                                    <div class="sku">SKU: ${p.sku} • ${p.supplier}</div>
+                                    <div class="stats">
+                                        <div class="stat-box">
+                                            <div class="stat-value" style="color: #c62828;">${p.qtySold}</div>
+                                            <div class="stat-label">Units Sold</div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-value" style="color: #f59e0b;">${p.qtyOnHand}</div>
+                                            <div class="stat-label">In Stock</div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-value" style="color: #2e7d32;">$${p.revenue.toFixed(2)}</div>
+                                            <div class="stat-label">Revenue</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>`
+                    }
+                </div>
+                
+                <div class="prod-section">
+                    <h3>🏭 Sales by Supplier</h3>
+                    <div class="prod-bar-chart">
+                        ${supplierBreakdown.map((s, i) => {
+                            const barWidth = (s.revenue / maxSupplierRevenue) * 100;
+                            const pct = totalRevenue > 0 ? (s.revenue / totalRevenue) * 100 : 0;
+                            const colors = ['#1565c0', '#00897b', '#43a047', '#f9a825', '#e65100', '#6a1b9a'];
+                            const color = colors[i % colors.length];
+                            return `
+                                <div class="prod-bar-row">
+                                    <div class="prod-bar-label">${s.name}</div>
+                                    <div class="prod-bar-container">
+                                        <div class="prod-bar-fill" style="width: ${Math.max(barWidth, 5)}%; background: ${color};">
+                                            ${pct.toFixed(1)}%
+                                        </div>
+                                    </div>
+                                    <div class="prod-bar-value" style="color: ${color};">$${s.revenue.toFixed(2)}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <div style="overflow-x: auto; margin-top: 20px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Supplier</th>
+                                    <th style="text-align: right;">Products</th>
+                                    <th style="text-align: right;">Units Sold</th>
+                                    <th style="text-align: right;">Revenue</th>
+                                    <th style="text-align: right;">Profit</th>
+                                    <th style="text-align: right;">% of Sales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${supplierBreakdown.map(s => {
+                                    const pct = totalRevenue > 0 ? (s.revenue / totalRevenue) * 100 : 0;
+                                    return `
+                                        <tr>
+                                            <td><strong>${s.name}</strong></td>
+                                            <td style="text-align: right;">${s.products}</td>
+                                            <td style="text-align: right;">${s.units.toLocaleString()}</td>
+                                            <td style="text-align: right;">$${s.revenue.toFixed(2)}</td>
+                                            <td style="text-align: right; color: ${s.profit >= 0 ? '#2e7d32' : '#c62828'};">$${s.profit.toFixed(2)}</td>
+                                            <td style="text-align: right;">${pct.toFixed(1)}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             `;
@@ -18744,8 +19254,15 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         @media (max-width: 768px) {
-            html, body {
+            html {
                 overflow-x: hidden;
+                overflow-y: auto !important; /* Allow vertical scroll */
+            }
+            
+            body {
+                overflow-x: hidden;
+                overflow-y: auto !important; /* Allow vertical scroll */
+                -webkit-overflow-scrolling: touch;
             }
         }
         
