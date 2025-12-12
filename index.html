@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9r - Added date filter buttons to Purchases -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9v - Added inventory columns to Sales by Item report -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1547,6 +1547,13 @@
                 overflow: hidden !important; /* Prevent outer scroll */
                 z-index: 99999 !important;  /* Ensure way above sticky elements */
                 touch-action: none !important; /* Critical for mobile! */
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
             }
             
             /* Lock inner modal content - prevent movement */
@@ -9551,10 +9558,9 @@
             document.getElementById('itemPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             
-            // Focus search
-            setTimeout(() => {
-                document.getElementById('itemPickerSearch').focus();
-            }, 100);
+            // Focus search - only on desktop to prevent mobile keyboard popup
+            document.activeElement?.blur();
+            focusOnDesktop('itemPickerSearch');
         }
         
         function onAdjustItemSelected() {
@@ -11292,7 +11298,7 @@
                     total += amt;
                     html += `<tr>
                         <td>${s.Invoice_Number || s.SO_Number || '-'}</td>
-                        <td>${s.Sale_Date || s.SO_Date || '-'}</td>
+                        <td>${formatDateSafe(s.Sale_Date || s.SO_Date)}</td>
                         <td>${getCustomerName(s.Customer_ID)}</td>
                         <td style="text-align: right;">$${amt.toFixed(2)}</td>
                         <td>${s.Payment_Status || 'Unpaid'}</td>
@@ -11393,7 +11399,9 @@
                         unitsSold: unitsSold,
                         revenue: revenue,
                         cost: cost,
-                        totalProfit: totalProfit
+                        totalProfit: totalProfit,
+                        qtyOnHand: parseInt(item.Qty_On_Hand) || 0,
+                        reorderPoint: parseInt(item.Reorder_Point) || 0
                     };
                 });
             
@@ -11414,15 +11422,15 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
                         <div style="font-size: 13px; color: #666; margin-bottom: 5px;">💰 Revenue</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #1976d2;">$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maxFractionDigits: 2})}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #1976d2;">$${totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
                     <div style="background: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336;">
                         <div style="font-size: 13px; color: #666; margin-bottom: 5px;">💸 Cost</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #c62828;">$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maxFractionDigits: 2})}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #c62828;">$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
                     <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">
                         <div style="font-size: 13px; color: #666; margin-bottom: 5px;">📈 Profit</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">$${totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maxFractionDigits: 2})}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #2e7d32;">$${totalProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                     </div>
                     <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
                         <div style="font-size: 13px; color: #666; margin-bottom: 5px;">📊 Margin</div>
@@ -11440,21 +11448,39 @@
                         <th>Item</th>
                         <th>Supplier</th>
                         <th style="text-align: right;">Units Sold</th>
+                        <th style="text-align: center;">📦 Stock</th>
+                        <th style="text-align: center;">🎯 Reorder</th>
+                        <th style="text-align: center;">Status</th>
                         <th style="text-align: right;">Revenue</th>
-                        <th style="text-align: right;">Cost</th>
                         <th style="text-align: right;">Profit</th>
                         <th style="text-align: right;">Margin %</th>
                     </tr></thead>
                     <tbody>`;
                 
                 sorted.forEach(item => {
+                    // Inventory status icon
+                    let stockIcon = '';
+                    let stockStyle = '';
+                    if (item.qtyOnHand <= 0) {
+                        stockIcon = '🔴';
+                        stockStyle = 'color: #c62828; font-weight: bold;';
+                    } else if (item.qtyOnHand <= item.reorderPoint) {
+                        stockIcon = '🟡';
+                        stockStyle = 'color: #f57c00; font-weight: bold;';
+                    } else {
+                        stockIcon = '🟢';
+                        stockStyle = 'color: #2e7d32;';
+                    }
+                    
                     html += `<tr>
                         <td><strong>${item.sku}</strong></td>
                         <td>${item.description}</td>
                         <td>${item.supplierName}</td>
                         <td style="text-align: right;"><strong>${item.unitsSold.toLocaleString()}</strong></td>
+                        <td style="text-align: center; ${stockStyle}">${item.qtyOnHand}</td>
+                        <td style="text-align: center;">${item.reorderPoint}</td>
+                        <td style="text-align: center; font-size: 16px;">${stockIcon}</td>
                         <td style="text-align: right;">$${item.revenue.toFixed(2)}</td>
-                        <td style="text-align: right;">$${item.cost.toFixed(2)}</td>
                         <td style="text-align: right; color: ${item.totalProfit >= 0 ? '#2e7d32' : '#c62828'}; font-weight: bold;">$${item.totalProfit.toFixed(2)}</td>
                         <td style="text-align: right; font-weight: bold;">${item.marginPercent.toFixed(1)}%</td>
                     </tr>`;
@@ -13814,11 +13840,6 @@
             // TODO: Open sale order modal
         }
         
-        function viewPurchaseOrder(poId) {
-            showSection('purchases');
-            // TODO: Open PO modal
-        }
-        
         function markForClearance(itemId) {
             if (confirm('Mark this item for clearance sale?')) {
                 alert('Clearance feature coming soon!');
@@ -15097,7 +15118,7 @@
                 filtered.forEach(detail => {
                     html += `<tr style="cursor: pointer;" onclick="openSalesOrder('${detail.soId}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                         <td><strong style="color: #667eea;">${detail.soId}</strong></td>
-                        <td>${new Date(detail.soDate).toLocaleDateString()}</td>
+                        <td>${formatDateSafe(detail.soDate)}</td>
                         <td style="color: #667eea;">${detail.customerName}</td>
                         <td style="color: #667eea;">${detail.itemDescription}</td>
                         <td>${detail.sku}</td>
@@ -16694,10 +16715,10 @@
             window.receiveLineCounter = lines.length;
             
             let html = `
-                <div style="max-height: 70vh; overflow-y: auto;">
-                    <h2>📦 Receive OUTGOING PO</h2>
+                <div style="max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+                    <h2 style="position: sticky; top: 0; background: white; padding: 10px 0; margin: 0 0 10px 0; z-index: 10;">📦 Receive PO</h2>
                     <p><strong>PO:</strong> ${po.PO_ID} | <strong>Supplier:</strong> ${getSupplierName(po.Supplier_ID)}</p>
-                    <p><strong>Order Date:</strong> ${new Date(po.PO_Date).toLocaleDateString()}</p>
+                    <p><strong>Order Date:</strong> ${formatDateSafe(po.PO_Date)}</p>
                     
                     <h3>Items Ordered</h3>
                     <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
@@ -19060,10 +19081,9 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('itemPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             
-            // Focus search after a moment
-            setTimeout(() => {
-                document.getElementById('itemPickerSearch').focus();
-            }, 100);
+            // Focus search after a moment - only on desktop
+            document.activeElement?.blur();
+            focusOnDesktop('itemPickerSearch');
         }
         
         function closeItemPicker() {
@@ -19414,6 +19434,7 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Supplier picker for Pricing Workbench filter
         function openSupplierPickerForPricing() {
+            document.activeElement?.blur();
             window.reportPickerType = 'supplier';
             window.supplierPickerIsFilter = true;
             supplierPickerCallback = {
@@ -19434,20 +19455,17 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('supplierPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('supplierPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('supplierPickerSearch');
         }
         
         function openSupplierPicker(selectElement) {
+            document.activeElement?.blur();
             supplierPickerCallback = selectElement;
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
             document.getElementById('supplierPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('supplierPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('supplierPickerSearch');
         }
         
         function closeSupplierPicker() {
@@ -19901,14 +19919,13 @@ NOTE: Please print the attached PO document for full details.`;
         let customerPickerCallback = null;
         
         function openCustomerPicker(selectElement) {
+            document.activeElement?.blur();
             customerPickerCallback = selectElement;
             document.getElementById('customerPickerSearch').value = '';
             renderCustomerPickerList();
             document.getElementById('customerPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('customerPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('customerPickerSearch');
         }
         
         // Customer picker for Sales Orders filter
@@ -20549,12 +20566,11 @@ NOTE: Please print the attached PO document for full details.`;
         ];
 
         function openThemePicker() {
+            document.activeElement?.blur();
             renderThemePickerList();
             document.getElementById('themePickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('themePickerSearch').focus();
-            }, 100);
+            focusOnDesktop('themePickerSearch');
         }
         
         function closeThemePicker() {
@@ -20994,18 +21010,18 @@ NOTE: Please print the attached PO document for full details.`;
         let poPickerCallback = null;
         
         function openPOPicker(inputElement) {
+            document.activeElement?.blur();
             poPickerCallback = inputElement;
             document.getElementById('poPickerSearch').value = '';
             renderPOPickerList();
             document.getElementById('poPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('poPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('poPickerSearch');
         }
         
         // PO picker for Purchase Orders filter (multi-select)
         function openPOPickerForPurchases() {
+            document.activeElement?.blur();
             poPickerCallback = {
                 tagName: 'PURCHASE_FILTER',
                 value: document.getElementById('filterPurchasePO').value
@@ -21024,9 +21040,7 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('poPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('poPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('poPickerSearch');
         }
         
         function togglePOSelection(poNum) {
@@ -21213,18 +21227,18 @@ NOTE: Please print the attached PO document for full details.`;
         let invoicePickerCallback = null;
         
         function openInvoicePicker(inputElement) {
+            document.activeElement?.blur();
             invoicePickerCallback = inputElement;
             document.getElementById('invoicePickerSearch').value = '';
             renderInvoicePickerList();
             document.getElementById('invoicePickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('invoicePickerSearch').focus();
-            }, 100);
+            focusOnDesktop('invoicePickerSearch');
         }
         
         // Invoice picker for Sales Orders filter (multi-select)
         function openInvoicePickerForSales() {
+            document.activeElement?.blur();
             invoicePickerCallback = {
                 tagName: 'SALES_FILTER',
                 value: document.getElementById('filterInvoiceNumber').value
@@ -21243,9 +21257,7 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('invoicePickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('invoicePickerSearch').focus();
-            }, 100);
+            focusOnDesktop('invoicePickerSearch');
         }
         
         function toggleInvoiceSelection(invoiceNum) {
@@ -21426,6 +21438,7 @@ NOTE: Please print the attached PO document for full details.`;
         // ==================== ITEM PICKER (for reports) ====================
         
         function openItemPickerForReport() {
+            document.activeElement?.blur();
             // Initialize selected items from current value
             const currentValue = document.getElementById('rptFilter_item').value;
             if (currentValue) {
@@ -21438,13 +21451,12 @@ NOTE: Please print the attached PO document for full details.`;
             renderItemPickerListForReport();
             document.getElementById('itemPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('itemPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('itemPickerSearch');
         }
         
         // Item picker for Inventory filter (multi-select)
         function openItemPickerForInventory() {
+            document.activeElement?.blur();
             window.reportPickerType = 'item';
             window.itemPickerCallback = {
                 tagName: 'INVENTORY_FILTER',
@@ -21464,13 +21476,12 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('itemPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('itemPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('itemPickerSearch');
         }
         
         // Item picker for Pricing Workbench filter (multi-select)
         function openItemPickerForPricing() {
+            document.activeElement?.blur();
             window.reportPickerType = 'item';
             window.itemPickerCallback = {
                 tagName: 'PRICING_FILTER',
@@ -21490,9 +21501,7 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('itemPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('itemPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('itemPickerSearch');
         }
         
         function closeItemPickerForReport() {
