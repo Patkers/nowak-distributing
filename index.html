@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-09-18:30 - Fixed Cubs theme buttons to blue/red -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V7 - Fixed PO/SO update functions (lines→lineItems) -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -6236,14 +6236,20 @@
                 return;
             }
             
+            // Get current amount paid from the editing order
+            const currentPaid = parseFloat(currentEditingOrder?.Amount_Paid) || 0;
+            const newTotalPaid = currentPaid + paymentAmount;
+            
             const result = await apiCall('recordPurchasePayment', {
                 poId: poId,
-                paymentAmount: paymentAmount
+                amountPaid: newTotalPaid  // FIXED: was 'paymentAmount', backend expects 'amountPaid' with total
             });
             
             if (result && result.status === 'success') {
-                alert(`✅ Payment recorded!\n\nTotal Paid: $${result.totalPaid.toFixed(2)}\nStatus: ${result.paymentStatus}`);
-                document.getElementById('orderModal').style.display = 'none';
+                const total = parseFloat(currentEditingOrder?.Total_Amount) || 0;
+                const payStatus = newTotalPaid >= total - 0.01 ? 'Paid' : (newTotalPaid > 0 ? 'Partial' : 'Unpaid');
+                alert(`✅ Payment recorded!\n\nTotal Paid: $${newTotalPaid.toFixed(2)}\nStatus: ${payStatus}`);
+                document.getElementById('orderModal').style.display = 'none'; document.body.classList.remove('modal-open');
                 loadPurchases();
             } else {
                 alert('❌ Error: ' + (result?.message || 'Unknown error'));
@@ -7129,7 +7135,7 @@
                 notes: document.getElementById('editPONotes').value,
                 totalAmount: totalAmount,
                 amountPaid: parseFloat(document.getElementById('editPOAmountPaid').value) || 0,
-                lines: newLines,
+                lineItems: newLines,  // FIXED: was 'lines', backend expects 'lineItems'
                 oldLines: currentEditingOrder._originalLines || []
             };
             
@@ -7386,7 +7392,7 @@
                 notes: document.getElementById('editSONotes').value,
                 totalAmount: totalAmount,
                 amountPaid: parseFloat(document.getElementById('editSOAmountPaid').value) || 0,
-                lines: newLines
+                lineItems: newLines  // FIXED: was 'lines', backend expects 'lineItems'
             };
             
             // Check if voiding - show confirmation
@@ -7453,13 +7459,13 @@
                 }
             }
             
-            // Call backend
-            apiCall('recordPurchasePayment', { poId: poId, paymentAmount: paymentAmount })
+            // Call backend - send TOTAL amount paid (existing + new payment)
+            const newTotalPaid = amountPaid + paymentAmount;
+            apiCall('recordPurchasePayment', { poId: poId, amountPaid: newTotalPaid })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const newTotal = amountPaid + paymentAmount;
                         const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
-                        showStatus('purchasesStatus', `✅ Payment recorded! $${newTotal.toFixed(2)} total paid. ${statusMsg}`, 'success');
+                        showStatus('purchasesStatus', `✅ Payment recorded! $${newTotalPaid.toFixed(2)} total paid. ${statusMsg}`, 'success');
                         loadPurchases();
                     } else {
                         showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
@@ -8398,13 +8404,13 @@
                 }
             }
             
-            // Call backend
-            apiCall('recordSalesPayment', { soId: soId, paymentAmount: paymentAmount })
+            // Call backend - send TOTAL amount paid (existing + new payment)
+            const newTotalPaid = amountPaid + paymentAmount;
+            apiCall('recordSalesPayment', { soId: soId, amountPaid: newTotalPaid })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const newTotal = amountPaid + paymentAmount;
                         const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
-                        showStatus('salesStatus', `✅ Payment received! $${newTotal.toFixed(2)} total paid. ${statusMsg}`, 'success');
+                        showStatus('salesStatus', `✅ Payment received! $${newTotalPaid.toFixed(2)} total paid. ${statusMsg}`, 'success');
                         loadSales();
                     } else {
                         showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
