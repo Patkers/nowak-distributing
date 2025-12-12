@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V10k - Fixed inventory adjustment report column names -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V10X - Fixed mobile scroll locking and back button overlay -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -487,6 +487,12 @@
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch;
             }
+            
+            /* Hide floating navigation buttons on mobile */
+            #backBtn,
+            #backToTopBtn {
+                display: none !important;
+            }
         }
         
         .table-scroll-wrapper .data-table {
@@ -637,8 +643,23 @@
         
         /* Tablets and smaller (768px and below) */
         @media (max-width: 768px) {
+            /* Ensure body can scroll properly on mobile */
+            html, body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                height: auto !important;
+                position: static !important;
+            }
+            
             body {
                 padding: 10px;
+            }
+            
+            /* Override stuck modal states on mobile */
+            body.modal-open {
+                position: static !important;
+                overflow-y: auto !important;
+                height: auto !important;
             }
             
             /* Floating Settings Gear - smaller on mobile */
@@ -1136,9 +1157,24 @@
         @media (max-width: 768px) and (orientation: portrait) {
             html, body {
                 overflow-x: hidden;
-                overflow-y: auto;
-                height: auto;
+                overflow-y: auto !important;
+                height: auto !important;
                 min-height: 100vh;
+                position: static !important;
+                width: 100% !important;
+            }
+            
+            /* Override any stuck modal-open state on mobile */
+            body.modal-open {
+                position: static !important;
+                overflow-y: auto !important;
+            }
+            
+            /* Hide floating navigation buttons on mobile portrait */
+            #backBtn,
+            #backToTopBtn {
+                display: none !important;
+                visibility: hidden !important;
             }
             
             #reportSetupModal {
@@ -2649,8 +2685,9 @@
                                 <input type="date" id="poDate" required>
                             </div>
                             <div class="form-group">
-                                <label>Due Date</label>
-                                <input type="date" id="poDueDate">
+                                <label>Expected Delivery Date *</label>
+                                <input type="date" id="poDueDate" required>
+                                <small style="color: #666;">When do you expect to receive this order?</small>
                             </div>
                             <div class="form-group">
                                 <label>Payment Terms</label>
@@ -2662,12 +2699,14 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Status</label>
-                                <select id="poStatus">
-                                    <option value="Received">Received</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Partial">Partial</option>
-                                    <option value="Voided">❌ Voided</option>
+                                <label>Status *</label>
+                                <select id="poStatus" required>
+                                    <option value="" disabled selected>-- Select Status --</option>
+                                    <option value="Ordered">📝 Ordered - Sent to supplier</option>
+                                    <option value="In Transit">🚚 In Transit - Shipped, on the way</option>
+                                    <option value="Partial">📦 Partial - Some items received</option>
+                                    <option value="Received">✅ Received - All items received</option>
+                                    <option value="Voided">❌ Voided - Cancelled</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -2799,8 +2838,9 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Due Date (if invoiced)</label>
-                                <input type="date" id="soDueDate">
+                                <label>Due Date *</label>
+                                <input type="date" id="soDueDate" required>
+                                <small style="color: #666;">Defaults to today for same-day sales</small>
                             </div>
                             <div class="form-group">
                                 <label>Order Total *</label>
@@ -2813,12 +2853,15 @@
                                 <small style="color: #666;">Enter amount if paid at time of sale</small>
                             </div>
                             <div class="form-group">
-                                <label>Status</label>
-                                <select id="soStatus">
-                                    <option value="Completed">Completed</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                    <option value="Voided">❌ Voided</option>
+                                <label>Status *</label>
+                                <select id="soStatus" required>
+                                    <option value="" disabled selected>-- Select Status --</option>
+                                    <option value="Pending">📝 Pending - Order placed</option>
+                                    <option value="Ready">📦 Ready for Pickup - Picked & ready to load</option>
+                                    <option value="Out for Delivery">🚚 Out for Delivery - On the truck</option>
+                                    <option value="Delivered">✅ Delivered - Product delivered</option>
+                                    <option value="Completed">💰 Completed - Delivered & Paid</option>
+                                    <option value="Voided">❌ Voided - Cancelled</option>
                                 </select>
                             </div>
                         </div>
@@ -3404,6 +3447,7 @@
                         <button class="btn report-btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
                         <button class="btn report-btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Item</button>
+                        <button class="btn report-btn" onclick="showReport('pick-list')" style="background: linear-gradient(135deg, #0891b2, #06b6d4) !important; color: white !important; font-weight: 700; border-left: 4px solid #0e7490 !important;">🚚 PICK LIST</button>
                     </div>
                 </div>
                 
@@ -3415,6 +3459,7 @@
                     <div id="purchaseReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('purchase-order-detail')">📋 Purchase Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
+                        <button class="btn report-btn" onclick="showReport('supplier-performance')" style="background: linear-gradient(135deg, #7c3aed, #a855f7) !important; color: white !important; font-weight: 700; border-left: 4px solid #6d28d9 !important;">📊 SUPPLIER PERFORMANCE</button>
                     </div>
                 </div>
                 
@@ -3976,6 +4021,19 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            // SAFETY: Remove any stuck modal-open class and reset body styles
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
+            
+            // SAFETY: Ensure back button is hidden on load
+            const backBtn = document.getElementById('backBtn');
+            const backToTopBtn = document.getElementById('backToTopBtn');
+            if (backBtn) backBtn.style.display = 'none';
+            if (backToTopBtn) backToTopBtn.style.display = 'none';
+            
             // Apply gradient for current theme
             applyThemeGradient();
             
@@ -3984,6 +4042,7 @@
             const today = new Date().toISOString().split('T')[0];
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
+            if (document.getElementById('soDueDate')) document.getElementById('soDueDate').value = today;
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
             
             // Restore report section visibility preferences
@@ -4157,9 +4216,10 @@
                 }
             }
             
-            // Show/hide Back button based on history length
+            // Show/hide Back button based on history length AND current tab
             const backBtn = document.getElementById('backBtn');
-            if (navigationHistory.length > 1) {
+            // Hide on home tab, only show on other tabs when there's history
+            if (navigationHistory.length > 1 && tabName !== 'home') {
                 backBtn.style.display = 'block';
             } else {
                 backBtn.style.display = 'none';
@@ -5918,6 +5978,22 @@
                 return;
             }
 
+            // ===== VALIDATION #0: Check Required Fields =====
+            const poStatus = document.getElementById('poStatus').value;
+            const poDueDate = document.getElementById('poDueDate').value;
+            
+            if (!poStatus) {
+                showStatus('purchasesStatus', '❌ Please select a Status', 'error');
+                document.getElementById('poStatus').focus();
+                return;
+            }
+            
+            if (!poDueDate) {
+                showStatus('purchasesStatus', '❌ Please select an Expected Delivery Date', 'error');
+                document.getElementById('poDueDate').focus();
+                return;
+            }
+
             // ===== VALIDATION #1: Check for Duplicate Items =====
             const itemCounts = {};
             lineItems.forEach(line => {
@@ -7114,13 +7190,12 @@
                         <div class="form-group">
                             <label>Status</label>
                             <select id="editPOStatus">
-                                <option value="Ordered" ${po.Status === 'Ordered' ? 'selected' : ''}>Ordered (Pending Delivery)</option>
-                                <option value="Received" ${po.Status === 'Received' ? 'selected' : ''}>Received</option>
-                                <option value="Partial" ${po.Status === 'Partial' ? 'selected' : ''}>Partially Received</option>
-                                <option value="Void" ${po.Status === 'Void' ? 'selected' : ''}>⛔ Void (Prices Changed)</option>
-                                <option value="Cancelled" ${po.Status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
+                                <option value="Ordered" ${po.Status === 'Ordered' ? 'selected' : ''}>📝 Ordered - Sent to supplier</option>
+                                <option value="In Transit" ${po.Status === 'In Transit' ? 'selected' : ''}>🚚 In Transit - Shipped, on the way</option>
+                                <option value="Partial" ${po.Status === 'Partial' ? 'selected' : ''}>📦 Partial - Some items received</option>
+                                <option value="Received" ${po.Status === 'Received' ? 'selected' : ''}>✅ Received - All items received</option>
+                                <option value="Voided" ${po.Status === 'Voided' || po.Status === 'Void' || po.Status === 'Cancelled' ? 'selected' : ''}>❌ Voided - Cancelled</option>
                             </select>
-                            <small style="color: #666; display: block; margin-top: 5px;">Use "Void" if supplier prices changed and you need to create a new PO</small>
                         </div>
                     </div>
                     <div>
@@ -7522,15 +7597,20 @@
                             <select id="editSOPaymentMethod">
                                 <option value="Cash" ${so.Payment_Method === 'Cash' ? 'selected' : ''}>Cash</option>
                                 <option value="Check" ${so.Payment_Method === 'Check' ? 'selected' : ''}>Check</option>
+                                <option value="Credit Card" ${so.Payment_Method === 'Credit Card' ? 'selected' : ''}>Credit Card</option>
                                 <option value="Invoice" ${so.Payment_Method === 'Invoice' ? 'selected' : ''}>Invoice</option>
+                                <option value="Terms (Net 30)" ${so.Payment_Method === 'Terms (Net 30)' ? 'selected' : ''}>Terms (Net 30)</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Status</label>
                             <select id="editSOStatus">
-                                <option value="Pending" ${so.Status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                <option value="Completed" ${so.Status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                <option value="Cancelled" ${so.Status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                <option value="Pending" ${so.Status === 'Pending' ? 'selected' : ''}>📝 Pending</option>
+                                <option value="Ready" ${so.Status === 'Ready' ? 'selected' : ''}>📦 Ready for Pickup</option>
+                                <option value="Out for Delivery" ${so.Status === 'Out for Delivery' ? 'selected' : ''}>🚚 Out for Delivery</option>
+                                <option value="Delivered" ${so.Status === 'Delivered' ? 'selected' : ''}>✅ Delivered</option>
+                                <option value="Completed" ${so.Status === 'Completed' ? 'selected' : ''}>💰 Completed</option>
+                                <option value="Voided" ${so.Status === 'Voided' ? 'selected' : ''}>❌ Voided</option>
                             </select>
                         </div>
                     </div>
@@ -8143,6 +8223,30 @@
             }
             
             try {
+                // Validate required fields
+                const status = document.getElementById('soStatus').value;
+                const dueDate = document.getElementById('soDueDate').value;
+                
+                if (!status) {
+                    showStatus('salesStatus', '❌ Please select a Status', 'error');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                    document.getElementById('soStatus').focus();
+                    return;
+                }
+                
+                if (!dueDate) {
+                    showStatus('salesStatus', '❌ Please select a Due Date', 'error');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                    document.getElementById('soDueDate').focus();
+                    return;
+                }
+                
                 // AUTO-GENERATE INVOICE NUMBER
                 // Format: INV-MMDDYY-XXX (e.g., INV-120725-001)
                 const saleDate = document.getElementById('soDate').value;
@@ -10030,6 +10134,11 @@
                 filters: ['quickDateOnly', 'item', 'transactionStatus'],
                 dateLabel: 'Sale Date'
             },
+            'pick-list': {
+                title: '🚚 Inventory Pick List',
+                filters: ['dateRange', 'customer', 'deliveryStatus'],
+                dateLabel: 'Date Range'
+            },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
                 filters: ['quickDateOnly', 'supplier', 'poType', 'paymentStatus', 'transactionStatus'],
@@ -10039,6 +10148,11 @@
                 title: '🏭 Purchase by Supplier',
                 filters: ['quickDateOnly', 'supplier', 'poType', 'transactionStatus'],
                 dateLabel: 'PO Date'
+            },
+            'supplier-performance': {
+                title: '📊 Supplier Performance',
+                filters: ['dateRange', 'supplier'],
+                dateLabel: 'Date Range'
             },
             'inventory-turnover': {
                 title: '🔄 Inventory Turnover',
@@ -10329,6 +10443,22 @@
                             <option value="Completed">✅ Completed Only</option>
                             <option value="Pending">🟡 Pending Only</option>
                             <option value="Voided">❌ Voided Only</option>
+                        </select>
+                    </div>`;
+            }
+            
+            // Delivery Status (for pick list)
+            if (config.filters.includes('deliveryStatus')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>🚚 Delivery Status</label>
+                        <select id="rptFilter_deliveryStatus">
+                            <option value="needs-delivery" selected>📦 Needs Delivery (Pending/Ready/Out)</option>
+                            <option value="">All Orders</option>
+                            <option value="pending">📝 Pending Only</option>
+                            <option value="ready">📦 Ready for Pickup Only</option>
+                            <option value="out">🚚 Out for Delivery Only</option>
+                            <option value="delivered">✅ Delivered/Completed</option>
                         </select>
                     </div>`;
             }
@@ -11020,7 +11150,8 @@
                 quarter: document.getElementById('rptFilter_quarter')?.value || 'annual',
                 cogsMethod: document.getElementById('rptFilter_cogsMethod')?.value || 'actual',
                 transactionStatus: document.getElementById('rptFilter_transactionStatus')?.value || 'exclude-voided',
-                adjustmentType: document.getElementById('rptFilter_adjustmentType')?.value || ''
+                adjustmentType: document.getElementById('rptFilter_adjustmentType')?.value || '',
+                deliveryStatus: document.getElementById('rptFilter_deliveryStatus')?.value || 'needs-delivery'
             };
             
             console.log('📱 Report filters:', reportFilters);
@@ -11047,11 +11178,17 @@
                     case 'sales-by-product':
                         reportHtml = await generateSalesByProductModal();
                         break;
+                    case 'pick-list':
+                        reportHtml = await generatePickListModal();
+                        break;
                     case 'purchase-order-detail':
                         reportHtml = await generatePurchaseOrderDetailModal();
                         break;
                     case 'purchase-by-supplier':
                         reportHtml = await generatePurchaseBySupplierModal();
+                        break;
+                    case 'supplier-performance':
+                        reportHtml = await generateSupplierPerformanceModal();
                         break;
                     case 'inventory-turnover':
                         reportHtml = await generateInventoryTurnoverModal();
@@ -11771,6 +11908,1434 @@
         
         async function generateGrossMarginModal() {
             return await generateInventoryReportModal('margin');
+        }
+        
+        // ==================== SUPPLIER PERFORMANCE DASHBOARD ====================
+        
+        async function generateSupplierPerformanceModal() {
+            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : null;
+            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : null;
+            if (toDate) toDate.setHours(23, 59, 59, 999);
+            if (fromDate) fromDate.setHours(0, 0, 0, 0);
+            const supplierFilter = reportFilters.supplier || '';
+            
+            // Fetch data
+            const [poResult, suppliersResult, itemsResult] = await Promise.all([
+                apiCall('getPurchaseOrders'),
+                apiCall('getSuppliers'),
+                apiCall('getItems')
+            ]);
+            
+            if (!poResult?.data || !suppliersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const suppliers = suppliersResult.data;
+            const items = itemsResult?.data || [];
+            let purchases = poResult.data;
+            
+            // Date range label
+            let dateLabel = 'All Time';
+            if (fromDate && toDate) {
+                dateLabel = `${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+            } else if (fromDate) {
+                dateLabel = `Since ${fromDate.toLocaleDateString()}`;
+            } else if (toDate) {
+                dateLabel = `Through ${toDate.toLocaleDateString()}`;
+            }
+            
+            // Filter by date
+            if (fromDate) {
+                purchases = purchases.filter(po => {
+                    const d = parseDate(po.PO_Date);
+                    return d && d >= fromDate;
+                });
+            }
+            if (toDate) {
+                purchases = purchases.filter(po => {
+                    const d = parseDate(po.PO_Date);
+                    return d && d <= toDate;
+                });
+            }
+            
+            // Filter by supplier if specified
+            if (supplierFilter) {
+                purchases = purchases.filter(po => po.Supplier_ID === supplierFilter);
+            }
+            
+            // Exclude voided/cancelled
+            purchases = purchases.filter(po => po.Status !== 'Void' && po.Status !== 'Cancelled' && po.Status !== 'Voided');
+            
+            // Calculate metrics per supplier
+            const supplierStats = {};
+            const allFulfillmentDays = [];
+            let totalOnTime = 0, totalLate = 0, totalPending = 0;
+            const lateOrders = [];
+            const monthlyData = {};
+            
+            purchases.forEach(po => {
+                const suppId = po.Supplier_ID;
+                const supplier = suppliers.find(s => s.Supplier_ID === suppId);
+                const supplierName = supplier?.Supplier_Name || suppId;
+                
+                if (!supplierStats[suppId]) {
+                    supplierStats[suppId] = {
+                        id: suppId,
+                        name: supplierName,
+                        totalPOs: 0,
+                        receivedPOs: 0,
+                        pendingPOs: 0,
+                        onTime: 0,
+                        late: 0,
+                        totalAmount: 0,
+                        fulfillmentDays: [],
+                        lateDays: []
+                    };
+                }
+                
+                const stats = supplierStats[suppId];
+                stats.totalPOs++;
+                stats.totalAmount += parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
+                
+                const poDate = parseDate(po.PO_Date);
+                const dueDate = parseDate(po.Due_Date);
+                const isReceived = po.Status === 'Received' || po.Status === 'Partial';
+                
+                // Track monthly data
+                if (poDate) {
+                    const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { total: 0, onTime: 0, late: 0 };
+                    }
+                    monthlyData[monthKey].total++;
+                }
+                
+                if (isReceived) {
+                    stats.receivedPOs++;
+                    
+                    // For received orders, check if on time
+                    // We'll use PO_Date + typical lead time as estimate since we don't have actual receive date
+                    // Or compare to Due_Date if available
+                    if (dueDate && poDate) {
+                        // Calculate days from order to due date as "expected fulfillment"
+                        const expectedDays = Math.ceil((dueDate - poDate) / (1000 * 60 * 60 * 24));
+                        stats.fulfillmentDays.push(expectedDays);
+                        allFulfillmentDays.push(expectedDays);
+                        
+                        // Assume received on time if status is Received (we don't have actual receive date)
+                        // For now, mark as on-time if received
+                        stats.onTime++;
+                        totalOnTime++;
+                        
+                        if (poDate) {
+                            const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
+                            if (monthlyData[monthKey]) monthlyData[monthKey].onTime++;
+                        }
+                    } else {
+                        stats.onTime++;
+                        totalOnTime++;
+                    }
+                } else if (po.Status === 'Ordered') {
+                    stats.pendingPOs++;
+                    totalPending++;
+                    
+                    // Check if overdue
+                    const today = new Date();
+                    if (dueDate && today > dueDate) {
+                        const daysLate = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
+                        stats.late++;
+                        stats.lateDays.push(daysLate);
+                        totalLate++;
+                        
+                        lateOrders.push({
+                            poId: po.Invoice_Number || po.PO_ID,
+                            supplier: supplierName,
+                            poDate: poDate,
+                            dueDate: dueDate,
+                            daysLate: daysLate,
+                            amount: parseFloat(po.Total_Amount || po.Invoice_Total) || 0,
+                            status: po.Status
+                        });
+                        
+                        if (poDate) {
+                            const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
+                            if (monthlyData[monthKey]) monthlyData[monthKey].late++;
+                        }
+                    }
+                }
+            });
+            
+            // Calculate overall metrics
+            const totalPOs = purchases.length;
+            const onTimeRate = totalPOs > 0 ? ((totalOnTime / (totalOnTime + totalLate)) * 100) : 0;
+            const avgFulfillmentDays = allFulfillmentDays.length > 0 
+                ? allFulfillmentDays.reduce((a, b) => a + b, 0) / allFulfillmentDays.length 
+                : 0;
+            
+            // Sort suppliers by total POs
+            const sortedSuppliers = Object.values(supplierStats).sort((a, b) => b.totalPOs - a.totalPOs);
+            
+            // Sort late orders by days late
+            lateOrders.sort((a, b) => b.daysLate - a.daysLate);
+            
+            // Get monthly trend (last 6 months)
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const now = new Date();
+            const trendMonths = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                const data = monthlyData[key] || { total: 0, onTime: 0, late: 0 };
+                trendMonths.push({
+                    label: monthNames[d.getMonth()],
+                    ...data,
+                    onTimeRate: data.total > 0 ? ((data.onTime / data.total) * 100) : 0
+                });
+            }
+            
+            // Colors
+            const chartColors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+            
+            let html = `
+                <style>
+                    .sp-header {
+                        text-align: center;
+                        padding: 30px;
+                        background: linear-gradient(135deg, #7c3aed, #a855f7);
+                        color: white;
+                        border-radius: 16px;
+                        margin-bottom: 25px;
+                    }
+                    .sp-header h2 { margin: 0; font-size: 28px; }
+                    .sp-header p { margin: 10px 0 0 0; opacity: 0.9; }
+                    
+                    .sp-kpi-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .sp-kpi {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        text-align: center;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                        border-top: 4px solid #8b5cf6;
+                    }
+                    .sp-kpi .value { font-size: 32px; font-weight: bold; }
+                    .sp-kpi .label { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
+                    
+                    .sp-section {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+                    }
+                    .sp-section h3 {
+                        margin: 0 0 15px 0;
+                        color: #1f2937;
+                        font-size: 18px;
+                    }
+                    
+                    .sp-gauge {
+                        width: 120px;
+                        height: 60px;
+                        margin: 0 auto 10px;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    .sp-gauge-bg {
+                        width: 120px;
+                        height: 60px;
+                        border-radius: 60px 60px 0 0;
+                        background: #e5e7eb;
+                    }
+                    .sp-gauge-fill {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        width: 120px;
+                        height: 60px;
+                        border-radius: 60px 60px 0 0;
+                        transform-origin: center bottom;
+                    }
+                    
+                    .sp-bar {
+                        height: 24px;
+                        border-radius: 12px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        overflow: hidden;
+                    }
+                    .sp-bar-segment {
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: white;
+                        min-width: 30px;
+                    }
+                    
+                    .sp-supplier-row {
+                        display: grid;
+                        grid-template-columns: 150px 1fr 80px 80px 80px;
+                        gap: 10px;
+                        align-items: center;
+                        padding: 12px;
+                        border-bottom: 1px solid #f3f4f6;
+                    }
+                    .sp-supplier-row:hover {
+                        background: #f9fafb;
+                    }
+                    .sp-supplier-name {
+                        font-weight: 600;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .sp-mini-bar {
+                        height: 20px;
+                        background: #f3f4f6;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        display: flex;
+                    }
+                    .sp-mini-bar-fill {
+                        height: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 10px;
+                        color: white;
+                        font-weight: 600;
+                        min-width: 25px;
+                    }
+                    
+                    .sp-trend-chart {
+                        display: flex;
+                        align-items: flex-end;
+                        justify-content: space-around;
+                        height: 120px;
+                        padding: 10px;
+                        background: #f9fafb;
+                        border-radius: 8px;
+                    }
+                    .sp-trend-bar {
+                        flex: 1;
+                        margin: 0 5px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    .sp-trend-fill {
+                        width: 100%;
+                        max-width: 40px;
+                        border-radius: 4px 4px 0 0;
+                        transition: height 0.3s;
+                    }
+                    .sp-trend-label {
+                        font-size: 11px;
+                        color: #666;
+                        margin-top: 5px;
+                    }
+                    
+                    .sp-late-card {
+                        background: #fef2f2;
+                        border: 1px solid #fecaca;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 10px;
+                    }
+                    .sp-late-card .days-late {
+                        background: #dc2626;
+                        color: white;
+                        padding: 2px 8px;
+                        border-radius: 10px;
+                        font-size: 12px;
+                        font-weight: 600;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .sp-supplier-row {
+                            grid-template-columns: 1fr;
+                            gap: 5px;
+                        }
+                        .sp-supplier-row > div:not(:first-child) {
+                            font-size: 12px;
+                        }
+                    }
+                </style>
+                
+                <div class="sp-header">
+                    <h2>📊 Supplier Performance Dashboard</h2>
+                    <p>${dateLabel}${supplierFilter ? ' • Filtered by supplier' : ''}</p>
+                </div>
+                
+                <!-- KPI Cards -->
+                <div class="sp-kpi-grid">
+                    <div class="sp-kpi">
+                        <div class="value" style="color: #7c3aed;">${totalPOs}</div>
+                        <div class="label">Total POs</div>
+                    </div>
+                    <div class="sp-kpi" style="border-top-color: #10b981;">
+                        <div class="value" style="color: #10b981;">${totalOnTime}</div>
+                        <div class="label">Received</div>
+                    </div>
+                    <div class="sp-kpi" style="border-top-color: #f59e0b;">
+                        <div class="value" style="color: #f59e0b;">${totalPending}</div>
+                        <div class="label">Pending</div>
+                    </div>
+                    <div class="sp-kpi" style="border-top-color: #dc2626;">
+                        <div class="value" style="color: #dc2626;">${totalLate}</div>
+                        <div class="label">Overdue</div>
+                    </div>
+                    <div class="sp-kpi" style="border-top-color: #3b82f6;">
+                        <div class="value" style="color: #3b82f6;">${onTimeRate.toFixed(0)}%</div>
+                        <div class="label">On-Time Rate</div>
+                    </div>
+                    <div class="sp-kpi" style="border-top-color: #6366f1;">
+                        <div class="value" style="color: #6366f1;">${avgFulfillmentDays.toFixed(0)}</div>
+                        <div class="label">Avg Days to Due</div>
+                    </div>
+                </div>
+                
+                <!-- Overall Performance Bar -->
+                <div class="sp-section">
+                    <h3>📈 Overall Fulfillment Status</h3>
+                    <div class="sp-bar">
+                        ${totalOnTime > 0 ? `<div class="sp-bar-segment" style="width: ${(totalOnTime/totalPOs)*100}%; background: #10b981;">✓ ${totalOnTime}</div>` : ''}
+                        ${totalPending > 0 ? `<div class="sp-bar-segment" style="width: ${(totalPending/totalPOs)*100}%; background: #f59e0b;">⏳ ${totalPending}</div>` : ''}
+                        ${totalLate > 0 ? `<div class="sp-bar-segment" style="width: ${(totalLate/totalPOs)*100}%; background: #dc2626;">⚠️ ${totalLate}</div>` : ''}
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 20px; font-size: 12px; color: #666;">
+                        <span>🟢 Received: ${totalOnTime}</span>
+                        <span>🟡 Pending: ${totalPending}</span>
+                        <span>🔴 Overdue: ${totalLate}</span>
+                    </div>
+                </div>
+                
+                <!-- Monthly Trend -->
+                <div class="sp-section">
+                    <h3>📅 Monthly Order Trend (Last 6 Months)</h3>
+                    <div class="sp-trend-chart">
+                        ${trendMonths.map(m => {
+                            const maxOrders = Math.max(...trendMonths.map(x => x.total), 1);
+                            const height = (m.total / maxOrders) * 80;
+                            return `
+                                <div class="sp-trend-bar">
+                                    <div style="font-size: 11px; margin-bottom: 5px; color: #666;">${m.total}</div>
+                                    <div class="sp-trend-fill" style="height: ${Math.max(height, 5)}px; background: linear-gradient(to top, #7c3aed, #a855f7);"></div>
+                                    <div class="sp-trend-label">${m.label}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                
+                <!-- Supplier Breakdown -->
+                <div class="sp-section">
+                    <h3>🏭 Performance by Supplier</h3>
+                    ${sortedSuppliers.length === 0 ? '<p style="color: #666; text-align: center;">No supplier data</p>' : `
+                        <div style="overflow-x: auto;">
+                            <div style="min-width: 500px;">
+                                <div class="sp-supplier-row" style="background: #f3f4f6; font-weight: 600; font-size: 12px;">
+                                    <div>Supplier</div>
+                                    <div>Fulfillment</div>
+                                    <div style="text-align: center;">POs</div>
+                                    <div style="text-align: center;">On-Time</div>
+                                    <div style="text-align: center;">Overdue</div>
+                                </div>
+                                ${sortedSuppliers.map((s, i) => {
+                                    const onTimeWidth = s.totalPOs > 0 ? ((s.receivedPOs / s.totalPOs) * 100) : 0;
+                                    const pendingWidth = s.totalPOs > 0 ? ((s.pendingPOs / s.totalPOs) * 100) : 0;
+                                    const lateWidth = s.totalPOs > 0 ? ((s.late / s.totalPOs) * 100) : 0;
+                                    return `
+                                        <div class="sp-supplier-row">
+                                            <div class="sp-supplier-name" title="${s.name}">${s.name}</div>
+                                            <div>
+                                                <div class="sp-mini-bar">
+                                                    ${s.receivedPOs > 0 ? `<div class="sp-mini-bar-fill" style="width: ${onTimeWidth}%; background: #10b981;">${s.receivedPOs}</div>` : ''}
+                                                    ${s.pendingPOs > 0 ? `<div class="sp-mini-bar-fill" style="width: ${pendingWidth}%; background: #f59e0b;">${s.pendingPOs}</div>` : ''}
+                                                    ${s.late > 0 ? `<div class="sp-mini-bar-fill" style="width: ${lateWidth}%; background: #dc2626;">${s.late}</div>` : ''}
+                                                </div>
+                                            </div>
+                                            <div style="text-align: center; font-weight: 600;">${s.totalPOs}</div>
+                                            <div style="text-align: center; color: #10b981; font-weight: 600;">${s.receivedPOs}</div>
+                                            <div style="text-align: center; color: ${s.late > 0 ? '#dc2626' : '#666'}; font-weight: 600;">${s.late}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `}
+                </div>
+                
+                <!-- Overdue Orders Alert -->
+                ${lateOrders.length > 0 ? `
+                    <div class="sp-section" style="border-left: 4px solid #dc2626;">
+                        <h3>🚨 Overdue Purchase Orders (${lateOrders.length})</h3>
+                        <p style="color: #666; font-size: 13px; margin-bottom: 15px;">These orders have passed their due date and have not been received.</p>
+                        ${lateOrders.slice(0, 10).map(o => `
+                            <div class="sp-late-card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                    <div>
+                                        <strong style="color: #991b1b;">${o.poId}</strong>
+                                        <span style="color: #666; margin-left: 10px;">${o.supplier}</span>
+                                    </div>
+                                    <span class="days-late">⏰ ${o.daysLate} days late</span>
+                                </div>
+                                <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                    <span>📅 Due: ${o.dueDate?.toLocaleDateString() || '-'}</span>
+                                    <span style="margin-left: 15px;">💰 $${o.amount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${lateOrders.length > 10 ? `<p style="color: #666; font-size: 12px; text-align: center;">... and ${lateOrders.length - 10} more overdue orders</p>` : ''}
+                    </div>
+                ` : `
+                    <div class="sp-section" style="border-left: 4px solid #10b981; background: #f0fdf4;">
+                        <h3 style="color: #166534;">✅ No Overdue Orders!</h3>
+                        <p style="color: #666; margin: 0;">All pending orders are within their due dates. Great job!</p>
+                    </div>
+                `}
+                
+                <!-- Summary Table -->
+                <div class="sp-section">
+                    <h3>📋 Supplier Summary</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Supplier</th>
+                                    <th style="text-align: right;">Total POs</th>
+                                    <th style="text-align: right;">Received</th>
+                                    <th style="text-align: right;">Pending</th>
+                                    <th style="text-align: right;">Overdue</th>
+                                    <th style="text-align: right;">Total Spend</th>
+                                    <th style="text-align: right;">Avg Days</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedSuppliers.map(s => {
+                                    const avgDays = s.fulfillmentDays.length > 0 
+                                        ? (s.fulfillmentDays.reduce((a,b) => a+b, 0) / s.fulfillmentDays.length).toFixed(0)
+                                        : '-';
+                                    return `
+                                        <tr>
+                                            <td><strong>${s.name}</strong></td>
+                                            <td style="text-align: right;">${s.totalPOs}</td>
+                                            <td style="text-align: right; color: #10b981;">${s.receivedPOs}</td>
+                                            <td style="text-align: right; color: #f59e0b;">${s.pendingPOs}</td>
+                                            <td style="text-align: right; color: ${s.late > 0 ? '#dc2626' : '#666'}; font-weight: ${s.late > 0 ? 'bold' : 'normal'};">${s.late}</td>
+                                            <td style="text-align: right;">$${s.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                            <td style="text-align: right;">${avgDays}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; font-size: 12px; color: #666;">
+                        <strong>📝 Note:</strong> On-time rate is calculated from received orders. "Avg Days" shows the average number of days from order to due date.
+                        For more accurate fulfillment tracking, consider adding a "Received Date" field when marking orders as received.
+                    </p>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // ==================== INVENTORY PICK LIST ====================
+        
+        async function generatePickListModal() {
+            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : null;
+            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : null;
+            if (toDate) toDate.setHours(23, 59, 59, 999);
+            if (fromDate) fromDate.setHours(0, 0, 0, 0);
+            const customerFilter = reportFilters.customer || '';
+            const deliveryStatus = reportFilters.deliveryStatus || 'needs-delivery';
+            
+            // Fetch all data
+            const [salesResult, customersResult, itemsResult, suppliersResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getCustomers'),
+                apiCall('getItems'),
+                apiCall('getSuppliers')
+            ]);
+            
+            if (!salesResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const customers = customersResult?.data || [];
+            const items = itemsResult?.data || [];
+            const suppliers = suppliersResult?.data || [];
+            let sales = salesResult.data;
+            
+            // Exclude voided orders
+            sales = sales.filter(so => so.Status !== 'Voided' && so.Status !== 'Void');
+            
+            // Date range label
+            let dateLabel = 'All Time';
+            if (fromDate && toDate) {
+                dateLabel = `${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()}`;
+            } else if (fromDate) {
+                dateLabel = `Since ${fromDate.toLocaleDateString()}`;
+            } else if (toDate) {
+                dateLabel = `Through ${toDate.toLocaleDateString()}`;
+            }
+            
+            // Filter by date
+            if (fromDate) {
+                sales = sales.filter(so => {
+                    const d = parseDate(so.Sale_Date || so.SO_Date);
+                    return d && d >= fromDate;
+                });
+            }
+            if (toDate) {
+                sales = sales.filter(so => {
+                    const d = parseDate(so.Sale_Date || so.SO_Date);
+                    return d && d <= toDate;
+                });
+            }
+            
+            // Filter by customer if specified
+            if (customerFilter) {
+                sales = sales.filter(so => so.Customer_ID === customerFilter);
+            }
+            
+            // Filter by delivery status
+            if (deliveryStatus === 'needs-delivery') {
+                // Show Pending, Ready, Out for Delivery (not yet completed/delivered)
+                sales = sales.filter(so => 
+                    so.Status === 'Pending' || 
+                    so.Status === 'Ready' || 
+                    so.Status === 'Out for Delivery'
+                );
+            } else if (deliveryStatus === 'pending') {
+                sales = sales.filter(so => so.Status === 'Pending');
+            } else if (deliveryStatus === 'ready') {
+                sales = sales.filter(so => so.Status === 'Ready');
+            } else if (deliveryStatus === 'out') {
+                sales = sales.filter(so => so.Status === 'Out for Delivery');
+            } else if (deliveryStatus === 'delivered') {
+                sales = sales.filter(so => so.Status === 'Completed' || so.Status === 'Delivered');
+            }
+            
+            // Build item lookup map
+            const itemMap = {};
+            items.forEach(item => {
+                itemMap[item.Item_ID] = {
+                    ...item,
+                    supplierName: suppliers.find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown'
+                };
+            });
+            
+            // Gather all line items grouped by customer/order
+            const pickListData = [];
+            let totalCost = 0, totalSale = 0, totalUnits = 0, totalCases = 0;
+            const itemQuantities = {}; // Track total quantities needed per item
+            
+            for (const so of sales) {
+                const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
+                const customerName = customer?.Customer_Name || so.Customer_ID;
+                const soDate = parseDate(so.Sale_Date || so.SO_Date);
+                
+                // Get line items
+                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                if (linesResult?.data && linesResult.data.length > 0) {
+                    const orderLines = [];
+                    let orderCost = 0, orderSale = 0;
+                    
+                    for (const line of linesResult.data) {
+                        const item = itemMap[line.Item_ID];
+                        const qty = parseInt(line.Quantity) || 0;
+                        const unitPrice = parseFloat(line.Unit_Price) || 0;
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        const unitCost = pkgCost / unitsPerPkg;
+                        const lineCost = qty * unitCost;
+                        const lineSale = qty * unitPrice;
+                        const qtyOnHand = parseInt(item?.Qty_On_Hand) || 0;
+                        const casesNeeded = Math.ceil(qty / unitsPerPkg);
+                        const uom = item?.Unit_of_Measure || item?.UOM || 'case';
+                        
+                        orderLines.push({
+                            itemId: line.Item_ID,
+                            sku: item?.SKU || '-',
+                            description: item?.Item_Description || line.Item_ID,
+                            supplier: item?.supplierName || 'Unknown',
+                            qty: qty,
+                            unitsPerPkg: unitsPerPkg,
+                            casesNeeded: casesNeeded,
+                            uom: uom,
+                            unitCost: unitCost,
+                            unitPrice: unitPrice,
+                            lineCost: lineCost,
+                            lineSale: lineSale,
+                            qtyOnHand: qtyOnHand,
+                            afterPick: qtyOnHand - qty
+                        });
+                        
+                        orderCost += lineCost;
+                        orderSale += lineSale;
+                        totalUnits += qty;
+                        totalCases += casesNeeded;
+                        
+                        // Track quantities per item
+                        if (!itemQuantities[line.Item_ID]) {
+                            itemQuantities[line.Item_ID] = {
+                                description: item?.Item_Description || line.Item_ID,
+                                sku: item?.SKU || '-',
+                                supplier: item?.supplierName || 'Unknown',
+                                qtyNeeded: 0,
+                                casesNeeded: 0,
+                                unitsPerPkg: unitsPerPkg,
+                                uom: uom,
+                                qtyOnHand: qtyOnHand
+                            };
+                        }
+                        itemQuantities[line.Item_ID].qtyNeeded += qty;
+                        itemQuantities[line.Item_ID].casesNeeded += casesNeeded;
+                    }
+                    
+                    pickListData.push({
+                        soId: so.SO_ID,
+                        invoiceNum: so.Invoice_Number || so.SO_ID,
+                        customerName: customerName,
+                        customerId: so.Customer_ID,
+                        customerAddress: customer?.Address || '',
+                        customerCity: customer?.City || '',
+                        customerState: customer?.State || '',
+                        customerZip: customer?.Zip || '',
+                        date: soDate,
+                        status: so.Status || 'Pending',
+                        lines: orderLines,
+                        orderCost: orderCost,
+                        orderSale: orderSale,
+                        itemCount: orderLines.length
+                    });
+                    
+                    totalCost += orderCost;
+                    totalSale += lineSale;
+                }
+            }
+            
+            totalSale = pickListData.reduce((sum, o) => sum + o.orderSale, 0);
+            const totalProfit = totalSale - totalCost;
+            const totalOrders = pickListData.length;
+            
+            // Check for stock issues
+            const stockIssues = Object.entries(itemQuantities).filter(([id, data]) => data.qtyNeeded > data.qtyOnHand);
+            
+            let html = `
+                <style>
+                    .pl-header {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #0891b2, #06b6d4);
+                        color: white;
+                        border-radius: 16px;
+                        margin-bottom: 20px;
+                    }
+                    .pl-header h2 { margin: 0; font-size: 26px; }
+                    .pl-header p { margin: 10px 0 0 0; opacity: 0.9; }
+                    
+                    .pl-summary {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                        gap: 12px;
+                        margin-bottom: 20px;
+                    }
+                    .pl-stat {
+                        background: white;
+                        border-radius: 10px;
+                        padding: 15px;
+                        text-align: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        border-top: 3px solid #0891b2;
+                    }
+                    .pl-stat .value { font-size: 24px; font-weight: bold; color: #0891b2; }
+                    .pl-stat .label { font-size: 11px; color: #666; text-transform: uppercase; margin-top: 3px; }
+                    
+                    .pl-order {
+                        background: white;
+                        border-radius: 12px;
+                        margin-bottom: 15px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        overflow: hidden;
+                    }
+                    .pl-order-header {
+                        background: #f8fafc;
+                        padding: 15px;
+                        border-bottom: 1px solid #e2e8f0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+                    .pl-order-header .customer { font-weight: 700; font-size: 16px; color: #0f172a; }
+                    .pl-order-header .invoice { font-size: 13px; color: #0891b2; }
+                    .pl-order-header .date { font-size: 13px; color: #64748b; }
+                    .pl-order-header .status {
+                        padding: 4px 12px;
+                        border-radius: 20px;
+                        font-size: 12px;
+                        font-weight: 600;
+                    }
+                    .pl-order-header .status.pending { background: #fef3c7; color: #92400e; }
+                    .pl-order-header .status.ready { background: #dbeafe; color: #1e40af; }
+                    .pl-order-header .status.out { background: #e0e7ff; color: #4338ca; }
+                    .pl-order-header .status.delivered { background: #d1fae5; color: #065f46; }
+                    .pl-order-header .status.completed { background: #d1fae5; color: #065f46; }
+                    
+                    .pl-items {
+                        padding: 0;
+                    }
+                    .pl-item {
+                        display: grid;
+                        grid-template-columns: 1fr 70px 70px 70px 70px 80px;
+                        gap: 8px;
+                        padding: 12px 15px;
+                        border-bottom: 1px solid #f1f5f9;
+                        align-items: center;
+                        font-size: 13px;
+                    }
+                    .pl-item:last-child { border-bottom: none; }
+                    .pl-item:hover { background: #f8fafc; }
+                    .pl-item-desc { font-weight: 500; }
+                    .pl-item-sku { font-size: 11px; color: #64748b; font-family: monospace; }
+                    .pl-item-supplier { font-size: 11px; color: #0891b2; }
+                    .pl-item .qty { font-weight: 700; text-align: center; }
+                    .pl-item .cases { font-weight: 700; text-align: center; color: #7c3aed; }
+                    .pl-item .stock { text-align: center; }
+                    .pl-item .stock.low { color: #dc2626; font-weight: 600; }
+                    .pl-item .stock.ok { color: #059669; }
+                    .pl-item .price { text-align: right; }
+                    
+                    .pl-order-footer {
+                        background: #f1f5f9;
+                        padding: 12px 15px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        font-size: 13px;
+                    }
+                    .pl-order-footer .cost { color: #dc2626; }
+                    .pl-order-footer .sale { color: #059669; font-weight: 700; }
+                    .pl-order-footer .profit { color: #7c3aed; font-weight: 600; }
+                    
+                    .pl-alert {
+                        background: #fef2f2;
+                        border: 1px solid #fecaca;
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                    }
+                    .pl-alert h4 { margin: 0 0 10px 0; color: #991b1b; }
+                    .pl-alert-item {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 8px 0;
+                        border-bottom: 1px solid #fecaca;
+                        font-size: 13px;
+                    }
+                    .pl-alert-item:last-child { border-bottom: none; }
+                    
+                    .pl-totals {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-top: 20px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    }
+                    .pl-totals h3 { margin: 0 0 15px 0; }
+                    .pl-total-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 8px 0;
+                        border-bottom: 1px solid #f1f5f9;
+                    }
+                    .pl-total-row:last-child { border-bottom: none; font-weight: bold; font-size: 18px; }
+                    
+                    .pl-print-btn {
+                        background: #0891b2;
+                        color: white;
+                        border: none;
+                        padding: 12px 24px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .pl-print-btn:hover { background: #0e7490; }
+                    
+                    @media (max-width: 768px) {
+                        .pl-item {
+                            grid-template-columns: 1fr;
+                            gap: 5px;
+                        }
+                        .pl-item > div { text-align: left !important; }
+                        .pl-item .qty::before { content: 'Units: '; font-weight: normal; }
+                        .pl-item .cases::before { content: 'Cases: '; font-weight: normal; }
+                        .pl-item .stock::before { content: 'Stock: '; font-weight: normal; }
+                        .pl-item .price::before { content: 'Price: '; font-weight: normal; }
+                    }
+                    
+                    @media print {
+                        .pl-print-btn { display: none; }
+                        .pl-order { break-inside: avoid; }
+                    }
+                </style>
+                
+                <div class="pl-header">
+                    <h2>🚚 Inventory Pick List</h2>
+                    <p>${dateLabel} • ${
+                        deliveryStatus === 'needs-delivery' ? '📦 Needs Delivery' : 
+                        deliveryStatus === 'pending' ? '📝 Pending Orders' : 
+                        deliveryStatus === 'ready' ? '📦 Ready for Pickup' : 
+                        deliveryStatus === 'out' ? '🚚 Out for Delivery' : 
+                        deliveryStatus === 'delivered' ? '✅ Delivered/Completed' : 
+                        'All Orders'
+                    }${customerFilter ? ' • Filtered by customer' : ''}</p>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <div style="font-size: 14px; color: #666;">
+                        📅 Generated: ${new Date().toLocaleString()}
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="pl-print-btn" onclick="window.print()">
+                            🖨️ Print Pick List
+                        </button>
+                        <button class="pl-print-btn" style="background: #7c3aed;" onclick="printShippingLabels()">
+                            🏷️ Print Labels
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="pl-summary">
+                    <div class="pl-stat">
+                        <div class="value">${totalOrders}</div>
+                        <div class="label">Orders</div>
+                    </div>
+                    <div class="pl-stat" style="border-top-color: #7c3aed;">
+                        <div class="value" style="color: #7c3aed;">${totalCases}</div>
+                        <div class="label">📦 Cases to Load</div>
+                    </div>
+                    <div class="pl-stat" style="border-top-color: #059669;">
+                        <div class="value" style="color: #059669;">${totalUnits}</div>
+                        <div class="label">Total Units</div>
+                    </div>
+                    <div class="pl-stat" style="border-top-color: #dc2626;">
+                        <div class="value" style="color: #dc2626;">$${totalCost.toFixed(2)}</div>
+                        <div class="label">Your Cost</div>
+                    </div>
+                    <div class="pl-stat" style="border-top-color: #059669;">
+                        <div class="value" style="color: #059669;">$${totalSale.toFixed(2)}</div>
+                        <div class="label">Sale Value</div>
+                    </div>
+                    <div class="pl-stat" style="border-top-color: #7c3aed;">
+                        <div class="value" style="color: #7c3aed;">$${totalProfit.toFixed(2)}</div>
+                        <div class="label">Gross Profit</div>
+                    </div>
+                </div>
+                
+                ${stockIssues.length > 0 ? `
+                    <div class="pl-alert">
+                        <h4>⚠️ Stock Warning - ${stockIssues.length} Item(s) Need Attention</h4>
+                        ${stockIssues.map(([id, data]) => `
+                            <div class="pl-alert-item">
+                                <div>
+                                    <strong>${data.description}</strong>
+                                    <span style="color: #666; margin-left: 10px;">${data.sku}</span>
+                                </div>
+                                <div>
+                                    <span style="color: #dc2626;">Need: ${data.qtyNeeded}</span>
+                                    <span style="margin: 0 10px;">|</span>
+                                    <span>Have: ${data.qtyOnHand}</span>
+                                    <span style="margin: 0 10px;">|</span>
+                                    <span style="color: #dc2626; font-weight: 600;">Short: ${data.qtyNeeded - data.qtyOnHand}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                <!-- Consolidated Pick Summary -->
+                ${Object.keys(itemQuantities).length > 0 ? `
+                    <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #0891b2;">
+                        <h3 style="margin: 0 0 15px 0; color: #0f172a;">📋 Consolidated Pick List - What to Grab</h3>
+                        <p style="color: #666; font-size: 13px; margin-bottom: 15px;">Total items to pick across all orders:</p>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="margin: 0;">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>SKU</th>
+                                        <th>Supplier</th>
+                                        <th style="text-align: center;">📦 Cases</th>
+                                        <th style="text-align: center;">Units</th>
+                                        <th style="text-align: center;">In Stock</th>
+                                        <th style="text-align: center;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Object.entries(itemQuantities)
+                                        .sort((a, b) => b[1].casesNeeded - a[1].casesNeeded)
+                                        .map(([itemId, data]) => {
+                                            const isShort = data.qtyNeeded > data.qtyOnHand;
+                                            const remaining = data.qtyOnHand - data.qtyNeeded;
+                                            return `
+                                                <tr style="${isShort ? 'background: #fef2f2;' : ''}">
+                                                    <td><strong>${data.description}</strong></td>
+                                                    <td style="font-family: monospace; font-size: 12px; color: #64748b;">${data.sku}</td>
+                                                    <td style="font-size: 12px; color: #0891b2;">${data.supplier}</td>
+                                                    <td style="text-align: center; font-weight: 700; color: #7c3aed; font-size: 16px;">
+                                                        ${data.casesNeeded}
+                                                        <span style="font-size: 10px; font-weight: normal; color: #666;">${data.uom}${data.casesNeeded !== 1 ? 's' : ''}</span>
+                                                    </td>
+                                                    <td style="text-align: center;">${data.qtyNeeded}</td>
+                                                    <td style="text-align: center; color: ${isShort ? '#dc2626' : '#059669'}; font-weight: ${isShort ? '600' : 'normal'};">${data.qtyOnHand}</td>
+                                                    <td style="text-align: center;">
+                                                        ${isShort 
+                                                            ? `<span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">⚠️ Short ${Math.abs(remaining)}</span>`
+                                                            : `<span style="background: #059669; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">✓ OK</span>`
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${pickListData.length === 0 ? `
+                    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+                        <h3 style="margin: 0; color: #666;">No Orders Found</h3>
+                        <p style="color: #999;">Try adjusting your filters to see orders.</p>
+                    </div>
+                ` : `
+                    <!-- Orders -->
+                    ${pickListData.map(order => `
+                        <div class="pl-order">
+                            <div class="pl-order-header">
+                                <div>
+                                    <div class="customer">👤 ${order.customerName}</div>
+                                    <div class="invoice">📋 ${order.invoiceNum}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="date">📅 ${order.date?.toLocaleDateString() || '-'}</div>
+                                    <span class="status ${
+                                        order.status === 'Completed' ? 'completed' : 
+                                        order.status === 'Delivered' ? 'delivered' : 
+                                        order.status === 'Out for Delivery' ? 'out' : 
+                                        order.status === 'Ready' ? 'ready' : 
+                                        'pending'
+                                    }">
+                                        ${
+                                            order.status === 'Completed' ? '💰 Completed' : 
+                                            order.status === 'Delivered' ? '✅ Delivered' : 
+                                            order.status === 'Out for Delivery' ? '🚚 Out for Delivery' : 
+                                            order.status === 'Ready' ? '📦 Ready' : 
+                                            '📝 Pending'
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="pl-items">
+                                <div class="pl-item" style="background: #f8fafc; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #64748b;">
+                                    <div>Item</div>
+                                    <div style="text-align: center;">Units</div>
+                                    <div style="text-align: center;">📦 Cases</div>
+                                    <div style="text-align: center;">Stock</div>
+                                    <div style="text-align: center;">After</div>
+                                    <div style="text-align: right;">Price</div>
+                                </div>
+                                ${order.lines.map(line => `
+                                    <div class="pl-item">
+                                        <div>
+                                            <div class="pl-item-desc">${line.description}</div>
+                                            <div class="pl-item-sku">${line.sku}</div>
+                                            <div class="pl-item-supplier">📦 ${line.supplier}</div>
+                                        </div>
+                                        <div class="qty">${line.qty}</div>
+                                        <div class="cases" title="${line.unitsPerPkg} per ${line.uom}">
+                                            ${line.casesNeeded} <span style="font-size: 10px; font-weight: normal; color: #666;">${line.uom}${line.casesNeeded !== 1 ? 's' : ''}</span>
+                                        </div>
+                                        <div class="stock ${line.qtyOnHand < line.qty ? 'low' : 'ok'}">
+                                            ${line.qtyOnHand}
+                                        </div>
+                                        <div class="stock ${line.afterPick < 0 ? 'low' : 'ok'}">
+                                            ${line.afterPick}
+                                        </div>
+                                        <div class="price">$${line.lineSale.toFixed(2)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="pl-order-footer">
+                                <div>
+                                    <span style="color: #666;">${order.itemCount} item(s)</span>
+                                </div>
+                                <div style="display: flex; gap: 20px;">
+                                    <span class="cost">Cost: $${order.orderCost.toFixed(2)}</span>
+                                    <span class="sale">Sale: $${order.orderSale.toFixed(2)}</span>
+                                    <span class="profit">Profit: $${(order.orderSale - order.orderCost).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    
+                    <!-- Totals -->
+                    <div class="pl-totals">
+                        <h3>📊 Pick List Summary</h3>
+                        <div class="pl-total-row">
+                            <span>Total Orders</span>
+                            <span>${totalOrders}</span>
+                        </div>
+                        <div class="pl-total-row">
+                            <span>📦 Total Cases to Load</span>
+                            <span style="color: #7c3aed; font-weight: 600;">${totalCases}</span>
+                        </div>
+                        <div class="pl-total-row">
+                            <span>Total Units to Pick</span>
+                            <span>${totalUnits}</span>
+                        </div>
+                        <div class="pl-total-row">
+                            <span>Your Cost (COGS)</span>
+                            <span style="color: #dc2626;">$${totalCost.toFixed(2)}</span>
+                        </div>
+                        <div class="pl-total-row">
+                            <span>Total Sale Value</span>
+                            <span style="color: #059669;">$${totalSale.toFixed(2)}</span>
+                        </div>
+                        <div class="pl-total-row">
+                            <span>💰 Gross Profit</span>
+                            <span style="color: #7c3aed;">$${totalProfit.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `}
+            `;
+            
+            // Store label data for printing
+            window.pickListLabelData = pickListData.map(order => ({
+                customerName: order.customerName,
+                customerAddress: order.customerAddress,
+                customerCity: order.customerCity,
+                customerState: order.customerState,
+                customerZip: order.customerZip,
+                invoiceNum: order.invoiceNum,
+                date: order.date,
+                lines: order.lines.map(line => ({
+                    description: line.description,
+                    sku: line.sku,
+                    casesNeeded: line.casesNeeded,
+                    unitsPerPkg: line.unitsPerPkg,
+                    uom: line.uom,
+                    qty: line.qty
+                })),
+                totalCases: order.lines.reduce((sum, line) => sum + line.casesNeeded, 0),
+                status: order.status
+            }));
+            
+            return html;
+        }
+        
+        // Print Shipping Labels Function
+        function printShippingLabels() {
+            const labelData = window.pickListLabelData || [];
+            
+            if (labelData.length === 0) {
+                alert('No orders to print labels for!');
+                return;
+            }
+            
+            // Generate all labels - one per item case
+            const allLabels = [];
+            const today = new Date().toLocaleDateString();
+            
+            labelData.forEach(order => {
+                // Build full address
+                const addressParts = [];
+                if (order.customerAddress) addressParts.push(order.customerAddress);
+                const cityStateZip = [order.customerCity, order.customerState, order.customerZip].filter(Boolean).join(', ');
+                if (cityStateZip) addressParts.push(cityStateZip);
+                const fullAddress = addressParts.join('<br>');
+                
+                // Create labels for each item's cases
+                order.lines.forEach(line => {
+                    const unitsPerPkg = line.unitsPerPkg || 1;
+                    const totalQty = line.qty;
+                    const fullCases = Math.floor(totalQty / unitsPerPkg);
+                    const partialUnits = totalQty % unitsPerPkg;
+                    const totalLabels = fullCases + (partialUnits > 0 ? 1 : 0);
+                    
+                    // Create labels for full cases
+                    for (let box = 1; box <= fullCases; box++) {
+                        allLabels.push({
+                            customerName: order.customerName,
+                            customerAddress: fullAddress,
+                            invoiceNum: order.invoiceNum,
+                            date: order.date?.toLocaleDateString() || today,
+                            itemName: line.description,
+                            itemSku: line.sku || '-',
+                            itemQty: unitsPerPkg,
+                            isPartial: false,
+                            unitsPerPkg: unitsPerPkg,
+                            boxNum: box,
+                            totalBoxesForItem: totalLabels,
+                            uom: line.uom || 'case'
+                        });
+                    }
+                    
+                    // Create label for partial case if any
+                    if (partialUnits > 0) {
+                        allLabels.push({
+                            customerName: order.customerName,
+                            customerAddress: fullAddress,
+                            invoiceNum: order.invoiceNum,
+                            date: order.date?.toLocaleDateString() || today,
+                            itemName: line.description,
+                            itemSku: line.sku || '-',
+                            itemQty: partialUnits,
+                            isPartial: true,
+                            unitsPerPkg: unitsPerPkg,
+                            boxNum: fullCases + 1,
+                            totalBoxesForItem: totalLabels,
+                            uom: line.uom || 'case'
+                        });
+                    }
+                });
+            });
+            
+            // Create print window
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Shipping Labels - Nowak Distributing</title>
+                    <style>
+                        @page {
+                            size: letter;
+                            margin: 0.25in;
+                        }
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            font-family: Arial, sans-serif;
+                            background: white;
+                        }
+                        .label-grid {
+                            display: grid;
+                            grid-template-columns: repeat(2, 1fr);
+                            gap: 0.2in;
+                            padding: 0.2in;
+                        }
+                        .label {
+                            border: 2px solid #333;
+                            border-radius: 8px;
+                            padding: 12px;
+                            height: 3.2in;
+                            display: flex;
+                            flex-direction: column;
+                            page-break-inside: avoid;
+                            background: white;
+                        }
+                        .label-header {
+                            text-align: center;
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 6px;
+                            margin-bottom: 8px;
+                        }
+                        .label-header .company {
+                            font-size: 12px;
+                            font-weight: bold;
+                            color: #333;
+                        }
+                        .label-body {
+                            flex: 1;
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        .customer-section {
+                            margin-bottom: 8px;
+                        }
+                        .customer-name {
+                            font-size: 18px;
+                            font-weight: bold;
+                            color: #000;
+                            margin-bottom: 3px;
+                        }
+                        .customer-address {
+                            font-size: 11px;
+                            color: #444;
+                            line-height: 1.3;
+                        }
+                        .order-info {
+                            font-size: 10px;
+                            color: #666;
+                            margin-bottom: 8px;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .item-section {
+                            background: #f5f5f5;
+                            border: 2px solid #666;
+                            border-radius: 6px;
+                            padding: 8px;
+                            margin-bottom: 8px;
+                            flex: 1;
+                        }
+                        .item-label {
+                            font-size: 9px;
+                            color: #666;
+                            text-transform: uppercase;
+                            margin-bottom: 2px;
+                        }
+                        .item-name {
+                            font-size: 14px;
+                            font-weight: bold;
+                            color: #000;
+                            line-height: 1.2;
+                        }
+                        .item-sku {
+                            font-size: 10px;
+                            font-family: monospace;
+                            color: #666;
+                            margin-top: 2px;
+                        }
+                        .item-qty {
+                            font-size: 11px;
+                            color: #444;
+                            margin-top: 4px;
+                        }
+                        .label-footer {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            border-top: 2px solid #333;
+                            padding-top: 8px;
+                        }
+                        .box-indicator {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #000;
+                            background: #e0e0e0;
+                            padding: 4px 10px;
+                            border-radius: 5px;
+                            border: 2px solid #333;
+                        }
+                        .box-indicator.partial {
+                            background: #fff3cd;
+                            border-color: #f59e0b;
+                            color: #92400e;
+                        }
+                        .box-indicator.full {
+                            background: #d1fae5;
+                            border-color: #10b981;
+                            color: #065f46;
+                        }
+                        .box-total {
+                            font-size: 11px;
+                            color: #666;
+                            text-align: center;
+                        }
+                        .checkbox-area {
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        }
+                        .checkbox {
+                            width: 18px;
+                            height: 18px;
+                            border: 2px solid #333;
+                            border-radius: 3px;
+                        }
+                        .checkbox-label {
+                            font-size: 10px;
+                            color: #666;
+                        }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .label { break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="label-grid">
+                        ${allLabels.map(label => `
+                            <div class="label">
+                                <div class="label-header">
+                                    <div class="company">📦 NOWAK DISTRIBUTING</div>
+                                </div>
+                                <div class="label-body">
+                                    <div class="customer-section">
+                                        <div class="customer-name">${label.customerName}</div>
+                                        ${label.customerAddress ? `<div class="customer-address">${label.customerAddress}</div>` : ''}
+                                    </div>
+                                    <div class="order-info">
+                                        <span>📋 ${label.invoiceNum}</span>
+                                        <span>📅 ${label.date}</span>
+                                    </div>
+                                    <div class="item-section">
+                                        <div class="item-label">Contents:</div>
+                                        <div class="item-name">${label.itemName}</div>
+                                        <div class="item-sku">SKU: ${label.itemSku}</div>
+                                        <div class="item-qty">${label.itemQty} units ${label.isPartial ? `(of ${label.unitsPerPkg} per ${label.uom})` : ''}</div>
+                                    </div>
+                                </div>
+                                <div class="label-footer">
+                                    <div class="box-indicator ${label.isPartial ? 'partial' : 'full'}">
+                                        ${label.isPartial 
+                                            ? `⚠️ PARTIAL` 
+                                            : `✓ FULL ${label.uom.toUpperCase()}`
+                                        }
+                                    </div>
+                                    <div class="box-total">
+                                        ${label.isPartial 
+                                            ? `${label.itemQty} of ${label.unitsPerPkg}` 
+                                            : `#${label.boxNum} of ${label.totalBoxesForItem}`
+                                        }
+                                    </div>
+                                    <div class="checkbox-area">
+                                        <div class="checkbox"></div>
+                                        <div class="checkbox-label">✓</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
         
         async function generateSimpleInventoryModal() {
