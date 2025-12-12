@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V7 - Fixed PO/SO update functions (lines→lineItems) -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V7b - Added debug logging for API calls -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4862,6 +4862,7 @@
 
         async function apiCall(action, data = {}) {
             if (!API_URL) {
+                console.error('API_URL not configured!');
                 alert('Please configure your API URL in Settings first!');
                 switchTab('config');
                 return null;
@@ -4875,15 +4876,32 @@
                 });
                 
                 const url = `${API_URL}?${params.toString()}`;
+                console.log(`API Call: ${action}`, { url: url.substring(0, 100) + '...' });
+                
                 const response = await fetch(url, {
                     method: 'GET',
                     mode: 'cors'
                 });
 
-                const result = await response.json();
-                return result;
+                console.log(`API Response status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    console.error('API HTTP Error:', response.status, response.statusText);
+                    return { status: 'error', message: `HTTP ${response.status}: ${response.statusText}` };
+                }
+
+                const text = await response.text();
+                console.log('API Response text (first 200 chars):', text.substring(0, 200));
+                
+                try {
+                    const result = JSON.parse(text);
+                    return result;
+                } catch (parseError) {
+                    console.error('JSON Parse Error:', parseError, 'Response was:', text.substring(0, 500));
+                    return { status: 'error', message: 'Invalid JSON response from server' };
+                }
             } catch (error) {
-                console.error('API Error:', error);
+                console.error('API Fetch Error:', error);
                 return { status: 'error', message: error.toString() };
             }
         }
@@ -5890,18 +5908,24 @@
                 const suppResult = await apiCall('getSuppliers');
                 if (suppResult && suppResult.status === 'success') {
                     cachedSuppliers = suppResult.data;
+                } else {
+                    console.error('Failed to load suppliers:', suppResult);
                 }
             }
             
             // Now load and display purchases
+            console.log('Calling getPurchaseOrders...');
             const result = await apiCall('getPurchaseOrders');
+            console.log('getPurchaseOrders result:', result);
             
             if (result && result.status === 'success') {
                 purchasesData = result.data;
                 displayPurchases(result.data);
                 loadPurchaseFilterSuppliers(); // Populate filter dropdown
             } else {
-                document.getElementById('purchasesTable').innerHTML = '<div class="loading">Error loading purchases</div>';
+                console.error('getPurchaseOrders failed:', result);
+                const errorMsg = result?.message || 'Unknown error - check console';
+                document.getElementById('purchasesTable').innerHTML = `<div class="loading">Error loading purchases: ${errorMsg}</div>`;
             }
         }
         
@@ -7937,18 +7961,24 @@
                 const custResult = await apiCall('getCustomers');
                 if (custResult && custResult.status === 'success') {
                     cachedCustomers = custResult.data;
+                } else {
+                    console.error('Failed to load customers:', custResult);
                 }
             }
             
             // Now load and display sales
+            console.log('Calling getSalesOrders...');
             const result = await apiCall('getSalesOrders');
+            console.log('getSalesOrders result:', result);
             
             if (result && result.status === 'success') {
                 salesData = result.data;
                 displaySales(result.data);
                 loadSaleFilterCustomers(); // Populate filter dropdown
             } else {
-                document.getElementById('salesTable').innerHTML = '<div class="loading">Error loading sales</div>';
+                console.error('getSalesOrders failed:', result);
+                const errorMsg = result?.message || 'Unknown error - check console';
+                document.getElementById('salesTable').innerHTML = `<div class="loading">Error loading sales: ${errorMsg}</div>`;
             }
         }
         
