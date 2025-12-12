@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9m - Nav bar transparent, buttons on theme background -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V9q - Fixed PO receive with logging -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1504,11 +1504,10 @@
         
         /* Navigation Container - Uses dynamic CSS variable to match card theme */
         .nav-container {
-            background: transparent; /* Let buttons float on body background */
+            background: var(--primary, #667eea) !important; /* Force same as body background */
             border-radius: 0;
-            margin: 0 auto;
-            padding: 10px 20px 20px 20px;
-            max-width: 1400px;
+            margin: 0 -20px; /* Extend to edges to blend with body */
+            padding: 10px 40px 20px 40px;
         }
         
         /* Desktop Modal Features - Draggable & Resizable */
@@ -3857,6 +3856,19 @@
         }
         
         // ==================== MULTI-SELECT FILTER HELPER ====================
+        /**
+         * Focus an element only on desktop (not touch devices)
+         * Prevents keyboard from popping up on mobile when opening pickers
+         */
+        function focusOnDesktop(elementId) {
+            if (!('ontouchstart' in window)) {
+                setTimeout(() => {
+                    const el = document.getElementById(elementId);
+                    if (el) el.focus();
+                }, 100);
+            }
+        }
+        
         /**
          * Check if a value matches a filter that might contain comma-separated values
          * @param {string} value - The value to check (e.g., "C001")
@@ -16804,15 +16816,21 @@
             const receivedLines = [];
             const rows = document.querySelectorAll('#receiveItemsBody tr');
             
-            rows.forEach(row => {
+            console.log('Found ' + rows.length + ' rows in receive table');
+            
+            rows.forEach((row, idx) => {
                 const checkbox = row.querySelector('input[type="checkbox"]');
                 const qtyInput = row.querySelector('input[type="number"]');
+                
+                console.log('Row ' + idx + ': checkbox=' + (checkbox ? checkbox.checked : 'null') + ', qtyInput=' + (qtyInput ? qtyInput.value : 'null'));
                 
                 if (checkbox && checkbox.checked && qtyInput) {
                     const qty = parseFloat(qtyInput.value) || 0;
                     const itemId = qtyInput.dataset.itemId;
                     const qtyOrdered = parseFloat(qtyInput.dataset.ordered) || 0;
                     const cost = parseFloat(qtyInput.dataset.cost) || 0;
+                    
+                    console.log('  itemId=' + itemId + ', qty=' + qty);
                     
                     if (qty > 0 && itemId) {
                         receivedLines.push({
@@ -16824,6 +16842,8 @@
                     }
                 }
             });
+            
+            console.log('Collected ' + receivedLines.length + ' lines to receive');
             
             if (receivedLines.length === 0) {
                 alert('Please select at least one item to receive');
@@ -16841,7 +16861,7 @@
             }
             
             try {
-                // Call API to convert OUTGOING to INCOMING
+                // Call API to process PO receipt
                 const data = {
                     poId: poId,
                     invoiceNumber: invoiceNumber,
@@ -16850,18 +16870,26 @@
                     lines: receivedLines
                 };
                 
+                console.log('Calling receiveOutgoingPO with data:', JSON.stringify(data));
+                
                 const result = await apiCall('receiveOutgoingPO', data);
+                
+                console.log('API result:', JSON.stringify(result));
                 
                 if (result && result.status === 'success') {
                     alert('✅ Items received successfully! Inventory has been updated.');
                     document.getElementById('orderModal').style.display = 'none';
+                    document.body.classList.remove('modal-open');
                     
                     // Reload purchases and items
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    alert('❌ Error receiving items: ' + (result?.message || 'Unknown error'));
+                    alert('❌ Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
                 }
+            } catch (error) {
+                console.error('Error in commitReceive:', error);
+                alert('❌ Error: ' + error.message);
             } finally {
                 // UNLOCK
                 isCommittingReceive = false;
@@ -19061,19 +19089,32 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Open supplier picker for filter text inputs
         function openSupplierPickerForFilter(inputElement) {
+            // Blur input to prevent mobile keyboard from appearing
+            if (inputElement) inputElement.blur();
+            document.activeElement?.blur();
+            
             supplierPickerCallback = inputElement;
             supplierPickerIsFilter = true;
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
             document.getElementById('supplierPickerModal').style.display = 'block';
+            document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('supplierPickerSearch').focus();
-            }, 100);
+            
+            // Only focus search on desktop (not touch devices)
+            if (!('ontouchstart' in window)) {
+                setTimeout(() => {
+                    document.getElementById('supplierPickerSearch').focus();
+                }, 100);
+            }
         }
         
         // Open item picker for filter text inputs
         function openItemPickerForFilter(inputElement) {
+            // Blur input to prevent mobile keyboard from appearing
+            if (inputElement) inputElement.blur();
+            document.activeElement?.blur();
+            
             window.itemPickerCallback = inputElement;
             window.itemPickerIsFilter = true;
             window.itemPickerSupplierContext = ''; // No supplier context for filters
@@ -19105,29 +19146,43 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Show modal
             document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
-            // Focus search after a moment
-            setTimeout(() => {
-                document.getElementById('itemPickerSearch').focus();
-            }, 100);
+            // Only focus search on desktop (not touch devices)
+            if (!('ontouchstart' in window)) {
+                setTimeout(() => {
+                    document.getElementById('itemPickerSearch').focus();
+                }, 100);
+            }
         }
         
         // Open customer picker for filter text inputs
         function openCustomerPickerForFilter(inputElement) {
+            // Blur input to prevent mobile keyboard from appearing
+            if (inputElement) inputElement.blur();
+            document.activeElement?.blur();
+            
             customerPickerCallback = inputElement;
             window.customerPickerIsFilter = true;
             document.getElementById('customerPickerSearch').value = '';
             renderCustomerPickerList();
             document.getElementById('customerPickerModal').style.display = 'block';
+            document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('customerPickerSearch').focus();
-            }, 100);
+            
+            // Only focus search on desktop (not touch devices)
+            if (!('ontouchstart' in window)) {
+                setTimeout(() => {
+                    document.getElementById('customerPickerSearch').focus();
+                }, 100);
+            }
         }
         
         // Customer picker for report filters
         function openCustomerPickerForReport() {
+            document.activeElement?.blur();
+            
             window.reportPickerType = 'customer';
             window.customerPickerIsFilter = true; // Allow "All Customers" option
             customerPickerCallback = {
@@ -19147,13 +19202,14 @@ NOTE: Please print the attached PO document for full details.`;
             renderCustomerPickerList();
             document.getElementById('customerPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('customerPickerSearch').focus();
-            }, 100);
+            document.body.classList.add('modal-open');
+            focusOnDesktop('customerPickerSearch');
         }
         
         // Supplier picker for report filters
         function openSupplierPickerForReport() {
+            document.activeElement?.blur();
+            
             window.reportPickerType = 'supplier';
             window.supplierPickerIsFilter = true; // Allow "All Suppliers" option
             supplierPickerCallback = {
@@ -19173,13 +19229,15 @@ NOTE: Please print the attached PO document for full details.`;
             renderSupplierPickerList();
             document.getElementById('supplierPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => {
-                document.getElementById('supplierPickerSearch').focus();
-            }, 100);
+            document.body.classList.add('modal-open');
+            focusOnDesktop('supplierPickerSearch');
         }
         
         // Supplier picker for Purchase Orders filter
         function openSupplierPickerForPurchases() {
+            // Blur to prevent mobile keyboard
+            document.activeElement?.blur();
+            
             window.reportPickerType = 'supplier';
             window.supplierPickerIsFilter = true;
             supplierPickerCallback = {
@@ -19200,13 +19258,19 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('supplierPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('supplierPickerSearch').focus();
-            }, 100);
+            
+            // Only focus on desktop
+            if (!('ontouchstart' in window)) {
+                setTimeout(() => {
+                    document.getElementById('supplierPickerSearch').focus();
+                }, 100);
+            }
         }
         
         // Supplier picker for Inventory filter
         function openSupplierPickerForInventory() {
+            document.activeElement?.blur();
+            
             window.reportPickerType = 'supplier';
             window.supplierPickerIsFilter = true;
             supplierPickerCallback = {
@@ -19227,9 +19291,7 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('supplierPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('supplierPickerSearch').focus();
-            }, 100);
+            focusOnDesktop('supplierPickerSearch');
         }
         
         // Supplier picker for Pricing Workbench filter
@@ -19733,6 +19795,9 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Customer picker for Sales Orders filter
         function openCustomerPickerForSales() {
+            // Blur to prevent mobile keyboard
+            document.activeElement?.blur();
+            
             window.reportPickerType = 'customer';
             window.customerPickerIsFilter = true;
             customerPickerCallback = {
@@ -19753,9 +19818,13 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('customerPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
-            setTimeout(() => {
-                document.getElementById('customerPickerSearch').focus();
-            }, 100);
+            
+            // Only focus on desktop
+            if (!('ontouchstart' in window)) {
+                setTimeout(() => {
+                    document.getElementById('customerPickerSearch').focus();
+                }, 100);
+            }
         }
         
         function closeCustomerPicker() {
