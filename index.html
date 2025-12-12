@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9 - Fixed ALL multi-select filters (customer/supplier/item) across all pages -->
+    <!-- ⚡ CACHE BUSTER: Version 2024-12-11-V9d - Fixed $0 in dashboard/reports by calculating line totals -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3808,6 +3808,33 @@
         let selectedItemsForPricing = [];
         let selectedSuppliersForPricing = [];
         
+        // ==================== DATE PARSING HELPER ====================
+        /**
+         * Parse a YYYY-MM-DD date string as LOCAL time (not UTC)
+         * This fixes timezone issues where new Date("2025-12-12") is parsed as UTC midnight
+         * which then becomes the previous day in local time zones
+         * @param {string} dateStr - Date string in YYYY-MM-DD format
+         * @returns {Date} - Date object in local time
+         */
+        function parseLocalDate(dateStr) {
+            if (!dateStr) return null;
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        }
+        
+        /**
+         * Format a Date object as YYYY-MM-DD in LOCAL time (not UTC)
+         * @param {Date} d - Date object
+         * @returns {string} - Date string in YYYY-MM-DD format
+         */
+        function formatLocalDate(d) {
+            if (!d) return '';
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
         // ==================== MULTI-SELECT FILTER HELPER ====================
         /**
          * Check if a value matches a filter that might contain comma-separated values
@@ -5970,10 +5997,10 @@
                 
                 const poDate = new Date(po.PO_Date);
                 
-                // Date FROM comparison (start of day)
+                // Date FROM comparison (start of day) - use global parseLocalDate helper
                 let matchesDateFrom = true;
                 if (dateFrom) {
-                    const fromDateObj = new Date(dateFrom);
+                    const fromDateObj = parseLocalDate(dateFrom);
                     fromDateObj.setHours(0, 0, 0, 0);
                     matchesDateFrom = poDate >= fromDateObj;
                 }
@@ -5981,7 +6008,7 @@
                 // Date TO comparison (end of day - 23:59:59)
                 let matchesDateTo = true;
                 if (dateTo) {
-                    const toDateObj = new Date(dateTo);
+                    const toDateObj = parseLocalDate(dateTo);
                     toDateObj.setHours(23, 59, 59, 999);
                     matchesDateTo = poDate <= toDateObj;
                 }
@@ -8042,10 +8069,10 @@
                 // FIX: Check both Sale_Date and SO_Date (like displaySales does)
                 const soDate = new Date(so.Sale_Date || so.SO_Date);
                 
-                // Date FROM comparison (start of day)
+                // Date FROM comparison (start of day) - use global parseLocalDate helper
                 let matchesDateFrom = true;
                 if (dateFrom) {
-                    const fromDateObj = new Date(dateFrom);
+                    const fromDateObj = parseLocalDate(dateFrom);
                     fromDateObj.setHours(0, 0, 0, 0);
                     matchesDateFrom = soDate >= fromDateObj;
                 }
@@ -8053,7 +8080,7 @@
                 // Date TO comparison (end of day - 23:59:59)
                 let matchesDateTo = true;
                 if (dateTo) {
-                    const toDateObj = new Date(dateTo);
+                    const toDateObj = parseLocalDate(dateTo);
                     toDateObj.setHours(23, 59, 59, 999);
                     matchesDateTo = soDate <= toDateObj;
                 }
@@ -8155,9 +8182,9 @@
                     return;
             }
             
-            // Format dates for input fields (YYYY-MM-DD)
-            const fromDateStr = fromDate.toISOString().split('T')[0];
-            const toDateStr = toDate.toISOString().split('T')[0];
+            // Format dates for input fields using LOCAL time (global helper)
+            const fromDateStr = formatLocalDate(fromDate);
+            const toDateStr = formatLocalDate(toDate);
             
             console.log('Setting dates:', fromDateStr, 'to', toDateStr); // Debug
             
@@ -10844,7 +10871,9 @@
                         const packageCost = parseFloat(item?.Package_Cost) || 0;
                         const unitCost = packageCost / unitsPerPackage;
                         const quantity = parseInt(line.Quantity || 0);
-                        const lineTotal = parseFloat(line.Line_Total || 0);
+                        // Calculate line total from qty * price (Line_Total may not exist)
+                        const unitPrice = parseFloat(line.Unit_Price) || 0;
+                        const lineTotal = quantity * unitPrice;
                         const lineCost = quantity * unitCost;
                         
                         allDetails.push({
@@ -10895,7 +10924,7 @@
             
             // Date filters
             if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 if (!isNaN(fromDate.getTime())) {
                     fromDate.setHours(0, 0, 0, 0);
                     filtered = filtered.filter(d => {
@@ -10905,7 +10934,7 @@
                 }
             }
             if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 if (!isNaN(toDate.getTime())) {
                     toDate.setHours(23, 59, 59, 999);
                     filtered = filtered.filter(d => {
@@ -11007,7 +11036,7 @@
             
             // Apply filters with mobile-safe date parsing
             if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 if (!isNaN(fromDate.getTime())) {
                     fromDate.setHours(0, 0, 0, 0);
                     sales = sales.filter(s => {
@@ -11017,7 +11046,7 @@
                 }
             }
             if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 if (!isNaN(toDate.getTime())) {
                     toDate.setHours(23, 59, 59, 999);
                     sales = sales.filter(s => {
@@ -11096,6 +11125,10 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         line.SO_Date = so.Sale_Date || so.SO_Date;
+                        // Calculate line total (Line_Total may not exist in API response)
+                        const qty = parseInt(line.Quantity || 0);
+                        const unitPrice = parseFloat(line.Unit_Price || 0);
+                        line.Line_Total = qty * unitPrice;
                         allLines.push(line);
                     });
                 }
@@ -11244,7 +11277,7 @@
             }
             
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 fromDate.setHours(0, 0, 0, 0);
                 purchases = purchases.filter(p => {
                     const poDate = parseFlexibleDate(p.PO_Date);
@@ -11252,7 +11285,7 @@
                 });
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59, 999);
                 purchases = purchases.filter(p => {
                     const poDate = parseFlexibleDate(p.PO_Date);
@@ -11346,7 +11379,7 @@
             }
             
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 fromDate.setHours(0, 0, 0, 0);
                 purchases = purchases.filter(p => {
                     const poDate = parseFlexibleDate(p.PO_Date);
@@ -11354,7 +11387,7 @@
                 });
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59, 999);
                 purchases = purchases.filter(p => {
                     const poDate = parseFlexibleDate(p.PO_Date);
@@ -11528,7 +11561,7 @@
                 try {
                     if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
                         console.log('Applying fromDate filter:', reportFilters.fromDate);
-                        const fromDate = new Date(reportFilters.fromDate);
+                        const fromDate = parseLocalDate(reportFilters.fromDate);
                         if (!isNaN(fromDate.getTime())) {
                             fromDate.setHours(0, 0, 0, 0);
                             adjustments = adjustments.filter(a => {
@@ -11545,7 +11578,7 @@
                     
                     if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
                         console.log('Applying toDate filter:', reportFilters.toDate);
-                        const toDate = new Date(reportFilters.toDate);
+                        const toDate = parseLocalDate(reportFilters.toDate);
                         if (!isNaN(toDate.getTime())) {
                             toDate.setHours(23, 59, 59, 999);
                             adjustments = adjustments.filter(a => {
@@ -11959,7 +11992,7 @@
             try {
                 // From date
                 if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
-                    const fromDate = new Date(reportFilters.fromDate);
+                    const fromDate = parseLocalDate(reportFilters.fromDate);
                     if (!isNaN(fromDate.getTime())) {
                         fromDate.setHours(0, 0, 0, 0);
                         filtered = filtered.filter(item => {
@@ -11971,7 +12004,7 @@
                 
                 // To date
                 if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
-                    const toDate = new Date(reportFilters.toDate);
+                    const toDate = parseLocalDate(reportFilters.toDate);
                     if (!isNaN(toDate.getTime())) {
                         toDate.setHours(23, 59, 59, 999);
                         filtered = filtered.filter(item => {
@@ -13595,9 +13628,10 @@
         // ==================== DAILY DASHBOARD ====================
         
         async function generateDailyDashboardModal() {
-            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : new Date();
-            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : new Date();
+            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : new Date();
+            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : new Date();
             fromDate.setHours(0, 0, 0, 0);
+            toDate.setHours(23, 59, 59, 999);
             
             // Fetch all data
             const [salesResult, itemsResult, customersResult] = await Promise.all([
@@ -13663,6 +13697,10 @@
                         const unitCost = pkgCost / unitsPerPkg;
                         totalCost += qty * unitCost;
                         
+                        // Calculate line total (Line_Total may not exist in data)
+                        const unitPrice = parseFloat(line.Unit_Price) || 0;
+                        const lineTotal = qty * unitPrice;
+                        
                         // Track product sales
                         const itemId = line.Item_ID;
                         if (!productSales[itemId]) {
@@ -13674,7 +13712,7 @@
                             };
                         }
                         productSales[itemId].qty += qty;
-                        productSales[itemId].sales += parseFloat(line.Line_Total) || 0;
+                        productSales[itemId].sales += lineTotal;
                     });
                 }
             }
@@ -13906,8 +13944,9 @@
         
         async function generateCustomerDashboardModal() {
             const customerId = reportFilters.customer;
-            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : null;
-            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : null;
+            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : null;
+            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : null;
+            if (toDate) toDate.setHours(23, 59, 59, 999);
             
             // Fetch all data
             const [salesResult, itemsResult, customersResult] = await Promise.all([
@@ -13980,6 +14019,10 @@
                         const qty = parseInt(line.Quantity) || 0;
                         totalQty += qty;
                         
+                        // Calculate line total (Line_Total may not exist in data)
+                        const unitPrice = parseFloat(line.Unit_Price) || 0;
+                        const lineTotal = qty * unitPrice;
+                        
                         const item = items.find(i => i.Item_ID === line.Item_ID);
                         const itemId = line.Item_ID;
                         if (!productSales[itemId]) {
@@ -13991,7 +14034,7 @@
                             };
                         }
                         productSales[itemId].qty += qty;
-                        productSales[itemId].sales += parseFloat(line.Line_Total) || 0;
+                        productSales[itemId].sales += lineTotal;
                     });
                 }
             }
@@ -14204,8 +14247,9 @@
         
         async function generateSupplierDashboardModal() {
             const supplierId = reportFilters.supplier;
-            const fromDate = reportFilters.fromDate ? new Date(reportFilters.fromDate) : null;
-            const toDate = reportFilters.toDate ? new Date(reportFilters.toDate + 'T23:59:59') : null;
+            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : null;
+            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : null;
+            if (toDate) toDate.setHours(23, 59, 59, 999);
             
             // Fetch all data
             const [poResult, itemsResult, suppliersResult] = await Promise.all([
@@ -14280,6 +14324,10 @@
                         const qty = parseInt(line.Quantity) || 0;
                         totalQty += qty;
                         
+                        // Calculate line total from qty * cost (Line_Total may not exist)
+                        const unitCost = parseFloat(line.Unit_Cost) || 0;
+                        const lineTotal = qty * unitCost;
+                        
                         const item = items.find(i => i.Item_ID === line.Item_ID);
                         const itemId = line.Item_ID;
                         if (!productPurchases[itemId]) {
@@ -14291,7 +14339,7 @@
                             };
                         }
                         productPurchases[itemId].qty += qty;
-                        productPurchases[itemId].cost += parseFloat(line.Line_Total) || 0;
+                        productPurchases[itemId].cost += lineTotal;
                     });
                 }
             }
@@ -14558,7 +14606,8 @@
                         const unitCost = packageCost / unitsPerPackage;
                         const quantity = parseInt(line.Quantity || 0);
                         const unitPrice = parseFloat(line.Unit_Price || 0);
-                        const lineTotal = parseFloat(line.Line_Total || 0);
+                        // Calculate line total from qty * price (Line_Total may not exist)
+                        const lineTotal = quantity * unitPrice;
                         const lineCost = quantity * unitCost;
                         
                         allDetails.push({
@@ -14587,11 +14636,11 @@
             // APPLY FILTERS
             let filtered = allDetails;
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 filtered = filtered.filter(d => new Date(d.soDate) >= fromDate);
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
                 filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
             }
@@ -14732,6 +14781,10 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const quantity = parseInt(line.Quantity || 0);
+                        const unitPrice = parseFloat(line.Unit_Price || 0);
+                        // Calculate line total from qty * price (Line_Total may not exist)
+                        const lineTotal = quantity * unitPrice;
                         allDetails.push({
                             soId: so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
@@ -14740,9 +14793,9 @@
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
-                            quantity: parseInt(line.Quantity || 0),
-                            unitPrice: parseFloat(line.Unit_Price || 0),
-                            lineTotal: parseFloat(line.Line_Total || 0),
+                            quantity: quantity,
+                            unitPrice: unitPrice,
+                            lineTotal: lineTotal,
                             paymentStatus: so.Payment_Status || 'Unknown',
                             status: so.Status || 'Completed'
                         });
@@ -14756,11 +14809,11 @@
             // APPLY FILTERS
             let filtered = allDetails;
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 filtered = filtered.filter(d => new Date(d.soDate) >= fromDate);
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
                 filtered = filtered.filter(d => new Date(d.soDate) <= toDate);
             }
@@ -14874,6 +14927,10 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         line.SO_Date = so.Sale_Date || so.SO_Date;
+                        // Calculate line total (Line_Total may not exist in API response)
+                        const qty = parseInt(line.Quantity || 0);
+                        const unitPrice = parseFloat(line.Unit_Price || 0);
+                        line.Line_Total = qty * unitPrice;
                         allLines.push(line);
                     });
                 }
@@ -14882,11 +14939,11 @@
             // APPLY DATE FILTERS to sales lines
             let filteredLines = allLines;
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 filteredLines = filteredLines.filter(line => new Date(line.SO_Date) >= fromDate);
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
                 filteredLines = filteredLines.filter(line => new Date(line.SO_Date) <= toDate);
             }
@@ -15031,6 +15088,10 @@
                 if (linesResult?.data) {
                     linesResult.data.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const quantity = parseInt(line.Quantity || 0);
+                        const unitCost = parseFloat(line.Unit_Cost || 0);
+                        // Calculate line total from qty * cost (Line_Total may not exist)
+                        const lineTotal = quantity * unitCost;
                         allDetails.push({
                             poId: po.PO_ID,
                             poDate: po.PO_Date,
@@ -15039,9 +15100,9 @@
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
-                            quantity: parseInt(line.Quantity || 0),
-                            unitCost: parseFloat(line.Unit_Cost || 0),
-                            lineTotal: parseFloat(line.Line_Total || 0),
+                            quantity: quantity,
+                            unitCost: unitCost,
+                            lineTotal: lineTotal,
                             paymentStatus: po.Payment_Status || 'Unknown',
                             status: po.Status || 'Received'
                         });
@@ -15055,11 +15116,11 @@
             // APPLY FILTERS
             let filtered = allDetails;
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 filtered = filtered.filter(d => new Date(d.poDate) >= fromDate);
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
                 filtered = filtered.filter(d => new Date(d.poDate) <= toDate);
             }
@@ -15170,11 +15231,11 @@
             
             // APPLY FILTERS
             if (reportFilters.fromDate) {
-                const fromDate = new Date(reportFilters.fromDate);
+                const fromDate = parseLocalDate(reportFilters.fromDate);
                 purchases = purchases.filter(po => new Date(po.PO_Date) >= fromDate);
             }
             if (reportFilters.toDate) {
-                const toDate = new Date(reportFilters.toDate);
+                const toDate = parseLocalDate(reportFilters.toDate);
                 toDate.setHours(23, 59, 59);
                 purchases = purchases.filter(po => new Date(po.PO_Date) <= toDate);
             }
@@ -19131,6 +19192,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeSupplierPicker() {
             document.getElementById('supplierPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             supplierPickerCallback = null;
         }
         
@@ -19618,6 +19680,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeCustomerPicker() {
             document.getElementById('customerPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             customerPickerCallback = null;
         }
         
@@ -19672,6 +19735,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeReasonPicker() {
             document.getElementById('reasonPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
         
         // ==================== UOM PICKER ====================
@@ -19727,6 +19791,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeUOMPicker() {
             document.getElementById('uomPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             uomPickerTargetId = null;
         }
         
@@ -20227,6 +20292,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeThemePicker() {
             document.getElementById('themePickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
         
         function filterThemePicker() {
@@ -20617,6 +20683,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeStatusPicker() {
             document.getElementById('statusPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             statusPickerCallback = null;
         }
         
@@ -20752,6 +20819,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closePOPicker() {
             document.getElementById('poPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             poPickerCallback = null;
         }
         
@@ -20970,6 +21038,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeInvoicePicker() {
             document.getElementById('invoicePickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             invoicePickerCallback = null;
         }
         
@@ -21161,6 +21230,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closeItemPickerForReport() {
             document.getElementById('itemPickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
         
         function renderItemPickerListForInventory() {
@@ -21706,6 +21776,7 @@ NOTE: Please print the attached PO document for full details.`;
         function closePOTypePicker() {
             document.getElementById('poTypePickerModal').style.display = 'none';
             document.body.style.overflow = '';
+            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
         
         function selectPOType(typeValue, typeName) {
