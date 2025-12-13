@@ -1143,6 +1143,7 @@
                 padding: 0 !important;
             }
             
+            /* Modal container - fixed, flex layout, no scroll */
             #reportSetupModal > div {
                 position: fixed !important;
                 top: 0 !important;
@@ -1154,16 +1155,18 @@
                 max-height: 100% !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
-                overflow-y: auto !important;
-                -webkit-overflow-scrolling: touch !important;
+                overflow: hidden !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
             
             #reportSetupHeader {
-                position: sticky !important;
-                top: 0 !important;
+                position: relative !important;
+                top: auto !important;
                 z-index: 10 !important;
                 padding: 12px 15px !important;
                 flex-wrap: nowrap !important;
+                flex-shrink: 0 !important;
             }
             
             #reportSetupHeader h2 {
@@ -1177,23 +1180,31 @@
             #reportSetupFilters {
                 padding: 12px !important;
                 margin-top: 0 !important;
+                flex-shrink: 0 !important;
             }
             
+            /* Content area - THIS SCROLLS */
             #reportSetupContent {
+                flex: 1 !important;
+                min-height: 0 !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
                 padding: 12px !important;
-                padding-bottom: 70px !important;
+                padding-bottom: 80px !important;
             }
             
             /* Report Modal Footer - Ensure buttons are visible */
             #reportSetupFooter {
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
+                position: relative !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
                 width: 100% !important;
                 padding: 10px 12px !important;
                 gap: 8px !important;
                 z-index: 10 !important;
+                flex-shrink: 0 !important;
             }
         }
         
@@ -1225,6 +1236,7 @@
                 padding: 0 !important;
             }
             
+            /* Modal container - fixed, no scroll */
             #reportSetupModal > div {
                 position: fixed !important;
                 top: 0 !important;
@@ -1236,39 +1248,102 @@
                 max-height: 100% !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
-                overflow-y: auto !important;
-                -webkit-overflow-scrolling: touch !important;
+                overflow: hidden !important; /* DON'T scroll here */
+                display: flex !important;
+                flex-direction: column !important;
             }
             
+            /* Header - fixed at top */
             #reportSetupHeader {
-                position: sticky !important;
-                top: 0 !important;
+                position: relative !important;
+                top: auto !important;
+                flex-shrink: 0 !important;
                 z-index: 10 !important;
                 background: var(--primary, #667eea) !important;
                 border-radius: 0 !important;
             }
             
+            /* Filters area - below header */
             #reportSetupFilters {
                 margin-top: 0 !important;
+                flex-shrink: 0 !important;
             }
             
+            /* CONTENT AREA - THIS IS WHAT SCROLLS */
             #reportSetupContent {
-                padding-bottom: 65px !important;
+                flex: 1 !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding: 12px !important;
+                padding-bottom: 80px !important;
+                min-height: 0 !important; /* Important for flex scrolling */
             }
             
+            /* Footer - fixed at bottom */
             #reportSetupFooter {
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
+                position: relative !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
                 width: 100% !important;
                 border-radius: 0 !important;
                 z-index: 10 !important;
+                flex-shrink: 0 !important;
             }
         }
         
         /* Landscape orientation on mobile devices */
         @media (max-height: 600px) and (orientation: landscape) {
+            /* Report Modal in Landscape - proper scrolling */
+            #reportSetupModal > div {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                overflow: hidden !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            #reportSetupHeader {
+                position: relative !important;
+                flex-shrink: 0 !important;
+                padding: 8px 12px !important;
+            }
+            
+            #reportSetupHeader h2 {
+                font-size: 14px !important;
+            }
+            
+            #reportSetupFilters {
+                margin-top: 0 !important;
+                flex-shrink: 0 !important;
+                padding: 8px !important;
+            }
+            
+            #reportSetupContent {
+                flex: 1 !important;
+                min-height: 0 !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding: 8px !important;
+                padding-bottom: 60px !important;
+            }
+            
+            #reportSetupFooter {
+                position: relative !important;
+                flex-shrink: 0 !important;
+                padding: 6px 10px !important;
+            }
+            
             html, body {
                 overflow-x: auto;
                 overflow-y: auto;
@@ -23442,21 +23517,21 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- Report Setup Modal -->
     <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center;">
-        <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; position: relative;">
-            <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; position: absolute; top: 0; left: 0; right: 0; z-index: 100;">
+        <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
                 <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
             </div>
-            <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; margin-top: 70px;">
+            <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
                 <!-- Filters will be populated by JavaScript -->
             </div>
-            <div id="reportSetupContent" style="padding: 20px; padding-bottom: 80px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+            <div id="reportSetupContent" style="padding: 20px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0;">
                 <div style="text-align: center; padding: 40px; color: #888;">
                     <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
                     <p>Configure filters above and click <strong>Run Report</strong></p>
                 </div>
             </div>
-            <div id="reportSetupFooter" style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: space-between; background: #f8f9fa; border-radius: 0 0 12px 12px; flex-wrap: wrap; position: absolute; bottom: 0; left: 0; right: 0; z-index: 100;">
+            <div id="reportSetupFooter" style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: space-between; background: #f8f9fa; border-radius: 0 0 12px 12px; flex-wrap: wrap; flex-shrink: 0;">
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="btn btn-secondary" onclick="printReport()" title="Print Report (or Save as PDF)">🖨️ Print</button>
                 </div>
