@@ -4,14 +4,16 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Saturday, December 14, 2025 @ 3:25 AM CST
-         VERSION: V10Z-20251214-0325
+         LAST UPDATED: Saturday, December 14, 2025 @ 3:50 AM CST
+         VERSION: V10Z-20251214-0350
          =====================================================
          CHANGES IN THIS VERSION:
-         - Badge and Settings HIDE on scroll (fade out after 50px)
-         - Production letter = white (matches gear)
-         - Fixed button names to Proper Case
-         - Only Action Dashboard is RED, all others use theme color
+         - FIXED: Reduced mobile touch sensitivity on dropdowns
+         - Added 300ms debounce between select taps
+         - Added touch-action: manipulation to all buttons/selects
+         - Min 44px touch targets on mobile
+         - Environment buttons work on mobile
+         - All dropdowns refresh on environment switch
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -45,6 +47,37 @@
             overflow-y: auto;
             /* Prevent pull-to-refresh but allow scroll */
             overscroll-behavior-y: contain;
+        }
+        
+        /* MOBILE TOUCH SENSITIVITY FIX */
+        /* Reduce accidental taps and double-firing */
+        select, 
+        button, 
+        .btn, 
+        .report-btn,
+        input[type="button"],
+        input[type="submit"] {
+            touch-action: manipulation; /* Disables double-tap zoom */
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1); /* Subtle tap feedback */
+            -webkit-touch-callout: none; /* Disable callout on long press */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* Larger touch targets on mobile */
+        @media (max-width: 768px) {
+            select, 
+            button:not(.btn-small), 
+            .btn:not(.btn-small) {
+                min-height: 44px; /* Apple's recommended touch target */
+                padding: 12px 16px;
+            }
+            
+            /* Add small delay before select opens to prevent accidental taps */
+            select {
+                -webkit-appearance: none;
+                appearance: none;
+            }
         }
 
         .container {
@@ -1928,13 +1961,13 @@
                     <div style="margin-bottom: 20px;">
                         <p style="margin: 0 0 10px 0; color: #666; font-size: 13px; font-weight: 600;">🎯 Quick Switch Environment:</p>
                         <div id="envButtonsContainer" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button type="button" id="envBtn-production" onclick="switchEnvironment('production')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #059669; background: #d1fae5; color: #065f46;">
+                            <button type="button" id="envBtn-production" onclick="switchEnvironment('production')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #059669; background: #d1fae5; color: #065f46; -webkit-tap-highlight-color: transparent; touch-action: manipulation; min-height: 44px;">
                                 🏭 Production
                             </button>
-                            <button type="button" id="envBtn-training" onclick="switchEnvironment('training')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #0284c7; background: white; color: #0284c7;">
+                            <button type="button" id="envBtn-training" onclick="switchEnvironment('training')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #0284c7; background: white; color: #0284c7; -webkit-tap-highlight-color: transparent; touch-action: manipulation; min-height: 44px;">
                                 📚 Training
                             </button>
-                            <button type="button" id="envBtn-test" onclick="switchEnvironment('test')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #dc2626; background: white; color: #dc2626;">
+                            <button type="button" id="envBtn-test" onclick="switchEnvironment('test')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #dc2626; background: white; color: #dc2626; -webkit-tap-highlight-color: transparent; touch-action: manipulation; min-height: 44px;">
                                 🛠️ Development
                             </button>
                         </div>
@@ -5396,7 +5429,7 @@
         }
         
         // ==================== HIDE FIXED ELEMENTS ON SCROLL ====================
-        // Since position:fixed isn't working, hide elements when user scrolls
+        // Hide badge and settings when scrolling down, show at top
         (function() {
             let ticking = false;
             
@@ -5562,6 +5595,9 @@
                     loadInventory()
                 ]);
                 
+                // IMPORTANT: Repopulate ALL dropdowns with new data
+                repopulateAllDropdowns();
+                
                 // Show success message
                 showStatus('configStatus', `✅ All data loaded from ${envNames[currentEnvironment]}!`, 'success');
                 console.log('✅ All data refreshed successfully');
@@ -5570,6 +5606,101 @@
                 console.error('Error refreshing data:', error);
                 showStatus('configStatus', `⚠️ Some data may not have loaded. Try refreshing individual tabs.`, 'error');
             }
+        }
+        
+        // Repopulate ALL dropdowns after environment switch
+        function repopulateAllDropdowns() {
+            console.log('🔄 Repopulating all dropdowns with new environment data...');
+            
+            // Customer dropdowns
+            const customerSelects = document.querySelectorAll('#soCustomer, #filter_customer, #custDash_customer');
+            customerSelects.forEach(select => {
+                if (select) {
+                    const currentValue = select.value;
+                    select.innerHTML = '<option value="">Select Customer</option>';
+                    if (select.id === 'filter_customer' || select.id === 'custDash_customer') {
+                        select.innerHTML = '<option value="">All Customers</option>';
+                    }
+                    cachedCustomers.forEach(c => {
+                        select.innerHTML += `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`;
+                    });
+                    // Restore selection if still valid
+                    if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                        select.value = currentValue;
+                    }
+                }
+            });
+            
+            // Supplier dropdowns
+            const supplierSelects = document.querySelectorAll('#poSupplier, #filterSupplier, #filterItemSupplier, #createPOSupplier, #suppDash_supplier');
+            supplierSelects.forEach(select => {
+                if (select) {
+                    const currentValue = select.value;
+                    const isFilter = select.id.includes('filter') || select.id.includes('Dash');
+                    select.innerHTML = isFilter ? '<option value="">All Suppliers</option>' : '<option value="">Select Supplier</option>';
+                    cachedSuppliers.forEach(s => {
+                        select.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                    });
+                    if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                        select.value = currentValue;
+                    }
+                }
+            });
+            
+            // Item dropdowns (Sales Order line items)
+            document.querySelectorAll('.so-item').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select Item</option>';
+                cachedItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
+                });
+                if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                    select.value = currentValue;
+                }
+            });
+            
+            // Item dropdowns (Purchase Order line items)
+            document.querySelectorAll('.po-item').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select Item</option>';
+                cachedItems.forEach(item => {
+                    const packageCost = parseFloat(item.Package_Cost) || 0;
+                    const unitsPerPackage = parseInt(item.Units_Per_Package) || 1;
+                    select.innerHTML += `<option value="${item.Item_ID}" data-cost="${packageCost.toFixed(2)}" data-units="${unitsPerPackage}">${item.Item_Description}</option>`;
+                });
+                if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                    select.value = currentValue;
+                }
+            });
+            
+            // Create PO item dropdowns
+            document.querySelectorAll('.createpo-item').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select item...</option>';
+                cachedItems.forEach(item => {
+                    const packageCost = parseFloat(item.Package_Cost) || 0;
+                    const unitsPerPackage = parseInt(item.Units_Per_Package) || 1;
+                    select.innerHTML += `<option value="${item.Item_ID}" data-cost="${packageCost.toFixed(2)}" data-units="${unitsPerPackage}">${item.Item_Description}</option>`;
+                });
+                if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                    select.value = currentValue;
+                }
+            });
+            
+            // Filter item dropdown
+            const filterItem = document.getElementById('filter_item');
+            if (filterItem) {
+                const currentValue = filterItem.value;
+                filterItem.innerHTML = '<option value="">All Items</option>';
+                cachedItems.forEach(item => {
+                    filterItem.innerHTML += `<option value="${item.Item_ID}">${item.Item_Description}</option>`;
+                });
+                if (currentValue && filterItem.querySelector(`option[value="${currentValue}"]`)) {
+                    filterItem.value = currentValue;
+                }
+            }
+            
+            console.log('✅ All dropdowns repopulated');
         }
         
         // Initialize environment URLs in the form on page load
@@ -5584,6 +5715,27 @@
             
             // Update UI to show current environment
             updateEnvironmentUI();
+            
+            // MOBILE FIX: Add touch-friendly event listeners to environment buttons
+            ['production', 'training', 'test'].forEach(env => {
+                const btn = document.getElementById(`envBtn-${env}`);
+                if (btn) {
+                    // Remove inline onclick to avoid double-firing
+                    btn.removeAttribute('onclick');
+                    
+                    // Add both click and touchend for mobile compatibility
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Environment button clicked:', env);
+                        switchEnvironment(env);
+                    });
+                    
+                    // Make touch more responsive
+                    btn.style.touchAction = 'manipulation';
+                    btn.style.webkitTapHighlightColor = 'transparent';
+                }
+            });
         }
         
         let cachedSuppliers = [];
@@ -5599,6 +5751,48 @@
         let selectedItemsForInventory = [];
         let selectedItemsForPricing = [];
         let selectedSuppliersForPricing = [];
+        
+        // ==================== TOUCH-AWARE PICKER SELECTION ====================
+        // Prevents accidental selections when scrolling through picker lists
+        // A selection only fires if the finger didn't move more than the threshold
+        
+        const pickerTouchState = {
+            startX: 0,
+            startY: 0,
+            moved: false,
+            threshold: 10  // pixels - if finger moves more than this, it's a scroll not a tap
+        };
+        
+        // Call this on touchstart for picker cards
+        function pickerTouchStart(e) {
+            const touch = e.touches[0];
+            pickerTouchState.startX = touch.clientX;
+            pickerTouchState.startY = touch.clientY;
+            pickerTouchState.moved = false;
+        }
+        
+        // Call this on touchmove for picker cards
+        function pickerTouchMove(e) {
+            if (pickerTouchState.moved) return; // Already marked as moved
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - pickerTouchState.startX);
+            const deltaY = Math.abs(touch.clientY - pickerTouchState.startY);
+            if (deltaX > pickerTouchState.threshold || deltaY > pickerTouchState.threshold) {
+                pickerTouchState.moved = true;
+            }
+        }
+        
+        // Call this on touchend - returns true if it was a clean tap (not a scroll)
+        function pickerTouchEnd() {
+            return !pickerTouchState.moved;
+        }
+        
+        // Wrapper for picker card selection - only fires callback if it was a clean tap
+        function handlePickerTap(callback, ...args) {
+            if (pickerTouchEnd()) {
+                callback(...args);
+            }
+        }
         
         // ==================== DATE PARSING HELPER ====================
         /**
@@ -5753,6 +5947,23 @@
             const backToTopBtn = document.getElementById('backToTopBtn');
             if (backBtn) backBtn.style.display = 'none';
             if (backToTopBtn) backToTopBtn.style.display = 'none';
+            
+            // MOBILE TOUCH DEBOUNCE - Prevent rapid multiple taps on selects
+            let lastSelectTap = 0;
+            const SELECT_DEBOUNCE_MS = 300; // Minimum ms between select taps
+            
+            document.addEventListener('touchstart', function(e) {
+                if (e.target.tagName === 'SELECT' || e.target.closest('select')) {
+                    const now = Date.now();
+                    if (now - lastSelectTap < SELECT_DEBOUNCE_MS) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('⏸️ Select tap debounced');
+                        return false;
+                    }
+                    lastSelectTap = now;
+                }
+            }, { passive: false });
             
             // Apply gradient for current theme
             applyThemeGradient();
@@ -11984,7 +12195,16 @@
             'pick-list': {
                 title: '🚚 Inventory Pick List',
                 filters: ['dateRange', 'customer', 'deliveryStatus'],
-                dateLabel: 'Date Range'
+                dateLabel: 'Date Range',
+                description: {
+                    purpose: 'Generate a consolidated list of items to pick from your warehouse for pending deliveries.',
+                    insights: [
+                        'See all items needed across multiple orders in one organized list',
+                        'Group picks by customer or route for efficient warehouse picking',
+                        'Track delivery status and prioritize urgent orders',
+                        'Print pick sheets to take to the warehouse floor'
+                    ]
+                }
             },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
@@ -12127,7 +12347,62 @@
             document.getElementById('reportSetupTitle').textContent = config.title;
             
             // Build filter UI
-            let filterHtml = '<div class="form-grid" style="gap: 15px;">';
+            let filterHtml = '';
+            
+            // Add report description/help section if available
+            if (config.description) {
+                filterHtml += `
+                    <div class="report-help-section" style="
+                        background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+                        border: 2px solid #c5d5f7;
+                        border-radius: 16px;
+                        padding: 16px 20px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+                    ">
+                        <div style="display: flex; align-items: flex-start; gap: 12px;">
+                            <div style="
+                                background: linear-gradient(135deg, var(--primary, #667eea) 0%, var(--secondary, #764ba2) 100%);
+                                color: white;
+                                width: 36px;
+                                height: 36px;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 18px;
+                                flex-shrink: 0;
+                                box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+                            ">💡</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #1a365d; font-size: 14px; margin-bottom: 6px;">
+                                    What This Report Does
+                                </div>
+                                <div style="color: #4a5568; font-size: 13px; line-height: 1.5; margin-bottom: 10px;">
+                                    ${config.description.purpose}
+                                </div>
+                                ${config.description.insights ? `
+                                    <div style="
+                                        background: white;
+                                        border-radius: 10px;
+                                        padding: 10px 14px;
+                                        border: 1px solid #e2e8f0;
+                                    ">
+                                        <div style="font-weight: 600; color: #2d3748; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            📊 What You'll Learn
+                                        </div>
+                                        <ul style="margin: 0; padding-left: 18px; color: #4a5568; font-size: 12px; line-height: 1.6;">
+                                            ${config.description.insights.map(insight => `<li>${insight}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            filterHtml += '<div class="form-grid" style="gap: 15px;">';
             
             // Date Range
             if (config.filters.includes('dateRange')) {
@@ -22401,7 +22676,7 @@ NOTE: Please print the attached PO document for full details.`;
             // Add "Clear Filter" option for filter text inputs
             if (isFilterInput && !search && !supplier) {
                 html += `
-                    <div class="item-picker-card" onclick="clearItemFilter()" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) clearItemFilter()" onclick="clearItemFilter()" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
                         <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
                             <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
                         </div>
@@ -22492,7 +22767,11 @@ NOTE: Please print the attached PO document for full details.`;
                 const supplierName = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown';
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectItemFromPicker('${item.Item_ID}')">
+                    <div class="item-picker-card" 
+                         ontouchstart="pickerTouchStart(event)" 
+                         ontouchmove="pickerTouchMove(event)" 
+                         ontouchend="if(pickerTouchEnd()) selectItemFromPicker('${item.Item_ID}')"
+                         onclick="selectItemFromPicker('${item.Item_ID}')">
                         <div class="item-picker-header-row" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px;">
                             <span class="item-picker-sku">${item.SKU || ''}</span>
                             <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}${backorderBadge}${topSellerBadge}
@@ -23358,19 +23637,19 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="item-picker-close" onclick="closePOTypePicker()">&times;</button>
             </div>
             <div id="poTypePickerList" class="item-picker-list" style="padding: 15px;">
-                <div class="item-picker-card" onclick="selectPOType('', 'All Types')" style="border-left: 4px solid #6c757d; background: #f8f9fa; margin-bottom: 10px;">
+                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('', 'All Types')" onclick="selectPOType('', 'All Types')" style="border-left: 4px solid #6c757d; background: #f8f9fa; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
                         <span style="font-size: 24px; margin-right: 12px;">📋</span> All Types
                     </div>
                     <div style="font-size: 13px; color: #6c757d; margin-top: 5px;">Show both inbound and outbound POs</div>
                 </div>
-                <div class="item-picker-card" onclick="selectPOType('INCOMING', 'Incoming (Purchases)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
+                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('INCOMING', 'Incoming (Purchases)')" onclick="selectPOType('INCOMING', 'Incoming (Purchases)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
                         <span style="font-size: 24px; margin-right: 12px;">📥</span> Incoming (Purchases)
                     </div>
                     <div style="font-size: 13px; color: #388e3c; margin-top: 5px;">Products received from suppliers</div>
                 </div>
-                <div class="item-picker-card" onclick="selectPOType('OUTGOING', 'Outgoing (Returns/Transfers)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
+                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('OUTGOING', 'Outgoing (Returns/Transfers)')" onclick="selectPOType('OUTGOING', 'Outgoing (Returns/Transfers)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #1565c0;">
                         <span style="font-size: 24px; margin-right: 12px;">📤</span> Outgoing (Returns/Transfers)
                     </div>
@@ -24465,9 +24744,10 @@ NOTE: Please print the attached PO document for full details.`;
             
             filtered.forEach(s => {
                 const isSelected = selectedSuppliersForReport.includes(s.Supplier_ID);
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
                 const clickHandler = isReportFilter 
-                    ? `onclick="toggleSupplierSelection('${s.Supplier_ID}')"` 
-                    : `onclick="selectSupplierFromPicker('${s.Supplier_ID}')"`;
+                    ? `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleSupplierSelection('${s.Supplier_ID}')" onclick="toggleSupplierSelection('${s.Supplier_ID}')"` 
+                    : `${touchHandlers} ontouchend="if(pickerTouchEnd()) selectSupplierFromPicker('${s.Supplier_ID}')" onclick="selectSupplierFromPicker('${s.Supplier_ID}')"`;
                 const checkboxHtml = isReportFilter 
                     ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSupplierSelection('${s.Supplier_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
                     : '';
@@ -24556,7 +24836,8 @@ NOTE: Please print the attached PO document for full details.`;
             
             filtered.forEach(s => {
                 const isSelected = selectedSuppliersForPricing.includes(s.Supplier_ID);
-                const clickHandler = `onclick="toggleSupplierSelectionForPricing('${s.Supplier_ID}')"`;
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
+                const clickHandler = `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleSupplierSelectionForPricing('${s.Supplier_ID}')" onclick="toggleSupplierSelectionForPricing('${s.Supplier_ID}')"`;
                 const checkboxHtml = `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSupplierSelectionForPricing('${s.Supplier_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">`;
                 
                 html += `
@@ -24921,7 +25202,7 @@ NOTE: Please print the attached PO document for full details.`;
             let html = '';
             adjustmentReasons.forEach(reason => {
                 html += `
-                    <div class="item-picker-card" onclick="selectReason('${reason.value}')" 
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectReason('${reason.value}')" onclick="selectReason('${reason.value}')" 
                          style="border-left: 4px solid #c0c0c0; margin-bottom: 10px; padding: 15px; cursor: pointer; transition: all 0.2s;"
                          onmouseover="this.style.background='#f0f4ff'; this.style.borderLeftColor='var(--primary, #667eea)'"
                          onmouseout="this.style.background='white'; this.style.borderLeftColor='#c0c0c0'">
@@ -24975,7 +25256,7 @@ NOTE: Please print the attached PO document for full details.`;
             let html = '';
             purchaseUOMs.forEach(uom => {
                 html += `
-                    <div class="item-picker-card" onclick="selectUOM('${uom.value}')" 
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectUOM('${uom.value}')" onclick="selectUOM('${uom.value}')" 
                          style="border-left: 4px solid #c0c0c0; margin-bottom: 10px; padding: 15px; cursor: pointer; transition: all 0.2s;"
                          onmouseover="this.style.background='#f0f4ff'; this.style.borderLeftColor='var(--primary, #667eea)'"
                          onmouseout="this.style.background='white'; this.style.borderLeftColor='#c0c0c0'">
@@ -25541,7 +25822,7 @@ NOTE: Please print the attached PO document for full details.`;
                 filteredThemes.forEach(theme => {
                     const isSelected = theme.value === currentTheme;
                     html += `
-                        <div onclick="selectTheme('${theme.value}', '${theme.name.replace(/'/g, "\\'")}')" 
+                        <div ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectTheme('${theme.value}', '${theme.name.replace(/'/g, "\\'")}')" onclick="selectTheme('${theme.value}', '${theme.name.replace(/'/g, "\\'")}')" 
                              style="cursor: pointer; padding: 12px; border: 2px solid ${isSelected ? theme.primary : '#e0e0e0'}; border-radius: 12px; background: ${isSelected ? '#f8f9fa' : 'white'}; transition: all 0.2s; display: flex; align-items: center; gap: 10px;"
                              onmouseover="this.style.borderColor='${theme.primary}'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
                              onmouseout="this.style.borderColor='${isSelected ? theme.primary : '#e0e0e0'}'; this.style.transform='none'; this.style.boxShadow='none'">
@@ -25665,9 +25946,10 @@ NOTE: Please print the attached PO document for full details.`;
             
             filtered.forEach(c => {
                 const isSelected = selectedCustomersForReport.includes(c.Customer_ID);
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
                 const clickHandler = isReportFilter 
-                    ? `onclick="toggleCustomerSelection('${c.Customer_ID}')"` 
-                    : `onclick="selectCustomerFromPicker('${c.Customer_ID}')"`;
+                    ? `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleCustomerSelection('${c.Customer_ID}')" onclick="toggleCustomerSelection('${c.Customer_ID}')"` 
+                    : `${touchHandlers} ontouchend="if(pickerTouchEnd()) selectCustomerFromPicker('${c.Customer_ID}')" onclick="selectCustomerFromPicker('${c.Customer_ID}')"`;
                 const checkboxHtml = isReportFilter 
                     ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleCustomerSelection('${c.Customer_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
                     : '';
@@ -25912,7 +26194,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const text = opt.text.replace(/^[^\w\s]\s*/, '');
                 
                 html += `
-                    <div class="item-picker-card" onclick="selectStatusFromPicker('${opt.value}')" 
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectStatusFromPicker('${opt.value}')" onclick="selectStatusFromPicker('${opt.value}')" 
                          style="border-left: 4px solid #c0c0c0; 
                                 ${isAll ? 'background: #f8f9fa;' : ''}
                                 ${opt.selected ? 'background: #e8e8e8; border-left-color: #888;' : ''}">
@@ -26079,7 +26361,7 @@ NOTE: Please print the attached PO document for full details.`;
             } else if (!isPurchaseFilter && !search) {
                 // Add "Clear Filter" option for single-select mode
                 html += `
-                    <div class="item-picker-card" onclick="selectPOFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOFromPicker('')" onclick="selectPOFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
                         <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
                             <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
                         </div>
@@ -26111,9 +26393,10 @@ NOTE: Please print the attached PO document for full details.`;
                 const displayNum = po.Invoice_Number || po.PO_ID;
                 
                 const isSelected = selectedPOsForPurchases.includes(displayNum);
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
                 const clickHandler = isPurchaseFilter 
-                    ? `onclick="togglePOSelection('${displayNum}')"` 
-                    : `onclick="selectPOFromPicker('${displayNum}')"`;
+                    ? `${touchHandlers} ontouchend="if(pickerTouchEnd()) togglePOSelection('${displayNum}')" onclick="togglePOSelection('${displayNum}')"` 
+                    : `${touchHandlers} ontouchend="if(pickerTouchEnd()) selectPOFromPicker('${displayNum}')" onclick="selectPOFromPicker('${displayNum}')"`;
                 const checkboxHtml = isPurchaseFilter 
                     ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="togglePOSelection('${displayNum}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
                     : '';
@@ -26296,7 +26579,7 @@ NOTE: Please print the attached PO document for full details.`;
             } else if (!isSalesFilter && !search) {
                 // Add "Clear Filter" option for single-select mode
                 html += `
-                    <div class="item-picker-card" onclick="selectInvoiceFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectInvoiceFromPicker('')" onclick="selectInvoiceFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
                         <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
                             <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
                         </div>
@@ -26326,9 +26609,10 @@ NOTE: Please print the attached PO document for full details.`;
                 const invoiceNum = sale.Invoice_Number || sale.SO_Number || 'No Invoice#';
                 
                 const isSelected = selectedInvoicesForSales.includes(invoiceNum);
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
                 const clickHandler = isSalesFilter 
-                    ? `onclick="toggleInvoiceSelection('${invoiceNum}')"` 
-                    : `onclick="selectInvoiceFromPicker('${invoiceNum}')"`;
+                    ? `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleInvoiceSelection('${invoiceNum}')" onclick="toggleInvoiceSelection('${invoiceNum}')"` 
+                    : `${touchHandlers} ontouchend="if(pickerTouchEnd()) selectInvoiceFromPicker('${invoiceNum}')" onclick="selectInvoiceFromPicker('${invoiceNum}')"`;
                 const checkboxHtml = isSalesFilter 
                     ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleInvoiceSelection('${invoiceNum}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
                     : '';
@@ -26507,7 +26791,8 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 
                 const isSelected = selectedItemsForInventory.includes(item.Item_ID);
-                const clickHandler = `onclick="toggleItemSelectionForInventory('${item.Item_ID}')"`;
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
+                const clickHandler = `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleItemSelectionForInventory('${item.Item_ID}')" onclick="toggleItemSelectionForInventory('${item.Item_ID}')"`;
                 const checkboxHtml = `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleItemSelectionForInventory('${item.Item_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">`;
                 
                 html += `
@@ -26675,7 +26960,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const checkboxHtml = `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleItemSelection('${item.Item_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">`;
                 
                 html += `
-                    <div class="item-picker-card" onclick="toggleItemSelection('${item.Item_ID}')" style="border-left: 4px solid ${isSelected ? '#10b981' : stockColor}; ${isSelected ? 'background: #d1fae5;' : ''} display: flex; align-items: start; gap: 12px; cursor: pointer;">
+                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) toggleItemSelection('${item.Item_ID}')" onclick="toggleItemSelection('${item.Item_ID}')" style="border-left: 4px solid ${isSelected ? '#10b981' : stockColor}; ${isSelected ? 'background: #d1fae5;' : ''} display: flex; align-items: start; gap: 12px; cursor: pointer;">
                         ${checkboxHtml}
                         <div style="flex: 1;">
                             <div class="item-picker-card-header" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
@@ -26802,7 +27087,8 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 
                 const isSelected = selectedItemsForPricing.includes(item.Item_ID);
-                const clickHandler = `onclick="toggleItemSelectionForPricing('${item.Item_ID}')"`;
+                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
+                const clickHandler = `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleItemSelectionForPricing('${item.Item_ID}')" onclick="toggleItemSelectionForPricing('${item.Item_ID}')"`;
                 const checkboxHtml = `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleItemSelectionForPricing('${item.Item_ID}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">`;
                 
                 html += `
