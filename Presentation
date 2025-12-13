@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nowak Vibe Consulting - AI-Powered Vibe Apps</title>
+    
+    <!-- Open Graph / Social Media Preview Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="🚀 Nowak Vibe Consulting - What We Built in 7 Days">
+    <meta property="og:description" content="Patrick built a $500K business app in ONE WEEK using AI. See the full breakdown of what was created and how much was saved.">
+    <meta property="og:image" content="https://patkers.github.io/nowak-distributing/nowak-vibe-logo.jpg">
+    <meta property="og:url" content="https://patkers.github.io/nowak-distributing/presentation.html">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="🚀 Nowak Vibe Consulting - What We Built in 7 Days">
+    <meta name="twitter:description" content="Patrick built a $500K business app in ONE WEEK using AI. See the breakdown.">
+    <meta name="twitter:image" content="https://patkers.github.io/nowak-distributing/nowak-vibe-logo.jpg">
+    
+    <!-- iMessage Preview -->
+    <meta name="apple-mobile-web-app-title" content="Nowak Vibe Consulting">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(120, 0, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 200, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(120, 0, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(180deg, #0a0a0f 0%, #12121a 100%);
+        }
+
+        .circuit-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+            background-image: 
+                linear-gradient(90deg, #00d4ff 1px, transparent 1px),
+                linear-gradient(180deg, #00d4ff 1px, transparent 1px);
+            background-size: 100px 100px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            position: relative;
+        }
+
+        .logo-container {
+            margin-bottom: 40px;
+        }
+
+        .logo-container img {
+            max-width: 600px;
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 0 30px rgba(0, 212, 255, 0.5));
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4)); }
+            to { filter: drop-shadow(0 0 40px rgba(120, 0, 255, 0.6)); }
+        }
+
+        .tagline {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            background: linear-gradient(90deg, #00d4ff, #7800ff, #00d4ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .intro-text {
+            font-size: 1.2em;
+            color: #a0a0a0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section {
+            padding: 60px 20px;
+            position: relative;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .section-title span {
+            background: linear-gradient(135deg, #00d4ff 0%, #7800ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #00d4ff, #7800ff);
+            margin: 15px auto 0;
+            border-radius: 2px;
+        }
+
+        .app-explanation {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(120, 0, 255, 0.1) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+        }
+
+        .app-explanation h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .simple-explanation {
+            font-size: 1.3em;
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .workflow-visual {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .workflow-step {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            min-width: 140px;
+            transition: all 0.3s ease;
+        }
+
+        .workflow-step:hover {
+            transform: translateY(-5px);
+            border-color: #00d4ff;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .workflow-step .icon { font-size: 2.5em; margin-bottom: 10px; }
+        .workflow-step .label { font-weight: 600; color: #ffffff; }
+        .workflow-arrow { font-size: 2em; color: #7800ff; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(20, 20, 30, 0.8) 0%, rgba(10, 10, 15, 0.9) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00d4ff, #7800ff);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff 0%, #7800ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .stat-label { font-size: 1em; color: #a0a0a0; font-weight: 500; }
+
+        .features-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .feature-card {
+            background: rgba(15, 15, 25, 0.8);
+            border: 1px solid rgba(120, 0, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #7800ff;
+            box-shadow: 0 10px 30px rgba(120, 0, 255, 0.15);
+        }
+
+        .feature-card h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .feature-card ul { list-style: none; padding: 0; }
+        .feature-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #c0c0c0;
+        }
+        .feature-card li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #7800ff;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 40px 0;
+            background: rgba(15, 15, 25, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(120, 0, 255, 0.2) 100%);
+            padding: 20px;
+            text-align: left;
+            font-family: 'Orbitron', sans-serif;
+            color: #00d4ff;
+            font-size: 0.9em;
+        }
+
+        .comparison-table td {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comparison-table tr:last-child td { border-bottom: none; }
+        .comparison-table tr:hover td { background: rgba(0, 212, 255, 0.05); }
+
+        .highlight-row {
+            background: linear-gradient(135deg, rgba(0, 255, 100, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%) !important;
+        }
+        .highlight-row td { color: #00ff88 !important; font-weight: 700; }
+
+        .price-tag { font-family: 'Orbitron', sans-serif; font-weight: 700; }
+        .price-high { color: #ff4444; }
+        .price-med { color: #ffaa00; }
+        .price-low { color: #00ff88; }
+
+        .story-section {
+            background: linear-gradient(135deg, rgba(120, 0, 255, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+            border-radius: 20px;
+            padding: 50px;
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .story-section h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            color: #ffffff;
+            margin-bottom: 30px;
+        }
+
+        .story-text {
+            font-size: 1.2em;
+            color: #c0c0c0;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            line-height: 1.8;
+        }
+
+        .patrick-intro {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+
+        .patrick-avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #00d4ff 0%, #7800ff 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+        }
+
+        .patrick-info h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            color: #00d4ff;
+        }
+        .patrick-info p { color: #a0a0a0; }
+
+        .partnership-section {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.08) 0%, rgba(0, 212, 255, 0.08) 100%);
+            border: 2px solid rgba(0, 255, 136, 0.2);
+            border-radius: 20px;
+            padding: 50px;
+            margin: 40px 0;
+        }
+
+        .partnership-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .partner-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .partner-card .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+        }
+
+        .partner-card.patrick .avatar {
+            background: linear-gradient(135deg, #00d4ff 0%, #7800ff 100%);
+        }
+
+        .partner-card.claude .avatar {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        }
+
+        .partner-card h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+
+        .partner-card ul {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
+
+        .partner-card li {
+            padding: 8px 0;
+            color: #a0a0a0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .partner-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00ff88;
+        }
+
+        .handshake-emoji {
+            font-size: 4em;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .partnership-quote {
+            font-size: 1.4em;
+            font-style: italic;
+            color: #00ff88;
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            border-left: 4px solid #00ff88;
+            background: rgba(0, 255, 136, 0.05);
+            border-radius: 0 10px 10px 0;
+        }
+
+        .bottom-section {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .big-savings {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .big-savings .saved { color: #00ff88; }
+        .big-savings .time { color: #00d4ff; }
+
+        .future-text {
+            font-size: 1.3em;
+            color: #a0a0a0;
+            margin-top: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 60px;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            background: linear-gradient(90deg, #00d4ff, #7800ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .footer-tagline { color: #666; font-size: 0.9em; }
+
+        @media (max-width: 768px) {
+            .section-title { font-size: 1.5em; }
+            .stat-number { font-size: 2em; }
+            .workflow-visual { flex-direction: column; }
+            .workflow-arrow { transform: rotate(90deg); }
+            .comparison-table { font-size: 0.85em; }
+            .comparison-table th, .comparison-table td { padding: 12px 8px; }
+            .big-savings { font-size: 1.8em; }
+            .app-explanation { padding: 25px; }
+            .partnership-section { padding: 30px 20px; }
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .slide-up {
+            animation: slideUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="circuit-lines"></div>
+
+    <div class="container">
+        <!-- Hero -->
+        <section class="hero fade-in">
+            <div class="logo-container">
+                <img src="nowak-vibe-logo.jpg" alt="Nowak Vibe Consulting Logo">
+            </div>
+            <p class="tagline">Building the Future, One App at a Time</p>
+            <p class="intro-text">
+                What happens when a Medical Analytics expert teams up with AI to build custom business software? 
+                <strong style="color: #00d4ff;">Magic.</strong>
+            </p>
+        </section>
+
+        <!-- What is the App -->
+        <section class="section">
+            <h2 class="section-title"><span>🤔 So... What Did Patrick Actually Build?</span></h2>
+            
+            <div class="app-explanation slide-up">
+                <h3>The Simple Version (for the family 😄)</h3>
+                <p class="simple-explanation">
+                    Patrick built a <strong style="color: #00d4ff;">complete business management system</strong> for a snack distribution company.<br>
+                    Think of it like QuickBooks + Excel + a custom warehouse app... <em>all in one</em>.
+                </p>
+
+                <h3 style="margin-top: 40px;">Here's How the Business Works:</h3>
+                <div class="workflow-visual">
+                    <div class="workflow-step">
+                        <div class="icon">🏭</div>
+                        <div class="label">Buy Snacks<br><small style="color:#888">from suppliers</small></div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="icon">📦</div>
+                        <div class="label">Store in<br><small style="color:#888">warehouse</small></div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="icon">🧾</div>
+                        <div class="label">Sell to<br><small style="color:#888">customers</small></div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="icon">🚚</div>
+                        <div class="label">Deliver<br><small style="color:#888">orders</small></div>
+                    </div>
+                    <div class="workflow-arrow">→</div>
+                    <div class="workflow-step">
+                        <div class="icon">💰</div>
+                        <div class="label">Get Paid<br><small style="color:#888">track money</small></div>
+                    </div>
+                </div>
+
+                <p style="text-align: center; color: #a0a0a0; margin-top: 30px; font-size: 1.1em;">
+                    <strong style="color: #00ff88;">The app manages ALL of this.</strong><br>
+                    Every product, every order, every customer, every dollar — tracked automatically.
+                </p>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="section">
+            <h2 class="section-title"><span>📊 By The Numbers</span></h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card slide-up">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">Days to Build</div>
+                </div>
+                <div class="stat-card slide-up">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Database Tables</div>
+                </div>
+                <div class="stat-card slide-up">
+                    <div class="stat-number">20+</div>
+                    <div class="stat-label">Reports & Dashboards</div>
+                </div>
+                <div class="stat-card slide-up">
+                    <div class="stat-number">280+</div>
+                    <div class="stat-label">Color Themes</div>
+                </div>
+                <div class="stat-card slide-up">
+                    <div class="stat-number">28K+</div>
+                    <div class="stat-label">Lines of Code</div>
+                </div>
+                <div class="stat-card slide-up">
+                    <div class="stat-number">$0</div>
+                    <div class="stat-label">Consultants Hired</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="section">
+            <h2 class="section-title"><span>✨ Everything The App Can Do</span></h2>
+            
+            <div class="features-container">
+                <div class="feature-card">
+                    <h4>📋 Manage Everything</h4>
+                    <ul>
+                        <li>Suppliers (who we buy from)</li>
+                        <li>Products (what we sell)</li>
+                        <li>Customers (who we sell to)</li>
+                        <li>Purchase Orders (buying)</li>
+                        <li>Sales Orders (selling)</li>
+                        <li>Inventory (warehouse stock)</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>📊 Smart Dashboards</h4>
+                    <ul>
+                        <li>Action Dashboard (needs attention)</li>
+                        <li>Business Overview (big picture)</li>
+                        <li>Product Dashboard (what's selling)</li>
+                        <li>Customer Dashboard (who's buying)</li>
+                        <li>Supplier Dashboard</li>
+                        <li>Profit & Loss Statement</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>📱 Works Everywhere</h4>
+                    <ul>
+                        <li>Desktop computers</li>
+                        <li>Tablets</li>
+                        <li>Mobile phones</li>
+                        <li>Touch-friendly interface</li>
+                        <li>No accidental taps!</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>🎨 Customizable</h4>
+                    <ul>
+                        <li>280+ color themes</li>
+                        <li>Chicago sports teams</li>
+                        <li>Green Bay Packers! 🧀</li>
+                        <li>Custom invoice branding</li>
+                        <li>Professional print layouts</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>💰 Financial Tracking</h4>
+                    <ul>
+                        <li>Accounts Receivable</li>
+                        <li>Accounts Payable</li>
+                        <li>Payment tracking</li>
+                        <li>Profit margins</li>
+                        <li>Gross margin reports</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>🚚 Delivery Management</h4>
+                    <ul>
+                        <li>Pick Lists (what to grab)</li>
+                        <li>Delivery status tracking</li>
+                        <li>Route organization</li>
+                        <li>Printable pick sheets</li>
+                        <li>Customer delivery labels</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cost Comparison -->
+        <section class="section">
+            <h2 class="section-title"><span>💵 What This Would Have Cost</span></h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Approach</th>
+                        <th>Time</th>
+                        <th>Cost</th>
+                        <th>Team</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Big Consulting Firm</strong><br><small style="color:#666">Accenture, Deloitte</small></td>
+                        <td>5-7 months</td>
+                        <td class="price-tag price-high">$500K - $800K</td>
+                        <td>6-8 people</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Small Software Agency</strong><br><small style="color:#666">Local dev shop</small></td>
+                        <td>4-5 months</td>
+                        <td class="price-tag price-high">$200K - $350K</td>
+                        <td>4-5 people</td>
+                    </tr>
+                    <tr>
+                        <td><strong>College Kids / Freelancers</strong><br><small style="color:#666">"Garage rate"</small></td>
+                        <td>8-10 months</td>
+                        <td class="price-tag price-med">$75K - $100K</td>
+                        <td>3-4 people</td>
+                    </tr>
+                    <tr class="highlight-row">
+                        <td><strong>🚀 Patrick + Claude AI</strong><br><small style="color:#00ff88">Nowak Vibe Consulting</small></td>
+                        <td><strong>7 DAYS</strong></td>
+                        <td class="price-tag price-low">~$20</td>
+                        <td>1 + AI</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Partnership Section -->
+        <section class="section">
+            <h2 class="section-title"><span>🤝 The Partnership</span></h2>
+            
+            <div class="partnership-section">
+                <h3 style="font-family: 'Orbitron', sans-serif; font-size: 1.5em; color: #ffffff; text-align: center; margin-bottom: 20px;">
+                    Why This Actually Worked
+                </h3>
+                <p style="text-align: center; color: #c0c0c0; font-size: 1.1em; max-width: 700px; margin: 0 auto;">
+                    Most people come to AI with vague ideas. Patrick came in knowing <em>exactly</em> what Nowak Distributing needed 
+                    because he lives and breathes data visualization every day at work.
+                </p>
+
+                <div class="handshake-emoji">🤝</div>
+
+                <div class="partnership-grid">
+                    <div class="partner-card patrick">
+                        <div class="avatar">👨‍💻</div>
+                        <h4>Patrick Brings</h4>
+                        <ul>
+                            <li>30+ years of analytics wisdom</li>
+                            <li>Real business understanding</li>
+                            <li>Clear vision of what "good" looks like</li>
+                            <li>Willingness to test and iterate fast</li>
+                            <li>Domain expertise in data visualization</li>
+                            <li>Knows exactly what the business needs</li>
+                        </ul>
+                    </div>
+                    <div class="partner-card claude">
+                        <div class="avatar">🤖</div>
+                        <h4>Claude Brings</h4>
+                        <ul>
+                            <li>Code generation at 3am without coffee</li>
+                            <li>Memory of every bug we've squashed</li>
+                            <li>280 theme color codes (almost memorized 😄)</li>
+                            <li>Infinite patience for "one more small fix"</li>
+                            <li>Instant implementation of ideas</li>
+                            <li>No miscommunication delays</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="partnership-quote">
+                    "Patrick focuses on the <strong>WHAT</strong>. Claude handles the <strong>HOW</strong>.<br>
+                    No waiting for developers. No miscommunication. No bloated budgets.<br>
+                    Just rapid iteration, real-time testing, and a custom solution built in days instead of months."
+                </div>
+            </div>
+        </section>
+
+        <!-- Story Section -->
+        <section class="story-section">
+            <h3>🎯 The Man Behind The Vision</h3>
+            <p class="story-text">
+                Patrick runs the <strong style="color: #00d4ff;">SAS Visual Analytics department</strong> at a major health insurance company. 
+                He's spent his career turning complex data into actionable insights.
+            </p>
+            <p class="story-text">
+                When he saw an opportunity to build custom software for a family snack distribution business, 
+                he didn't hire consultants or wait 6 months for a proposal.
+            </p>
+            <p class="story-text" style="color: #00ff88; font-weight: 600;">
+                He partnered with AI and built it himself. In one week.
+            </p>
+
+            <div class="patrick-intro">
+                <div class="patrick-avatar">👨‍💻</div>
+                <div class="patrick-info">
+                    <h4>Patrick Nowak</h4>
+                    <p>Founder, Nowak Vibe Consulting</p>
+                    <p>Head of Medical Analytics</p>
+                    <p>Sherwood, Wisconsin 🧀</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bottom -->
+        <section class="bottom-section">
+            <div class="big-savings">
+                <span class="saved">$500,000+</span> saved<br>
+                <span class="time">6 months</span> of time back
+            </div>
+            <p class="future-text">
+                This is the future of building software.<br>
+                <strong style="color: #00d4ff;">AI-Powered Vibe Apps.</strong>
+            </p>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-logo">NOWAK VIBE CONSULTING, INC.</div>
+            <div class="footer-tagline">AI-Powered Vibe Apps • Sherwood, WI • December 2024</div>
+        </footer>
+    </div>
+
+    <script>
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.slide-up, .fade-in').forEach(el => {
+            el.style.animationPlayState = 'paused';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
