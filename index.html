@@ -1914,18 +1914,77 @@
             <!-- Backend API URL - At bottom, collapsed by default -->
             <div style="margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #999;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0; color: #666;">🔧 Backend API URL</h3>
+                    <h3 style="margin: 0; color: #666;">🔧 Database Environment</h3>
                     <button class="btn-small" onclick="toggleSettingsSection('apiSection')" style="background: var(--primary, #667eea); color: white; border-left: 3px solid rgba(255,255,255,0.4); opacity: 0.85;">
                         <span id="apiSection-toggle">▶ Show</span>
                     </button>
                 </div>
                 <div id="apiSection" style="display: none; margin-top: 15px;">
-                    <p style="margin-bottom: 10px; color: #888; font-size: 13px;">
-                        ⚠️ Advanced setting - only change if instructed
+                    
+                    <!-- Environment Switcher Buttons -->
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 0 0 10px 0; color: #666; font-size: 13px; font-weight: 600;">🎯 Quick Switch Environment:</p>
+                        <div id="envButtonsContainer" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" id="envBtn-production" onclick="switchEnvironment('production')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #059669; background: #d1fae5; color: #065f46;">
+                                🏭 Production
+                            </button>
+                            <button type="button" id="envBtn-training" onclick="switchEnvironment('training')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #0284c7; background: white; color: #0284c7;">
+                                📚 Training
+                            </button>
+                            <button type="button" id="envBtn-test" onclick="switchEnvironment('test')" class="env-btn" style="padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 3px solid #dc2626; background: white; color: #dc2626;">
+                                🧪 Test
+                            </button>
+                        </div>
+                        <p id="currentEnvDisplay" style="margin: 10px 0 0 0; padding: 8px 12px; background: #d1fae5; border-radius: 6px; color: #065f46; font-weight: 600; display: inline-block;">
+                            ✅ Currently using: Production
+                        </p>
+                    </div>
+                    
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                    
+                    <!-- Environment URL Configuration -->
+                    <p style="margin: 0 0 15px 0; color: #888; font-size: 13px;">
+                        ⚙️ Configure your Google Apps Script URLs for each environment:
                     </p>
-                    <input type="text" id="apiUrl" class="form-group" style="width: 100%; padding: 10px; margin-bottom: 15px;" 
-                           placeholder="https://script.google.com/macros/s/.../exec">
-                    <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveConfig()">💾 Save Configuration</button>
+                    
+                    <!-- Production URL -->
+                    <div style="margin-bottom: 15px; padding: 15px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #059669;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #065f46;">🏭 Production URL</label>
+                        <input type="text" id="envUrl-production" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #a7f3d0; border-radius: 6px;" 
+                               placeholder="https://script.google.com/macros/s/.../exec"
+                               onchange="saveEnvironmentUrl('production')">
+                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #059669;">Your live business data</p>
+                    </div>
+                    
+                    <!-- Training URL -->
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #0369a1;">📚 Training URL</label>
+                        <input type="text" id="envUrl-training" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #bae6fd; border-radius: 6px;" 
+                               placeholder="https://script.google.com/macros/s/.../exec"
+                               onchange="saveEnvironmentUrl('training')">
+                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #0284c7;">Sample data for learning the system</p>
+                    </div>
+                    
+                    <!-- Test URL -->
+                    <div style="margin-bottom: 15px; padding: 15px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #991b1b;">🧪 Test URL</label>
+                        <input type="text" id="envUrl-test" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #fecaca; border-radius: 6px;" 
+                               placeholder="https://script.google.com/macros/s/.../exec"
+                               onchange="saveEnvironmentUrl('test')">
+                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #dc2626;">For testing new features and changes</p>
+                    </div>
+                    
+                    <!-- Legacy single URL input (hidden but functional for backward compatibility) -->
+                    <input type="hidden" id="apiUrl">
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                        <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveConfig()" style="background: #059669;">💾 Save All Settings</button>
+                        <button class="btn btn-secondary" onclick="refreshAfterEnvSwitch()">🔄 Refresh Data</button>
+                    </div>
+                    
+                    <p style="margin: 15px 0 0 0; padding: 10px; background: #fef3c7; border-radius: 6px; color: #92400e; font-size: 12px;">
+                        💡 <strong>Tip:</strong> Settings persist after hard refresh (Ctrl+Shift+R). Switch environments anytime without losing your configuration!
+                    </p>
                 </div>
             </div>
         </div>
@@ -5303,7 +5362,161 @@
     </div>
 
     <script>
-        let API_URL = localStorage.getItem('apiUrl') || 'https://script.google.com/macros/s/AKfycbyCcX93pMAfO3hOsrQjDuSnMMMmL0l9EnLFHnn0BBQ_RjGelL-Jp-0OcSRTgf72rIAITA/exec';
+        // ==================== ENVIRONMENT MANAGEMENT ====================
+        // Default URLs for each environment
+        const DEFAULT_PRODUCTION_URL = 'https://script.google.com/macros/s/AKfycbyCcX93pMAfO3hOsrQjDuSnMMMmL0l9EnLFHnn0BBQ_RjGelL-Jp-0OcSRTgf72rIAITA/exec';
+        const DEFAULT_TRAINING_URL = '';
+        const DEFAULT_TEST_URL = '';
+        
+        // Environment configuration (loaded from localStorage)
+        let environments = {
+            production: localStorage.getItem('envUrl-production') || DEFAULT_PRODUCTION_URL,
+            training: localStorage.getItem('envUrl-training') || DEFAULT_TRAINING_URL,
+            test: localStorage.getItem('envUrl-test') || DEFAULT_TEST_URL
+        };
+        
+        // Current active environment
+        let currentEnvironment = localStorage.getItem('currentEnvironment') || 'production';
+        
+        // Get the active API URL based on current environment
+        function getActiveApiUrl() {
+            return environments[currentEnvironment] || environments.production || DEFAULT_PRODUCTION_URL;
+        }
+        
+        // API_URL - now dynamically set from environment
+        let API_URL = getActiveApiUrl();
+        
+        // Also support legacy apiUrl for backward compatibility
+        if (localStorage.getItem('apiUrl') && !localStorage.getItem('envUrl-production')) {
+            environments.production = localStorage.getItem('apiUrl');
+            localStorage.setItem('envUrl-production', environments.production);
+        }
+        
+        // Switch to a different environment
+        function switchEnvironment(env) {
+            if (!environments[env]) {
+                alert(`No URL configured for ${env} environment. Please enter a URL first.`);
+                return;
+            }
+            
+            currentEnvironment = env;
+            localStorage.setItem('currentEnvironment', env);
+            API_URL = getActiveApiUrl();
+            
+            // Also update legacy apiUrl for compatibility
+            localStorage.setItem('apiUrl', API_URL);
+            
+            // Update UI
+            updateEnvironmentUI();
+            
+            // Show confirmation
+            const envNames = { production: '🏭 Production', training: '📚 Training', test: '🧪 Test' };
+            showStatus('configStatus', `✅ Switched to ${envNames[env]} environment`, 'success');
+            
+            // Refresh all data
+            refreshAfterEnvSwitch();
+        }
+        
+        // Save an environment URL
+        function saveEnvironmentUrl(env) {
+            const input = document.getElementById(`envUrl-${env}`);
+            if (input) {
+                const url = input.value.trim();
+                environments[env] = url;
+                localStorage.setItem(`envUrl-${env}`, url);
+                
+                // If this is the current environment, update API_URL
+                if (env === currentEnvironment) {
+                    API_URL = url;
+                    localStorage.setItem('apiUrl', url);
+                }
+                
+                console.log(`Saved ${env} URL:`, url);
+            }
+        }
+        
+        // Update UI to reflect current environment
+        function updateEnvironmentUI() {
+            const envColors = {
+                production: { bg: '#d1fae5', border: '#059669', text: '#065f46', activeBg: '#d1fae5' },
+                training: { bg: '#dbeafe', border: '#0284c7', text: '#0369a1', activeBg: '#dbeafe' },
+                test: { bg: '#fee2e2', border: '#dc2626', text: '#991b1b', activeBg: '#fee2e2' }
+            };
+            const envNames = { production: '🏭 Production', training: '📚 Training', test: '🧪 Test' };
+            
+            // Update buttons
+            ['production', 'training', 'test'].forEach(env => {
+                const btn = document.getElementById(`envBtn-${env}`);
+                if (btn) {
+                    const colors = envColors[env];
+                    if (env === currentEnvironment) {
+                        btn.style.background = colors.activeBg;
+                        btn.style.borderWidth = '3px';
+                        btn.style.transform = 'scale(1.05)';
+                        btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                    } else {
+                        btn.style.background = 'white';
+                        btn.style.borderWidth = '3px';
+                        btn.style.transform = 'scale(1)';
+                        btn.style.boxShadow = 'none';
+                    }
+                }
+            });
+            
+            // Update status display
+            const display = document.getElementById('currentEnvDisplay');
+            if (display) {
+                const colors = envColors[currentEnvironment];
+                display.style.background = colors.activeBg;
+                display.style.color = colors.text;
+                display.innerHTML = `✅ Currently using: <strong>${envNames[currentEnvironment]}</strong>`;
+            }
+            
+            // Update page title to show environment
+            if (currentEnvironment !== 'production') {
+                document.title = `ERP System [${currentEnvironment.toUpperCase()}]`;
+            } else {
+                document.title = 'ERP System';
+            }
+        }
+        
+        // Refresh all cached data after environment switch
+        function refreshAfterEnvSwitch() {
+            // Clear caches
+            cachedSuppliers = [];
+            cachedItems = [];
+            cachedCustomers = [];
+            
+            // Reload data for current tab
+            const activeTab = document.querySelector('.card.active');
+            if (activeTab) {
+                const tabId = activeTab.id;
+                switch(tabId) {
+                    case 'suppliers': loadSuppliers(); break;
+                    case 'items': loadItems(); break;
+                    case 'customers': loadCustomers(); break;
+                    case 'purchases': loadPurchases(); break;
+                    case 'sales': loadSales(); break;
+                    case 'inventory': loadInventory(); break;
+                    case 'createpo': loadPOFormData(); break;
+                }
+            }
+        }
+        
+        // Initialize environment URLs in the form on page load
+        function initializeEnvironmentForm() {
+            // Load URLs into form fields
+            ['production', 'training', 'test'].forEach(env => {
+                const input = document.getElementById(`envUrl-${env}`);
+                if (input && environments[env]) {
+                    input.value = environments[env];
+                }
+            });
+            
+            // Update UI to show current environment
+            updateEnvironmentUI();
+        }
+        
         let cachedSuppliers = [];
         let cachedItems = [];
         let cachedCustomers = [];
@@ -5474,6 +5687,9 @@
             
             // Apply gradient for current theme
             applyThemeGradient();
+            
+            // Initialize environment switcher
+            initializeEnvironmentForm();
             
             updateConfigStatus();
             loadInvoiceSettings();
@@ -5971,12 +6187,15 @@
             const statusEl = document.getElementById('configStatusText');
             const apiInput = document.getElementById('apiUrl');
             
+            const envNames = { production: '🏭 Production', training: '📚 Training', test: '🧪 Test' };
+            const envColors = { production: '#059669', training: '#0284c7', test: '#dc2626' };
+            
             if (API_URL) {
-                apiInput.value = API_URL;
-                statusEl.innerHTML = '✅ API configured and ready!';
-                statusEl.style.color = '#2e7d32';
+                if (apiInput) apiInput.value = API_URL;
+                statusEl.innerHTML = `✅ Connected to <strong>${envNames[currentEnvironment]}</strong>`;
+                statusEl.style.color = envColors[currentEnvironment];
             } else {
-                statusEl.innerHTML = '⚠️ Not configured - enter API URL above';
+                statusEl.innerHTML = '⚠️ Not configured - enter API URL in settings';
                 statusEl.style.color = '#f57c00';
             }
         }
@@ -6384,19 +6603,30 @@
         });
         
         function saveConfig() {
-            const apiUrl = document.getElementById('apiUrl').value.trim();
-            const status = document.getElementById('configStatus');
+            // Save all environment URLs
+            ['production', 'training', 'test'].forEach(env => {
+                const input = document.getElementById(`envUrl-${env}`);
+                if (input) {
+                    const url = input.value.trim();
+                    environments[env] = url;
+                    localStorage.setItem(`envUrl-${env}`, url);
+                }
+            });
             
-            if (!apiUrl) {
-                showStatus('configStatus', 'Please enter an API URL', 'error');
-                return;
+            // Update the active API_URL
+            API_URL = getActiveApiUrl();
+            localStorage.setItem('apiUrl', API_URL);
+            
+            // Also update the hidden legacy input for compatibility
+            const apiUrlInput = document.getElementById('apiUrl');
+            if (apiUrlInput) {
+                apiUrlInput.value = API_URL;
             }
             
-            API_URL = apiUrl;
-            localStorage.setItem('apiUrl', apiUrl);
             updateConfigStatus();
+            updateEnvironmentUI();
             
-            showStatus('configStatus', '✅ Configuration saved!', 'success');
+            showStatus('configStatus', '✅ All environment settings saved!', 'success');
         }
         
         // Save Invoice Settings
