@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ⚡ CACHE BUSTER: Version 2024-12-12-V10Z - Reports first, Help Center added, Inv Flow moved to Reports -->
+    <!-- =====================================================
+         NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
+         =====================================================
+         LAST UPDATED: Sunday, December 14, 2025 @ 12:15 AM CST
+         VERSION: V10Z-20251214-0015
+         =====================================================
+         CHANGES IN THIS VERSION:
+         - Added Environment Switcher (Production/Training/Test)
+         - Fixed Sales Dashboard to default to All Time (not just today)
+         - Added auto-refresh when switching environments
+         ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17319,10 +17329,25 @@
         // ==================== DAILY DASHBOARD ====================
         
         async function generateDailyDashboardModal() {
-            const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : new Date();
-            let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : new Date();
-            fromDate.setHours(0, 0, 0, 0);
-            toDate.setHours(23, 59, 59, 999);
+            // Default to ALL TIME if no dates specified (not just today)
+            let fromDate, toDate;
+            
+            if (reportFilters.fromDate) {
+                fromDate = parseLocalDate(reportFilters.fromDate);
+                fromDate.setHours(0, 0, 0, 0);
+            } else {
+                // Default: beginning of time (Jan 1, 2020)
+                fromDate = new Date(2020, 0, 1, 0, 0, 0, 0);
+            }
+            
+            if (reportFilters.toDate) {
+                toDate = parseLocalDate(reportFilters.toDate);
+                toDate.setHours(23, 59, 59, 999);
+            } else {
+                // Default: end of today
+                toDate = new Date();
+                toDate.setHours(23, 59, 59, 999);
+            }
             
             // Fetch all data
             const [salesResult, itemsResult, customersResult] = await Promise.all([
@@ -17418,10 +17443,15 @@
             const topCustomers = Object.values(customerSales).sort((a, b) => b.sales - a.sales).slice(0, 5);
             const topProducts = Object.values(productSales).sort((a, b) => b.sales - a.sales).slice(0, 5);
             
-            // Date range label
-            const fromStr = fromDate.toLocaleDateString();
-            const toStr = toDate.toLocaleDateString();
-            const dateLabel = fromStr === toStr ? fromStr : `${fromStr} - ${toStr}`;
+            // Date range label - show "All Time" if no specific dates were selected
+            let dateLabel;
+            if (!reportFilters.fromDate && !reportFilters.toDate) {
+                dateLabel = 'All Time';
+            } else {
+                const fromStr = fromDate.toLocaleDateString();
+                const toStr = toDate.toLocaleDateString();
+                dateLabel = fromStr === toStr ? fromStr : `${fromStr} - ${toStr}`;
+            }
             
             // Build dashboard HTML with card styling
             let html = `
