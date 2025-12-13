@@ -6089,7 +6089,7 @@
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
             if (document.getElementById('soDueDate')) document.getElementById('soDueDate').value = today;
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
-            if (document.getElementById('createPOExpectedDate')) document.getElementById('createPOExpectedDate').value = today;
+            // Expected delivery date left blank - user must select
             
             // Restore report section visibility preferences
             restoreReportSections();
@@ -8509,7 +8509,7 @@
             
             const supplierName = getSupplierName(po.Supplier_ID);
             const dueDate = po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-';
-            const billDate = po.Bill_Date ? new Date(po.Bill_Date).toLocaleDateString() : '-';
+            const receiveDate = po.Receive_Date ? new Date(po.Receive_Date).toLocaleDateString() : '-';
             
             // Status color logic
             const statusColor = po.Status === 'Void' || po.Status === 'Cancelled' || po.Status === 'Voided' ? '#dc3545' : 
@@ -8536,7 +8536,7 @@
                                 <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Supplier:</td><td>${supplierName}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${po.Invoice_Number || '-'}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">PO Date:</td><td>${new Date(po.PO_Date).toLocaleDateString()}</td></tr>
-                                <tr><td style="padding: 8px 0; font-weight: bold;">Bill Date:</td><td>${billDate}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold;">Receive Date:</td><td>${receiveDate}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${statusColor === '#28a745' ? '#c3e6cb' : '#dee2e6'};">${statusText}</span></td></tr>
                             </table>
@@ -15496,24 +15496,47 @@
                 if (isReceived) {
                     stats.receivedPOs++;
                     
-                    // For received orders, check if on time
-                    // We'll use PO_Date + typical lead time as estimate since we don't have actual receive date
-                    // Or compare to Due_Date if available
-                    if (dueDate && poDate) {
-                        // Calculate days from order to due date as "expected fulfillment"
+                    // Calculate actual lead time using Receive_Date
+                    const receiveDate = parseDate(po.Receive_Date);
+                    
+                    if (receiveDate && poDate) {
+                        // Actual lead time = Receive_Date - PO_Date
+                        const actualLeadDays = Math.ceil((receiveDate - poDate) / (1000 * 60 * 60 * 24));
+                        stats.fulfillmentDays.push(actualLeadDays);
+                        allFulfillmentDays.push(actualLeadDays);
+                        
+                        // Check if on-time: compare Receive_Date to Due_Date (expected delivery)
+                        if (dueDate) {
+                            if (receiveDate <= dueDate) {
+                                stats.onTime++;
+                                totalOnTime++;
+                                if (poDate) {
+                                    const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
+                                    if (monthlyData[monthKey]) monthlyData[monthKey].onTime++;
+                                }
+                            } else {
+                                // Received late
+                                const daysLate = Math.ceil((receiveDate - dueDate) / (1000 * 60 * 60 * 24));
+                                stats.late++;
+                                stats.lateDays.push(daysLate);
+                                totalLate++;
+                                if (poDate) {
+                                    const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
+                                    if (monthlyData[monthKey]) monthlyData[monthKey].late++;
+                                }
+                            }
+                        } else {
+                            // No due date set, count as on-time
+                            stats.onTime++;
+                            totalOnTime++;
+                        }
+                    } else if (dueDate && poDate) {
+                        // Fallback if no Receive_Date: use expected days
                         const expectedDays = Math.ceil((dueDate - poDate) / (1000 * 60 * 60 * 24));
                         stats.fulfillmentDays.push(expectedDays);
                         allFulfillmentDays.push(expectedDays);
-                        
-                        // Assume received on time if status is Received (we don't have actual receive date)
-                        // For now, mark as on-time if received
                         stats.onTime++;
                         totalOnTime++;
-                        
-                        if (poDate) {
-                            const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
-                            if (monthlyData[monthKey]) monthlyData[monthKey].onTime++;
-                        }
                     } else {
                         stats.onTime++;
                         totalOnTime++;
@@ -15782,7 +15805,7 @@
                     </div>
                     <div class="sp-kpi" style="border-top-color: #6366f1;">
                         <div class="value" style="color: #6366f1;">${avgFulfillmentDays.toFixed(0)}</div>
-                        <div class="label">Avg Days to Due</div>
+                        <div class="label">Avg Lead Time (days)</div>
                     </div>
                 </div>
                 
@@ -20043,7 +20066,7 @@
                 // Set today's date
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('createPODate').value = today;
-                document.getElementById('createPOExpectedDate').value = today;
+                document.getElementById('createPOExpectedDate').value = ''; // User must select
                 
                 // Clear existing line items
                 const container = document.getElementById('createPOLineItems');
@@ -20125,7 +20148,7 @@
                 // Set today's date
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('createPODate').value = today;
-                document.getElementById('createPOExpectedDate').value = today;
+                document.getElementById('createPOExpectedDate').value = ''; // User must select
                 
                 // Clear existing line items
                 const container = document.getElementById('createPOLineItems');
@@ -24534,7 +24557,18 @@
                     </table>
                     </div>
                     
-                    <div class="form-group" style="margin-top: 20px;">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
+                        <div class="form-group" style="flex: 1; min-width: 200px; margin: 0;">
+                            <label>Supplier Invoice #</label>
+                            <input type="text" id="receiveInvoiceNumber" value="${po.Invoice_Number || ''}" placeholder="Enter supplier's invoice number..." style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 200px; margin: 0;">
+                            <label>Receive Date (defaults to today)</label>
+                            <input type="date" id="receiveDate" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
                         <label>Notes (optional)</label>
                         <textarea id="receiveNotes" rows="2" placeholder="Any discrepancies, damage, or special notes..." style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box;"></textarea>
                     </div>
@@ -24622,6 +24656,8 @@
             }
             
             const notes = document.getElementById('receiveNotes')?.value || '';
+            const invoiceNumber = document.getElementById('receiveInvoiceNumber')?.value || '';
+            const receiveDate = document.getElementById('receiveDate')?.value || '';
             
             // Collect lines to receive
             const linesToReceive = [];
@@ -24647,7 +24683,7 @@
             
             // Confirm
             const totalQty = linesToReceive.reduce((sum, l) => sum + l.qtyToReceive, 0);
-            if (!confirm(`Receive ${totalQty} items into inventory?\\n\\nThis will update your stock levels.`)) {
+            if (!confirm(`Receive ${totalQty} items into inventory?\n\nThis will update your stock levels.`)) {
                 return;
             }
             
@@ -24672,11 +24708,21 @@
                 console.log('API result:', JSON.stringify(result));
                 
                 if (result && result.status === 'success') {
+                    // Update invoice number and bill date on PO
+                    const updateData = { poId: poId };
+                    if (invoiceNumber.trim()) updateData.invoiceNumber = invoiceNumber.trim();
+                    if (receiveDate) updateData.receiveDate = receiveDate;
+                    
+                    if (updateData.invoiceNumber || updateData.receiveDate) {
+                        await apiCall('updatePurchaseOrder', updateData);
+                        console.log('Updated PO - Invoice:', invoiceNumber, 'Receive Date:', receiveDate);
+                    }
+                    
                     const statusMsg = result.newStatus === 'Received' 
                         ? '✅ All items received! PO is now complete.' 
                         : `📦 Items received. PO status: ${result.newStatus} (${result.totalReceived}/${result.totalOrdered})`;
                     
-                    alert(statusMsg + '\\n\\nInventory has been updated.');
+                    alert(statusMsg + '\n\nInventory has been updated.');
                     
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
@@ -25311,7 +25357,7 @@ NOTE: Please print the attached PO document for full details.`;
         function clearCreatePOForm() {
             document.getElementById('createPOSupplier').value = '';
             document.getElementById('createPODate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('createPOExpectedDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('createPOExpectedDate').value = ''; // User must select
             
             // Clear all line items except the first one
             const container = document.getElementById('createPOLineItems');
