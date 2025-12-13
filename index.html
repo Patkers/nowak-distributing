@@ -5481,25 +5481,36 @@
         }
         
         // Refresh all cached data after environment switch
-        function refreshAfterEnvSwitch() {
-            // Clear caches
+        async function refreshAfterEnvSwitch() {
+            // Show loading indicator
+            const envNames = { production: '🏭 Production', training: '📚 Training', test: '🧪 Test' };
+            showStatus('configStatus', `🔄 Loading all data from ${envNames[currentEnvironment]}...`, 'info');
+            
+            // Clear all caches
             cachedSuppliers = [];
             cachedItems = [];
             cachedCustomers = [];
             
-            // Reload data for current tab
-            const activeTab = document.querySelector('.card.active');
-            if (activeTab) {
-                const tabId = activeTab.id;
-                switch(tabId) {
-                    case 'suppliers': loadSuppliers(); break;
-                    case 'items': loadItems(); break;
-                    case 'customers': loadCustomers(); break;
-                    case 'purchases': loadPurchases(); break;
-                    case 'sales': loadSales(); break;
-                    case 'inventory': loadInventory(); break;
-                    case 'createpo': loadPOFormData(); break;
-                }
+            try {
+                // Load ALL data in parallel for speed
+                console.log('🔄 Refreshing all data for environment:', currentEnvironment);
+                
+                await Promise.all([
+                    loadSuppliers(),
+                    loadItems(),
+                    loadCustomers(),
+                    loadPurchases(),
+                    loadSales(),
+                    loadInventory()
+                ]);
+                
+                // Show success message
+                showStatus('configStatus', `✅ All data loaded from ${envNames[currentEnvironment]}!`, 'success');
+                console.log('✅ All data refreshed successfully');
+                
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                showStatus('configStatus', `⚠️ Some data may not have loaded. Try refreshing individual tabs.`, 'error');
             }
         }
         
