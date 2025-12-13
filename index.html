@@ -3156,10 +3156,10 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Reason *</label>
+                        <label>Reason * <span style="color: #dc2626; font-size: 11px;">(required)</span></label>
                         <input type="text" id="adjustReasonDisplay" placeholder="🔍 Click to select reason..." 
                                onclick="openReasonPicker()" readonly
-                               style="cursor: pointer; background: #fff;">
+                               style="cursor: pointer; background: #fff; border: 2px solid #f39c12;">
                         <input type="hidden" id="adjustReason" required>
                     </div>
                     <div class="form-group">
@@ -11887,6 +11887,9 @@
             document.getElementById('adjustItem').value = '';
             document.getElementById('adjustReasonDisplay').value = '';
             document.getElementById('adjustReason').value = '';
+            // Reset reason field styling
+            document.getElementById('adjustReasonDisplay').style.borderColor = '#f39c12';
+            document.getElementById('adjustReasonDisplay').style.background = '#fff';
             
             // Check if we should return to a report (e.g., Action Dashboard)
             if (returnToReport) {
@@ -11934,6 +11937,26 @@
             const reason = document.getElementById('adjustReason').value;
             const notes = document.getElementById('adjustNotes').value;
             
+            // Validation - Item is required
+            if (!itemId) {
+                alert('⚠️ Please select an item to adjust.');
+                return;
+            }
+            
+            // Validation - Reason is required
+            if (!reason || reason.trim() === '') {
+                alert('⚠️ Please select a reason for this adjustment.');
+                document.getElementById('adjustReasonDisplay').focus();
+                return;
+            }
+            
+            // Validation - Adjustment amount is required
+            if (isNaN(adjustment) || adjustment === 0) {
+                alert('⚠️ Please enter an adjustment amount (positive or negative).');
+                document.getElementById('adjustQuantity').focus();
+                return;
+            }
+            
             if (newQty < 0) {
                 if (!confirm(`Warning: This will set inventory to ${newQty} (NEGATIVE).\n\nAre you sure?`)) {
                     return;
@@ -11953,19 +11976,30 @@
                 adjustment: adjustment,
                 reference: 'MANUAL',
                 reason: reason + (notes ? ' - ' + notes : ''),
-                user: 'Manual' // FIX #7: Add user field for audit trail
+                user: 'Manual'
             };
+            
+            console.log('📝 Submitting inventory adjustment:', data);
             
             const result = await apiCall('adjustInventory', data);
             
+            console.log('📝 Adjustment result:', result);
+            
             if (result && result.status === 'success') {
                 showStatus('inventoryStatus', `✅ Inventory adjusted! ${item.Item_Description}: ${currentQty} → ${newQty}`, 'success');
+                
+                // Refresh cached items to get updated quantities
+                const itemsResult = await apiCall('getItems');
+                if (itemsResult && itemsResult.status === 'success') {
+                    cachedItems = itemsResult.data;
+                }
                 
                 // Note: hideAdjustInventoryForm will handle returning to report if returnToReport is set
                 hideAdjustInventoryForm();
                 loadInventory();
             } else {
                 showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                console.error('Adjustment failed:', result);
             }
         }
         
@@ -28210,6 +28244,9 @@ NOTE: Please print the attached PO document for full details.`;
         function selectReason(reason) {
             document.getElementById('adjustReason').value = reason;
             document.getElementById('adjustReasonDisplay').value = reason;
+            // Visual feedback - change border to green when reason selected
+            document.getElementById('adjustReasonDisplay').style.borderColor = '#10b981';
+            document.getElementById('adjustReasonDisplay').style.background = '#ecfdf5';
             closeReasonPicker();
         }
         
