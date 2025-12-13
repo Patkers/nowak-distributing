@@ -2666,8 +2666,8 @@
                                 <input type="date" id="createPODate" required>
                             </div>
                             <div class="form-group">
-                                <label>Expected Delivery Date</label>
-                                <input type="date" id="createPOExpectedDate">
+                                <label>Expected Delivery Date *</label>
+                                <input type="date" id="createPOExpectedDate" required>
                             </div>
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label>Notes</label>
@@ -2678,9 +2678,12 @@
                     
                     <!-- Card 2: Line Items -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
                             <h4 style="margin: 0; color: var(--primary, #667eea);">📦 Line Items</h4>
-                            <button class="btn-small" onclick="addCreatePOLineItem()" style="background: var(--primary, #667eea); color: white;">➕ Add Line Item</button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn-small" onclick="openMultiItemPickerForPO()" style="background: #28a745; color: white;">📋 Select Multiple Items</button>
+                                <button class="btn-small" onclick="addCreatePOLineItem()" style="background: var(--primary, #667eea); color: white;">➕ Add Single Item</button>
+                            </div>
                         </div>
                         
                         <!-- Wrapper for horizontal scroll on mobile -->
@@ -3039,7 +3042,12 @@
                     
                     <!-- Card 2: Items Sold -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <h4 style="margin-top: 0; margin-bottom: 15px;">Items Sold</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                            <h4 style="margin: 0;">Items Sold</h4>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" class="btn-small" onclick="openMultiItemPickerForSO()" style="background: #28a745; color: white;">📋 Select Multiple Items</button>
+                            </div>
+                        </div>
                         <div class="line-items-container" id="soLineItems" style="background: #fafafa; padding: 15px; border-radius: 8px; border: 2px solid #667eea;">
                             <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;">
                                 <div>
@@ -6053,6 +6061,7 @@
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
             if (document.getElementById('soDueDate')) document.getElementById('soDueDate').value = today;
             if (document.getElementById('createPODate')) document.getElementById('createPODate').value = today;
+            if (document.getElementById('createPOExpectedDate')) document.getElementById('createPOExpectedDate').value = today;
             
             // Restore report section visibility preferences
             restoreReportSections();
@@ -12244,28 +12253,72 @@
             'action-dashboard': {
                 title: '🚨 Action Dashboard',
                 filters: [], // No filters needed - shows all critical actions
-                dateLabel: ''
-                // Removed noFilters flag - use Run Report button instead
+                dateLabel: '',
+                description: {
+                    purpose: 'View all critical business issues that need immediate attention in one place.',
+                    insights: [
+                        'Past due customer payments that need follow-up',
+                        'Pending deliveries that need to be scheduled or completed',
+                        'Items that are running low and need to be reordered',
+                        'Purchase orders waiting to be received'
+                    ]
+                }
             },
             'business-overview': {
                 title: '📊 Business Overview',
                 filters: ['dateRange', 'topN'],
-                dateLabel: 'Date Range'
+                dateLabel: 'Date Range',
+                description: {
+                    purpose: 'Get a high-level snapshot of your business performance with key metrics and trends.',
+                    insights: [
+                        'Total sales, purchases, and profit for the period',
+                        'Top selling products and best customers',
+                        'Revenue trends and growth indicators',
+                        'Quick health check of your business'
+                    ]
+                }
             },
             'sales-by-customer': {
                 title: '👥 Sales by Customer',
                 filters: ['quickDateOnly', 'customer', 'minAmount', 'transactionStatus'],
-                dateLabel: 'Sale Date'
+                dateLabel: 'Sale Date',
+                description: {
+                    purpose: 'Analyze sales performance grouped by customer to understand your revenue sources.',
+                    insights: [
+                        'Which customers generate the most revenue',
+                        'Customer purchasing patterns and frequency',
+                        'Identify your VIP customers for better service',
+                        'Spot customers who may need attention or follow-up'
+                    ]
+                }
             },
             'sales-order-detail': {
                 title: '📋 Sales Order Detail',
                 filters: ['quickDateOnly', 'customer', 'paymentStatus', 'transactionStatus'],
-                dateLabel: 'Sale Date'
+                dateLabel: 'Sale Date',
+                description: {
+                    purpose: 'View detailed information on all sales orders with line items and payment status.',
+                    insights: [
+                        'Complete order history with all items sold',
+                        'Payment status and amounts due per order',
+                        'Delivery status tracking',
+                        'Drill down into any order for full details'
+                    ]
+                }
             },
             'sales-by-product': {
                 title: '📦 Sales by Item',
                 filters: ['quickDateOnly', 'item', 'transactionStatus'],
-                dateLabel: 'Sale Date'
+                dateLabel: 'Sale Date',
+                description: {
+                    purpose: 'Analyze which products are selling best and their revenue contribution.',
+                    insights: [
+                        'Best and worst selling products',
+                        'Revenue and quantity sold by product',
+                        'Identify opportunities to promote slow movers',
+                        'Track seasonal product trends'
+                    ]
+                }
             },
             'pick-list': {
                 title: '🚚 Inventory Pick List',
@@ -12284,99 +12337,256 @@
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
                 filters: ['quickDateOnly', 'supplier', 'poType', 'paymentStatus', 'transactionStatus'],
-                dateLabel: 'PO Date'
+                dateLabel: 'PO Date',
+                description: {
+                    purpose: 'View all purchase orders with complete details including items, costs, and status.',
+                    insights: [
+                        'Track what you\'ve ordered from each supplier',
+                        'See payment status and amounts owed',
+                        'Monitor expected delivery dates',
+                        'View line item details for each order'
+                    ]
+                }
             },
             'purchase-by-supplier': {
                 title: '🏭 Purchase by Supplier',
                 filters: ['quickDateOnly', 'supplier', 'poType', 'transactionStatus'],
-                dateLabel: 'PO Date'
+                dateLabel: 'PO Date',
+                description: {
+                    purpose: 'Analyze your purchasing patterns grouped by supplier.',
+                    insights: [
+                        'Total spend with each supplier',
+                        'Compare supplier pricing and volume',
+                        'Identify your key supplier relationships',
+                        'Track ordering frequency by supplier'
+                    ]
+                }
             },
             'supplier-performance': {
                 title: '📊 Supplier Performance',
                 filters: ['dateRange', 'supplier'],
-                dateLabel: 'Date Range'
+                dateLabel: 'Date Range',
+                description: {
+                    purpose: 'Evaluate supplier reliability based on delivery times and order fulfillment.',
+                    insights: [
+                        'On-time delivery rates by supplier',
+                        'Average lead times and fulfillment rates',
+                        'Identify reliable vs problematic suppliers',
+                        'Data to support supplier negotiations'
+                    ]
+                }
             },
             'inventory-turnover': {
                 title: '🔄 Inventory Turnover',
                 filters: ['supplier', 'stockStatus', 'turnoverStatus'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Measure how quickly your inventory sells and identify slow-moving items.',
+                    insights: [
+                        'Turnover rate for each product',
+                        'Days of supply remaining',
+                        'Fast movers vs dead stock',
+                        'Optimize inventory investment'
+                    ]
+                }
             },
             'gross-margin': {
                 title: '💰 Gross Margin',
                 filters: ['supplier', 'stockStatus'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Analyze profitability by comparing your cost vs selling price for each item.',
+                    insights: [
+                        'Profit margin percentage by product',
+                        'Most and least profitable items',
+                        'Identify pricing opportunities',
+                        'Compare margins across suppliers'
+                    ]
+                }
             },
             'accounts-receivable': {
                 title: '💵 Accounts Receivable',
                 filters: ['customer', 'aging'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Track money owed to you by customers and aging of outstanding invoices.',
+                    insights: [
+                        'Total outstanding receivables',
+                        'Aging breakdown (current, 30, 60, 90+ days)',
+                        'Which customers owe you money',
+                        'Prioritize collection efforts'
+                    ]
+                }
             },
             'accounts-payable': {
                 title: '💸 Accounts Payable',
                 filters: ['supplier', 'aging'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Track money you owe to suppliers and when payments are due.',
+                    insights: [
+                        'Total outstanding payables',
+                        'Aging breakdown by due date',
+                        'Plan cash flow for upcoming payments',
+                        'Avoid late payment penalties'
+                    ]
+                }
             },
             'simple-inventory': {
                 title: '📋 Inventory List',
                 filters: ['supplier', 'stockStatus'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'View your current inventory levels with stock status for all products.',
+                    insights: [
+                        'Current quantity on hand for each item',
+                        'Items below reorder point',
+                        'Quantities on order from suppliers',
+                        'Quick inventory snapshot'
+                    ]
+                }
             },
             'inventory-adjustments': {
                 title: '📝 Inventory Adjustment History',
                 filters: ['quickDateOnly', 'item', 'adjustmentType'],
-                dateLabel: 'Adjustment Date'
+                dateLabel: 'Adjustment Date',
+                description: {
+                    purpose: 'Review all inventory adjustments made for auditing and tracking purposes.',
+                    insights: [
+                        'History of all inventory changes',
+                        'Reasons for each adjustment',
+                        'Track shrinkage and corrections',
+                        'Audit trail for inventory accuracy'
+                    ]
+                }
             },
             'profit-loss': {
                 title: '📊 Profit & Loss Statement',
                 filters: ['yearSelect', 'quarterSelect', 'cogsMethod'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'View your profit and loss statement with revenue, costs, and net income.',
+                    insights: [
+                        'Total revenue and cost of goods sold',
+                        'Gross profit and net income',
+                        'Monthly or quarterly breakdown',
+                        'Compare performance across periods'
+                    ]
+                }
             },
             'annual-sales-summary': {
                 title: '📈 Annual Sales Summary',
                 filters: ['yearSelect'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Review your annual sales performance with monthly breakdown.',
+                    insights: [
+                        'Total sales for the year',
+                        'Month-by-month sales trends',
+                        'Seasonal patterns in your business',
+                        'Year-over-year comparison data'
+                    ]
+                }
             },
             'annual-purchase-summary': {
                 title: '📉 Annual Purchase Summary',
                 filters: ['yearSelect'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Review your annual purchasing with monthly breakdown by supplier.',
+                    insights: [
+                        'Total purchases for the year',
+                        'Monthly purchasing patterns',
+                        'Supplier spending breakdown',
+                        'Plan future purchasing needs'
+                    ]
+                }
             },
             'inventory-valuation': {
                 title: '💰 Inventory Valuation',
                 filters: ['supplier'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Calculate the total value of your current inventory at cost.',
+                    insights: [
+                        'Total inventory value on hand',
+                        'Value breakdown by supplier',
+                        'Identify high-value stock items',
+                        'Data for financial reporting'
+                    ]
+                }
             },
             'cash-flow-summary': {
                 title: '💵 Cash Flow Summary',
                 filters: ['yearSelect', 'quarterSelect'],
-                dateLabel: ''
+                dateLabel: '',
+                description: {
+                    purpose: 'Track cash coming in from sales and going out for purchases.',
+                    insights: [
+                        'Cash received from customers',
+                        'Cash paid to suppliers',
+                        'Net cash flow for the period',
+                        'Plan for cash needs'
+                    ]
+                }
             },
             'daily-dashboard': {
                 title: '🎯 Sales Dashboard',
                 filters: ['quickDateOnly', 'customer'],
-                dateLabel: 'Date'
-            },
-            'business-overview': {
-                title: '📊 Business Overview',
-                filters: ['dateRange', 'topN'],
-                dateLabel: 'Date Range'
+                dateLabel: 'Date',
+                description: {
+                    purpose: 'View today\'s sales activity and key performance indicators.',
+                    insights: [
+                        'Today\'s sales and orders',
+                        'Comparison to daily average',
+                        'Top products sold today',
+                        'Quick daily performance check'
+                    ]
+                }
             },
             'product-dashboard': {
                 title: '📦 Product Dashboard',
                 filters: ['dateRange', 'item', 'topN'],
-                dateLabel: 'Date Range'
+                dateLabel: 'Date Range',
+                description: {
+                    purpose: 'Deep dive into individual product performance with sales and inventory metrics.',
+                    insights: [
+                        'Product sales history and trends',
+                        'Current stock levels and turnover',
+                        'Profit margin analysis',
+                        'Reorder recommendations'
+                    ]
+                }
             },
             'customer-dashboard': {
                 title: '👤 Customer Dashboard',
                 filters: ['customer', 'dateRange'],
                 dateLabel: 'Date Range',
-                customerRequired: true
+                customerRequired: true,
+                description: {
+                    purpose: 'View a complete profile of a customer including purchase history and account status.',
+                    insights: [
+                        'Customer purchase history and patterns',
+                        'Account balance and payment history',
+                        'Most purchased products',
+                        'Customer lifetime value'
+                    ]
+                }
             },
             'supplier-dashboard': {
                 title: '🏭 Supplier Dashboard',
                 filters: ['supplier', 'dateRange'],
                 dateLabel: 'Date Range',
-                supplierRequired: true
+                supplierRequired: true,
+                description: {
+                    purpose: 'View a complete profile of a supplier including orders and performance metrics.',
+                    insights: [
+                        'Purchase history with supplier',
+                        'Items supplied and pricing',
+                        'Delivery performance',
+                        'Account balance and payment status'
+                    ]
+                }
             }
         };
         
@@ -22302,10 +22512,16 @@
             
             const supplierId = document.getElementById('createPOSupplier').value;
             const poDate = document.getElementById('createPODate').value;
+            const expectedDeliveryDate = document.getElementById('createPOExpectedDate').value;
             const notes = document.getElementById('createPONotes')?.value;
             
             if (!supplierId || !poDate) {
                 alert('Please select supplier and date');
+                return;
+            }
+            
+            if (!expectedDeliveryDate) {
+                alert('Please select an Expected Delivery Date');
                 return;
             }
             
@@ -22387,7 +22603,7 @@
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
                 purchaseDate: poDate,
-                dueDate: null,
+                dueDate: expectedDeliveryDate,
                 paymentTerms: 'Net 30',
                 status: 'Ordered', // OUTGOING status
                 totalAmount: total,
@@ -22686,6 +22902,7 @@ NOTE: Please print the attached PO document for full details.`;
         function clearCreatePOForm() {
             document.getElementById('createPOSupplier').value = '';
             document.getElementById('createPODate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('createPOExpectedDate').value = new Date().toISOString().split('T')[0];
             
             // Clear all line items except the first one
             const container = document.getElementById('createPOLineItems');
@@ -22729,6 +22946,8 @@ NOTE: Please print the attached PO document for full details.`;
             const supplier = (supplierEl && supplierEl.value) ? supplierEl.value : (window.itemPickerSupplierContext || '');
             
             const isFilterInput = window.itemPickerIsFilter;
+            const isMultiSelect = window.multiSelectMode || false;
+            const selectedItems = window.multiSelectedItems || new Set();
             
             let filtered = (window.itemPickerItems || []).filter(item => {
                 // Search filter - check SKU and Description (convert to string first!)
@@ -22747,6 +22966,16 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             let html = '';
+            
+            // Show selection count in multi-select mode
+            if (isMultiSelect && selectedItems.size > 0) {
+                html += `
+                    <div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #2e7d32; font-weight: bold;">✅ ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected</span>
+                        <button onclick="clearMultiSelection()" style="background: #fff; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Clear All</button>
+                    </div>
+                `;
+            }
             
             // Add "Clear Filter" option for filter text inputs
             if (isFilterInput && !search && !supplier) {
@@ -22841,12 +23070,26 @@ NOTE: Please print the attached PO document for full details.`;
                 
                 const supplierName = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID)?.Supplier_Name || 'Unknown';
                 
+                // Multi-select mode: show checkbox
+                const isSelected = selectedItems.has(item.Item_ID);
+                const checkboxHtml = isMultiSelect ? `
+                    <div style="position: absolute; top: 10px; right: 10px; z-index: 5;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; border: 3px solid ${isSelected ? '#4caf50' : '#ccc'}; background: ${isSelected ? '#4caf50' : 'white'}; display: flex; align-items: center; justify-content: center;">
+                            ${isSelected ? '<span style="color: white; font-size: 16px; font-weight: bold;">✓</span>' : ''}
+                        </div>
+                    </div>
+                ` : '';
+                
+                const cardStyle = isMultiSelect && isSelected ? 'border: 3px solid #4caf50; background: #f1f8e9;' : '';
+                const clickHandler = isMultiSelect ? `toggleMultiSelectItem('${item.Item_ID}')` : `selectItemFromPicker('${item.Item_ID}')`;
+                
                 html += `
-                    <div class="item-picker-card" 
+                    <div class="item-picker-card" style="position: relative; ${cardStyle}"
                          ontouchstart="pickerTouchStart(event)" 
                          ontouchmove="pickerTouchMove(event)" 
-                         ontouchend="if(pickerTouchEnd()) selectItemFromPicker('${item.Item_ID}')"
-                         onclick="selectItemFromPicker('${item.Item_ID}')">
+                         ontouchend="if(pickerTouchEnd()) ${clickHandler}"
+                         onclick="${clickHandler}">
+                        ${checkboxHtml}
                         <div class="item-picker-header-row" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px;">
                             <span class="item-picker-sku">${item.SKU || ''}</span>
                             <span class="item-picker-stock ${stockClass}">${stockText}</span>${onOrderBadge}${backorderBadge}${topSellerBadge}
@@ -22874,6 +23117,291 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
         };
+        
+        // Multi-select helper functions
+        function toggleMultiSelectItem(itemId) {
+            if (!window.multiSelectedItems) window.multiSelectedItems = new Set();
+            
+            if (window.multiSelectedItems.has(itemId)) {
+                window.multiSelectedItems.delete(itemId);
+            } else {
+                window.multiSelectedItems.add(itemId);
+            }
+            
+            renderItemPickerList();
+            updateMultiSelectCount();
+        }
+        
+        function clearMultiSelection() {
+            window.multiSelectedItems = new Set();
+            renderItemPickerList();
+            updateMultiSelectCount();
+        }
+        
+        function updateMultiSelectCount() {
+            const count = window.multiSelectedItems ? window.multiSelectedItems.size : 0;
+            const countEl = document.getElementById('itemSelectionCount');
+            if (countEl) {
+                countEl.textContent = count > 0 ? `${count} item${count > 1 ? 's' : ''} selected` : '';
+            }
+        }
+        
+        // Open multi-select picker for Purchase Orders
+        function openMultiItemPickerForPO() {
+            const supplierId = document.getElementById('createPOSupplier').value;
+            
+            if (!supplierId) {
+                alert('Please select a supplier first');
+                return;
+            }
+            
+            // Set up multi-select mode
+            window.multiSelectMode = true;
+            window.multiSelectContext = 'PO';
+            window.multiSelectedItems = new Set();
+            window.itemPickerSupplierContext = supplierId;
+            window.itemPickerItems = cachedItems || [];
+            
+            // Hide supplier filter (already selected)
+            const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
+            if (supplierFilterDiv) supplierFilterDiv.style.display = 'none';
+            
+            // Update modal header
+            document.querySelector('#itemPickerModal .item-picker-header h3').textContent = '📋 Select Multiple Items';
+            
+            // Update Done button to add selected items
+            const doneBtn = document.querySelector('#itemPickerModal .item-picker-footer button.btn');
+            if (doneBtn) {
+                doneBtn.textContent = '➕ Add Selected Items';
+                doneBtn.onclick = addSelectedItemsToPO;
+            }
+            
+            // Clear search
+            document.getElementById('itemPickerSearch').value = '';
+            
+            // Render items
+            renderItemPickerList();
+            
+            // Show modal
+            document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Open multi-select picker for Sales Orders
+        function openMultiItemPickerForSO() {
+            const customerId = document.getElementById('newSaleCustomer').value;
+            
+            if (!customerId) {
+                alert('Please select a customer first');
+                return;
+            }
+            
+            // Set up multi-select mode
+            window.multiSelectMode = true;
+            window.multiSelectContext = 'SO';
+            window.multiSelectedItems = new Set();
+            window.itemPickerSupplierContext = ''; // Show all items for sales
+            window.itemPickerItems = cachedItems || [];
+            
+            // Show supplier filter for sales
+            const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
+            const supplierSelect = document.getElementById('itemPickerSupplier');
+            if (supplierFilterDiv) {
+                supplierFilterDiv.style.display = 'block';
+                supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+                if (cachedSuppliers && cachedSuppliers.length > 0) {
+                    cachedSuppliers.forEach(s => {
+                        supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                    });
+                }
+                supplierSelect.value = '';
+            }
+            
+            // Update modal header
+            document.querySelector('#itemPickerModal .item-picker-header h3').textContent = '📋 Select Multiple Items';
+            
+            // Update Done button to add selected items
+            const doneBtn = document.querySelector('#itemPickerModal .item-picker-footer button.btn');
+            if (doneBtn) {
+                doneBtn.textContent = '➕ Add Selected Items';
+                doneBtn.onclick = addSelectedItemsToSO;
+            }
+            
+            // Clear search
+            document.getElementById('itemPickerSearch').value = '';
+            
+            // Render items
+            renderItemPickerList();
+            
+            // Show modal
+            document.getElementById('itemPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Add selected items to Purchase Order
+        function addSelectedItemsToPO() {
+            const selectedItems = window.multiSelectedItems || new Set();
+            
+            if (selectedItems.size === 0) {
+                alert('Please select at least one item');
+                return;
+            }
+            
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const container = document.getElementById('createPOLineItems');
+            
+            // Get existing rows to check for duplicates
+            const existingItems = new Set();
+            container.querySelectorAll('.createpo-item').forEach(sel => {
+                if (sel.value) existingItems.add(sel.value);
+            });
+            
+            // Clear empty rows first
+            const rows = container.querySelectorAll('.line-item-row');
+            rows.forEach(row => {
+                const itemSelect = row.querySelector('.createpo-item');
+                if (!itemSelect.value) {
+                    row.remove();
+                }
+            });
+            
+            // Add new rows for each selected item
+            selectedItems.forEach(itemId => {
+                if (existingItems.has(itemId)) return; // Skip duplicates
+                
+                const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+                if (!item) return;
+                
+                // Create new row
+                const newRow = document.createElement('div');
+                newRow.className = 'line-item-row';
+                newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
+                
+                const cost = parseFloat(item.Package_Cost) || 0;
+                const units = parseInt(item.Units_Per_Package) || 1;
+                
+                newRow.innerHTML = `
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                        <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
+                            <option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                        <input type="number" class="createpo-qty" placeholder="Qty" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">${units}</div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">$${cost.toFixed(2)}</div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                    </div>
+                    <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px;">🗑️</button>
+                `;
+                
+                container.appendChild(newRow);
+            });
+            
+            // Close picker
+            closeItemPicker();
+            
+            // Focus first empty quantity field
+            setTimeout(() => {
+                const firstEmptyQty = container.querySelector('.createpo-qty:not([value]):not(:placeholder-shown), .createpo-qty[value=""]');
+                if (firstEmptyQty) firstEmptyQty.focus();
+            }, 100);
+            
+            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+        }
+        
+        // Add selected items to Sales Order
+        function addSelectedItemsToSO() {
+            const selectedItems = window.multiSelectedItems || new Set();
+            
+            if (selectedItems.size === 0) {
+                alert('Please select at least one item');
+                return;
+            }
+            
+            const container = document.getElementById('soLineItems');
+            
+            // Get existing rows to check for duplicates
+            const existingItems = new Set();
+            container.querySelectorAll('.so-item').forEach(sel => {
+                if (sel.value) existingItems.add(sel.value);
+            });
+            
+            // Clear empty rows first
+            const rows = container.querySelectorAll('.line-item-row');
+            rows.forEach(row => {
+                const itemSelect = row.querySelector('.so-item');
+                if (!itemSelect.value) {
+                    row.remove();
+                }
+            });
+            
+            // Add new rows for each selected item
+            selectedItems.forEach(itemId => {
+                if (existingItems.has(itemId)) return; // Skip duplicates
+                
+                const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+                if (!item) return;
+                
+                const sellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                const qty = parseInt(item.Qty_On_Hand) || 0;
+                
+                // Create new row
+                const newRow = document.createElement('div');
+                newRow.className = 'line-item-row';
+                newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;';
+                
+                newRow.innerHTML = `
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                        <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
+                            <option value="${item.Item_ID}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
+                        <input type="number" class="so-qty" placeholder="Qty" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
+                        <input type="number" class="so-price" value="${sellPrice.toFixed(2)}" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                    </div>
+                    <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">🗑️</button>
+                    <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; border-radius: 6px; border: 2px solid #e8f5e9; background: #f1f8e9;">
+                        📦 Stock: ${qty} available
+                    </div>
+                `;
+                
+                container.appendChild(newRow);
+                
+                // Attach remove handler
+                newRow.querySelector('.remove-btn').onclick = function() {
+                    this.closest('.line-item-row').remove();
+                };
+            });
+            
+            // Close picker
+            closeItemPicker();
+            
+            // Focus first empty quantity field
+            setTimeout(() => {
+                const firstEmptyQty = container.querySelector('.so-qty:not([value]):not(:placeholder-shown), .so-qty[value=""]');
+                if (firstEmptyQty) firstEmptyQty.focus();
+            }, 100);
+            
+            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+        }
         
         // ============================================================================
         // INVENTORY FLOW DASHBOARD FUNCTIONS
@@ -24374,6 +24902,19 @@ NOTE: Please print the attached PO document for full details.`;
         function closeItemPicker() {
             document.getElementById('itemPickerModal').style.display = 'none';
             window.itemPickerCallback = null;
+            window.multiSelectMode = false;
+            window.multiSelectedItems = new Set();
+            
+            // Reset modal header
+            const headerEl = document.querySelector('#itemPickerModal .item-picker-header h3');
+            if (headerEl) headerEl.textContent = '📦 Select Item(s)';
+            
+            // Reset Done button
+            const doneBtn = document.querySelector('#itemPickerModal .item-picker-footer button.btn');
+            if (doneBtn) {
+                doneBtn.textContent = '✓ Done';
+                doneBtn.onclick = function() { closeItemPicker(); closeItemPickerForReport(); };
+            }
             
             // Only remove modal-open if no other modals are open
             const reportModal = document.getElementById('reportSetupModal');
