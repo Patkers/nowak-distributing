@@ -2093,11 +2093,11 @@
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                         <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveConfig()" style="background: #059669;">💾 Save All Settings</button>
                         <button class="btn btn-secondary" onclick="refreshAfterEnvSwitch()">🔄 Refresh Data</button>
+                        <button class="btn" onclick="restoreDefaultUrls()" style="background: #7c3aed;">🔧 Restore Default URLs</button>
                     </div>
                     
                     <p style="margin: 15px 0 0 0; padding: 10px; background: #fef3c7; border-radius: 6px; color: #92400e; font-size: 12px;">
-                        💡 <strong>Tip:</strong> Settings persist after hard refresh (Ctrl+Shift+R). Switch environments anytime without losing your configuration!
-                    </p>
+                        💡 <strong>Tip:</strong> If URLs are blank after clearing site data, click "Restore Default URLs" to repopulate them!</p>
                 </div>
             </div>
         </div>
@@ -5486,8 +5486,8 @@
         // ==================== ENVIRONMENT MANAGEMENT ====================
         // Default URLs for each environment
         const DEFAULT_PRODUCTION_URL = 'https://script.google.com/macros/s/AKfycbyCcX93pMAfO3hOsrQjDuSnMMMmL0l9EnLFHnn0BBQ_RjGelL-Jp-0OcSRTgf72rIAITA/exec';
-        const DEFAULT_TRAINING_URL = '';
-        const DEFAULT_TEST_URL = '';
+        const DEFAULT_TRAINING_URL = 'https://script.google.com/macros/s/AKfycbxfYLcOjk04p2MMSzAkiUT26MXx0zrzCmBdCqJ1oPfgcvIEBNtIfTzOsStuV-Nlibc7/exec';
+        const DEFAULT_TEST_URL = 'https://script.google.com/macros/s/AKfycbyNVzERe6ZKvSiTX0yNF3IU9gT2V2cK8hzXoqsSmU5hE9fVXokO0zV2XXbiWxyrB-DF/exec';
         
         // Environment configuration (loaded from localStorage)
         let environments = {
@@ -5587,6 +5587,30 @@
                 
                 console.log(`Saved ${env} URL:`, url);
             }
+        }
+        
+        // Restore default URLs (useful after clearing site data)
+        function restoreDefaultUrls() {
+            // Set the input fields to default values
+            document.getElementById('envUrl-production').value = DEFAULT_PRODUCTION_URL;
+            document.getElementById('envUrl-training').value = DEFAULT_TRAINING_URL;
+            document.getElementById('envUrl-test').value = DEFAULT_TEST_URL;
+            
+            // Save to localStorage
+            environments.production = DEFAULT_PRODUCTION_URL;
+            environments.training = DEFAULT_TRAINING_URL;
+            environments.test = DEFAULT_TEST_URL;
+            
+            localStorage.setItem('envUrl-production', DEFAULT_PRODUCTION_URL);
+            localStorage.setItem('envUrl-training', DEFAULT_TRAINING_URL);
+            localStorage.setItem('envUrl-test', DEFAULT_TEST_URL);
+            
+            // Update current API_URL
+            API_URL = environments[currentEnvironment] || DEFAULT_PRODUCTION_URL;
+            localStorage.setItem('apiUrl', API_URL);
+            
+            alert('✅ Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
+            console.log('Default URLs restored:', environments);
         }
         
         // Update UI to reflect current environment
@@ -11973,8 +11997,8 @@
             
             const data = {
                 itemId: itemId,
-                adjustment: adjustment,
-                reference: 'MANUAL',
+                quantity: adjustment,  // Backend expects 'quantity' not 'adjustment'
+                adjustmentType: 'Manual',
                 reason: reason + (notes ? ' - ' + notes : ''),
                 user: 'Manual'
             };
@@ -12304,6 +12328,7 @@
             'action-dashboard': {
                 title: '🚨 Action Dashboard',
                 filters: [], // No filters needed - shows all critical actions
+                noFilters: true, // Skip setup and go directly to report
                 dateLabel: '',
                 description: {
                     purpose: 'View all critical business issues that need immediate attention in one place.',
