@@ -6005,11 +6005,13 @@
         
         // Helper functions to lookup names from IDs
         function getCustomerName(customerId) {
+            if (!cachedCustomers || cachedCustomers.length === 0) return customerId;
             const customer = cachedCustomers.find(c => c.Customer_ID === customerId);
             return customer ? customer.Customer_Name : customerId;
         }
         
         function getSupplierName(supplierId) {
+            if (!cachedSuppliers || cachedSuppliers.length === 0) return supplierId;
             const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
             return supplier ? supplier.Supplier_Name : supplierId;
         }
@@ -11885,6 +11887,16 @@
             document.getElementById('adjustItem').value = '';
             document.getElementById('adjustReasonDisplay').value = '';
             document.getElementById('adjustReason').value = '';
+            
+            // Check if we should return to a report (e.g., Action Dashboard)
+            if (returnToReport) {
+                const reportToOpen = returnToReport;
+                returnToReport = null; // Clear it so we don't loop
+                // Delay to allow user to see any success/status messages
+                setTimeout(() => {
+                    showReport(reportToOpen);
+                }, 800);
+            }
         }
         
         function updateAdjustmentCalc() {
@@ -11948,6 +11960,8 @@
             
             if (result && result.status === 'success') {
                 showStatus('inventoryStatus', `✅ Inventory adjusted! ${item.Item_Description}: ${currentQty} → ${newQty}`, 'success');
+                
+                // Note: hideAdjustInventoryForm will handle returning to report if returnToReport is set
                 hideAdjustInventoryForm();
                 loadInventory();
             } else {
@@ -11961,6 +11975,7 @@
         let reportData = {};
         let rawReportData = {}; // Store unfiltered data for re-filtering
         let reportFilters = {}; // Store current filter values
+        let returnToReport = null; // Store report to return to after action (e.g., from Action Dashboard)
         
         // Helper: Build filter UI HTML
         function buildFilterUI(reportType, options = {}) {
@@ -13705,6 +13720,16 @@
                 
                 container.innerHTML = reportHtml;
                 
+                // Execute any inline scripts (Chart.js initialization)
+                // Scripts added via innerHTML don't execute automatically
+                const scripts = container.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    document.body.appendChild(newScript);
+                    document.body.removeChild(newScript);
+                });
+                
                 // Make tables sortable
                 makeReportTablesSortable();
                 
@@ -14113,6 +14138,55 @@
                 </div>
             `;
             
+            // Group by payment status for chart (BEFORE table)
+            const byStatus = {};
+            sales.forEach(s => {
+                const status = s.Payment_Status || 'Unpaid';
+                if (!byStatus[status]) byStatus[status] = { count: 0, amount: 0 };
+                byStatus[status].count++;
+                byStatus[status].amount += parseFloat(s.Total_Amount) || 0;
+            });
+            
+            const soChartId = 'soStatusChart_' + Date.now();
+            const soLabels = Object.keys(byStatus);
+            const soData = soLabels.map(s => byStatus[s].count);
+            const soColors = {
+                'Paid': '#4caf50',
+                'Partial': '#03a9f4',
+                'Unpaid': '#ff9800',
+                'Overdue': '#f44336'
+            };
+            const chartColors = soLabels.map(s => soColors[s] || '#9c27b0');
+            
+            // Chart Section
+            html += `
+                <div style="margin-bottom: 20px;">
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📊 Payment Status</strong>
+                        <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px;">
+                            <canvas id="${soChartId}" height="180"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Detail Table Section (collapsible)
+            html += `
+                <div>
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📋 Detail Table</strong>
+                        <span style="color: #666; font-size: 12px;">(${sales.length} orders - click to hide/show)</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+            `;
+            
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
                     <th>Invoice #</th>
@@ -14142,43 +14216,13 @@
                 <td colspan="3">TOTAL</td>
                 <td style="text-align: right;">${formatMoney(total)}</td>
                 <td></td>
-            </tr></tfoot></table></div>`;
-            
-            // Group by payment status for chart
-            const byStatus = {};
-            sales.forEach(s => {
-                const status = s.Payment_Status || 'Unpaid';
-                if (!byStatus[status]) byStatus[status] = { count: 0, amount: 0 };
-                byStatus[status].count++;
-                byStatus[status].amount += parseFloat(s.Total_Amount) || 0;
-            });
-            
-            const soChartId = 'soStatusChart_' + Date.now();
-            const soLabels = Object.keys(byStatus);
-            const soData = soLabels.map(s => byStatus[s].count);
-            const soColors = {
-                'Paid': '#4caf50',
-                'Partial': '#03a9f4',
-                'Unpaid': '#ff9800',
-                'Overdue': '#f44336'
-            };
-            const chartColors = soLabels.map(s => soColors[s] || '#9c27b0');
-            
-            html += `
-                <div style="margin-top: 20px; margin-bottom: 20px;">
-                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
-                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
-                        <span class="toggle-icon">▼</span>
-                        <strong>📊 Payment Status</strong>
-                        <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px;">
-                            <canvas id="${soChartId}" height="180"></canvas>
-                        </div>
+            </tr></tfoot></table></div>
                     </div>
                 </div>
-                
+            `;
+            
+            // Chart.js initialization
+            html += `
                 <scr` + `ipt>
                     setTimeout(() => {
                         const ctx = document.getElementById('${soChartId}');
@@ -14585,6 +14629,55 @@
                 </div>
             `;
             
+            // Group by status for chart (BEFORE table)
+            const byStatus = {};
+            purchases.forEach(p => {
+                const status = p.Status || 'Pending';
+                if (!byStatus[status]) byStatus[status] = { count: 0, amount: 0 };
+                byStatus[status].count++;
+                byStatus[status].amount += parseFloat(p.Total_Amount) || 0;
+            });
+            
+            const statusChartId = 'poStatusChart_' + Date.now();
+            const statusLabels = Object.keys(byStatus);
+            const statusData = statusLabels.map(s => byStatus[s].count);
+            const statusColors = {
+                'Received': '#4caf50',
+                'Pending': '#ff9800',
+                'Voided': '#9e9e9e',
+                'Partial': '#03a9f4'
+            };
+            const chartColors = statusLabels.map(s => statusColors[s] || '#9c27b0');
+            
+            // Chart Section
+            html += `
+                <div style="margin-bottom: 20px;">
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📊 Status Breakdown</strong>
+                        <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px;">
+                            <canvas id="${statusChartId}" height="180"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Detail Table Section (collapsible)
+            html += `
+                <div>
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📋 Detail Table</strong>
+                        <span style="color: #666; font-size: 12px;">(${purchases.length} orders - click to hide/show)</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+            `;
+            
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
                     <th>PO #</th>
@@ -14618,43 +14711,13 @@
                 <td colspan="4">TOTAL</td>
                 <td style="text-align: right;">${formatMoney(total)}</td>
                 <td></td>
-            </tr></tfoot></table></div>`;
-            
-            // Group by status for chart
-            const byStatus = {};
-            purchases.forEach(p => {
-                const status = p.Status || 'Pending';
-                if (!byStatus[status]) byStatus[status] = { count: 0, amount: 0 };
-                byStatus[status].count++;
-                byStatus[status].amount += parseFloat(p.Total_Amount) || 0;
-            });
-            
-            const statusChartId = 'poStatusChart_' + Date.now();
-            const statusLabels = Object.keys(byStatus);
-            const statusData = statusLabels.map(s => byStatus[s].count);
-            const statusColors = {
-                'Received': '#4caf50',
-                'Pending': '#ff9800',
-                'Voided': '#9e9e9e',
-                'Partial': '#03a9f4'
-            };
-            const chartColors = statusLabels.map(s => statusColors[s] || '#9c27b0');
-            
-            html += `
-                <div style="margin-top: 20px; margin-bottom: 20px;">
-                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
-                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
-                        <span class="toggle-icon">▼</span>
-                        <strong>📊 Status Breakdown</strong>
-                        <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px;">
-                            <canvas id="${statusChartId}" height="180"></canvas>
-                        </div>
+            </tr></tfoot></table></div>
                     </div>
                 </div>
-                
+            `;
+            
+            // Chart.js initialization
+            html += `
                 <scr` + `ipt>
                     setTimeout(() => {
                         const ctx = document.getElementById('${statusChartId}');
@@ -15995,7 +16058,7 @@
                     });
                     
                     totalCost += orderCost;
-                    totalSale += lineSale;
+                    totalSale += orderSale;
                 }
             }
             
@@ -17822,14 +17885,37 @@
                 parts.push(`📅 ${periodLabel}`);
             }
             
-            // Customer
+            // Customer (handle multi-select)
             if (reportFilters.customer) {
-                parts.push(`👤 ${getCustomerName(reportFilters.customer)}`);
+                const customerIds = reportFilters.customer.split(',').filter(id => id.trim());
+                if (customerIds.length === 1) {
+                    parts.push(`👤 ${getCustomerName(customerIds[0])}`);
+                } else if (customerIds.length > 1) {
+                    // Show names instead of just codes
+                    const names = customerIds.map(id => getCustomerName(id)).join(', ');
+                    if (names.length > 50) {
+                        // If too long, abbreviate
+                        parts.push(`👤 ${customerIds.length} customers`);
+                    } else {
+                        parts.push(`👤 ${names}`);
+                    }
+                }
             }
             
-            // Supplier
+            // Supplier (handle multi-select)
             if (reportFilters.supplier) {
-                parts.push(`🏭 ${getSupplierName(reportFilters.supplier)}`);
+                const supplierIds = reportFilters.supplier.split(',').filter(id => id.trim());
+                if (supplierIds.length === 1) {
+                    parts.push(`🏭 ${getSupplierName(supplierIds[0])}`);
+                } else if (supplierIds.length > 1) {
+                    // Show names instead of just codes
+                    const names = supplierIds.map(id => getSupplierName(id)).join(', ');
+                    if (names.length > 50) {
+                        parts.push(`🏭 ${supplierIds.length} suppliers`);
+                    } else {
+                        parts.push(`🏭 ${names}`);
+                    }
+                }
             }
             
             // Payment Status
@@ -20043,6 +20129,9 @@
                 alert('Item not found. Please refresh and try again.');
                 return;
             }
+            
+            // Store that we should return to Action Dashboard when done
+            returnToReport = 'action-dashboard';
             
             // Close the report modal
             closeReportSetup();
@@ -25685,7 +25774,7 @@ NOTE: Please print the attached PO document for full details.`;
                 ]);
             } catch (error) {
                 console.error('Dashboard timeout or error:', error);
-                showStatus('Dashboard failed to load: ' + error.message, 'error');
+                console.log('Dashboard failed to load: ' + error.message);
                 
                 const alertsDiv = document.getElementById('invflowAlerts');
                 if (alertsDiv) {
@@ -25711,7 +25800,7 @@ NOTE: Please print the attached PO document for full details.`;
         async function refreshInventoryFlow() {
             console.log('🔄 Starting refreshInventoryFlow...');
             try {
-                showStatus('Loading inventory flow data...', 'info');
+                console.log('Loading inventory flow data...');
                 
                 // Make sure we have all the data loaded
                 console.log('📦 Checking cached data...');
@@ -25756,11 +25845,11 @@ NOTE: Please print the attached PO document for full details.`;
                 console.log('✅ Critical items rendered');
                 
                 console.log('🎉 Dashboard refresh complete!');
-                showStatus('Inventory flow dashboard updated!', 'success');
+                console.log('Inventory flow dashboard updated!');
             } catch (error) {
                 console.error('❌ Error refreshing inventory flow:', error);
                 console.error('Error stack:', error.stack);
-                showStatus('Error loading dashboard: ' + error.message, 'error');
+                console.error('Error loading dashboard: ' + error.message);
                 
                 // Show error in alerts section
                 const alertsDiv = document.getElementById('invflowAlerts');
@@ -27791,6 +27880,15 @@ NOTE: Please print the attached PO document for full details.`;
                 if (displayInput) displayInput.value = supplier ? supplier.Supplier_Name : selectedSuppliersForPricing[0];
                 if (hiddenInput) hiddenInput.value = selectedSuppliersForPricing[0];
                 if (countDiv) countDiv.textContent = '1 supplier selected';
+            } else if (selectedSuppliersForPricing.length <= 3) {
+                // For 2-3 suppliers, show their names
+                const names = selectedSuppliersForPricing.map(id => {
+                    const s = (cachedSuppliers || []).find(sup => sup.Supplier_ID === id);
+                    return s ? s.Supplier_Name : id;
+                }).join(', ');
+                if (displayInput) displayInput.value = names;
+                if (hiddenInput) hiddenInput.value = selectedSuppliersForPricing.join(',');
+                if (countDiv) countDiv.textContent = `${selectedSuppliersForPricing.length} suppliers selected`;
             } else {
                 if (displayInput) displayInput.value = `${selectedSuppliersForPricing.length} suppliers selected`;
                 if (hiddenInput) hiddenInput.value = selectedSuppliersForPricing.join(',');
@@ -27864,6 +27962,15 @@ NOTE: Please print the attached PO document for full details.`;
                 if (displayInput) displayInput.value = supplier ? supplier.Supplier_Name : selectedSuppliersForReport[0];
                 if (hiddenInput) hiddenInput.value = selectedSuppliersForReport[0];
                 if (countDiv) countDiv.textContent = '1 supplier selected';
+            } else if (selectedSuppliersForReport.length <= 3) {
+                // For 2-3 suppliers, show their names
+                const names = selectedSuppliersForReport.map(id => {
+                    const s = (cachedSuppliers || []).find(sup => sup.Supplier_ID === id);
+                    return s ? s.Supplier_Name : id;
+                }).join(', ');
+                if (displayInput) displayInput.value = names;
+                if (hiddenInput) hiddenInput.value = selectedSuppliersForReport.join(',');
+                if (countDiv) countDiv.textContent = `${selectedSuppliersForReport.length} suppliers selected`;
             } else {
                 if (displayInput) displayInput.value = `${selectedSuppliersForReport.length} suppliers selected`;
                 if (hiddenInput) hiddenInput.value = selectedSuppliersForReport.join(',');
@@ -28862,10 +28969,10 @@ NOTE: Please print the attached PO document for full details.`;
                             </div>
                             ${c.Address || c.City || c.State || c.Zip ? `
                                 <div style="margin-top: 10px; padding: 10px; background: ${isSelected ? '#ffffff' : '#f8f9fa'}; border-radius: 8px; border: 1px solid #e0e0e0;">
-                                    <div style="font-weight: 600; color: #555; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
-                                    ${c.Address ? `<div style="font-size: 13px; color: #333;">${c.Address}</div>` : ''}
+                                    <div style="font-weight: 600; color: #666; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
+                                    ${c.Address ? `<div style="font-size: 13px; color: #222 !important;">${c.Address}</div>` : ''}
                                     ${c.City || c.State || c.Zip ? `
-                                        <div style="font-size: 13px; color: #555;">
+                                        <div style="font-size: 13px; color: #444 !important;">
                                             ${c.City || ''}${c.City && (c.State || c.Zip) ? ', ' : ''}${c.State || ''} ${c.Zip || ''}
                                         </div>
                                     ` : ''}
@@ -28936,7 +29043,17 @@ NOTE: Please print the attached PO document for full details.`;
                 if (displayInput) displayInput.value = customer ? customer.Customer_Name : selectedCustomersForReport[0];
                 if (hiddenInput) hiddenInput.value = selectedCustomersForReport[0];
                 if (countDiv) countDiv.textContent = '1 customer selected';
+            } else if (selectedCustomersForReport.length <= 3) {
+                // For 2-3 customers, show their names
+                const names = selectedCustomersForReport.map(id => {
+                    const c = (cachedCustomers || []).find(cust => cust.Customer_ID === id);
+                    return c ? c.Customer_Name : id;
+                }).join(', ');
+                if (displayInput) displayInput.value = names;
+                if (hiddenInput) hiddenInput.value = selectedCustomersForReport.join(',');
+                if (countDiv) countDiv.textContent = `${selectedCustomersForReport.length} customers selected`;
             } else {
+                // For more than 3, show count
                 if (displayInput) displayInput.value = `${selectedCustomersForReport.length} customers selected`;
                 if (hiddenInput) hiddenInput.value = selectedCustomersForReport.join(',');
                 if (countDiv) countDiv.textContent = `${selectedCustomersForReport.length} customers selected`;
