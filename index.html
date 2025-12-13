@@ -5998,6 +5998,15 @@
         // Prevents double-clicks/taps from submitting forms twice
         let buttonDebounceMap = new Map();
         
+        // Get today's date in YYYY-MM-DD format using LOCAL time (not UTC)
+        function getTodayLocalDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        
         function debounceButton(buttonElement, duration = 2000) {
             if (!buttonElement) return false;
             
@@ -6084,7 +6093,7 @@
             
             updateConfigStatus();
             loadInvoiceSettings();
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayLocalDate();
             if (document.getElementById('poDate')) document.getElementById('poDate').value = today;
             if (document.getElementById('soDate')) document.getElementById('soDate').value = today;
             if (document.getElementById('soDueDate')) document.getElementById('soDueDate').value = today;
@@ -8132,10 +8141,17 @@
                 if (!continueWithOverpay) return;
             }
 
+            // Get the selected date and add current time
+            const selectedPODate = document.getElementById('poDate').value;
+            const nowPO = new Date();
+            const poDateWithTime = selectedPODate === getTodayLocalDate() 
+                ? nowPO.toISOString()  // Today - use actual current time
+                : `${selectedPODate}T${nowPO.toTimeString().split(' ')[0]}`; // Other date - add current time
+
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
-                poDate: document.getElementById('poDate').value,
+                poDate: poDateWithTime,
                 dueDate: document.getElementById('poDueDate').value || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: calculatedTotal,
@@ -10434,9 +10450,16 @@
                 // Generate invoice number: INV-120725-001
                 const invoiceNumber = `INV-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
 
+                // Get the selected date and add current time
+                const selectedDate = document.getElementById('soDate').value;
+                const now = new Date();
+                const saleDateWithTime = selectedDate === getTodayLocalDate() 
+                    ? now.toISOString()  // Today - use actual current time
+                    : `${selectedDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
+
                 const data = {
                     customerId: document.getElementById('soCustomer').value,
-                    saleDate: document.getElementById('soDate').value,
+                    saleDate: saleDateWithTime,
                     invoiceNumber: invoiceNumber,
                     paymentMethod: document.getElementById('soPayment').value,
                     dueDate: document.getElementById('soDueDate').value || null,
@@ -20064,7 +20087,7 @@
                 }
                 
                 // Set today's date
-                const today = new Date().toISOString().split('T')[0];
+                const today = getTodayLocalDate();
                 document.getElementById('createPODate').value = today;
                 document.getElementById('createPOExpectedDate').value = ''; // User must select
                 
@@ -20146,7 +20169,7 @@
                 }
                 
                 // Set today's date
-                const today = new Date().toISOString().split('T')[0];
+                const today = getTodayLocalDate();
                 document.getElementById('createPODate').value = today;
                 document.getElementById('createPOExpectedDate').value = ''; // User must select
                 
@@ -24564,7 +24587,7 @@
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin: 0;">
                             <label>Receive Date (defaults to today)</label>
-                            <input type="date" id="receiveDate" value="${new Date().toISOString().split('T')[0]}" style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
+                            <input type="date" id="receiveDate" value="${getTodayLocalDate()}" style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
                         </div>
                     </div>
                     
@@ -25053,11 +25076,17 @@
             // Generate PO number: PO-120725-001
             const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
             
+            // Get the selected date and add current time
+            const now = new Date();
+            const poDateWithTime = poDate === getTodayLocalDate() 
+                ? now.toISOString()  // Today - use actual current time
+                : `${poDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
+            
             // Create OUTGOING PO
             const data = {
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
-                purchaseDate: poDate,
+                poDate: poDateWithTime,  // Fixed: was 'purchaseDate', backend expects 'poDate'
                 dueDate: expectedDeliveryDate,
                 paymentTerms: 'Net 30',
                 status: 'Ordered', // OUTGOING status
@@ -25356,7 +25385,7 @@ NOTE: Please print the attached PO document for full details.`;
         
         function clearCreatePOForm() {
             document.getElementById('createPOSupplier').value = '';
-            document.getElementById('createPODate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('createPODate').value = getTodayLocalDate();
             document.getElementById('createPOExpectedDate').value = ''; // User must select
             
             // Clear all line items except the first one
