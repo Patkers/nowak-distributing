@@ -4,14 +4,14 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Saturday, December 14, 2025 @ 3:20 AM CST
-         VERSION: V10Z-20251214-0320
+         LAST UPDATED: Saturday, December 14, 2025 @ 3:25 AM CST
+         VERSION: V10Z-20251214-0325
          =====================================================
          CHANGES IN THIS VERSION:
          - Badge and Settings HIDE on scroll (fade out after 50px)
-         - Show again when scrolled back to top
-         - Smooth 0.3s opacity transition
          - Production letter = white (matches gear)
+         - Fixed button names to Proper Case
+         - Only Action Dashboard is RED, all others use theme color
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -3496,8 +3496,8 @@
                         <span id="dashboardReports-toggle" class="report-toggle">▼</span>
                     </div>
                     <div id="dashboardReports" class="report-buttons">
-                        <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border-left: 4px solid #b91c1c !important;">🚨 ACTION DASHBOARD</button>
-                        <button class="btn report-btn" onclick="showReport('business-overview')" style="background: linear-gradient(135deg, #059669, #10b981) !important; color: white !important; font-weight: 700; border-left: 4px solid #047857 !important;">📊 BUSINESS OVERVIEW</button>
+                        <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border-left: 4px solid #b91c1c !important;">🚨 Action Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('business-overview')">📊 Business Overview</button>
                         <button class="btn report-btn" onclick="showReport('daily-dashboard')">🎯 Sales Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('product-dashboard')">📦 Product Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('customer-dashboard')">👤 Customer Dashboard</button>
@@ -3514,7 +3514,7 @@
                         <button class="btn report-btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
                         <button class="btn report-btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Item</button>
-                        <button class="btn report-btn" onclick="showReport('pick-list')" style="background: linear-gradient(135deg, #0891b2, #06b6d4) !important; color: white !important; font-weight: 700; border-left: 4px solid #0e7490 !important;">🚚 PICK LIST</button>
+                        <button class="btn report-btn" onclick="showReport('pick-list')">🚚 Pick List</button>
                     </div>
                 </div>
                 
@@ -3526,7 +3526,7 @@
                     <div id="purchaseReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('purchase-order-detail')">📋 Purchase Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
-                        <button class="btn report-btn" onclick="showReport('supplier-performance')" style="background: linear-gradient(135deg, #7c3aed, #a855f7) !important; color: white !important; font-weight: 700; border-left: 4px solid #6d28d9 !important;">📊 SUPPLIER PERFORMANCE</button>
+                        <button class="btn report-btn" onclick="showReport('supplier-performance')">📊 Supplier Performance</button>
                     </div>
                 </div>
                 
@@ -3536,7 +3536,7 @@
                         <span id="inventoryReports-toggle" class="report-toggle">▼</span>
                     </div>
                     <div id="inventoryReports" class="report-buttons">
-                        <button class="btn report-btn" onclick="switchTab('invflow')" style="background: linear-gradient(135deg, #c2410c, #ea580c) !important; color: white !important; font-weight: 700; border-left: 4px solid #9a3412 !important;">🔄 INVENTORY FLOW DASHBOARD</button>
+                        <button class="btn report-btn" onclick="switchTab('invflow')">🔄 Inventory Flow Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('simple-inventory')">📋 Inventory List</button>
                         <button class="btn report-btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
                         <button class="btn report-btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
