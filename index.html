@@ -3685,6 +3685,7 @@
                         <button class="btn report-btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Item</button>
                         <button class="btn report-btn" onclick="showReport('pick-list')">🚚 Pick List</button>
+                        <button class="btn report-btn" onclick="showReport('dormant-customers')">📞 Dormant Customers</button>
                     </div>
                 </div>
                 
@@ -12715,6 +12716,20 @@
                     ]
                 }
             },
+            'dormant-customers': {
+                title: '📞 Dormant Customers',
+                filters: ['dormantDays'],
+                dateLabel: 'Dormancy Threshold',
+                description: {
+                    purpose: 'Identify customers who haven\'t ordered recently so you can reach out and win back their business.',
+                    insights: [
+                        'See customers sorted by how long since their last order',
+                        'View their last purchase details to personalize your outreach',
+                        'Understand buying patterns and average order values',
+                        'Get addresses and contact info for sales calls or visits'
+                    ]
+                }
+            },
             'purchase-order-detail': {
                 title: '📋 Purchase Order Detail',
                 filters: ['quickDateOnly', 'supplier', 'poType', 'paymentStatus', 'transactionStatus'],
@@ -13261,12 +13276,41 @@
                     </div>`;
             }
             
-            // Sales Invoice Search (for pick list)
+            // Sales Invoice Search (for pick list) - Smart Lookup
             if (config.filters.includes('salesInvoice')) {
                 filterHtml += `
                     <div class="form-group">
                         <label>🧾 Sales Invoice #</label>
-                        <input type="text" id="rptFilter_salesInvoice" placeholder="Search by invoice number..." style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="text" id="rptFilter_salesInvoice_display" placeholder="🔍 Click to select invoice..." 
+                            onclick="openInvoicePickerForReport()" readonly 
+                            style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_salesInvoice" value="">
+                    </div>`;
+            }
+            
+            // Dormant Days threshold (for dormant customers report)
+            if (config.filters.includes('dormantDays')) {
+                filterHtml += `
+                    <div class="form-group">
+                        <label>📅 No Orders In Last...</label>
+                        <select id="rptFilter_dormantDays">
+                            <option value="14">2 Weeks (14 days)</option>
+                            <option value="30" selected>1 Month (30 days)</option>
+                            <option value="60">2 Months (60 days)</option>
+                            <option value="90">3 Months (90 days)</option>
+                            <option value="180">6 Months (180 days)</option>
+                            <option value="365">1 Year (365 days)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🏙️ Sort By</label>
+                        <select id="rptFilter_dormantSort">
+                            <option value="days-desc">Most Dormant First</option>
+                            <option value="days-asc">Least Dormant First</option>
+                            <option value="city">City (A-Z)</option>
+                            <option value="value-desc">Highest Value First</option>
+                            <option value="orders-desc">Most Orders First</option>
+                        </select>
                     </div>`;
             }
             
@@ -14012,7 +14056,9 @@
                 transactionStatus: document.getElementById('rptFilter_transactionStatus')?.value || 'exclude-voided',
                 adjustmentType: document.getElementById('rptFilter_adjustmentType')?.value || '',
                 deliveryStatus: document.getElementById('rptFilter_deliveryStatus')?.value || 'needs-delivery',
-                salesInvoice: document.getElementById('rptFilter_salesInvoice')?.value?.trim() || ''
+                salesInvoice: document.getElementById('rptFilter_salesInvoice')?.value?.trim() || '',
+                dormantDays: parseInt(document.getElementById('rptFilter_dormantDays')?.value) || 30,
+                dormantSort: document.getElementById('rptFilter_dormantSort')?.value || 'days-desc'
             };
             
             console.log('📱 Report filters:', reportFilters);
@@ -14044,6 +14090,9 @@
                         break;
                     case 'pick-list':
                         reportHtml = await generatePickListModal();
+                        break;
+                    case 'dormant-customers':
+                        reportHtml = await generateDormantCustomersModal();
                         break;
                     case 'purchase-order-detail':
                         reportHtml = await generatePurchaseOrderDetailModal();
@@ -17616,6 +17665,410 @@
             printWindow.document.close();
         }
         
+        // Dormant Customers Report - Win back inactive customers
+        async function generateDormantCustomersModal() {
+            const dormantThreshold = reportFilters.dormantDays || 30;
+            const sortBy = reportFilters.dormantSort || 'days-desc';
+            
+            // Fetch all necessary data
+            const [salesResult, customersResult, itemsResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getCustomers'),
+                apiCall('getItems')
+            ]);
+            
+            if (!salesResult?.data || !customersResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const sales = salesResult.data.filter(s => s.Status !== 'Voided');
+            const customers = customersResult.data;
+            const items = itemsResult?.data || [];
+            
+            // Build item lookup
+            const itemMap = {};
+            items.forEach(item => {
+                itemMap[item.Item_ID] = item.Item_Description || item.SKU || item.Item_ID;
+            });
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const thresholdDate = new Date(today);
+            thresholdDate.setDate(thresholdDate.getDate() - dormantThreshold);
+            
+            // Analyze each customer's buying history
+            const customerAnalysis = [];
+            
+            for (const customer of customers) {
+                // Get all orders for this customer
+                const customerOrders = sales.filter(s => s.Customer_ID === customer.Customer_ID);
+                
+                if (customerOrders.length === 0) continue; // Skip customers who never ordered
+                
+                // Sort by date to find latest order
+                customerOrders.sort((a, b) => new Date(b.Sale_Date || b.SO_Date) - new Date(a.Sale_Date || a.SO_Date));
+                
+                const lastOrder = customerOrders[0];
+                const lastOrderDate = new Date(lastOrder.Sale_Date || lastOrder.SO_Date);
+                lastOrderDate.setHours(0, 0, 0, 0);
+                
+                // Only include if last order was before threshold
+                if (lastOrderDate >= thresholdDate) continue;
+                
+                const daysSinceOrder = Math.floor((today - lastOrderDate) / (1000 * 60 * 60 * 24));
+                
+                // Calculate stats
+                const totalOrders = customerOrders.length;
+                const totalSpent = customerOrders.reduce((sum, o) => sum + (parseFloat(o.Total_Amount) || 0), 0);
+                const avgOrderValue = totalSpent / totalOrders;
+                
+                // Find first order date for customer lifetime
+                const firstOrderDate = new Date(customerOrders[customerOrders.length - 1].Sale_Date || customerOrders[customerOrders.length - 1].SO_Date);
+                const customerLifetimeDays = Math.floor((lastOrderDate - firstOrderDate) / (1000 * 60 * 60 * 24)) + 1;
+                const orderFrequency = totalOrders > 1 ? Math.round(customerLifetimeDays / (totalOrders - 1)) : 0;
+                
+                // Get last order line items
+                let lastOrderItems = [];
+                try {
+                    const linesResult = await apiCall('getSalesOrderLines', { soId: lastOrder.SO_ID });
+                    if (linesResult?.data) {
+                        lastOrderItems = linesResult.data.map(line => ({
+                            name: itemMap[line.Item_ID] || line.Item_ID,
+                            qty: parseInt(line.Quantity) || 0,
+                            price: parseFloat(line.Unit_Price) || 0,
+                            total: (parseInt(line.Quantity) || 0) * (parseFloat(line.Unit_Price) || 0)
+                        }));
+                    }
+                } catch(e) {
+                    // Skip if can't fetch lines
+                }
+                
+                // Build address
+                const addressParts = [];
+                if (customer.Address) addressParts.push(customer.Address);
+                const cityStateZip = [customer.City, customer.State, customer.Zip].filter(Boolean).join(', ');
+                if (cityStateZip) addressParts.push(cityStateZip);
+                
+                customerAnalysis.push({
+                    customerId: customer.Customer_ID,
+                    name: customer.Customer_Name || customer.Customer_ID,
+                    phone: customer.Phone || '',
+                    email: customer.Email || '',
+                    address: customer.Address || '',
+                    city: customer.City || '',
+                    state: customer.State || '',
+                    zip: customer.Zip || '',
+                    fullAddress: addressParts.join(', '),
+                    lastOrderDate: lastOrderDate,
+                    daysSinceOrder: daysSinceOrder,
+                    totalOrders: totalOrders,
+                    totalSpent: totalSpent,
+                    avgOrderValue: avgOrderValue,
+                    orderFrequency: orderFrequency,
+                    lastOrderItems: lastOrderItems,
+                    lastOrderTotal: parseFloat(lastOrder.Total_Amount) || 0,
+                    lastInvoice: lastOrder.Invoice_Number || lastOrder.SO_ID
+                });
+            }
+            
+            // Sort based on user selection
+            switch(sortBy) {
+                case 'days-asc':
+                    customerAnalysis.sort((a, b) => a.daysSinceOrder - b.daysSinceOrder);
+                    break;
+                case 'city':
+                    customerAnalysis.sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+                    break;
+                case 'value-desc':
+                    customerAnalysis.sort((a, b) => b.totalSpent - a.totalSpent);
+                    break;
+                case 'orders-desc':
+                    customerAnalysis.sort((a, b) => b.totalOrders - a.totalOrders);
+                    break;
+                default: // days-desc
+                    customerAnalysis.sort((a, b) => b.daysSinceOrder - a.daysSinceOrder);
+            }
+            
+            // Calculate summary stats
+            const totalDormant = customerAnalysis.length;
+            const totalAtRisk = customerAnalysis.reduce((sum, c) => sum + c.totalSpent, 0);
+            const avgDormantDays = totalDormant > 0 ? Math.round(customerAnalysis.reduce((sum, c) => sum + c.daysSinceOrder, 0) / totalDormant) : 0;
+            const highValueDormant = customerAnalysis.filter(c => c.totalSpent > 500).length;
+            
+            // Determine dormancy level
+            function getDormancyLevel(days) {
+                if (days >= 180) return { label: '🔴 Critical', color: '#dc2626', bg: '#fef2f2' };
+                if (days >= 90) return { label: '🟠 High Risk', color: '#ea580c', bg: '#fff7ed' };
+                if (days >= 60) return { label: '🟡 At Risk', color: '#ca8a04', bg: '#fefce8' };
+                return { label: '🟢 Watch', color: '#16a34a', bg: '#f0fdf4' };
+            }
+            
+            let html = `
+                <style>
+                    .dormant-header {
+                        text-align: center;
+                        padding: 25px;
+                        background: linear-gradient(135deg, #f59e0b, #d97706);
+                        color: white;
+                        border-radius: 16px;
+                        margin-bottom: 20px;
+                    }
+                    .dormant-header h2 { margin: 0; font-size: 26px; }
+                    .dormant-header p { margin: 10px 0 0 0; opacity: 0.9; }
+                    
+                    .dormant-summary {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                        gap: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .dormant-stat {
+                        background: white;
+                        border-radius: 12px;
+                        padding: 20px;
+                        text-align: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        border-top: 4px solid #f59e0b;
+                    }
+                    .dormant-stat .value { font-size: 28px; font-weight: bold; color: #f59e0b; }
+                    .dormant-stat .label { font-size: 12px; color: #666; text-transform: uppercase; margin-top: 5px; }
+                    
+                    .insight-box {
+                        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+                        border: 2px solid #f59e0b;
+                        border-radius: 12px;
+                        padding: 20px;
+                        margin-bottom: 25px;
+                    }
+                    .insight-box h3 { margin: 0 0 15px 0; color: #92400e; }
+                    .insight-item {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 10px;
+                        margin-bottom: 10px;
+                        font-size: 14px;
+                        color: #78350f;
+                    }
+                    .insight-item:last-child { margin-bottom: 0; }
+                    
+                    .customer-card {
+                        background: white;
+                        border-radius: 12px;
+                        margin-bottom: 15px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        overflow: hidden;
+                        border-left: 5px solid #f59e0b;
+                    }
+                    .customer-card-header {
+                        padding: 15px 20px;
+                        background: #fafafa;
+                        border-bottom: 1px solid #e5e7eb;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+                    .customer-name { font-size: 18px; font-weight: 700; color: #1f2937; }
+                    .customer-address { font-size: 13px; color: #6b7280; margin-top: 4px; line-height: 1.4; }
+                    .customer-contact { font-size: 13px; color: #3b82f6; margin-top: 4px; }
+                    .dormancy-badge {
+                        padding: 6px 14px;
+                        border-radius: 20px;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                    
+                    .customer-stats {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                        gap: 15px;
+                        padding: 15px 20px;
+                        background: #f9fafb;
+                    }
+                    .stat-item {
+                        text-align: center;
+                    }
+                    .stat-item .stat-value { font-size: 18px; font-weight: 700; color: #1f2937; }
+                    .stat-item .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; }
+                    
+                    .last-order-section {
+                        padding: 15px 20px;
+                        border-top: 1px solid #e5e7eb;
+                    }
+                    .last-order-title { font-weight: 600; color: #374151; margin-bottom: 10px; font-size: 14px; }
+                    .last-order-items {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                    }
+                    .order-item-chip {
+                        background: #e0e7ff;
+                        color: #3730a3;
+                        padding: 5px 12px;
+                        border-radius: 15px;
+                        font-size: 12px;
+                        font-weight: 500;
+                    }
+                    
+                    .action-section {
+                        padding: 15px 20px;
+                        background: #fefce8;
+                        border-top: 1px solid #fde047;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+                    .action-hint { font-size: 13px; color: #854d0e; }
+                    .action-btn {
+                        background: #f59e0b;
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 13px;
+                    }
+                    .action-btn:hover { background: #d97706; }
+                    
+                    @media print {
+                        .action-section { display: none; }
+                        .customer-card { break-inside: avoid; }
+                    }
+                </style>
+                
+                <div class="dormant-header">
+                    <h2>📞 Dormant Customers Report</h2>
+                    <p>Customers with no orders in the last ${dormantThreshold} days • Time to reconnect!</p>
+                </div>
+                
+                <div class="dormant-summary">
+                    <div class="dormant-stat">
+                        <div class="value">${totalDormant}</div>
+                        <div class="label">Dormant Customers</div>
+                    </div>
+                    <div class="dormant-stat" style="border-top-color: #dc2626;">
+                        <div class="value" style="color: #dc2626;">${formatMoney(totalAtRisk)}</div>
+                        <div class="label">💰 Revenue at Risk</div>
+                    </div>
+                    <div class="dormant-stat" style="border-top-color: #7c3aed;">
+                        <div class="value" style="color: #7c3aed;">${avgDormantDays}</div>
+                        <div class="label">📅 Avg Days Dormant</div>
+                    </div>
+                    <div class="dormant-stat" style="border-top-color: #059669;">
+                        <div class="value" style="color: #059669;">${highValueDormant}</div>
+                        <div class="label">⭐ High Value ($500+)</div>
+                    </div>
+                </div>
+                
+                <div class="insight-box">
+                    <h3>💡 Sales Call Strategy</h3>
+                    <div class="insight-item">
+                        <span>📋</span>
+                        <span><strong>Review their last order</strong> below before calling - know what they typically buy so you can suggest reorders.</span>
+                    </div>
+                    <div class="insight-item">
+                        <span>💰</span>
+                        <span><strong>Prioritize high-value customers</strong> - Sort by "Highest Value First" to focus on your most important relationships.</span>
+                    </div>
+                    <div class="insight-item">
+                        <span>🗓️</span>
+                        <span><strong>Check their order frequency</strong> - If they usually order every 14 days and it's been 30, they're overdue!</span>
+                    </div>
+                    <div class="insight-item">
+                        <span>🚗</span>
+                        <span><strong>Plan your route</strong> - Sort by City to group nearby customers for efficient in-person visits.</span>
+                    </div>
+                </div>
+            `;
+            
+            if (customerAnalysis.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+                        <h3 style="margin: 0; color: #059669;">Great News!</h3>
+                        <p style="color: #666;">No dormant customers in this time period. Everyone's been ordering!</p>
+                    </div>
+                `;
+            } else {
+                // Customer detail cards
+                html += `<h3 style="margin: 0 0 15px 0; color: #1f2937;">📋 Customer Details (${customerAnalysis.length} customers)</h3>`;
+                
+                customerAnalysis.forEach(customer => {
+                    const level = getDormancyLevel(customer.daysSinceOrder);
+                    
+                    html += `
+                        <div class="customer-card" style="border-left-color: ${level.color};">
+                            <div class="customer-card-header">
+                                <div>
+                                    <div class="customer-name">👤 ${customer.name}</div>
+                                    ${customer.fullAddress ? `<div class="customer-address">📍 ${customer.fullAddress}</div>` : ''}
+                                    ${customer.phone ? `<div class="customer-contact">📞 ${customer.phone}</div>` : ''}
+                                    ${customer.email ? `<div class="customer-contact">✉️ ${customer.email}</div>` : ''}
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="dormancy-badge" style="background: ${level.bg}; color: ${level.color};">
+                                        ${level.label} • ${customer.daysSinceOrder} days
+                                    </div>
+                                    <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                                        Last order: ${customer.lastOrderDate.toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="customer-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${formatMoney(customer.totalSpent)}</div>
+                                    <div class="stat-label">Lifetime Value</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${customer.totalOrders}</div>
+                                    <div class="stat-label">Total Orders</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${formatMoney(customer.avgOrderValue)}</div>
+                                    <div class="stat-label">Avg Order</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${customer.orderFrequency > 0 ? customer.orderFrequency + ' days' : 'N/A'}</div>
+                                    <div class="stat-label">Order Frequency</div>
+                                </div>
+                            </div>
+                            
+                            <div class="last-order-section">
+                                <div class="last-order-title">🛒 Last Order (${customer.lastInvoice}) - ${formatMoney(customer.lastOrderTotal)}</div>
+                                <div class="last-order-items">
+                                    ${customer.lastOrderItems.length > 0 
+                                        ? customer.lastOrderItems.map(item => 
+                                            `<span class="order-item-chip">${item.qty}x ${item.name}</span>`
+                                        ).join('')
+                                        : '<span style="color: #666; font-size: 13px;">No line items recorded</span>'
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="action-section">
+                                <div class="action-hint">
+                                    ${customer.orderFrequency > 0 && customer.daysSinceOrder > customer.orderFrequency * 1.5
+                                        ? `⚠️ Usually orders every ${customer.orderFrequency} days - ${Math.round(customer.daysSinceOrder / customer.orderFrequency)}x overdue!`
+                                        : `📊 ${customer.totalOrders} orders over their history`
+                                    }
+                                </div>
+                                <button class="action-btn" onclick="createSalesOrderForCustomer('${customer.customerId}')">
+                                    ➕ New Order
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            return html;
+        }
+        
         async function generateSimpleInventoryModal() {
             return await generateInventoryReportModal('simple');
         }
@@ -21070,6 +21523,47 @@
         function exportDormantCustomers() {
             alert('Export feature coming soon!');
             // TODO: Implement CSV export
+        }
+        
+        // Create a new sales order for a customer (from Dormant Customers report)
+        function createSalesOrderForCustomer(customerId) {
+            // Close the report modal
+            closeReportSetup();
+            
+            // Switch to CREATE SO tab
+            switchTab('createso');
+            
+            setTimeout(() => {
+                // Set customer in the picker
+                const customer = (cachedCustomers || []).find(c => c.Customer_ID === customerId);
+                if (customer) {
+                    const displayInput = document.getElementById('createSOCustomerDisplay');
+                    const hiddenInput = document.getElementById('createSOCustomer');
+                    if (displayInput && hiddenInput) {
+                        displayInput.value = customer.Customer_Name || customer.Customer_ID;
+                        hiddenInput.value = customerId;
+                    }
+                }
+                
+                // Set today's date
+                const today = getTodayLocalDate();
+                const dateInput = document.getElementById('createSODate');
+                if (dateInput) dateInput.value = today;
+                
+                // Clear existing line items
+                const container = document.getElementById('createSOLineItems');
+                if (container) container.innerHTML = '';
+                
+                // Add an empty line item row
+                if (typeof addSOLineItem === 'function') {
+                    addSOLineItem();
+                }
+                
+                // Show confirmation
+                if (customer) {
+                    showStatus('soStatus', `📝 Creating order for ${customer.Customer_Name}. Add items below!`, 'success');
+                }
+            }, 300);
         }
         
         // ==================== DAILY DASHBOARD ====================
@@ -28461,6 +28955,157 @@ NOTE: Please print the attached PO document for full details.`;
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('supplierPickerSearch');
+        }
+        
+        // Invoice picker for report filters (Pick List)
+        async function openInvoicePickerForReport() {
+            document.activeElement?.blur();
+            
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('invoicePickerModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'invoicePickerModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #ddd; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
+                            <h3 style="margin: 0;">🧾 Select Invoice</h3>
+                            <button onclick="closeInvoicePicker()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; cursor: pointer; padding: 5px 10px; border-radius: 5px;">✕</button>
+                        </div>
+                        <div style="padding: 15px;">
+                            <input type="text" id="invoicePickerSearch" placeholder="🔍 Search invoice #, customer..." 
+                                oninput="filterInvoicePickerList()"
+                                style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 16px;">
+                        </div>
+                        <div id="invoicePickerList" style="flex: 1; overflow-y: auto; padding: 0 15px 15px;">
+                            <div style="text-align: center; padding: 20px; color: #666;">Loading invoices...</div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // Show modal
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            document.body.classList.add('modal-open');
+            
+            // Load invoices
+            const listEl = document.getElementById('invoicePickerList');
+            listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Loading invoices...</div>';
+            
+            try {
+                const salesResult = await apiCall('getSalesOrders');
+                const customersResult = await apiCall('getCustomers');
+                
+                if (!salesResult?.data) {
+                    listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc2626;">Failed to load invoices</div>';
+                    return;
+                }
+                
+                const customers = customersResult?.data || [];
+                const customerMap = {};
+                customers.forEach(c => customerMap[c.Customer_ID] = c.Customer_Name);
+                
+                // Filter to only non-voided, non-completed orders for pick list
+                const pendingOrders = salesResult.data.filter(s => 
+                    s.Status !== 'Voided' && s.Status !== 'Completed' && s.Status !== 'Delivered'
+                ).sort((a, b) => new Date(b.Sale_Date || b.SO_Date) - new Date(a.Sale_Date || a.SO_Date));
+                
+                // Store for filtering
+                window.invoicePickerData = pendingOrders.map(s => ({
+                    id: s.SO_ID,
+                    invoiceNum: s.Invoice_Number || s.SO_Number || s.SO_ID,
+                    customerId: s.Customer_ID,
+                    customerName: customerMap[s.Customer_ID] || s.Customer_ID,
+                    date: s.Sale_Date || s.SO_Date,
+                    status: s.Status || 'Pending',
+                    amount: parseFloat(s.Total_Amount) || 0
+                }));
+                
+                renderInvoicePickerList();
+                focusOnDesktop('invoicePickerSearch');
+            } catch(e) {
+                listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc2626;">Error: ' + e.message + '</div>';
+            }
+        }
+        
+        function renderInvoicePickerList() {
+            const listEl = document.getElementById('invoicePickerList');
+            const search = (document.getElementById('invoicePickerSearch')?.value || '').toLowerCase();
+            const data = window.invoicePickerData || [];
+            
+            const filtered = data.filter(inv => {
+                if (!search) return true;
+                return inv.invoiceNum.toLowerCase().includes(search) ||
+                       inv.customerName.toLowerCase().includes(search);
+            });
+            
+            let html = `
+                <div onclick="selectInvoice('')" 
+                    style="padding: 12px 15px; border: 2px solid #10b981; border-radius: 8px; margin-bottom: 10px; cursor: pointer; background: #ecfdf5; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #059669;">📋 All Invoices</div>
+                        <div style="font-size: 12px; color: #666;">Show all pending orders</div>
+                    </div>
+                    <div style="color: #10b981; font-size: 20px;">✓</div>
+                </div>
+            `;
+            
+            if (filtered.length === 0) {
+                html += '<div style="text-align: center; padding: 20px; color: #666;">No invoices found</div>';
+            } else {
+                filtered.slice(0, 50).forEach(inv => {
+                    const statusColors = {
+                        'Pending': '#f59e0b',
+                        'Ready': '#3b82f6',
+                        'Out for Delivery': '#8b5cf6'
+                    };
+                    const statusColor = statusColors[inv.status] || '#666';
+                    
+                    html += `
+                        <div onclick="selectInvoice('${inv.invoiceNum}')" 
+                            style="padding: 12px 15px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9ff';"
+                            onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white';">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; color: #1f2937;">🧾 ${inv.invoiceNum}</div>
+                                    <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">👤 ${inv.customerName}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 600; color: #059669;">${formatMoney(inv.amount)}</div>
+                                    <div style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: ${statusColor}20; color: ${statusColor}; margin-top: 3px;">${inv.status}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (filtered.length > 50) {
+                    html += `<div style="text-align: center; padding: 10px; color: #666; font-size: 13px;">Showing 50 of ${filtered.length} invoices. Type to search more...</div>`;
+                }
+            }
+            
+            listEl.innerHTML = html;
+        }
+        
+        function filterInvoicePickerList() {
+            renderInvoicePickerList();
+        }
+        
+        function selectInvoice(invoiceNum) {
+            document.getElementById('rptFilter_salesInvoice').value = invoiceNum;
+            document.getElementById('rptFilter_salesInvoice_display').value = invoiceNum ? '🧾 ' + invoiceNum : '📋 All Invoices';
+            closeInvoicePicker();
+        }
+        
+        function closeInvoicePicker() {
+            const modal = document.getElementById('invoicePickerModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = '';
+            document.body.classList.remove('modal-open');
         }
         
         // Supplier picker for Purchase Orders filter
