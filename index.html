@@ -28134,7 +28134,7 @@ NOTE: Please print the attached PO document for full details.`;
                         <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
                             <div style="flex: 1; min-width: 250px;">
                                 <div style="font-weight: 600; font-size: 16px; color: #333; margin-bottom: 6px;">
-                                    PO #${po.PO_ID} - ${supplierName}
+                                    PO #${po.Invoice_Number || po.PO_ID} - ${supplierName}
                                 </div>
                                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
                                     <span style="background: ${dateBg}; color: ${dateColor}; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
@@ -28247,34 +28247,32 @@ NOTE: Please print the attached PO document for full details.`;
          * View critical items report (placeholder - can be expanded later)
          */
         function viewCriticalItemsReport() {
-            alert('Critical Items Report - This would open a detailed report showing all critical items with full details, trends, and recommendations.');
+            // Open the Inventory Status report which shows critical items
+            showReport('inventory-status');
         }
         
         /**
-         * View item details (placeholder - can link to existing item view)
+         * View item details - opens Items tab and could highlight the item
          */
         function viewItemDetails(itemId) {
             switchTab('items');
-            // Could add auto-filtering or highlighting of the specific item
+            // TODO: Could add auto-filtering or highlighting of the specific item
         }
         
         /**
          * View PO details (placeholder - can link to existing PO view)
          */
         function viewPODetails(poId) {
-            switchTab('purchases');
-            // Could add auto-filtering or opening the PO modal
+            // Open the PO detail popup directly
+            viewPurchaseOrder(poId);
         }
         
         /**
-         * Receive PO (placeholder - can link to existing receive function)
+         * Receive PO - calls the existing receive function
          */
         function receivePO(poId) {
-            if (confirm(`Receive Purchase Order ${poId}?`)) {
-                // Call existing receive PO function
-                alert('This would trigger the PO receiving process.');
-                switchTab('purchases');
-            }
+            // Call existing receive PO function that opens the receive modal
+            receiveOutgoingPO(poId);
         }
     </script>
     
