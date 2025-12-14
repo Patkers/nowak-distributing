@@ -6281,6 +6281,71 @@
         // Navigation history for back button
         let navigationHistory = ['reports'];
         
+        // ========== CHART MANAGEMENT ==========
+        // Global registry to track all chart instances
+        const chartRegistry = {};
+        
+        // Safely create a chart, destroying any existing one on the same canvas
+        function createSafeChart(canvasId, config) {
+            // Destroy existing chart if it exists
+            if (chartRegistry[canvasId]) {
+                try {
+                    chartRegistry[canvasId].destroy();
+                } catch (e) {
+                    console.log('Chart destroy error (non-critical):', e);
+                }
+                delete chartRegistry[canvasId];
+            }
+            
+            // Also check Chart.js internal registry
+            const existingChart = Chart.getChart(canvasId);
+            if (existingChart) {
+                try {
+                    existingChart.destroy();
+                } catch (e) {
+                    console.log('Existing chart destroy error (non-critical):', e);
+                }
+            }
+            
+            // Get canvas element
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.warn('Canvas not found:', canvasId);
+                return null;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.warn('Could not get canvas context:', canvasId);
+                return null;
+            }
+            
+            // Create new chart
+            try {
+                const chart = new Chart(ctx, config);
+                chartRegistry[canvasId] = chart;
+                return chart;
+            } catch (e) {
+                console.error('Error creating chart:', e);
+                return null;
+            }
+        }
+        
+        // Destroy all charts (useful when switching reports)
+        function destroyAllCharts() {
+            Object.keys(chartRegistry).forEach(canvasId => {
+                try {
+                    if (chartRegistry[canvasId]) {
+                        chartRegistry[canvasId].destroy();
+                    }
+                } catch (e) {
+                    // Ignore errors during cleanup
+                }
+            });
+            // Clear registry
+            Object.keys(chartRegistry).forEach(key => delete chartRegistry[key]);
+        }
+        
         function switchTab(tabName) {
             // Remove active class from all navigation cards
             document.querySelectorAll('.landing-nav-card').forEach(card => {
@@ -13866,6 +13931,9 @@
         async function executeReport() {
             console.log('📱 executeReport called for:', currentReport);
             
+            // CRITICAL: Destroy all existing charts before generating new ones
+            destroyAllCharts();
+            
             // AUTO-COLLAPSE the setup section when running report (especially helpful on mobile)
             const collapsible = document.getElementById('reportSetupCollapsible');
             const toggleIcon = document.querySelector('.setup-toggle-icon');
@@ -14261,7 +14329,7 @@
                         // Bar Chart - Top 10 Customers
                         const ctx1 = document.getElementById('${barChartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'bar',
                                 data: {
                                     labels: [${top10Customers.map(([id, d]) => `'${d.name.replace(/'/g, "\\'").substring(0, 20)}'`).join(', ')}],
@@ -14299,7 +14367,7 @@
                         if (ctx2) {
                             const topData = [${top10Customers.slice(0, 5).map(([id, d]) => d.sales.toFixed(2)).join(', ')}];
                             const otherTotal = ${sortedCustomers.slice(5).reduce((sum, [id, d]) => sum + d.sales, 0).toFixed(2)};
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'doughnut',
                                 data: {
                                     labels: [${top10Customers.slice(0, 5).map(([id, d]) => `'${d.name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}, 'Others'],
@@ -14504,7 +14572,7 @@
                     setTimeout(() => {
                         const ctx = document.getElementById('${soChartId}');
                         if (ctx) {
-                            new Chart(ctx, {
+                            if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'doughnut',
                                 data: {
                                     labels: ['${soLabels.join("', '")}'],
@@ -14745,7 +14813,7 @@
                             // Bar Chart - Top 10 Items
                             const ctx1 = document.getElementById('${barChartId}');
                             if (ctx1) {
-                                new Chart(ctx1, {
+                                if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                     type: 'bar',
                                     data: {
                                         labels: [${top10Items.map(i => `'${i.description.replace(/'/g, "\\'").substring(0, 20)}'`).join(', ')}],
@@ -14783,7 +14851,7 @@
                             if (ctx2) {
                                 const topData = [${top10Items.slice(0, 5).map(i => i.revenue.toFixed(2)).join(', ')}];
                                 const otherTotal = ${sorted.slice(5).reduce((sum, i) => sum + i.revenue, 0).toFixed(2)};
-                                new Chart(ctx2, {
+                                if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                     type: 'doughnut',
                                     data: {
                                         labels: [${top10Items.slice(0, 5).map(i => `'${i.description.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}, 'Others'],
@@ -14999,7 +15067,7 @@
                     setTimeout(() => {
                         const ctx = document.getElementById('${statusChartId}');
                         if (ctx) {
-                            new Chart(ctx, {
+                            if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'doughnut',
                                 data: {
                                     labels: ['${statusLabels.join("', '")}'],
@@ -15215,7 +15283,7 @@
                     setTimeout(() => {
                         const ctx1 = document.getElementById('${barChartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'bar',
                                 data: {
                                     labels: ['${suppLabels.join("', '")}'],
@@ -15237,7 +15305,7 @@
                         }
                         const ctx2 = document.getElementById('${pieChartId}');
                         if (ctx2) {
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'doughnut',
                                 data: {
                                     labels: ['${suppLabels.join("', '")}' ${othersTotal > 0 ? ", 'Others'" : ''}],
@@ -15541,7 +15609,7 @@
                         // Bar Chart - Value by Velocity
                         const ctx1 = document.getElementById('${chartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'bar',
                                 data: {
                                     labels: ['🚀 Fast', '📦 Medium', '🐢 Slow', '💀 Dead'],
@@ -15578,7 +15646,7 @@
                         // Pie Chart - Item Count
                         const ctx2 = document.getElementById('${pieChartId}');
                         if (ctx2) {
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'doughnut',
                                 data: {
                                     labels: ['Fast Movers', 'Medium Movers', 'Slow Movers', 'Dead Stock'],
@@ -17312,7 +17380,7 @@
                             setTimeout(() => {
                                 const ctx = document.getElementById('${chartId}');
                                 if (ctx) {
-                                    new Chart(ctx, {
+                                    if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                         type: 'doughnut',
                                         data: {
                                             labels: ['${typeLabels.join("', '")}'],
@@ -17544,7 +17612,7 @@
                         setTimeout(() => {
                             const ctx1 = document.getElementById('${topChartId}');
                             if (ctx1) {
-                                new Chart(ctx1, {
+                                if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                     type: 'bar',
                                     data: {
                                         labels: [${top10Margins.map(d => `'${d.name.replace(/'/g, "\\'")}'`).join(', ')}],
@@ -17566,7 +17634,7 @@
                             }
                             const ctx2 = document.getElementById('${bottomChartId}');
                             if (ctx2) {
-                                new Chart(ctx2, {
+                                if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                     type: 'bar',
                                     data: {
                                         labels: [${bottom5Margins.map(d => `'${d.name.replace(/'/g, "\\'")}'`).join(', ')}],
@@ -17795,7 +17863,7 @@
                         // Aging Bar Chart
                         const ctx1 = document.getElementById('${agingChartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'bar',
                                 data: {
                                     labels: ['Current', '31-60 Days', '61-90 Days', '90+ Days'],
@@ -17830,7 +17898,7 @@
                         // Customer Pie Chart
                         const ctx2 = document.getElementById('${custChartId}');
                         if (ctx2) {
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'doughnut',
                                 data: {
                                     labels: [${topCustomers.map(([id, d]) => `'${d.name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}${topCustomers.length < Object.keys(byCustomer).length ? ", 'Others'" : ''}],
@@ -18008,7 +18076,7 @@
                     setTimeout(() => {
                         const ctx1 = document.getElementById('${agingChartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'bar',
                                 data: {
                                     labels: ['Current', '31-60 Days', '61-90 Days', '90+ Days'],
@@ -18029,7 +18097,7 @@
                         }
                         const ctx2 = document.getElementById('${suppChartId}');
                         if (ctx2) {
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'doughnut',
                                 data: {
                                     labels: ['${suppLabels.join("', '")}' ${othersOwed > 0 ? ", 'Others'" : ''}],
@@ -18439,7 +18507,7 @@
                     setTimeout(() => {
                         const ctx = document.getElementById('${plChartId}');
                         if (ctx) {
-                            new Chart(ctx, {
+                            if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'bar',
                                 data: {
                                     labels: ['Revenue', 'COGS', 'Gross Profit'],
@@ -18661,7 +18729,7 @@
                         // Line Chart - Monthly Trend
                         const ctx1 = document.getElementById('${lineChartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'line',
                                 data: {
                                     labels: ['${monthNames.join("', '")}'],
@@ -18700,7 +18768,7 @@
                         // Bar Chart - Top Customers
                         const ctx2 = document.getElementById('${barChartId}');
                         if (ctx2) {
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'bar',
                                 data: {
                                     labels: [${topCustomers.map(([id, d]) => `'${d.name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}],
@@ -18915,7 +18983,7 @@
                     setTimeout(() => {
                         const ctx1 = document.getElementById('${lineChartId}');
                         if (ctx1) {
-                            new Chart(ctx1, {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
                                 type: 'line',
                                 data: {
                                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -18938,7 +19006,7 @@
                         }
                         const ctx2 = document.getElementById('${barChartId}');
                         if (ctx2) {
-                            new Chart(ctx2, {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
                                 type: 'bar',
                                 data: {
                                     labels: [${topSuppliers.map(([id, d]) => `'${d.name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}],
@@ -19108,7 +19176,7 @@
                     setTimeout(() => {
                         const ctx = document.getElementById('${pieChartId}');
                         if (ctx) {
-                            new Chart(ctx, {
+                            if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'doughnut',
                                 data: {
                                     labels: ['${suppLabels.join("', '")}' ${othersValue > 0 ? ", 'Others'" : ''}],
@@ -19293,7 +19361,7 @@
                     setTimeout(() => {
                         const ctx = document.getElementById('${cashChartId}');
                         if (ctx) {
-                            new Chart(ctx, {
+                            if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'bar',
                                 data: {
                                     labels: ['Cash In', 'Cash Out', 'Net Flow'],
