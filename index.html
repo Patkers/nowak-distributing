@@ -14741,7 +14741,7 @@
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
-                                        legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
+                                        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } }
                                     }
                                 }
                             });
@@ -15146,9 +15146,25 @@
         
         async function generatePurchaseOrderDetailModal() {
             const poResult = await apiCall('getPurchaseOrders');
+            const suppliersResult = await apiCall('getSuppliers');
+            const itemsResult = await apiCall('getItems');
             if (!poResult?.data) throw new Error('Failed to load PO data');
             
             let purchases = poResult.data;
+            const suppliers = suppliersResult?.data || [];
+            const items = itemsResult?.data || [];
+            
+            // Helper to get supplier name
+            function getSupplierName(supplierId) {
+                const supplier = suppliers.find(s => s.Supplier_ID == supplierId);
+                return supplier ? supplier.Supplier_Name : supplierId;
+            }
+            
+            // Helper to get item name
+            function getItemName(itemId) {
+                const item = items.find(i => i.Item_ID == itemId);
+                return item ? item.Item_Description : itemId;
+            }
             
             // Helper function to parse dates in various formats
             function parseFlexibleDate(dateVal) {
@@ -15260,18 +15276,90 @@
             };
             const chartColors = statusLabels.map(s => statusColors[s] || '#9c27b0');
             
-            // Chart Section
+            // Group by supplier for bar chart
+            const bySupplier = {};
+            purchases.forEach(p => {
+                const suppName = getSupplierName(p.Supplier_ID);
+                if (!bySupplier[suppName]) bySupplier[suppName] = 0;
+                bySupplier[suppName] += parseFloat(p.Total_Amount) || 0;
+            });
+            const sortedSuppliers = Object.entries(bySupplier).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const supplierChartId = 'poSupplierChart_' + Date.now();
+            
+            // Group by date for trend chart
+            const byDate = {};
+            purchases.forEach(p => {
+                const dateObj = parseFlexibleDate(p.PO_Date);
+                if (dateObj) {
+                    const dateKey = dateObj.toISOString().split('T')[0];
+                    if (!byDate[dateKey]) byDate[dateKey] = 0;
+                    byDate[dateKey] += parseFloat(p.Total_Amount) || 0;
+                }
+            });
+            const sortedDates = Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
+            const trendChartId = 'poTrendChart_' + Date.now();
+            
+            // Fetch PO lines for Top Products chart
+            const byProduct = {};
+            for (const po of purchases) {
+                try {
+                    const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
+                    if (linesResult?.data) {
+                        linesResult.data.forEach(line => {
+                            const itemName = getItemName(line.Item_ID);
+                            const qty = parseFloat(line.Quantity) || 0;
+                            const amount = parseFloat(line.Line_Total) || (qty * (parseFloat(line.Unit_Cost) || 0));
+                            if (!byProduct[itemName]) byProduct[itemName] = { qty: 0, amount: 0 };
+                            byProduct[itemName].qty += qty;
+                            byProduct[itemName].amount += amount;
+                        });
+                    }
+                } catch(e) {
+                    // Skip if can't fetch lines
+                }
+            }
+            const sortedProducts = Object.entries(byProduct).sort((a, b) => b[1].amount - a[1].amount).slice(0, 10);
+            const productsChartId = 'poProductsChart_' + Date.now();
+            
+            // Charts Section - all 4 charts in a grid
             html += `
                 <div style="margin-bottom: 20px;">
                     <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
                          style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
                         <span class="toggle-icon">▼</span>
-                        <strong>📊 Status Breakdown</strong>
+                        <strong>📊 Charts</strong>
                         <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
                     </div>
                     <div style="margin-top: 15px;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px;">
-                            <canvas id="${statusChartId}" height="180"></canvas>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Status Breakdown Donut -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Status Breakdown</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${statusChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Top Suppliers Bar -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">🏭 Top Suppliers</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${supplierChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Top Products Bar -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Top Products</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${productsChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Spending Trend Line -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📈 Spending Trend</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${trendChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -15327,10 +15415,11 @@
                 </div>
             `;
             
-            // Chart.js initialization
+            // Chart.js initialization for all 4 charts
             html += `
                 <scr` + `ipt>
                     setTimeout(() => {
+                        // Status Breakdown Donut
                         const ctx = document.getElementById('${statusChartId}');
                         if (ctx) {
                             if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
@@ -15347,7 +15436,118 @@
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
-                                        legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
+                                        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Top Suppliers Bar Chart
+                        const ctx2 = document.getElementById('${supplierChartId}');
+                        if (ctx2) {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${sortedSuppliers.map(([name]) => `'${name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Spending',
+                                        data: [${sortedSuppliers.map(([, amt]) => amt.toFixed(2)).join(', ')}],
+                                        backgroundColor: '#3b82f6',
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: false, animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: { 
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Top Products Bar Chart
+                        const ctx4 = document.getElementById('${productsChartId}');
+                        if (ctx4) {
+                            if(Chart.getChart(ctx4))Chart.getChart(ctx4).destroy(); new Chart(ctx4, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${sortedProducts.map(([name]) => `'${name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Purchases',
+                                        data: [${sortedProducts.map(([, data]) => data.amount.toFixed(2)).join(', ')}],
+                                        backgroundColor: '#8b5cf6',
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: false, animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: { 
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Spending Trend Line Chart
+                        const ctx3 = document.getElementById('${trendChartId}');
+                        if (ctx3) {
+                            if(Chart.getChart(ctx3))Chart.getChart(ctx3).destroy(); new Chart(ctx3, {
+                                type: 'line',
+                                data: {
+                                    labels: [${sortedDates.map(([date]) => `'${date.substring(5)}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Daily Spending',
+                                        data: [${sortedDates.map(([, amt]) => amt.toFixed(2)).join(', ')}],
+                                        borderColor: '#f59e0b',
+                                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                        fill: true,
+                                        tension: 0.3,
+                                        pointRadius: 4,
+                                        pointBackgroundColor: '#f59e0b'
+                                    }]
+                                },
+                                options: {
+                                    responsive: false, animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: { 
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
                                     }
                                 }
                             });
@@ -17016,7 +17216,6 @@
                                 <div>
                                     <div class="customer">👤 ${order.customerName}</div>
                                     ${fullAddress ? `<div style="font-size: 13px; color: #475569; margin-top: 4px; line-height: 1.4;">📍 ${fullAddress}</div>` : ''}
-                                    ${order.customerPhone ? `<div style="font-size: 13px; color: #475569; margin-top: 2px;">📞 ${order.customerPhone}</div>` : ''}
                                     <div class="invoice" style="margin-top: 4px;">📋 ${order.invoiceNum}</div>
                                 </div>
                                 <div style="text-align: right;">
@@ -19736,23 +19935,54 @@
             }).sort((a, b) => a.Qty - b.Qty);
             
             // ===== 4. LOW STOCK (NEEDS REORDER) =====
+            // First, calculate committed stock from pending sales orders
+            const committedByItem = {};
+            
+            // Get pending/unfulfilled sales orders
+            const pendingSales = sales.filter(s => 
+                s.Status === 'Pending' || s.Status === 'Ready' || s.Status === 'Out for Delivery'
+            );
+            
+            // Fetch lines for pending orders to get committed quantities
+            for (const so of pendingSales) {
+                try {
+                    const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                    if (linesResult?.data) {
+                        linesResult.data.forEach(line => {
+                            const itemId = line.Item_ID;
+                            const qty = parseFloat(line.Quantity) || 0;
+                            if (!committedByItem[itemId]) committedByItem[itemId] = 0;
+                            committedByItem[itemId] += qty;
+                        });
+                    }
+                } catch(e) {
+                    // Skip if can't fetch lines
+                }
+            }
+            
             const lowStock = items.filter(item => {
                 const qty = parseFloat(item.Qty_On_Hand || 0);
+                const committed = committedByItem[item.Item_ID] || 0;
+                const available = qty - committed;
                 const reorder = parseFloat(item.Reorder_Point || 0);
-                return qty > 0 && qty <= reorder && reorder > 0;
+                return available <= reorder && reorder > 0;
             }).map(item => {
                 const qty = parseFloat(item.Qty_On_Hand || 0);
+                const committed = committedByItem[item.Item_ID] || 0;
+                const available = qty - committed;
                 const reorder = parseFloat(item.Reorder_Point || 0);
                 const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
-                const unitsNeeded = reorder - qty;
+                const unitsNeeded = reorder - available;
                 return {
                     ...item,
                     Qty: qty,
+                    Committed: committed,
+                    Available: available,
                     Reorder_Point: reorder,
                     Units_Needed: unitsNeeded,
                     Supplier_Name: supplier?.Supplier_Name || 'Unknown'
                 };
-            }).sort((a, b) => (a.Qty / a.Reorder_Point) - (b.Qty / b.Reorder_Point));
+            }).sort((a, b) => (a.Available / a.Reorder_Point) - (b.Available / b.Reorder_Point));
             
             // ===== 5. DEAD STOCK (NO SALES) =====
             const deadStockDays = 180; // Configurable threshold
@@ -20324,8 +20554,16 @@
                         ${lowStock.length > 0 ? '<button class="action-btn action-btn-success" onclick="bulkReorder()">🛒 Bulk Reorder</button>' : ''}
                     </div>
                     <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
-                        <strong>Items at or below reorder point</strong> - Current qty ≤ Reorder Point (and Reorder Point > 0). Sorted by lowest stock percentage first. Ready to reorder!
+                        <strong>Items at or below reorder point</strong> (considering pending orders). Sorted by lowest availability first.
                     </p>
+                    <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin-bottom: 15px;">
+                        <div style="font-weight: 600; color: #92400e; margin-bottom: 6px;">📐 Gap Formula:</div>
+                        <div style="font-family: monospace; font-size: 13px; color: #78350f; line-height: 1.6;">
+                            Available = On Hand − Committed (pending orders)<br>
+                            Gap = Reorder Point − Available<br>
+                            <em style="font-size: 12px; color: #a16207;">This ensures you order enough to cover existing orders AND maintain safety stock.</em>
+                        </div>
+                    </div>
             `;
             
             if (lowStock.length === 0) {
@@ -20339,9 +20577,11 @@
                                 <th>SKU</th>
                                 <th>Item</th>
                                 <th>Supplier</th>
-                                <th>Current</th>
-                                <th>Reorder Point</th>
-                                <th>Needed</th>
+                                <th style="text-align: center;">On Hand</th>
+                                <th style="text-align: center;">Committed</th>
+                                <th style="text-align: center;">Available</th>
+                                <th style="text-align: center;">Reorder Pt</th>
+                                <th style="text-align: center;">Gap</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -20355,11 +20595,13 @@
                             <td>${item.SKU || 'N/A'}</td>
                             <td>${item.Item_Description}</td>
                             <td>${item.Supplier_Name}</td>
-                            <td>${item.Qty}</td>
-                            <td>${item.Reorder_Point}</td>
-                            <td style="font-weight: 700; color: #f59e0b;">${Math.ceil(item.Units_Needed)}</td>
+                            <td style="text-align: center;">${item.Qty}</td>
+                            <td style="text-align: center; color: ${item.Committed > 0 ? '#dc2626' : '#666'};">${item.Committed > 0 ? '-' + item.Committed : '0'}</td>
+                            <td style="text-align: center; font-weight: 600; color: ${item.Available < 0 ? '#dc2626' : '#059669'};">${item.Available}</td>
+                            <td style="text-align: center;">${item.Reorder_Point}</td>
+                            <td style="text-align: center; font-weight: 700; color: #f59e0b;">${Math.ceil(item.Units_Needed)}</td>
                             <td>
-                                <button class="oval-action-btn oval-action-success" onclick="createPOForItem('${item.Item_ID}')">🛒 Order</button>
+                                <button class="oval-action-btn oval-action-success" onclick="createPOForItem('${item.Item_ID}', ${Math.ceil(item.Units_Needed)})">🛒 Order</button>
                             </td>
                         </tr>
                     `;
@@ -20683,7 +20925,7 @@
             }, 300);
         }
         
-        function createPOForItem(itemId) {
+        function createPOForItem(itemId, unitsNeeded) {
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
@@ -20717,10 +20959,10 @@
                 const container = document.getElementById('createPOLineItems');
                 container.innerHTML = '';
                 
-                // Add the item
+                // Use passed unitsNeeded if provided, otherwise calculate simple gap
                 const cost = parseFloat(item.Package_Cost) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
-                const qtyNeeded = Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
+                const qtyNeeded = unitsNeeded !== undefined ? unitsNeeded : Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
                 const casesNeeded = Math.ceil(qtyNeeded / units);
                 
                 const newRow = document.createElement('div');
