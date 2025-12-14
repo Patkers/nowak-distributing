@@ -8894,6 +8894,8 @@
                                                return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
                                            })()}"
                                            style="width: 120px; padding: 8px; border: 2px solid #c3e6cb; border-radius: 4px;">
+                                    <input type="date" id="quickPaymentDate" value="${getTodayLocalDate()}" 
+                                           style="padding: 8px; border: 2px solid #c3e6cb; border-radius: 4px;">
                                     <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) recordQuickPOPayment('${po.PO_ID}')" 
                                             style="background: #28a745; padding: 8px 15px;">
                                         💵 Record Payment
@@ -9017,7 +9019,9 @@
         
         async function recordQuickPOPayment(poId) {
             const paymentInput = document.getElementById('quickPaymentAmount');
+            const paymentDateInput = document.getElementById('quickPaymentDate');
             const paymentAmount = parseFloat(paymentInput.value) || 0;
+            const paymentDate = paymentDateInput?.value || getTodayLocalDate();
             
             if (paymentAmount <= 0) {
                 alert('Please enter a payment amount greater than 0');
@@ -9030,7 +9034,8 @@
             
             const result = await apiCall('recordPurchasePayment', {
                 poId: poId,
-                amountPaid: newTotalPaid  // FIXED: was 'paymentAmount', backend expects 'amountPaid' with total
+                amountPaid: newTotalPaid,
+                paymentDate: paymentDate
             });
             
             if (result && result.status === 'success') {
@@ -10297,7 +10302,8 @@
             
             // Call backend - send TOTAL amount paid (existing + new payment)
             const newTotalPaid = amountPaid + paymentAmount;
-            apiCall('recordPurchasePayment', { poId: poId, amountPaid: newTotalPaid })
+            const paymentDate = getTodayLocalDate(); // Default to today
+            apiCall('recordPurchasePayment', { poId: poId, amountPaid: newTotalPaid, paymentDate: paymentDate })
                 .then(result => {
                     if (result && result.status === 'success') {
                         const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
