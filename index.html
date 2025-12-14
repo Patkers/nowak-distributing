@@ -2759,7 +2759,7 @@
                                     <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
                                         <div>
                                             <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                            <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;">
+                                            <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
                                                 <option value="">Select item...</option>
                                             </select>
                                         </div>
@@ -6432,6 +6432,15 @@
             if (tabName === 'invflow') {
                 refreshInventoryFlowWithTimeout();
             }
+            
+            // Clear Create PO form when switching to that tab (fresh start)
+            // But only if not coming from a pre-fill action
+            if (tabName === 'createpo' && !window.skipCreatePOClear) {
+                if (typeof clearCreatePOForm === 'function') {
+                    clearCreatePOForm();
+                }
+            }
+            window.skipCreatePOClear = false; // Reset flag
             
             // Scroll to top when switching tabs
             window.scrollTo(0, 0);
@@ -21347,6 +21356,9 @@
             // Close the report modal
             closeReportSetup();
             
+            // Skip clearing since we're pre-filling
+            window.skipCreatePOClear = true;
+            
             // Switch to CREATE PO tab
             switchTab('createpo');
             
@@ -21430,6 +21442,9 @@
             
             // Close the report modal
             closeReportSetup();
+            
+            // Skip clearing since we're pre-filling
+            window.skipCreatePOClear = true;
             
             // Switch to CREATE PO tab
             switchTab('createpo');
@@ -25465,6 +25480,46 @@
         
         // ==================== CREATE PO (PRINT ONLY) FUNCTIONS ====================
         
+        // Add supplier check to createpo-item selects on focus AND click
+        document.addEventListener('focusin', function(e) {
+            if (e.target.classList.contains('createpo-item')) {
+                const supplierId = document.getElementById('createPOSupplier')?.value;
+                if (!supplierId) {
+                    e.preventDefault();
+                    e.target.blur(); // Remove focus
+                    alert('⚠️ Please select a supplier first');
+                    document.getElementById('createPOSupplier')?.focus();
+                }
+            }
+        });
+        
+        // Also catch mousedown/touchstart to prevent dropdown from opening
+        document.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('createpo-item')) {
+                const supplierId = document.getElementById('createPOSupplier')?.value;
+                if (!supplierId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('⚠️ Please select a supplier first');
+                    document.getElementById('createPOSupplier')?.focus();
+                }
+            }
+        });
+        
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.classList.contains('createpo-item')) {
+                const supplierId = document.getElementById('createPOSupplier')?.value;
+                if (!supplierId) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setTimeout(() => {
+                        alert('⚠️ Please select a supplier first');
+                        document.getElementById('createPOSupplier')?.focus();
+                    }, 10);
+                }
+            }
+        }, { passive: false });
+        
         function filterItemsBySupplier() {
             const supplierId = document.getElementById('createPOSupplier').value;
             const itemSelects = document.querySelectorAll('.createpo-item');
@@ -25679,6 +25734,9 @@
                     return;
                 }
                 
+                // Skip clearing since we're pre-filling
+                window.skipCreatePOClear = true;
+                
                 // Switch to Create PO tab
                 switchTab('createpo');
                 
@@ -25773,8 +25831,26 @@
             let html = `
                 <div class="receive-modal-content">
                     <h2 style="position: sticky; top: 0; background: white; padding: 10px 0; margin: 0 0 10px 0; z-index: 10;">📦 Receive PO Items</h2>
-                    <p><strong>PO:</strong> ${po.PO_ID} | <strong>Supplier:</strong> ${getSupplierName(po.Supplier_ID)}</p>
-                    <p><strong>Order Date:</strong> ${formatDateSafe(po.PO_Date)} | <strong>Status:</strong> <span style="background: ${po.Status === 'Received' ? '#28a745' : po.Status === 'Partial' ? '#fd7e14' : '#ffc107'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 2px 8px; border-radius: 4px;">${po.Status}</span></p>
+                    
+                    <!-- Order Info Box -->
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #28a745;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <strong>📋 Internal PO #:</strong> 
+                                <span style="font-size: 18px; font-weight: bold; color: #2e7d32;">${po.Invoice_Number || po.PO_ID}</span>
+                            </div>
+                            <div>
+                                <strong>🏭 Supplier:</strong> ${getSupplierName(po.Supplier_ID)}
+                            </div>
+                            <div>
+                                <strong>📅 Order Date:</strong> ${formatDateSafe(po.PO_Date)}
+                            </div>
+                            <div>
+                                <strong>📦 Status:</strong> 
+                                <span style="background: ${po.Status === 'Received' ? '#28a745' : po.Status === 'Partial' ? '#fd7e14' : '#ffc107'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 2px 8px; border-radius: 4px;">${po.Status}</span>
+                            </div>
+                        </div>
+                    </div>
                     
                     ${totalPrevReceived > 0 ? `
                     <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196f3;">
@@ -25799,13 +25875,13 @@
                     <table class="data-table" id="receiveItemsTable" style="table-layout: fixed; min-width: 700px; width: 100%;">
                         <thead>
                             <tr style="background: #667eea; color: white;">
-                                <th style="width: 28%;">Item</th>
-                                <th style="width: 12%; text-align: center;">Ordered</th>
-                                <th style="width: 12%; text-align: center;">Prev Recv</th>
-                                <th style="width: 14%; text-align: center;">Receive Now</th>
-                                <th style="width: 12%; text-align: center;">Pending</th>
-                                <th style="width: 10%; text-align: center;">Status</th>
-                                <th style="width: 12%; text-align: right;">Cost</th>
+                                <th style="width: 28%; font-size: 15px; padding: 12px 8px;">Item</th>
+                                <th style="width: 12%; text-align: center; font-size: 15px; padding: 12px 8px;">Ordered</th>
+                                <th style="width: 12%; text-align: center; font-size: 15px; padding: 12px 8px;">Prev Recv</th>
+                                <th style="width: 14%; text-align: center; font-size: 15px; padding: 12px 8px;">Receive Now</th>
+                                <th style="width: 12%; text-align: center; font-size: 15px; padding: 12px 8px;">Pending</th>
+                                <th style="width: 10%; text-align: center; font-size: 15px; padding: 12px 8px;">Status</th>
+                                <th style="width: 12%; text-align: right; font-size: 15px; padding: 12px 8px;">Cost</th>
                             </tr>
                         </thead>
                         <tbody id="receiveItemsBody">
@@ -25835,15 +25911,15 @@
                 
                 html += `
                     <tr id="receiveLine${index}" data-is-original="true" style="background: ${statusBg};">
-                        <td style="padding: 8px; font-size: 13px; word-wrap: break-word;">
-                            <strong>${itemName}</strong>
-                            <div style="font-size: 11px; color: #666;">${item?.SKU || ''}</div>
+                        <td style="padding: 12px; word-wrap: break-word;">
+                            <strong style="font-size: 18px; line-height: 1.3; display: block;">${itemName}</strong>
+                            <div style="font-size: 15px; color: #666; margin-top: 4px;">${item?.SKU || ''}</div>
                         </td>
-                        <td style="text-align: center; padding: 8px 4px; font-weight: bold;">${qtyOrdered}</td>
-                        <td style="text-align: center; padding: 8px 4px; color: ${qtyPrevReceived > 0 ? '#28a745' : '#999'}; font-weight: ${qtyPrevReceived > 0 ? 'bold' : 'normal'};">
+                        <td style="text-align: center; padding: 12px 8px; font-weight: bold; font-size: 18px;">${qtyOrdered}</td>
+                        <td style="text-align: center; padding: 12px 8px; color: ${qtyPrevReceived > 0 ? '#28a745' : '#999'}; font-weight: ${qtyPrevReceived > 0 ? 'bold' : 'normal'}; font-size: 18px;">
                             ${qtyPrevReceived > 0 ? qtyPrevReceived : '-'}
                         </td>
-                        <td style="padding: 8px 4px;">
+                        <td style="padding: 12px 8px;">
                             ${isComplete ? `
                                 <input type="number" 
                                        id="receiveQty${index}" 
@@ -25854,7 +25930,7 @@
                                        data-ordered="${qtyOrdered}"
                                        data-prev-received="${qtyPrevReceived}"
                                        data-cost="${unitCost}"
-                                       style="width: 100%; padding: 8px; font-size: 14px; text-align: center; box-sizing: border-box; background: #e9ecef; cursor: not-allowed;">
+                                       style="width: 100%; padding: 12px; font-size: 20px; text-align: center; box-sizing: border-box; background: #e9ecef; cursor: not-allowed;">
                             ` : `
                                 <input type="number" 
                                        id="receiveQty${index}" 
@@ -25867,17 +25943,17 @@
                                        data-ordered="${qtyOrdered}"
                                        data-prev-received="${qtyPrevReceived}"
                                        data-cost="${unitCost}"
-                                       style="width: 100%; padding: 8px; font-size: 14px; text-align: center; box-sizing: border-box; border: 2px solid #28a745;"
+                                       style="width: 100%; padding: 12px; font-size: 20px; text-align: center; box-sizing: border-box; border: 2px solid #28a745;"
                                        oninput="updateReceiveLinePartial(${index})">
                             `}
                         </td>
-                        <td style="text-align: center; padding: 8px 4px;" id="receivePending${index}">
+                        <td style="text-align: center; padding: 12px 8px; font-size: 18px;" id="receivePending${index}">
                             <span style="color: ${qtyPending > 0 ? '#dc3545' : '#28a745'}; font-weight: bold;">
                                 ${isComplete ? '0' : qtyPending}
                             </span>
                         </td>
-                        <td style="text-align: center; padding: 8px 4px; font-size: 18px;">${statusBadge}</td>
-                        <td style="text-align: right; padding: 8px 4px; font-size: 13px;">${formatMoney(unitCost)}</td>
+                        <td style="text-align: center; padding: 12px 8px; font-size: 24px;">${statusBadge}</td>
+                        <td style="text-align: right; padding: 12px 8px; font-size: 16px; font-weight: 600;">${formatMoney(unitCost)}</td>
                     </tr>
                 `;
             });
@@ -25897,11 +25973,12 @@
                     
                     <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin: 0;">
-                            <label>Supplier Invoice #</label>
-                            <input type="text" id="receiveInvoiceNumber" value="${po.Invoice_Number || ''}" placeholder="Enter supplier's invoice number..." style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
+                            <label style="font-weight: 600;">🏭 Supplier's Invoice # <span style="font-weight: normal; color: #666;">(from their packing slip)</span></label>
+                            <input type="text" id="receiveInvoiceNumber" value="" placeholder="Enter supplier's invoice/packing slip #..." style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
+                            <div style="font-size: 12px; color: #666; margin-top: 4px;">💡 Your internal PO# (${po.Invoice_Number || po.PO_ID}) will be preserved</div>
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin: 0;">
-                            <label>Receive Date (defaults to today)</label>
+                            <label style="font-weight: 600;">📅 Receive Date</label>
                             <input type="date" id="receiveDate" value="${getTodayLocalDate()}" style="width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 6px;">
                         </div>
                     </div>
@@ -26046,14 +26123,27 @@
                 console.log('API result:', JSON.stringify(result));
                 
                 if (result && result.status === 'success') {
-                    // Update invoice number and bill date on PO
+                    // Update receive date on PO (but NOT the Invoice_Number - that's our internal PO#)
+                    // Supplier's invoice # is stored in notes for reference
                     const updateData = { poId: poId };
-                    if (invoiceNumber.trim()) updateData.invoiceNumber = invoiceNumber.trim();
+                    
+                    // DON'T update invoiceNumber - that's our internal tracking number!
+                    // Instead, append supplier invoice to notes if provided
                     if (receiveDate) updateData.receiveDate = receiveDate;
                     
-                    if (updateData.invoiceNumber || updateData.receiveDate) {
+                    // If supplier invoice provided, append to existing notes
+                    if (invoiceNumber.trim()) {
+                        const existingNotes = notes.trim();
+                        const supplierInvoiceNote = `📦 Supplier Invoice #: ${invoiceNumber.trim()}`;
+                        updateData.notes = existingNotes 
+                            ? `${existingNotes}\n${supplierInvoiceNote}`
+                            : supplierInvoiceNote;
+                        console.log('Stored supplier invoice in notes:', invoiceNumber);
+                    }
+                    
+                    if (updateData.receiveDate || updateData.notes) {
                         await apiCall('updatePurchaseOrder', updateData);
-                        console.log('Updated PO - Invoice:', invoiceNumber, 'Receive Date:', receiveDate);
+                        console.log('Updated PO - Receive Date:', receiveDate, 'Supplier Invoice stored in notes');
                     }
                     
                     const statusMsg = result.newStatus === 'Received' 
@@ -26703,23 +26793,48 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('createPODate').value = getTodayLocalDate();
             document.getElementById('createPOExpectedDate').value = ''; // User must select
             
+            // Clear Notes field - be more aggressive
+            const notesField = document.getElementById('createPONotes');
+            if (notesField) {
+                notesField.value = '';
+                notesField.textContent = '';  // Also clear textContent for textareas
+            }
+            
+            // Also clear old form notes if it exists (in case both are in DOM)
+            const oldNotesField = document.getElementById('poNotes');
+            if (oldNotesField) {
+                oldNotesField.value = '';
+                oldNotesField.textContent = '';
+            }
+            
             // Clear all line items except the first one
             const container = document.getElementById('createPOLineItems');
             const rows = container.querySelectorAll('.line-item-row');
             rows.forEach((row, index) => {
                 if (index === 0) {
-                    row.querySelector('.createpo-item').value = '';
-                    row.querySelector('.createpo-qty').value = '';
-                    row.querySelector('.createpo-units').textContent = '-';
-                    row.querySelector('.createpo-totalunits').textContent = '-';
-                    row.querySelector('.createpo-cost').textContent = '-';
-                    row.querySelector('.createpo-linetotal').textContent = '$0.00';
+                    const itemSelect = row.querySelector('.createpo-item');
+                    if (itemSelect) itemSelect.value = '';
+                    const qtyInput = row.querySelector('.createpo-qty');
+                    if (qtyInput) qtyInput.value = '';
+                    const unitsDiv = row.querySelector('.createpo-units');
+                    if (unitsDiv) unitsDiv.textContent = '-';
+                    const totalUnitsDiv = row.querySelector('.createpo-totalunits');
+                    if (totalUnitsDiv) totalUnitsDiv.textContent = '-';
+                    const costDiv = row.querySelector('.createpo-cost');
+                    if (costDiv) costDiv.textContent = '-';
+                    const lineTotalDiv = row.querySelector('.createpo-linetotal');
+                    if (lineTotalDiv) lineTotalDiv.textContent = '$0.00';
                 } else {
                     row.remove();
                 }
             });
             
+            // Re-populate item options for first row (since supplier is now cleared)
+            filterItemsBySupplier();
+            
             calculateCreatePOTotal();
+            
+            console.log('✅ Create PO form cleared');
         }
         
         // ===== ITEM PICKER FUNCTIONS (must be here so inline handlers work) =====
