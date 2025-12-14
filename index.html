@@ -4087,6 +4087,7 @@
                             <li style="margin-bottom: 8px;"><strong>Partial PO Receiving:</strong> Receive partial shipments and track remaining quantities</li>
                             <li style="margin-bottom: 8px;"><strong>Enhanced Dashboards:</strong> Premium styling with gradient headers throughout</li>
                             <li style="margin-bottom: 8px;"><strong>Pick List Report:</strong> Efficiently gather items for delivery routes</li>
+                            <li style="margin-bottom: 8px;"><strong>Dormant Customers Report:</strong> Identify and win back inactive customers with buying history</li>
                             <li><strong>13 Theme Options:</strong> Including Chicago sports teams and Green Bay Packers</li>
                         </ul>
                     </div>
@@ -4131,6 +4132,7 @@
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Quick Item Picker</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Auto-Calculate Totals</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Pick List Generation</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Dormant Customer Tracking</div>
                             </div>
                         </div>
                         
@@ -4143,6 +4145,7 @@
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Sales Dashboard</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Inventory Flow Dashboard</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Customer & Product Analytics</div>
+                                <div style="padding: 10px; background: white; border-radius: 6px;">✅ Dormant Customers Report</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Accounts Receivable/Payable</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Profit & Loss Statement</div>
                                 <div style="padding: 10px; background: white; border-radius: 6px;">✅ Supplier Performance</div>
@@ -4302,6 +4305,7 @@
                                 <li><a href="#" onclick="showTutorial('print-invoice'); return false;" style="color: #db2777; text-decoration: none; display: flex; align-items: center; gap: 8px;"><span style="color: #ec4899;">▶</span> How to print an invoice</a></li>
                                 <li><a href="#" onclick="showTutorial('record-payment'); return false;" style="color: #db2777; text-decoration: none; display: flex; align-items: center; gap: 8px;"><span style="color: #ec4899;">▶</span> How to record customer payment</a></li>
                                 <li><a href="#" onclick="showTutorial('pick-list'); return false;" style="color: #db2777; text-decoration: none; display: flex; align-items: center; gap: 8px;"><span style="color: #ec4899;">▶</span> How to generate a pick list</a></li>
+                                <li><a href="#" onclick="showTutorial('dormant-customers'); return false;" style="color: #db2777; text-decoration: none; display: flex; align-items: center; gap: 8px;"><span style="color: #ec4899;">▶</span> How to win back dormant customers</a></li>
                             </ul>
                         </div>
                         
@@ -5420,10 +5424,12 @@
                     <h4>📈 Reports</h4>
                     <p><strong>Available Reports:</strong></p>
                     <ul style="line-height: 1.8;">
-                        <li><strong>Low Stock Report:</strong> Items below reorder point</li>
-                        <li><strong>Supplier Report:</strong> All items by supplier</li>
-                        <li><strong>Customer Report:</strong> Sales by customer</li>
-                        <li><strong>Inventory Value:</strong> Total inventory cost</li>
+                        <li><strong>Action Dashboard:</strong> Items needing immediate attention</li>
+                        <li><strong>Sales Dashboard:</strong> Revenue, orders, and payment tracking</li>
+                        <li><strong>Pick List:</strong> Items to gather for delivery routes</li>
+                        <li><strong>Dormant Customers:</strong> Win back customers who haven't ordered recently</li>
+                        <li><strong>Accounts Receivable:</strong> Outstanding customer balances</li>
+                        <li><strong>Inventory Reports:</strong> Stock levels, turnover, valuation</li>
                     </ul>
 
                     <h4>💾 Backup & Data Access</h4>
@@ -13291,26 +13297,30 @@
             // Dormant Days threshold (for dormant customers report)
             if (config.filters.includes('dormantDays')) {
                 filterHtml += `
-                    <div class="form-group">
-                        <label>📅 No Orders In Last...</label>
-                        <select id="rptFilter_dormantDays">
-                            <option value="14">2 Weeks (14 days)</option>
-                            <option value="30" selected>1 Month (30 days)</option>
-                            <option value="60">2 Months (60 days)</option>
-                            <option value="90">3 Months (90 days)</option>
-                            <option value="180">6 Months (180 days)</option>
-                            <option value="365">1 Year (365 days)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>🏙️ Sort By</label>
-                        <select id="rptFilter_dormantSort">
-                            <option value="days-desc">Most Dormant First</option>
-                            <option value="days-asc">Least Dormant First</option>
-                            <option value="city">City (A-Z)</option>
-                            <option value="value-desc">Highest Value First</option>
-                            <option value="orders-desc">Most Orders First</option>
-                        </select>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 15px; border: 2px solid #f59e0b;">
+                                <label style="display: block; font-weight: 600; color: #92400e; margin-bottom: 8px; font-size: 14px;">📅 No Orders In Last...</label>
+                                <select id="rptFilter_dormantDays" style="width: 100%; padding: 12px; border: 2px solid #f59e0b; border-radius: 8px; font-size: 15px; font-weight: 500; background: white; cursor: pointer;">
+                                    <option value="14">⏰ 2 Weeks (14 days)</option>
+                                    <option value="30" selected>📆 1 Month (30 days)</option>
+                                    <option value="60">📆 2 Months (60 days)</option>
+                                    <option value="90">📆 3 Months (90 days)</option>
+                                    <option value="180">📆 6 Months (180 days)</option>
+                                    <option value="365">📆 1 Year (365 days)</option>
+                                </select>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-radius: 12px; padding: 15px; border: 2px solid #6366f1;">
+                                <label style="display: block; font-weight: 600; color: #4338ca; margin-bottom: 8px; font-size: 14px;">🔀 Sort Results By</label>
+                                <select id="rptFilter_dormantSort" style="width: 100%; padding: 12px; border: 2px solid #6366f1; border-radius: 8px; font-size: 15px; font-weight: 500; background: white; cursor: pointer;">
+                                    <option value="days-desc">🔴 Most Dormant First</option>
+                                    <option value="days-asc">🟢 Least Dormant First</option>
+                                    <option value="city">🏙️ City (A-Z)</option>
+                                    <option value="value-desc">💰 Highest Value First</option>
+                                    <option value="orders-desc">📦 Most Orders First</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>`;
             }
             
@@ -17753,6 +17763,7 @@
                     customerId: customer.Customer_ID,
                     name: customer.Customer_Name || customer.Customer_ID,
                     phone: customer.Phone || '',
+                    mobile: customer.Mobile || '',
                     email: customer.Email || '',
                     address: customer.Address || '',
                     city: customer.City || '',
@@ -18000,14 +18011,37 @@
                 customerAnalysis.forEach(customer => {
                     const level = getDormancyLevel(customer.daysSinceOrder);
                     
+                    // Build contact info section
+                    let contactHtml = '';
+                    if (customer.phone || customer.mobile) {
+                        contactHtml += '<div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px;">';
+                        if (customer.phone) {
+                            contactHtml += `<a href="tel:${customer.phone.replace(/[^0-9+]/g, '')}" style="color: #2563eb; text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 4px;">📞 <span style="text-decoration: underline;">${customer.phone}</span></a>`;
+                        }
+                        if (customer.mobile) {
+                            contactHtml += `<a href="tel:${customer.mobile.replace(/[^0-9+]/g, '')}" style="color: #2563eb; text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 4px;">📱 <span style="text-decoration: underline;">${customer.mobile}</span></a>`;
+                        }
+                        contactHtml += '</div>';
+                    }
+                    if (customer.email) {
+                        contactHtml += `<div style="margin-top: 4px;"><a href="mailto:${customer.email}" style="color: #2563eb; text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 4px;">✉️ <span style="text-decoration: underline;">${customer.email}</span></a></div>`;
+                    }
+                    
                     html += `
                         <div class="customer-card" style="border-left-color: ${level.color};">
                             <div class="customer-card-header">
-                                <div>
+                                <div style="flex: 1;">
                                     <div class="customer-name">👤 ${customer.name}</div>
-                                    ${customer.fullAddress ? `<div class="customer-address">📍 ${customer.fullAddress}</div>` : ''}
-                                    ${customer.phone ? `<div class="customer-contact">📞 ${customer.phone}</div>` : ''}
-                                    ${customer.email ? `<div class="customer-contact">✉️ ${customer.email}</div>` : ''}
+                                    ${customer.fullAddress ? `
+                                        <div style="margin-top: 8px; padding: 10px 12px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #3b82f6;">
+                                            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 4px; font-weight: 600;">📍 Delivery Address</div>
+                                            <div style="font-size: 14px; color: #1f2937; line-height: 1.5;">
+                                                ${customer.address ? customer.address + '<br>' : ''}
+                                                ${[customer.city, customer.state].filter(Boolean).join(', ')}${customer.zip ? ' ' + customer.zip : ''}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${contactHtml}
                                 </div>
                                 <div style="text-align: right;">
                                     <div class="dormancy-badge" style="background: ${level.bg}; color: ${level.color};">
@@ -32297,6 +32331,29 @@ NOTE: Please print the attached PO document for full details.`;
                     { action: 'Print', detail: 'Click <strong>🖨️ Print</strong> to print for warehouse use.' }
                 ],
                 tips: ['Pick list shows all items needed for pending deliveries', 'Items are grouped for efficient picking', 'Use this to prepare orders for delivery runs']
+            },
+            'dormant-customers': {
+                title: 'How to Win Back Dormant Customers',
+                icon: '📞',
+                category: 'Sales & Invoice Tasks',
+                color: '#f59e0b',
+                steps: [
+                    { action: 'Go to Reports', detail: 'Click the <strong>📈 Reports</strong> tab.' },
+                    { action: 'Find Sales Reports', detail: 'Look in the <strong>Sales Reports</strong> section.' },
+                    { action: 'Click Dormant Customers', detail: 'Click the <strong>📞 Dormant Customers</strong> report button.' },
+                    { action: 'Set Dormancy Threshold', detail: 'Choose how long since last order (e.g., 30 days, 90 days).' },
+                    { action: 'Choose Sort Order', detail: 'Sort by Most Dormant, City (for route planning), or Highest Value.' },
+                    { action: 'Generate Report', detail: 'Click <strong>Generate</strong> to see your dormant customers.' },
+                    { action: 'Review Customer Cards', detail: 'Each card shows contact info, address, buying history, and their last order items.' },
+                    { action: 'Take Action', detail: 'Click <strong>➕ New Order</strong> to start a new order for that customer.' }
+                ],
+                tips: [
+                    'Review their last order items before calling - know what they typically buy',
+                    'Sort by City to plan efficient in-person visit routes',
+                    'High-value customers ($500+ lifetime) should be priority contacts',
+                    'Check their order frequency - if they usually order every 14 days and it\'s been 45, they\'re 3x overdue!',
+                    'Address and phone are included for sales calls or delivery visits'
+                ]
             },
             
             // ===== INVENTORY TUTORIALS =====
