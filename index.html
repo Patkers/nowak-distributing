@@ -14063,14 +14063,30 @@
                         break;
                 }
                 
+                // CRITICAL: Clear container completely first
+                container.innerHTML = '';
+                
+                // Small delay to ensure DOM is clear
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
                 container.innerHTML = reportHtml;
                 
                 // Execute any inline scripts (Chart.js initialization)
                 // Scripts added via innerHTML don't execute automatically
+                // Use a unique execution ID to prevent duplicate runs
+                const executionId = Date.now();
+                window.lastChartExecutionId = executionId;
+                
                 const scripts = container.querySelectorAll('script');
                 scripts.forEach(script => {
+                    // Wrap script content to check execution ID
+                    const wrappedContent = `
+                        if (window.lastChartExecutionId === ${executionId}) {
+                            ${script.textContent}
+                        }
+                    `;
                     const newScript = document.createElement('script');
-                    newScript.textContent = script.textContent;
+                    newScript.textContent = wrappedContent;
                     document.body.appendChild(newScript);
                     document.body.removeChild(newScript);
                 });
@@ -14342,7 +14358,7 @@
                                 },
                                 options: {
                                     indexAxis: 'y',
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
@@ -14378,7 +14394,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } },
@@ -14583,7 +14599,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
@@ -14826,7 +14842,7 @@
                                     },
                                     options: {
                                         indexAxis: 'y',
-                                        responsive: true,
+                                        responsive: true, animation: false,
                                         maintainAspectRatio: false,
                                         plugins: {
                                             legend: { display: false },
@@ -14862,7 +14878,7 @@
                                         }]
                                     },
                                     options: {
-                                        responsive: true,
+                                        responsive: true, animation: false,
                                         maintainAspectRatio: false,
                                         plugins: {
                                             legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
@@ -15078,7 +15094,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
@@ -15296,7 +15312,7 @@
                                 },
                                 options: {
                                     indexAxis: 'y',
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { display: false } },
                                     scales: { x: { beginAtZero: true, ticks: { callback: (val) => '$' + val.toLocaleString() } } }
@@ -15316,7 +15332,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } } }
                                 }
@@ -15621,7 +15637,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
@@ -15657,7 +15673,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: {
@@ -17391,7 +17407,7 @@
                                             }]
                                         },
                                         options: {
-                                            responsive: true,
+                                            responsive: true, animation: false,
                                             maintainAspectRatio: false,
                                             plugins: {
                                                 legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
@@ -17625,7 +17641,7 @@
                                     },
                                     options: {
                                         indexAxis: 'y',
-                                        responsive: true,
+                                        responsive: true, animation: false,
                                         maintainAspectRatio: false,
                                         plugins: { legend: { display: false } },
                                         scales: { x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } } }
@@ -17647,7 +17663,7 @@
                                     },
                                     options: {
                                         indexAxis: 'y',
-                                        responsive: true,
+                                        responsive: true, animation: false,
                                         maintainAspectRatio: false,
                                         plugins: { legend: { display: false } },
                                         scales: { x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } } }
@@ -17875,7 +17891,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
@@ -17909,7 +17925,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } }
@@ -18088,7 +18104,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { display: false } },
                                     scales: { y: { beginAtZero: true, ticks: { callback: (val) => '$' + val.toLocaleString() } } }
@@ -18108,7 +18124,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } } }
                                 }
@@ -18518,7 +18534,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
@@ -18745,7 +18761,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
@@ -18781,7 +18797,7 @@
                                 },
                                 options: {
                                     indexAxis: 'y',
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
@@ -18997,7 +19013,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { display: false } },
                                     scales: { y: { beginAtZero: true, ticks: { callback: (val) => '$' + val.toLocaleString() } } }
@@ -19019,7 +19035,7 @@
                                 },
                                 options: {
                                     indexAxis: 'y',
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { display: false } },
                                     scales: { x: { beginAtZero: true, ticks: { callback: (val) => '$' + val.toLocaleString() } } }
@@ -19187,7 +19203,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } },
@@ -19372,7 +19388,7 @@
                                     }]
                                 },
                                 options: {
-                                    responsive: true,
+                                    responsive: true, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: { legend: { display: false } },
                                     scales: { y: { beginAtZero: true, ticks: { callback: (val) => '$' + val.toLocaleString() } } }
