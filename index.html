@@ -3695,8 +3695,8 @@
                         <span id="purchaseReports-toggle" class="report-toggle">▼</span>
                     </div>
                     <div id="purchaseReports" class="report-buttons">
-                        <button class="btn report-btn" onclick="showReport('purchase-order-detail')">📋 Purchase Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('purchase-by-supplier')">🏭 Purchase by Supplier</button>
+                        <button class="btn report-btn" onclick="showReport('purchase-order-detail')">📋 Purchase Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('supplier-performance')">📊 Supplier Performance</button>
                     </div>
                 </div>
@@ -15430,7 +15430,7 @@
                             <!-- Spending Trend Line -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📈 Spending Trend</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${trendChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
@@ -15470,9 +15470,13 @@
                     const typeStyle = poType === 'OUTGOING' 
                         ? 'background: #e3f2fd; color: #1565c0;' 
                         : 'background: #e8f5e9; color: #2e7d32;';
+                    
+                    // Format date and time nicely (mobile-safe)
+                    const formattedDate = formatDateSafe(p.PO_Date) + ' ' + formatTimeSafe(p.PO_Date);
+                    
                     html += `<tr>
                         <td>${p.PO_Number || p.Invoice_Number || '-'}</td>
-                        <td>${p.PO_Date || '-'}</td>
+                        <td>${formattedDate}</td>
                         <td>${getSupplierName(p.Supplier_ID)}</td>
                         <td><span style="${typeStyle} padding: 3px 8px; border-radius: 4px; font-size: 11px;">${poType === 'OUTGOING' ? '📤 Out' : '📥 In'}</span></td>
                         <td style="text-align: right;">${formatMoney(amt)}</td>
@@ -15609,6 +15613,9 @@
                                 options: {
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
+                                    layout: {
+                                        padding: { top: 10, right: 10, bottom: 5, left: 5 }
+                                    },
                                     plugins: {
                                         legend: { display: false },
                                         tooltip: {
@@ -21993,6 +22000,72 @@
             const purchases = poResult?.data || [];
             let sales = salesResult.data.filter(so => so.Status !== 'Voided');
             
+            // Filter purchases by date and calculate stats
+            const filteredPurchases = purchases.filter(po => {
+                if (po.Status === 'Voided' || po.Status === 'Cancelled') return false;
+                const poDate = parseDate(po.PO_Date);
+                if (!poDate) return false;
+                if (fromDate && poDate < fromDate) return false;
+                if (toDate && poDate > toDate) return false;
+                return true;
+            });
+            
+            // Calculate purchase stats
+            let totalPOAmount = 0, totalPOPaid = 0, totalPOOutstanding = 0;
+            let poCount = filteredPurchases.length;
+            let paidPOCount = 0, unpaidPOCount = 0, partialPOCount = 0;
+            let receivedPOCount = 0, pendingPOCount = 0;
+            const supplierSpend = {};
+            const monthlyPurchases = {};
+            
+            for (const po of filteredPurchases) {
+                const poAmount = parseFloat(po.Total_Amount) || 0;
+                const poPaid = parseFloat(po.Amount_Paid) || 0;
+                
+                totalPOAmount += poAmount;
+                totalPOPaid += poPaid;
+                totalPOOutstanding += (poAmount - poPaid);
+                
+                // Payment status counts
+                if (po.Payment_Status === 'Paid') paidPOCount++;
+                else if (po.Payment_Status === 'Partial') partialPOCount++;
+                else unpaidPOCount++;
+                
+                // Receiving status counts
+                if (po.Status === 'Received') receivedPOCount++;
+                else pendingPOCount++;
+                
+                // Supplier breakdown
+                const suppId = po.Supplier_ID;
+                if (!supplierSpend[suppId]) {
+                    const supp = suppliers.find(s => s.Supplier_ID === suppId);
+                    supplierSpend[suppId] = { name: supp?.Supplier_Name || 'Unknown', spend: 0, paid: 0, orders: 0 };
+                }
+                supplierSpend[suppId].spend += poAmount;
+                supplierSpend[suppId].paid += poPaid;
+                supplierSpend[suppId].orders++;
+                
+                // Monthly breakdown
+                const poDate = parseDate(po.PO_Date);
+                if (poDate) {
+                    const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
+                    if (!monthlyPurchases[monthKey]) {
+                        monthlyPurchases[monthKey] = { spend: 0, paid: 0, orders: 0 };
+                    }
+                    monthlyPurchases[monthKey].spend += poAmount;
+                    monthlyPurchases[monthKey].paid += poPaid;
+                    monthlyPurchases[monthKey].orders++;
+                }
+            }
+            
+            // Sort suppliers by spend
+            const topSuppliersBySpend = Object.values(supplierSpend).sort((a, b) => b.spend - a.spend);
+            const maxSupplierSpend = topSuppliersBySpend.length > 0 ? topSuppliersBySpend[0].spend : 1;
+            
+            // Sort monthly purchases
+            const sortedMonthlyPurchases = Object.entries(monthlyPurchases).sort((a, b) => a[0].localeCompare(b[0]));
+            const maxMonthlySpend = Math.max(...sortedMonthlyPurchases.map(([, d]) => d.spend), 1);
+            
             // Calculate date range for comparison (same period last year)
             const now = new Date();
             let periodStart = fromDate || new Date(now.getFullYear(), 0, 1); // Default to YTD
@@ -22403,6 +22476,39 @@
                     </div>
                 </div>
                 
+                <!-- Purchases KPI Cards -->
+                <div style="margin-top: 10px; margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 15px 0; color: #dc2626; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                        📋 Purchase Orders Summary
+                    </h3>
+                    <div class="biz-kpi-grid">
+                        <div class="biz-kpi" style="border-top: 4px solid #dc2626;">
+                            <div class="icon">🛍️</div>
+                            <div class="value">$${totalPOAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div class="label">Total PO Amount</div>
+                            <div class="change">${poCount} orders</div>
+                        </div>
+                        <div class="biz-kpi" style="border-top: 4px solid #16a34a;">
+                            <div class="icon">✅</div>
+                            <div class="value">$${totalPOPaid.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div class="label">Amount Paid</div>
+                            <div class="change up">${paidPOCount} paid in full</div>
+                        </div>
+                        <div class="biz-kpi" style="border-top: 4px solid #f59e0b;">
+                            <div class="icon">⏳</div>
+                            <div class="value" style="color: ${totalPOOutstanding > 0 ? '#dc2626' : '#16a34a'};">$${totalPOOutstanding.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div class="label">Outstanding Payables</div>
+                            <div class="change ${totalPOOutstanding > 0 ? 'down' : 'up'}">${unpaidPOCount + partialPOCount} unpaid</div>
+                        </div>
+                        <div class="biz-kpi" style="border-top: 4px solid #7c3aed;">
+                            <div class="icon">📥</div>
+                            <div class="value">${receivedPOCount}</div>
+                            <div class="label">POs Received</div>
+                            <div class="change">${pendingPOCount} pending</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Year over Year Comparison -->
                 <div class="biz-section">
                     <h3>📅 Year-over-Year Comparison</h3>
@@ -22568,6 +22674,187 @@
                             <span class="biz-stat-label">📊 Daily Avg Revenue</span>
                             <span class="biz-stat-value">${formatMoney(totalRevenue / Math.max(periodDays, 1))}</span>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- ==================== PURCHASES SECTION ==================== -->
+                <div style="margin-top: 30px; padding-top: 30px; border-top: 3px solid #dc2626;">
+                    <h2 style="color: #dc2626; margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+                        📋 Purchase Orders Analysis
+                    </h2>
+                </div>
+                
+                <!-- Monthly Purchases Trend -->
+                ${sortedMonthlyPurchases.length > 0 ? `
+                <div class="biz-section">
+                    <h3>📊 Purchases Trend by Month</h3>
+                    <div class="biz-monthly-chart">
+                        ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
+                            const height = (data.spend / maxMonthlySpend) * 100;
+                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                            return `
+                                <div class="biz-monthly-bar">
+                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
+                                    <div class="biz-monthly-label">${monthName}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <span style="font-size: 12px; color: #6b7280;">📉 Monthly Purchase Spend (Last 12 Months)</span>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="biz-row">
+                    <!-- Top Suppliers by Spend -->
+                    <div class="biz-section">
+                        <h3>🏭 Top Suppliers by Spend</h3>
+                        ${topSuppliersBySpend.length === 0 ? '<p style="color: #6b7280; text-align: center;">No purchase data</p>' :
+                        topSuppliersBySpend.slice(0, topN).map((s, i) => {
+                            const width = (s.spend / maxSupplierSpend) * 100;
+                            const outstanding = s.spend - s.paid;
+                            return `
+                                <div class="biz-chart-bar">
+                                    <div class="biz-chart-label" title="${s.name}">${i + 1}. ${s.name}</div>
+                                    <div class="biz-chart-bar-bg">
+                                        <div class="biz-chart-bar-fill" style="width: ${Math.max(width, 8)}%; background: linear-gradient(90deg, #dc2626, #f87171);">
+                                            ${s.orders}
+                                        </div>
+                                    </div>
+                                    <div class="biz-chart-value">$${s.spend.toFixed(0)}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <!-- Purchase Quick Stats -->
+                    <div class="biz-section">
+                        <h3>📋 Purchase Stats</h3>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">🛍️ Total PO Amount</span>
+                            <span class="biz-stat-value">${formatMoney(totalPOAmount)}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">✅ Amount Paid</span>
+                            <span class="biz-stat-value" style="color: #16a34a;">${formatMoney(totalPOPaid)}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">⏳ Outstanding</span>
+                            <span class="biz-stat-value" style="color: ${totalPOOutstanding > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(totalPOOutstanding)}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">📦 Total POs</span>
+                            <span class="biz-stat-value">${poCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">💵 Paid in Full</span>
+                            <span class="biz-stat-value">${paidPOCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">🔄 Partial Payment</span>
+                            <span class="biz-stat-value">${partialPOCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">❌ Unpaid</span>
+                            <span class="biz-stat-value" style="color: ${unpaidPOCount > 0 ? '#dc2626' : '#16a34a'};">${unpaidPOCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">📥 Received</span>
+                            <span class="biz-stat-value">${receivedPOCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">⏳ Pending Receipt</span>
+                            <span class="biz-stat-value">${pendingPOCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">🛒 Avg PO Value</span>
+                            <span class="biz-stat-value">${formatMoney(poCount > 0 ? totalPOAmount / poCount : 0)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Supplier Spend Table -->
+                ${topSuppliersBySpend.length > 0 ? `
+                <div class="biz-section">
+                    <h3>🏭 Supplier Spend Details</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Supplier</th>
+                                    <th style="text-align: right;">PO Count</th>
+                                    <th style="text-align: right;">Total Spend</th>
+                                    <th style="text-align: right;">Amount Paid</th>
+                                    <th style="text-align: right;">Outstanding</th>
+                                    <th style="text-align: right;">% of Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topSuppliersBySpend.map((s, i) => {
+                                    const pct = totalPOAmount > 0 ? (s.spend / totalPOAmount) * 100 : 0;
+                                    const outstanding = s.spend - s.paid;
+                                    return `
+                                        <tr>
+                                            <td><strong>${i + 1}</strong></td>
+                                            <td>${s.name}</td>
+                                            <td style="text-align: right;">${s.orders}</td>
+                                            <td style="text-align: right;">${formatMoney(s.spend)}</td>
+                                            <td style="text-align: right; color: #16a34a;">${formatMoney(s.paid)}</td>
+                                            <td style="text-align: right; color: ${outstanding > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(outstanding)}</td>
+                                            <td style="text-align: right;">
+                                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                                    <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                                                        <div style="height: 100%; width: ${pct}%; background: #dc2626; border-radius: 4px;"></div>
+                                                    </div>
+                                                    <span>${pct.toFixed(1)}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                            <tfoot style="font-weight: bold; background: #f9fafb;">
+                                <tr>
+                                    <td colspan="2">TOTAL</td>
+                                    <td style="text-align: right;">${poCount}</td>
+                                    <td style="text-align: right;">${formatMoney(totalPOAmount)}</td>
+                                    <td style="text-align: right; color: #16a34a;">${formatMoney(totalPOPaid)}</td>
+                                    <td style="text-align: right; color: ${totalPOOutstanding > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(totalPOOutstanding)}</td>
+                                    <td style="text-align: right;">100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Cash Flow Summary -->
+                <div class="biz-section" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #16a34a;">
+                    <h3 style="color: #16a34a;">💵 Cash Flow Summary</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div style="text-align: center; padding: 20px; background: white; border-radius: 12px;">
+                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">💰 Revenue (Sales)</div>
+                            <div style="font-size: 28px; font-weight: bold; color: #16a34a;">+${formatMoney(totalRevenue)}</div>
+                        </div>
+                        <div style="text-align: center; padding: 20px; background: white; border-radius: 12px;">
+                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">🛍️ Expenses (Purchases)</div>
+                            <div style="font-size: 28px; font-weight: bold; color: #dc2626;">-${formatMoney(totalPOAmount)}</div>
+                        </div>
+                        <div style="text-align: center; padding: 20px; background: white; border-radius: 12px;">
+                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">📊 Net Cash Flow</div>
+                            <div style="font-size: 28px; font-weight: bold; color: ${totalRevenue - totalPOAmount >= 0 ? '#16a34a' : '#dc2626'};">
+                                ${totalRevenue - totalPOAmount >= 0 ? '+' : ''}${formatMoney(totalRevenue - totalPOAmount)}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; text-align: center;">
+                        <span style="font-size: 14px; color: #6b7280;">
+                            ${totalRevenue - totalPOAmount >= 0 
+                                ? '✅ Positive cash flow! Revenue exceeds purchase expenses.' 
+                                : '⚠️ Negative cash flow. Purchase expenses exceed revenue.'}
+                        </span>
                     </div>
                 </div>
                 
