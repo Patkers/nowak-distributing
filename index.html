@@ -1248,6 +1248,8 @@
                 height: 100% !important;
                 max-height: 100% !important;
                 max-width: 100% !important;
+                min-width: 0 !important; /* Override inline min-width: 500px */
+                min-height: 0 !important; /* Override inline min-height */
                 margin: 0 !important;
                 border-radius: 0 !important;
                 overflow: hidden !important; /* DON'T scroll here */
@@ -1283,6 +1285,40 @@
                 min-height: 0 !important; /* Important for flex scrolling */
             }
             
+            /* Chart grid on mobile - single column */
+            #reportSetupContent div[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            /* Constrain chart containers on mobile */
+            #reportSetupContent canvas {
+                max-width: 100% !important;
+                max-height: 180px !important;
+                width: 100% !important;
+            }
+            
+            #reportSetupContent canvas.print-chart {
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: 180px !important;
+                width: 100% !important;
+            }
+            
+            /* Chart container divs - force overflow clip */
+            #reportSetupContent div[style*="height: 200px"],
+            #reportSetupContent div[style*="height: 200px; overflow: hidden"] {
+                height: 180px !important;
+                max-height: 180px !important;
+                overflow: hidden !important;
+                position: relative !important;
+            }
+            
+            /* Chart card containers */
+            #reportSetupContent div[style*="box-shadow"] {
+                max-width: 100% !important;
+                overflow: hidden !important;
+            }
+            
             /* Footer - fixed at bottom */
             #reportSetupFooter {
                 position: relative !important;
@@ -1310,6 +1346,8 @@
                 height: 100% !important;
                 max-height: 100% !important;
                 max-width: 100% !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
                 overflow: hidden !important;
@@ -1761,6 +1799,8 @@
                 margin: 0 !important;
                 max-width: 100% !important;
                 max-height: 100% !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
                 width: 100% !important;
                 height: 100% !important;
                 transform: none !important;
@@ -14690,28 +14730,28 @@
                             <!-- Payment Status Donut -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">💵 Payment Status</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${soChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
                             <!-- Top Customers Bar -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">👥 Top Customers</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${customerChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
                             <!-- Top Products Bar -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Top Products</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${productsChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
                             <!-- Sales Trend Line -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📈 Sales Trend</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${trendChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
@@ -15368,21 +15408,21 @@
                             <!-- Status Breakdown Donut -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Status Breakdown</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${statusChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
                             <!-- Top Suppliers Bar -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">🏭 Top Suppliers</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${supplierChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
                             <!-- Top Products Bar -->
                             <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Top Products</h4>
-                                <div style="height: 200px;">
+                                <div style="height: 200px; overflow: hidden;">
                                     <canvas id="${productsChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
@@ -28719,6 +28759,8 @@ NOTE: Please print the attached PO document for full details.`;
             #orderModalInner {
                 margin: 0 !important;
                 max-width: 100% !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
                 width: 100% !important;
                 height: 100% !important;
                 max-height: 100% !important;
@@ -28775,17 +28817,22 @@ NOTE: Please print the attached PO document for full details.`;
             
             /* Make inner container fullscreen */
             #reportSetupModal > div,
-            #orderModal > div {
+            #reportSetupModalInner,
+            #orderModal > div,
+            #orderModalInner {
                 margin: 0 !important;
                 max-width: 100% !important;
+                min-width: 0 !important;
                 width: 100% !important;
                 height: 100vh !important;
                 height: 100dvh !important; /* Dynamic viewport height for mobile */
                 max-height: 100vh !important;
                 max-height: 100dvh !important;
+                min-height: 0 !important;
                 border-radius: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
+                resize: none !important;
             }
             
             /* Compact header in landscape - DEBUG: red background */
