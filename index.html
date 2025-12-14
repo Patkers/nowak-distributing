@@ -1237,7 +1237,8 @@
             }
             
             /* Modal container - fixed, no scroll */
-            #reportSetupModal > div {
+            #reportSetupModal > div,
+            #reportSetupModalInner {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -1246,11 +1247,13 @@
                 width: 100% !important;
                 height: 100% !important;
                 max-height: 100% !important;
+                max-width: 100% !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
                 overflow: hidden !important; /* DON'T scroll here */
                 display: flex !important;
                 flex-direction: column !important;
+                resize: none !important; /* Disable resize on mobile */
             }
             
             /* Header - fixed at top */
@@ -1296,7 +1299,8 @@
         /* Landscape orientation on mobile devices */
         @media (max-height: 600px) and (orientation: landscape) {
             /* Report Modal in Landscape - proper scrolling */
-            #reportSetupModal > div {
+            #reportSetupModal > div,
+            #reportSetupModalInner {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -1305,11 +1309,13 @@
                 width: 100% !important;
                 height: 100% !important;
                 max-height: 100% !important;
+                max-width: 100% !important;
                 margin: 0 !important;
                 border-radius: 0 !important;
                 overflow: hidden !important;
                 display: flex !important;
                 flex-direction: column !important;
+                resize: none !important;
             }
             
             #reportSetupHeader {
@@ -1709,7 +1715,9 @@
             
             /* Center modals initially */
             #orderModal > div,
+            #orderModalInner,
             #reportSetupModal > div,
+            #reportSetupModalInner,
             .item-picker-container {
                 position: relative;
                 margin: 50px auto !important;
@@ -1739,7 +1747,9 @@
             
             /* Inner modal content - scrollable */
             #orderModal > div,
+            #orderModalInner,
             #reportSetupModal > div,
+            #reportSetupModalInner,
             #howToGuideModal > div,
             #uploadItemsModal > div,
             .item-picker-container {
@@ -1758,6 +1768,7 @@
                 overflow-y: auto !important;
                 -webkit-overflow-scrolling: touch !important;
                 z-index: 100000 !important;
+                resize: none !important; /* Disable resize on mobile */
             }
         }
         
@@ -1781,6 +1792,107 @@
         #orderModalInner:hover::after,
         #reportSetupModalInner:hover::after {
             color: #667eea;
+        }
+        
+        /* ==================== IN-PLACE PRINT STYLES ==================== */
+        @media print {
+            /* Hide everything except the report content */
+            body * {
+                visibility: hidden;
+            }
+            
+            /* Show only the report modal and its contents */
+            #reportSetupModal,
+            #reportSetupModal *,
+            #reportSetupModalInner,
+            #reportSetupModalInner * {
+                visibility: visible;
+            }
+            
+            /* Position the report content for printing */
+            #reportSetupModal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            
+            #reportSetupModalInner {
+                position: relative !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+            }
+            
+            /* Hide modal header, filters, and footer when printing */
+            #reportSetupHeader,
+            #reportSetupFilters,
+            #reportSetupFooter {
+                display: none !important;
+            }
+            
+            /* Report content takes full page */
+            #reportSetupContent {
+                padding: 0.5in !important;
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
+            }
+            
+            /* Show chart images, hide canvases */
+            .print-chart-image {
+                display: block !important;
+                max-width: 100% !important;
+            }
+            
+            canvas.print-chart {
+                display: none !important;
+            }
+            
+            /* Ensure colors print */
+            * {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            /* Table styling for print */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                font-size: 10pt !important;
+            }
+            
+            th {
+                background: #1a365d !important;
+                color: white !important;
+                padding: 8px !important;
+            }
+            
+            td {
+                border: 1px solid #ddd !important;
+                padding: 6px !important;
+            }
+            
+            /* Page breaks */
+            .page-break {
+                page-break-before: always;
+            }
+            
+            /* Prevent breaking inside elements */
+            tr, .content-card, .biz-section {
+                page-break-inside: avoid;
+            }
         }
     </style>
     <link rel="stylesheet" href="sports-themes.css">
@@ -13771,7 +13883,7 @@
             });
         }
         
-        // Print report with professional invoice-style formatting
+        // Print report in-place (no new window)
         function printReport() {
             const content = document.getElementById('reportSetupContent');
             const title = document.getElementById('reportSetupTitle').textContent;
@@ -13781,292 +13893,42 @@
                 return;
             }
             
-            // Clone the content so we can modify it
-            const clonedContent = content.cloneNode(true);
-            
             // Convert all canvas charts to images for printing
             const canvases = content.querySelectorAll('canvas');
-            const clonedCanvases = clonedContent.querySelectorAll('canvas');
-            
-            canvases.forEach((canvas, index) => {
+            canvases.forEach((canvas) => {
                 try {
+                    // Check if already converted
+                    if (canvas.dataset.printConverted) return;
+                    
                     const imgData = canvas.toDataURL('image/png');
                     const img = document.createElement('img');
                     img.src = imgData;
+                    img.className = 'print-chart-image';
                     img.style.maxWidth = '100%';
                     img.style.height = 'auto';
-                    img.style.display = 'block';
+                    img.style.display = 'none'; // Hidden on screen, shown in print
                     
-                    // Replace the cloned canvas with the image
-                    if (clonedCanvases[index] && clonedCanvases[index].parentNode) {
-                        clonedCanvases[index].parentNode.replaceChild(img, clonedCanvases[index]);
-                    }
+                    // Insert image after canvas
+                    canvas.parentNode.insertBefore(img, canvas.nextSibling);
+                    canvas.dataset.printConverted = 'true';
                 } catch(e) {
                     console.warn('Could not convert chart to image:', e);
                 }
             });
             
-            // Get the modified HTML
-            const printContent = clonedContent.innerHTML;
+            // Add print class to body for CSS targeting
+            document.body.classList.add('printing-report');
             
-            // Get invoice settings for company info
-            const settings = {
-                companyName: document.getElementById('invoiceCompanyName')?.value || 'Nowak Distributing',
-                contactName: document.getElementById('invoiceContactName')?.value || '',
-                address1: document.getElementById('invoiceAddress1')?.value || '',
-                address2: document.getElementById('invoiceAddress2')?.value || '',
-                cityStateZip: document.getElementById('invoiceCityStateZip')?.value || '',
-                phone: document.getElementById('invoicePhone')?.value || '',
-                email: document.getElementById('invoiceEmail')?.value || '',
-                footer: document.getElementById('invoiceFooter')?.value || 'Thank you for your business!'
-            };
+            // Store the title for print header
+            document.body.dataset.printTitle = title.replace(/^[^\w]+/, '');
             
-            // Use professional navy color for all reports (not theme-dependent)
-            const reportColor = '#1a365d';
+            // Trigger print
+            window.print();
             
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>${title} - ${settings.companyName}</title>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>
-                        * { box-sizing: border-box; }
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            padding: 15px;
-                            padding-top: 70px;
-                            margin: 0;
-                            color: #333;
-                            width: 100%;
-                            max-width: 100%;
-                            overflow-x: visible;
-                        }
-                        
-                        /* Fixed toolbar at top */
-                        .print-toolbar {
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            right: 0;
-                            background: #333;
-                            color: white;
-                            padding: 10px 15px;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            flex-wrap: wrap;
-                            gap: 10px;
-                            z-index: 9999;
-                            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                        }
-                        .print-toolbar .toolbar-title {
-                            font-size: 12px;
-                            flex: 1;
-                            min-width: 150px;
-                        }
-                        .print-toolbar .toolbar-buttons {
-                            display: flex;
-                            gap: 8px;
-                        }
-                        .print-toolbar button {
-                            padding: 12px 20px;
-                            border: none;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            font-weight: bold;
-                            white-space: nowrap;
-                        }
-                        .print-toolbar .btn-print {
-                            background: #4CAF50;
-                            color: white;
-                        }
-                        .print-toolbar .btn-close {
-                            background: #f44336;
-                            color: white;
-                        }
-                        @media (max-width: 500px) {
-                            .print-toolbar {
-                                flex-direction: column;
-                                text-align: center;
-                            }
-                            .print-toolbar .toolbar-title {
-                                font-size: 11px;
-                            }
-                            .print-toolbar .toolbar-buttons {
-                                width: 100%;
-                                justify-content: center;
-                            }
-                            body {
-                                padding-top: 100px;
-                            }
-                        }
-                        
-                        /* Header - matches invoice style */
-                        .report-header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                            border-bottom: 3px solid ${reportColor};
-                            padding-bottom: 20px;
-                        }
-                        .report-header h1 {
-                            color: ${reportColor};
-                            margin: 0 0 5px 0;
-                            font-size: 24pt;
-                        }
-                        .report-header .company-name {
-                            font-size: 16pt;
-                            margin: 5px 0;
-                            font-weight: bold;
-                        }
-                        .report-header .report-date {
-                            color: #666;
-                            font-size: 11pt;
-                        }
-                        
-                        /* Company Info Box - simplified for mobile */
-                        .company-info {
-                            background: #f8f9fa;
-                            border: 1px solid #dee2e6;
-                            border-left: 4px solid ${reportColor};
-                            border-radius: 8px;
-                            padding: 15px;
-                            margin-bottom: 25px;
-                        }
-                        .company-info h3 {
-                            margin: 0 0 10px 0;
-                            color: ${reportColor};
-                            font-size: 12pt;
-                        }
-                        .company-info p {
-                            margin: 4px 0;
-                            font-size: 11pt;
-                            line-height: 1.4;
-                        }
-                        .company-info .section {
-                            margin-bottom: 15px;
-                        }
-                        .company-info .section:last-child {
-                            margin-bottom: 0;
-                        }
-                        
-                        /* Tables */
-                        table { 
-                            width: 100%; 
-                            border-collapse: collapse; 
-                            margin: 15px 0; 
-                            font-size: 10pt;
-                        }
-                        th { 
-                            background: ${reportColor}; 
-                            color: white; 
-                            padding: 10px 8px; 
-                            text-align: left;
-                            font-weight: bold;
-                        }
-                        td { 
-                            border: 1px solid #ddd; 
-                            padding: 8px; 
-                        }
-                        tfoot tr { 
-                            font-weight: bold; 
-                            background: #f5f5f5; 
-                        }
-                        tfoot td {
-                            border-top: 2px solid ${reportColor};
-                        }
-                        
-                        /* Dashboard Cards (for print) */
-                        .dash-card-grid {
-                            display: grid;
-                            grid-template-columns: repeat(3, 1fr);
-                            gap: 10px;
-                            margin: 15px 0;
-                        }
-                        .dash-card {
-                            border: 1px solid #ddd;
-                            border-left: 4px solid ${reportColor};
-                            padding: 10px;
-                            border-radius: 6px;
-                        }
-                        .dash-card-label {
-                            font-size: 8pt;
-                            color: #666;
-                            text-transform: uppercase;
-                        }
-                        .dash-card-value {
-                            font-size: 16pt;
-                            font-weight: bold;
-                        }
-                        .dash-card-sub {
-                            font-size: 8pt;
-                            color: #888;
-                        }
-                        .dash-section {
-                            border: 1px solid #ddd;
-                            border-radius: 6px;
-                            padding: 15px;
-                            margin: 10px 0;
-                        }
-                        .top-item {
-                            display: flex;
-                            justify-content: space-between;
-                            padding: 8px 0;
-                            border-bottom: 1px solid #eee;
-                        }
-                        .top-item-rank {
-                            display: inline-block;
-                            width: 20px;
-                            height: 20px;
-                            border-radius: 50%;
-                            text-align: center;
-                            line-height: 20px;
-                            font-size: 10px;
-                            margin-right: 8px;
-                            background: #f0f0f0;
-                        }
-                        
-                        /* Print adjustments */
-                        @media print { 
-                            body { 
-                                print-color-adjust: exact; 
-                                -webkit-print-color-adjust: exact;
-                                padding: 0.5in;
-                                padding-top: 0.5in;
-                            }
-                            .no-print, .print-toolbar { display: none !important; }
-                        }
-                        
-                        /* General content */
-                        h3, h4 { color: ${reportColor}; margin: 15px 0 10px 0; }
-                        p { margin: 5px 0; }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-toolbar no-print">
-                        <span class="toolbar-title">📄 Report Preview - Click Print or Save as PDF, then Close</span>
-                        <div class="toolbar-buttons">
-                            <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
-                            <button class="btn-close" onclick="window.close()">✕ Close</button>
-                        </div>
-                    </div>
-                    
-                    <div class="report-header">
-                        <h1>${title.replace(/^[^\w]+/, '')}</h1>
-                        <div class="company-name">${settings.companyName}</div>
-                        <div class="report-date">Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</div>
-                    </div>
-                    
-                    ${printContent}
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            
-            // Don't auto-print - let user review first, then click Print button
-            // This avoids the browser's PDF viewer taking over with no escape
+            // Remove print class after a delay
+            setTimeout(() => {
+                document.body.classList.remove('printing-report');
+            }, 1000);
         }
         
         // Helper to get current theme colors for printing
@@ -28840,7 +28702,9 @@ NOTE: Please print the attached PO document for full details.`;
         
         /* Modal content container - this is what scrolls */
         #reportSetupModal > div,
-        #orderModal > div {
+        #reportSetupModalInner,
+        #orderModal > div,
+        #orderModalInner {
             position: relative;
             max-height: 100vh !important;
             overflow-y: auto !important;
@@ -28850,7 +28714,9 @@ NOTE: Please print the attached PO document for full details.`;
         /* Mobile-specific modal fixes */
         @media (max-width: 768px) {
             #reportSetupModal > div,
-            #orderModal > div {
+            #reportSetupModalInner,
+            #orderModal > div,
+            #orderModalInner {
                 margin: 0 !important;
                 max-width: 100% !important;
                 width: 100% !important;
@@ -28859,6 +28725,7 @@ NOTE: Please print the attached PO document for full details.`;
                 border-radius: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
+                resize: none !important;
             }
             
             /* Headers don't shrink */
