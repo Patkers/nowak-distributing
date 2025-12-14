@@ -2701,7 +2701,7 @@
             <div style="max-width: 100%; overflow: hidden;">
                 <h2>📝 Create Purchase Order</h2>
                 <p style="color: #666; margin-bottom: 20px;">
-                    Create an OUTGOING purchase order to track items on order from suppliers. Use <strong>"Save as OUTGOING PO"</strong> to save to database and mark items as "On Order", or use <strong>"Print PO (No Save)"</strong> to just generate a printable document.
+                    Create a purchase order to track items on order from suppliers. Use <strong>"Save PO"</strong> to save to database and mark items as "On Order", or use <strong>"Print PO (No Save)"</strong> to just generate a printable document.
                 </p>
                 
                 <div id="createPOForm">
@@ -2807,7 +2807,7 @@
                     
                     <!-- Action Buttons -->
                     <div class="filter-card">
-                        <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveOutgoingPO()" style="flex: 1; min-width: 200px;">💾 Save as OUTGOING PO</button>
+                        <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveOutgoingPO()" style="flex: 1; min-width: 200px;">💾 Save PO</button>
                         <button class="btn" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
                         <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                     </div>
@@ -21424,7 +21424,7 @@
                 // Calculate total
                 calculateCreatePOTotal();
                 
-                alert(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save as OUTGOING PO" when ready.`);
+                alert(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save PO" when ready.`);
                 
             }, 300);
         }
@@ -26499,7 +26499,7 @@
                 amountPaid: 0,
                 notes: notes || '',
                 lineItems: lineItems,  // Fixed: was 'lines', backend expects 'lineItems'
-                poType: 'OUTGOING' // New field to distinguish
+                poType: 'INCOMING' // Fixed: should be INCOMING for supplier POs
             };
             
             const result = await apiCall('createPurchaseOrder', data);
@@ -26521,7 +26521,7 @@
                 const saveBtn = document.querySelector('button[onclick="saveOutgoingPO()"]');
                 if (saveBtn) {
                     saveBtn.disabled = false;
-                    saveBtn.textContent = '💾 Save as OUTGOING PO';
+                    saveBtn.textContent = '💾 Save PO';
                 }
             }
         }
