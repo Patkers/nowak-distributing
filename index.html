@@ -18048,7 +18048,7 @@
                                         ${level.label} • ${customer.daysSinceOrder} days
                                     </div>
                                     <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
-                                        Last order: ${customer.lastOrderDate.toLocaleDateString()}
+                                        Last order: ${(customer.lastOrderDate.getMonth()+1) + '/' + customer.lastOrderDate.getDate() + '/' + customer.lastOrderDate.getFullYear()}
                                     </div>
                                 </div>
                             </div>
@@ -20892,11 +20892,13 @@
                 `;
                 
                 pastDuePayments.slice(0, 10).forEach(p => {
+                    const dueDate = new Date(p.Due_Date);
+                    const dueDateStr = (dueDate.getMonth()+1) + '/' + dueDate.getDate() + '/' + dueDate.getFullYear();
                     html += `
                         <tr>
                             <td>${p.Customer_Name}</td>
                             <td>SO-${p.Sale_ID}</td>
-                            <td>${new Date(p.Due_Date).toLocalizedString()}</td>
+                            <td>${dueDateStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${formatMoney(p.Balance)}</td>
                             <td>
@@ -20953,11 +20955,13 @@
                 `;
                 
                 latePOs.forEach(p => {
+                    const needByDate = new Date(p.Need_By_Date);
+                    const needByStr = (needByDate.getMonth()+1) + '/' + needByDate.getDate() + '/' + needByDate.getFullYear();
                     html += `
                         <tr>
                             <td>${p.Supplier_Name}</td>
                             <td>PO-${p.PO_ID}</td>
-                            <td>${new Date(p.Need_By_Date).toLocaleDateString()}</td>
+                            <td>${needByStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${p.Status}</td>
                             <td>
@@ -21266,10 +21270,11 @@
                 `;
                 
                 dormantCustomers.slice(0, 15).forEach(c => {
+                    const lastOrderStr = (c.Last_Order_Date.getMonth()+1) + '/' + c.Last_Order_Date.getDate() + '/' + c.Last_Order_Date.getFullYear();
                     html += `
                         <tr>
                             <td>${c.Customer_Name}</td>
-                            <td>${c.Last_Order_Date.toLocaleDateString()}</td>
+                            <td>${lastOrderStr}</td>
                             <td>${c.Days_Since_Order} days</td>
                             <td>${formatMoney(c.Total_Sales)}</td>
                             <td>
@@ -28995,46 +29000,36 @@ NOTE: Please print the attached PO document for full details.`;
         async function openInvoicePickerForReport() {
             document.activeElement?.blur();
             
-            // Create modal if it doesn't exist
-            let modal = document.getElementById('invoicePickerModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'invoicePickerModal';
-                modal.className = 'modal';
-                modal.innerHTML = `
-                    <div class="modal-content" style="max-width: 500px; max-height: 80vh; display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #ddd; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
-                            <h3 style="margin: 0;">🧾 Select Invoice</h3>
-                            <button onclick="closeInvoicePicker()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; cursor: pointer; padding: 5px 10px; border-radius: 5px;">✕</button>
-                        </div>
-                        <div style="padding: 15px;">
-                            <input type="text" id="invoicePickerSearch" placeholder="🔍 Search invoice #, customer..." 
-                                oninput="filterInvoicePickerList()"
-                                style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 16px;">
-                        </div>
-                        <div id="invoicePickerList" style="flex: 1; overflow-y: auto; padding: 0 15px 15px;">
-                            <div style="text-align: center; padding: 20px; color: #666;">Loading invoices...</div>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
+            // Use the existing invoice picker modal (defined in HTML)
+            const modal = document.getElementById('invoicePickerModal');
+            const listEl = document.getElementById('invoicePickerList');
+            
+            if (!modal || !listEl) {
+                console.error('Invoice picker modal not found');
+                return;
             }
+            
+            // Set flag for report mode
+            window.invoicePickerForReport = true;
             
             // Show modal
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             
-            // Load invoices
-            const listEl = document.getElementById('invoicePickerList');
-            listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Loading invoices...</div>';
+            // Clear search
+            const searchInput = document.getElementById('invoicePickerSearch');
+            if (searchInput) searchInput.value = '';
+            
+            // Show loading
+            listEl.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Loading invoices...</div>';
             
             try {
                 const salesResult = await apiCall('getSalesOrders');
                 const customersResult = await apiCall('getCustomers');
                 
                 if (!salesResult?.data) {
-                    listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc2626;">Failed to load invoices</div>';
+                    listEl.innerHTML = '<div style="text-align: center; padding: 40px; color: #dc2626;">Failed to load invoices</div>';
                     return;
                 }
                 
@@ -29061,12 +29056,14 @@ NOTE: Please print the attached PO document for full details.`;
                 renderInvoicePickerList();
                 focusOnDesktop('invoicePickerSearch');
             } catch(e) {
-                listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc2626;">Error: ' + e.message + '</div>';
+                listEl.innerHTML = '<div style="text-align: center; padding: 40px; color: #dc2626;">Error: ' + e.message + '</div>';
             }
         }
         
         function renderInvoicePickerList() {
             const listEl = document.getElementById('invoicePickerList');
+            if (!listEl) return;
+            
             const search = (document.getElementById('invoicePickerSearch')?.value || '').toLowerCase();
             const data = window.invoicePickerData || [];
             
@@ -29077,18 +29074,19 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             let html = `
-                <div onclick="selectInvoice('')" 
-                    style="padding: 12px 15px; border: 2px solid #10b981; border-radius: 8px; margin-bottom: 10px; cursor: pointer; background: #ecfdf5; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-weight: 600; color: #059669;">📋 All Invoices</div>
-                        <div style="font-size: 12px; color: #666;">Show all pending orders</div>
+                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectInvoiceForReport('')" onclick="selectInvoiceForReport('')" 
+                    style="border-left: 4px solid #10b981; background: #ecfdf5; user-select: none;">
+                    <div style="pointer-events: none;">
+                        <div class="item-picker-desc" style="font-weight: bold; color: #059669;">
+                            <span style="font-size: 20px; margin-right: 8px;">📋</span> All Invoices
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">Show all pending orders</div>
                     </div>
-                    <div style="color: #10b981; font-size: 20px;">✓</div>
                 </div>
             `;
             
             if (filtered.length === 0) {
-                html += '<div style="text-align: center; padding: 20px; color: #666;">No invoices found</div>';
+                html += '<div style="text-align: center; padding: 30px; color: #666;">No invoices found</div>';
             } else {
                 filtered.slice(0, 50).forEach(inv => {
                     const statusColors = {
@@ -29099,13 +29097,11 @@ NOTE: Please print the attached PO document for full details.`;
                     const statusColor = statusColors[inv.status] || '#666';
                     
                     html += `
-                        <div onclick="selectInvoice('${inv.invoiceNum}')" 
-                            style="padding: 12px 15px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;"
-                            onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9ff';"
-                            onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white';">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectInvoiceForReport('${inv.invoiceNum}')" onclick="selectInvoiceForReport('${inv.invoiceNum}')" 
+                            style="user-select: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; pointer-events: none;">
                                 <div>
-                                    <div style="font-weight: 600; color: #1f2937;">🧾 ${inv.invoiceNum}</div>
+                                    <div class="item-picker-desc" style="font-weight: 600; color: #1f2937;">🧾 ${inv.invoiceNum}</div>
                                     <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">👤 ${inv.customerName}</div>
                                 </div>
                                 <div style="text-align: right;">
@@ -29129,10 +29125,26 @@ NOTE: Please print the attached PO document for full details.`;
             renderInvoicePickerList();
         }
         
-        function selectInvoice(invoiceNum) {
-            document.getElementById('rptFilter_salesInvoice').value = invoiceNum;
-            document.getElementById('rptFilter_salesInvoice_display').value = invoiceNum ? '🧾 ' + invoiceNum : '📋 All Invoices';
+        // Also handle the original filterInvoicePicker for compatibility
+        function filterInvoicePicker() {
+            if (window.invoicePickerForReport) {
+                renderInvoicePickerList();
+            }
+        }
+        
+        function selectInvoiceForReport(invoiceNum) {
+            const hiddenInput = document.getElementById('rptFilter_salesInvoice');
+            const displayInput = document.getElementById('rptFilter_salesInvoice_display');
+            if (hiddenInput) hiddenInput.value = invoiceNum;
+            if (displayInput) displayInput.value = invoiceNum ? '🧾 ' + invoiceNum : '📋 All Invoices';
             closeInvoicePicker();
+        }
+        
+        function selectInvoice(invoiceNum) {
+            // If in report mode, use report version
+            if (window.invoicePickerForReport) {
+                selectInvoiceForReport(invoiceNum);
+            }
         }
         
         function closeInvoicePicker() {
@@ -29140,6 +29152,7 @@ NOTE: Please print the attached PO document for full details.`;
             if (modal) modal.style.display = 'none';
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open');
+            window.invoicePickerForReport = false;
         }
         
         // Supplier picker for Purchase Orders filter
