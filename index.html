@@ -13602,6 +13602,34 @@
                 return;
             }
             
+            // Clone the content so we can modify it
+            const clonedContent = content.cloneNode(true);
+            
+            // Convert all canvas charts to images for printing
+            const canvases = content.querySelectorAll('canvas');
+            const clonedCanvases = clonedContent.querySelectorAll('canvas');
+            
+            canvases.forEach((canvas, index) => {
+                try {
+                    const imgData = canvas.toDataURL('image/png');
+                    const img = document.createElement('img');
+                    img.src = imgData;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+                    
+                    // Replace the cloned canvas with the image
+                    if (clonedCanvases[index] && clonedCanvases[index].parentNode) {
+                        clonedCanvases[index].parentNode.replaceChild(img, clonedCanvases[index]);
+                    }
+                } catch(e) {
+                    console.warn('Could not convert chart to image:', e);
+                }
+            });
+            
+            // Get the modified HTML
+            const printContent = clonedContent.innerHTML;
+            
             // Get invoice settings for company info
             const settings = {
                 companyName: document.getElementById('invoiceCompanyName')?.value || 'Nowak Distributing',
@@ -13852,7 +13880,7 @@
                         <div class="report-date">Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</div>
                     </div>
                     
-                    ${content.innerHTML}
+                    ${printContent}
                 </body>
                 </html>
             `);
@@ -14447,9 +14475,17 @@
         // Simplified modal generators for other reports - they use the same data but return HTML
         async function generateSalesOrderDetailModal() {
             const salesResult = await apiCall('getSalesOrders');
+            const itemsResult = await apiCall('getItems');
             if (!salesResult?.data) throw new Error('Failed to load sales data');
             
             let sales = salesResult.data;
+            const items = itemsResult?.data || [];
+            
+            // Helper to get item name
+            function getItemName(itemId) {
+                const item = items.find(i => i.Item_ID == itemId);
+                return item ? item.Item_Description : itemId;
+            }
             
             // Helper function to parse dates in various formats
             function parseFlexibleDate(dateVal) {
@@ -14549,18 +14585,90 @@
             };
             const chartColors = soLabels.map(s => soColors[s] || '#9c27b0');
             
-            // Chart Section
+            // Group by customer for bar chart
+            const byCustomer = {};
+            sales.forEach(s => {
+                const custName = getCustomerName(s.Customer_ID);
+                if (!byCustomer[custName]) byCustomer[custName] = 0;
+                byCustomer[custName] += parseFloat(s.Total_Amount) || 0;
+            });
+            const sortedCustomers = Object.entries(byCustomer).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const customerChartId = 'soCustomerChart_' + Date.now();
+            
+            // Group by date for trend chart
+            const byDate = {};
+            sales.forEach(s => {
+                const dateObj = parseDateSafe(s.Sale_Date || s.SO_Date);
+                if (dateObj) {
+                    const dateKey = dateObj.toISOString().split('T')[0];
+                    if (!byDate[dateKey]) byDate[dateKey] = 0;
+                    byDate[dateKey] += parseFloat(s.Total_Amount) || 0;
+                }
+            });
+            const sortedDates = Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
+            const trendChartId = 'soTrendChart_' + Date.now();
+            
+            // Fetch sales order lines for Top Products chart
+            const byProduct = {};
+            for (const so of sales) {
+                try {
+                    const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID || so.SO_Number });
+                    if (linesResult?.data) {
+                        linesResult.data.forEach(line => {
+                            const itemName = getItemName(line.Item_ID);
+                            const qty = parseFloat(line.Quantity) || 0;
+                            const amount = parseFloat(line.Line_Total) || (qty * (parseFloat(line.Unit_Price) || 0));
+                            if (!byProduct[itemName]) byProduct[itemName] = { qty: 0, amount: 0 };
+                            byProduct[itemName].qty += qty;
+                            byProduct[itemName].amount += amount;
+                        });
+                    }
+                } catch(e) {
+                    // Skip if can't fetch lines
+                }
+            }
+            const sortedProducts = Object.entries(byProduct).sort((a, b) => b[1].amount - a[1].amount).slice(0, 10);
+            const productsChartId = 'soProductsChart_' + Date.now();
+            
+            // Charts Section - all 4 charts in a grid
             html += `
                 <div style="margin-bottom: 20px;">
                     <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
                          style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
                         <span class="toggle-icon">▼</span>
-                        <strong>📊 Payment Status</strong>
+                        <strong>📊 Charts</strong>
                         <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
                     </div>
                     <div style="margin-top: 15px;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px;">
-                            <canvas id="${soChartId}" height="180"></canvas>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Payment Status Donut -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">💵 Payment Status</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${soChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Top Customers Bar -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">👥 Top Customers</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${customerChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Top Products Bar -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Top Products</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${productsChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Sales Trend Line -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📈 Sales Trend</h4>
+                                <div style="height: 200px;">
+                                    <canvas id="${trendChartId}" class="print-chart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -14612,10 +14720,11 @@
                 </div>
             `;
             
-            // Chart.js initialization
+            // Chart.js initialization for all 4 charts
             html += `
                 <scr` + `ipt>
                     setTimeout(() => {
+                        // Payment Status Donut
                         const ctx = document.getElementById('${soChartId}');
                         if (ctx) {
                             if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
@@ -14633,6 +14742,117 @@
                                     maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Top Customers Bar Chart
+                        const ctx2 = document.getElementById('${customerChartId}');
+                        if (ctx2) {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${sortedCustomers.map(([name]) => `'${name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Sales',
+                                        data: [${sortedCustomers.map(([, amt]) => amt.toFixed(2)).join(', ')}],
+                                        backgroundColor: '#3b82f6',
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: false, animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: { 
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Top Products Bar Chart
+                        const ctx4 = document.getElementById('${productsChartId}');
+                        if (ctx4) {
+                            if(Chart.getChart(ctx4))Chart.getChart(ctx4).destroy(); new Chart(ctx4, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${sortedProducts.map(([name]) => `'${name.replace(/'/g, "\\'").substring(0, 15)}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Sales',
+                                        data: [${sortedProducts.map(([, data]) => data.amount.toFixed(2)).join(', ')}],
+                                        backgroundColor: '#8b5cf6',
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: false, animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: { 
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Sales Trend Line Chart
+                        const ctx3 = document.getElementById('${trendChartId}');
+                        if (ctx3) {
+                            if(Chart.getChart(ctx3))Chart.getChart(ctx3).destroy(); new Chart(ctx3, {
+                                type: 'line',
+                                data: {
+                                    labels: [${sortedDates.map(([date]) => `'${date.substring(5)}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Daily Sales',
+                                        data: [${sortedDates.map(([, amt]) => amt.toFixed(2)).join(', ')}],
+                                        borderColor: '#10b981',
+                                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                        fill: true,
+                                        tension: 0.3,
+                                        pointRadius: 4,
+                                        pointBackgroundColor: '#10b981'
+                                    }]
+                                },
+                                options: {
+                                    responsive: false, animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: { 
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
                                     }
                                 }
                             });
@@ -16463,6 +16683,7 @@
                         customerCity: customer?.City || '',
                         customerState: customer?.State || '',
                         customerZip: customer?.Zip || '',
+                        customerPhone: customer?.Phone || '',
                         date: soDate,
                         status: so.Status || 'Pending',
                         lines: orderLines,
@@ -16649,7 +16870,7 @@
                 </style>
                 
                 <div class="pl-header">
-                    <h2>🚚 Inventory Pick List</h2>
+                    <h2>🚚 Pick List / Delivery Manifest</h2>
                     <p>${dateLabel} • ${
                         deliveryStatus === 'needs-delivery' ? '📦 Needs Delivery' : 
                         deliveryStatus === 'pending' ? '📝 Pending Orders' : 
@@ -16666,7 +16887,7 @@
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <button class="pl-print-btn" onclick="window.print()">
-                            🖨️ Print Pick List
+                            🖨️ Print Manifest
                         </button>
                         <button class="pl-print-btn" style="background: #7c3aed;" onclick="printShippingLabels()">
                             🏷️ Print Labels
@@ -16781,12 +17002,22 @@
                     </div>
                 ` : `
                     <!-- Orders -->
-                    ${pickListData.map(order => `
+                    ${pickListData.map(order => {
+                        // Build address string
+                        const addressParts = [];
+                        if (order.customerAddress) addressParts.push(order.customerAddress);
+                        const cityStateZip = [order.customerCity, order.customerState, order.customerZip].filter(Boolean).join(', ');
+                        if (cityStateZip) addressParts.push(cityStateZip);
+                        const fullAddress = addressParts.join('<br>');
+                        
+                        return `
                         <div class="pl-order">
                             <div class="pl-order-header">
                                 <div>
                                     <div class="customer">👤 ${order.customerName}</div>
-                                    <div class="invoice">📋 ${order.invoiceNum}</div>
+                                    ${fullAddress ? `<div style="font-size: 13px; color: #475569; margin-top: 4px; line-height: 1.4;">📍 ${fullAddress}</div>` : ''}
+                                    ${order.customerPhone ? `<div style="font-size: 13px; color: #475569; margin-top: 2px;">📞 ${order.customerPhone}</div>` : ''}
+                                    <div class="invoice" style="margin-top: 4px;">📋 ${order.invoiceNum}</div>
                                 </div>
                                 <div style="text-align: right;">
                                     <div class="date">📅 ${order.date?.toLocaleDateString() || '-'}</div>
@@ -16850,7 +17081,7 @@
                                 </div>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                     
                     <!-- Totals -->
                     <div class="pl-totals">
