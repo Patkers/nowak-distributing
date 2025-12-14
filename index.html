@@ -1764,6 +1764,14 @@
     <link rel="stylesheet" href="sports-themes.css">
     <!-- Chart.js for report visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        // Disable ALL Chart.js animations globally to prevent looping
+        Chart.defaults.animation = false;
+        Chart.defaults.animations = {};
+        Chart.defaults.transitions = {};
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+    </script>
 </head>
 <body class="theme-purple">
     <!-- Immediate theme application -->
@@ -6333,6 +6341,7 @@
         
         // Destroy all charts (useful when switching reports)
         function destroyAllCharts() {
+            // First destroy all charts in our registry
             Object.keys(chartRegistry).forEach(canvasId => {
                 try {
                     if (chartRegistry[canvasId]) {
@@ -6344,6 +6353,19 @@
             });
             // Clear registry
             Object.keys(chartRegistry).forEach(key => delete chartRegistry[key]);
+            
+            // Also destroy any Chart.js instances that might not be in our registry
+            // by finding all canvases and checking if they have charts
+            document.querySelectorAll('canvas').forEach(canvas => {
+                try {
+                    const chart = Chart.getChart(canvas);
+                    if (chart) {
+                        chart.destroy();
+                    }
+                } catch (e) {
+                    // Ignore errors
+                }
+            });
         }
         
         function switchTab(tabName) {
@@ -14071,25 +14093,33 @@
                 
                 container.innerHTML = reportHtml;
                 
-                // Execute any inline scripts (Chart.js initialization)
-                // Scripts added via innerHTML don't execute automatically
-                // Use a unique execution ID to prevent duplicate runs
-                const executionId = Date.now();
-                window.lastChartExecutionId = executionId;
-                
+                // Remove all script tags - we'll use a different approach
                 const scripts = container.querySelectorAll('script');
+                const scriptContents = [];
                 scripts.forEach(script => {
-                    // Wrap script content to check execution ID
-                    const wrappedContent = `
-                        if (window.lastChartExecutionId === ${executionId}) {
-                            ${script.textContent}
-                        }
-                    `;
-                    const newScript = document.createElement('script');
-                    newScript.textContent = wrappedContent;
-                    document.body.appendChild(newScript);
-                    document.body.removeChild(newScript);
+                    scriptContents.push(script.textContent);
+                    script.remove();
                 });
+                
+                // Execute chart scripts ONCE with a single timeout
+                // Clear any previous chart init timeout
+                if (window.chartInitTimeout) {
+                    clearTimeout(window.chartInitTimeout);
+                }
+                
+                window.chartInitTimeout = setTimeout(() => {
+                    scriptContents.forEach(content => {
+                        try {
+                            // Remove the setTimeout wrapper from the content if present
+                            let cleanContent = content;
+                            // Execute the content directly (the setTimeout inside will fire once)
+                            const fn = new Function(cleanContent);
+                            fn();
+                        } catch(e) {
+                            console.warn('Chart init error:', e);
+                        }
+                    });
+                }, 200);
                 
                 // Make tables sortable
                 makeReportTablesSortable();
@@ -14242,8 +14272,8 @@
             const top10Customers = sortedCustomers.slice(0, 10);
             
             // Generate unique chart IDs
-            const barChartId = 'salesCustBarChart_' + Date.now();
-            const pieChartId = 'salesCustPieChart_' + Date.now();
+            const barChartId = 'salesCustBarChart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const pieChartId = 'salesCustPieChart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
             // Build HTML with KPI cards
             let html = `<h3 style="margin-top: 0;">Sales by Customer Report</h3>`;
