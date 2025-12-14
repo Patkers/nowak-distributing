@@ -1760,6 +1760,28 @@
                 z-index: 100000 !important;
             }
         }
+        
+        /* Modal resize handle styles */
+        #orderModalInner,
+        #reportSetupModalInner {
+            position: relative;
+        }
+        
+        #orderModalInner::after,
+        #reportSetupModalInner::after {
+            content: '⤡';
+            position: absolute;
+            bottom: 5px;
+            right: 8px;
+            font-size: 14px;
+            color: #aaa;
+            pointer-events: none;
+        }
+        
+        #orderModalInner:hover::after,
+        #reportSetupModalInner:hover::after {
+            color: #667eea;
+        }
     </style>
     <link rel="stylesheet" href="sports-themes.css">
     <!-- Chart.js for report visualizations -->
@@ -9579,6 +9601,94 @@
             printWindow.document.close();
         }
         
+        // ==================== MODAL SIZE PERSISTENCE ====================
+        // Save and restore modal sizes from localStorage
+        
+        function saveModalSize(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                const size = {
+                    width: modal.offsetWidth,
+                    height: modal.offsetHeight
+                };
+                localStorage.setItem('modalSize_' + modalId, JSON.stringify(size));
+            }
+        }
+        
+        function restoreModalSize(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                try {
+                    const saved = localStorage.getItem('modalSize_' + modalId);
+                    if (saved) {
+                        const size = JSON.parse(saved);
+                        if (size.width && size.height) {
+                            modal.style.width = size.width + 'px';
+                            modal.style.height = size.height + 'px';
+                            modal.style.maxWidth = 'none'; // Override max-width to allow custom size
+                        }
+                    }
+                } catch (e) {
+                    console.log('Error restoring modal size:', e);
+                }
+            }
+        }
+        
+        // Set up resize observers for modals
+        document.addEventListener('DOMContentLoaded', function() {
+            // Order Modal size observer
+            const orderModalInner = document.getElementById('orderModalInner');
+            if (orderModalInner) {
+                let resizeTimeout;
+                new ResizeObserver(() => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (document.getElementById('orderModal').style.display !== 'none') {
+                            saveModalSize('orderModalInner');
+                        }
+                    }, 200);
+                }).observe(orderModalInner);
+            }
+            
+            // Report Setup Modal size observer
+            const reportModalInner = document.getElementById('reportSetupModalInner');
+            if (reportModalInner) {
+                let resizeTimeout;
+                new ResizeObserver(() => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (document.getElementById('reportSetupModal').style.display !== 'none') {
+                            saveModalSize('reportSetupModalInner');
+                        }
+                    }, 200);
+                }).observe(reportModalInner);
+            }
+            
+            // Watch for modal open events to restore size
+            const orderModal = document.getElementById('orderModal');
+            if (orderModal) {
+                new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.attributeName === 'style' && orderModal.style.display === 'block') {
+                            restoreModalSize('orderModalInner');
+                        }
+                    });
+                }).observe(orderModal, { attributes: true, attributeFilter: ['style'] });
+            }
+            
+            const reportModal = document.getElementById('reportSetupModal');
+            if (reportModal) {
+                new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.attributeName === 'style' && 
+                            (reportModal.style.display === 'block' || reportModal.style.display === 'flex')) {
+                            restoreModalSize('reportSetupModalInner');
+                        }
+                    });
+                }).observe(reportModal, { attributes: true, attributeFilter: ['style'] });
+            }
+        });
+        
         function closeOrderModal() {
             document.getElementById('orderModal').style.display = 'none';
             currentEditingOrder = null;
@@ -15360,19 +15470,6 @@
             const sortedSuppliers = Object.entries(bySupplier).sort((a, b) => b[1] - a[1]).slice(0, 10);
             const supplierChartId = 'poSupplierChart_' + Date.now();
             
-            // Group by date for trend chart
-            const byDate = {};
-            purchases.forEach(p => {
-                const dateObj = parseFlexibleDate(p.PO_Date);
-                if (dateObj) {
-                    const dateKey = dateObj.toISOString().split('T')[0];
-                    if (!byDate[dateKey]) byDate[dateKey] = 0;
-                    byDate[dateKey] += parseFloat(p.Total_Amount) || 0;
-                }
-            });
-            const sortedDates = Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
-            const trendChartId = 'poTrendChart_' + Date.now();
-            
             // Fetch PO lines for Top Products chart
             const byProduct = {};
             for (const po of purchases) {
@@ -15425,13 +15522,6 @@
                                 <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📦 Top Products</h4>
                                 <div style="height: 200px;">
                                     <canvas id="${productsChartId}" class="print-chart"></canvas>
-                                </div>
-                            </div>
-                            <!-- Spending Trend Line -->
-                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <h4 style="margin: 0 0 15px 0; font-size: 14px; color: #555;">📈 Spending Trend</h4>
-                                <div style="height: 200px; overflow: hidden;">
-                                    <canvas id="${trendChartId}" class="print-chart"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -15584,48 +15674,6 @@
                                     },
                                     scales: {
                                         x: { 
-                                            beginAtZero: true,
-                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                        
-                        // Spending Trend Line Chart
-                        const ctx3 = document.getElementById('${trendChartId}');
-                        if (ctx3) {
-                            if(Chart.getChart(ctx3))Chart.getChart(ctx3).destroy(); new Chart(ctx3, {
-                                type: 'line',
-                                data: {
-                                    labels: [${sortedDates.map(([date]) => `'${date.substring(5)}'`).join(', ')}],
-                                    datasets: [{
-                                        label: 'Daily Spending',
-                                        data: [${sortedDates.map(([, amt]) => amt.toFixed(2)).join(', ')}],
-                                        borderColor: '#f59e0b',
-                                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                        fill: true,
-                                        tension: 0.3,
-                                        pointRadius: 4,
-                                        pointBackgroundColor: '#f59e0b'
-                                    }]
-                                },
-                                options: {
-                                    responsive: false, animation: false,
-                                    maintainAspectRatio: false,
-                                    layout: {
-                                        padding: { top: 10, right: 10, bottom: 5, left: 5 }
-                                    },
-                                    plugins: {
-                                        legend: { display: false },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
-                                            }
-                                        }
-                                    },
-                                    scales: {
-                                        y: { 
                                             beginAtZero: true,
                                             ticks: { callback: (val) => '$' + val.toLocaleString() }
                                         }
@@ -16782,8 +16830,7 @@
                 
                 <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px;">
                     <p style="margin: 0; font-size: 12px; color: #666;">
-                        <strong>📝 Note:</strong> On-time rate is calculated from received orders. "Avg Days" shows the average number of days from order to due date.
-                        For more accurate fulfillment tracking, consider adding a "Received Date" field when marking orders as received.
+                        <strong>📝 Note:</strong> On-time rate is calculated by comparing Receive Date to Due Date. "Avg Days" shows the average lead time from PO creation to receipt.
                     </p>
                 </div>
             `;
@@ -28233,7 +28280,7 @@ NOTE: Please print the attached PO document for full details.`;
     
     <!-- Order View/Edit Modal -->
     <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto; padding: 20px 0;">
-        <div style="background: white; margin: 0 auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column;">
+        <div id="orderModalInner" style="background: white; margin: 0 auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: auto; min-width: 400px; min-height: 300px;">
             <div id="orderModalHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
                 <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
@@ -28252,7 +28299,7 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- Report Setup Modal -->
     <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center;">
-        <div style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px;">
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
                 <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
