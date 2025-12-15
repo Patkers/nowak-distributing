@@ -8050,6 +8050,9 @@
                     console.log('=================================');
                 }
                 
+                // Build expected arrival dates from pending POs (async, don't wait)
+                buildItemExpectedArrivals();
+                
                 // Apply active filter by default (show only active items)
                 if (itemsTable) {
                     const activeFilter = document.getElementById('filterItemActive')?.value || 'active';
@@ -10941,13 +10944,16 @@
         function updateSOItemInfo(selectElement) {
             console.log('updateSOItemInfo called!'); // DEBUG
             const option = selectElement.options[selectElement.selectedIndex];
-            console.log('Selected option:', option); // DEBUG
-            console.log('Option text:', option.text); // DEBUG
-            console.log('data-price attribute:', option.getAttribute('data-price')); // DEBUG
-            console.log('data-stock attribute:', option.getAttribute('data-stock')); // DEBUG
             
             const price = option.getAttribute('data-price');
             const stock = parseFloat(option.getAttribute('data-stock')) || 0;
+            
+            // Get item data for additional fields
+            const itemId = option.value;
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            const onOrder = item ? (parseInt(item.Qty_On_Order) || 0) : 0;
+            const onBackorder = item ? (parseInt(item.Qty_On_Backorder) || 0) : 0;
+            const expectedArrival = window.itemExpectedArrivals?.[itemId] || null;
             
             const row = selectElement.closest('.line-item-row');
             const priceInput = row.querySelector('.so-price');
@@ -10957,44 +10963,68 @@
             if (price) {
                 console.log('Setting price to:', price); // DEBUG
                 priceInput.value = price;
-            } else {
-                console.log('NO PRICE FOUND!'); // DEBUG
             }
             
-            // Show stock info
+            // Show comprehensive stock info
             if (stockInfoDiv && option.value) {
                 stockInfoDiv.style.display = 'block';
                 
                 const qty = parseFloat(qtyInput.value) || 0;
                 const remaining = stock - qty;
                 
-                let message = `📦 Current Stock: ${stock} units`;
+                // Build status HTML
+                let statusHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">`;
+                statusHtml += `<span>📦 <strong>On Hand:</strong> ${stock}</span>`;
+                if (onOrder > 0) {
+                    statusHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}</span>`;
+                }
+                if (onBackorder > 0) {
+                    statusHtml += `<span style="color: #dc2626;">📤 <strong>Backorder:</strong> ${onBackorder}</span>`;
+                }
+                if (expectedArrival) {
+                    statusHtml += `<span style="color: #0891b2;">🚚 <strong>Expected:</strong> ${expectedArrival}</span>`;
+                }
+                statusHtml += `</div>`;
+                
                 let bgColor = '#e3f2fd';
-                let textColor = '#1565c0';
+                let borderColor = '#90caf9';
                 
                 if (qty > 0) {
-                    message += ` → After sale: ${remaining} units`;
+                    statusHtml += `<div style="margin-top: 6px; font-weight: 600;">`;
                     
                     if (remaining < 0) {
+                        const shortage = Math.abs(remaining);
                         bgColor = '#ffebee';
-                        textColor = '#c62828';
-                        message += ' ⚠️ INSUFFICIENT STOCK - This will create a negative inventory!';
+                        borderColor = '#ef5350';
+                        
+                        if (onOrder >= shortage) {
+                            statusHtml += `<span style="color: #f59e0b;">⏳ Short ${shortage} units - but ${onOrder} on order`;
+                            if (expectedArrival) {
+                                statusHtml += ` (arriving ${expectedArrival})`;
+                            }
+                            statusHtml += `</span>`;
+                        } else {
+                            statusHtml += `<span style="color: #c62828;">⚠️ INSUFFICIENT STOCK! Short ${shortage} units</span>`;
+                        }
                     } else if (remaining === 0) {
                         bgColor = '#fff3e0';
-                        textColor = '#ef6c00';
-                        message += ' ⚠️ This will deplete stock to zero';
+                        borderColor = '#ffb74d';
+                        statusHtml += `<span style="color: #e65100;">⚠️ Will deplete stock to zero</span>`;
                     } else if (remaining < 10) {
                         bgColor = '#fff3e0';
-                        textColor = '#ef6c00';
-                        message += ' ⚠️ Low stock warning';
+                        borderColor = '#ffb74d';
+                        statusHtml += `<span style="color: #ef6c00;">⚠️ Low stock after sale: ${remaining} remaining</span>`;
+                    } else {
+                        statusHtml += `<span style="color: #2e7d32;">✅ OK - ${remaining} will remain after sale</span>`;
                     }
+                    
+                    statusHtml += `</div>`;
                 }
                 
-                stockInfoDiv.textContent = message;
+                stockInfoDiv.innerHTML = statusHtml;
                 stockInfoDiv.style.background = bgColor;
-                stockInfoDiv.style.color = textColor;
-                stockInfoDiv.style.border = `1px solid ${textColor}`;
-                stockInfoDiv.style.borderRadius = '4px';
+                stockInfoDiv.style.border = `2px solid ${borderColor}`;
+                stockInfoDiv.style.borderRadius = '6px';
             }
             
             calculateSOTotal();
@@ -28484,6 +28514,70 @@ NOTE: Please print the attached PO document for full details.`;
             document.body.style.overflow = 'hidden';
         }
         
+        // Build a lookup of expected arrival dates from pending POs for each item
+        async function buildItemExpectedArrivals() {
+            try {
+                // Get pending POs (Ordered or Partial status)
+                const poResult = await apiCall('getPurchaseOrders');
+                if (!poResult?.data) {
+                    window.itemExpectedArrivals = {};
+                    return;
+                }
+                
+                const pendingPOs = poResult.data.filter(po => 
+                    po.Status === 'Ordered' || po.Status === 'Partial'
+                );
+                
+                // Build map of item -> earliest due date
+                const arrivals = {};
+                
+                for (const po of pendingPOs) {
+                    const dueDate = po.Due_Date;
+                    if (!dueDate) continue;
+                    
+                    // Get line items for this PO
+                    try {
+                        const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
+                        if (!linesResult?.data) continue;
+                        
+                        for (const line of linesResult.data) {
+                            const itemId = line.Item_ID;
+                            if (!itemId) continue;
+                            
+                            // Format the date nicely
+                            let formattedDate;
+                            try {
+                                const d = new Date(dueDate);
+                                formattedDate = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+                            } catch(e) {
+                                formattedDate = dueDate;
+                            }
+                            
+                            // Keep the earliest date for each item
+                            if (!arrivals[itemId]) {
+                                arrivals[itemId] = formattedDate;
+                            } else {
+                                // Compare dates and keep earlier one
+                                const existing = new Date(arrivals[itemId]);
+                                const current = new Date(dueDate);
+                                if (current < existing) {
+                                    arrivals[itemId] = formattedDate;
+                                }
+                            }
+                        }
+                    } catch(e) {
+                        console.warn('Error fetching PO lines for:', po.PO_ID, e);
+                    }
+                }
+                
+                window.itemExpectedArrivals = arrivals;
+                console.log('Built expected arrivals for', Object.keys(arrivals).length, 'items');
+            } catch(e) {
+                console.error('Error building expected arrivals:', e);
+                window.itemExpectedArrivals = {};
+            }
+        }
+        
         // Open multi-select picker for Sales Orders
         function openMultiItemPickerForSO() {
             const customerId = document.getElementById('soCustomer').value;
@@ -28492,6 +28586,9 @@ NOTE: Please print the attached PO document for full details.`;
                 alert('Please select a customer first');
                 return;
             }
+            
+            // Build expected arrivals lookup from pending POs
+            buildItemExpectedArrivals();
             
             // Set up multi-select mode
             window.multiSelectMode = true;
@@ -28659,11 +28756,33 @@ NOTE: Please print the attached PO document for full details.`;
                 newRow.className = 'line-item-row';
                 newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: end;';
                 
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const onBackorder = parseInt(item.Qty_On_Backorder) || 0;
+                const expectedArrival = window.itemExpectedArrivals?.[item.Item_ID] || null;
+                
+                // Build comprehensive stock info HTML
+                let stockInfoHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">`;
+                stockInfoHtml += `<span>📦 <strong>On Hand:</strong> ${qty}</span>`;
+                if (onOrder > 0) {
+                    stockInfoHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}</span>`;
+                }
+                if (onBackorder > 0) {
+                    stockInfoHtml += `<span style="color: #dc2626;">📤 <strong>On Backorder:</strong> ${onBackorder}</span>`;
+                }
+                if (expectedArrival) {
+                    stockInfoHtml += `<span style="color: #0891b2;">🚚 <strong>Expected:</strong> ${expectedArrival}</span>`;
+                }
+                stockInfoHtml += `</div>`;
+                
                 newRow.innerHTML = `
                     <div>
                         <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
                         <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
-                            <option value="${item.Item_ID}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
+                            <option value="${item.Item_ID}" selected 
+                                data-stock="${qty}" 
+                                data-onorder="${onOrder}" 
+                                data-onbackorder="${onBackorder}"
+                                data-expected="${expectedArrival || ''}">${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
                         </select>
                     </div>
                     <div>
@@ -28676,7 +28795,7 @@ NOTE: Please print the attached PO document for full details.`;
                     </div>
                     <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">🗑️</button>
                     <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 8px 12px; margin-top: -5px; border-radius: 6px; border: 2px solid #e8f5e9; background: #f1f8e9;">
-                        📦 Stock: ${qty} available
+                        ${stockInfoHtml}
                     </div>
                 `;
                 
@@ -28692,40 +28811,64 @@ NOTE: Please print the attached PO document for full details.`;
                     qtyInput.addEventListener('input', function() {
                         // Update stock warning based on quantity
                         const qtyVal = parseFloat(this.value) || 0;
-                        const stockAvailable = qty; // qty is the stock from the item
+                        const stockAvailable = qty;
                         const remaining = stockAvailable - qtyVal;
+                        const totalAvailable = stockAvailable + onOrder; // Including incoming
                         
                         if (stockInfoDiv) {
-                            let message = `📦 Stock: ${stockAvailable} available`;
+                            let statusHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">`;
+                            statusHtml += `<span>📦 <strong>On Hand:</strong> ${stockAvailable}</span>`;
+                            if (onOrder > 0) {
+                                statusHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}</span>`;
+                            }
+                            if (onBackorder > 0) {
+                                statusHtml += `<span style="color: #dc2626;">📤 <strong>Backorder:</strong> ${onBackorder}</span>`;
+                            }
+                            if (expectedArrival) {
+                                statusHtml += `<span style="color: #0891b2;">🚚 <strong>Expected:</strong> ${expectedArrival}</span>`;
+                            }
+                            statusHtml += `</div>`;
+                            
                             let bgColor = '#f1f8e9';
-                            let borderColor = '#e8f5e9';
-                            let textColor = '#333';
+                            let borderColor = '#a5d6a7';
                             
                             if (qtyVal > 0) {
-                                message = `📦 Stock: ${stockAvailable} available → After sale: ${remaining}`;
+                                statusHtml += `<div style="margin-top: 6px; font-weight: 600;">`;
                                 
                                 if (remaining < 0) {
+                                    const shortage = Math.abs(remaining);
                                     bgColor = '#ffebee';
                                     borderColor = '#ef5350';
-                                    textColor = '#c62828';
-                                    message += ' ⚠️ INSUFFICIENT STOCK!';
+                                    
+                                    if (onOrder >= shortage) {
+                                        // Can fulfill once PO arrives
+                                        statusHtml += `<span style="color: #f59e0b;">⏳ Short ${shortage} units - but ${onOrder} on order`;
+                                        if (expectedArrival) {
+                                            statusHtml += ` (arriving ${expectedArrival})`;
+                                        }
+                                        statusHtml += `</span>`;
+                                    } else {
+                                        // Not enough even with incoming
+                                        statusHtml += `<span style="color: #c62828;">⚠️ INSUFFICIENT STOCK! Short ${shortage} units</span>`;
+                                    }
                                 } else if (remaining === 0) {
                                     bgColor = '#fff3e0';
                                     borderColor = '#ffb74d';
-                                    textColor = '#e65100';
-                                    message += ' ⚠️ Will deplete stock';
+                                    statusHtml += `<span style="color: #e65100;">⚠️ Will deplete stock to zero</span>`;
                                 } else if (remaining < 10) {
                                     bgColor = '#fff3e0';
                                     borderColor = '#ffb74d';
-                                    textColor = '#ef6c00';
-                                    message += ' ⚠️ Low stock warning';
+                                    statusHtml += `<span style="color: #ef6c00;">⚠️ Low stock after sale: ${remaining} remaining</span>`;
+                                } else {
+                                    statusHtml += `<span style="color: #2e7d32;">✅ OK - ${remaining} will remain after sale</span>`;
                                 }
+                                
+                                statusHtml += `</div>`;
                             }
                             
-                            stockInfoDiv.textContent = message;
+                            stockInfoDiv.innerHTML = statusHtml;
                             stockInfoDiv.style.background = bgColor;
                             stockInfoDiv.style.borderColor = borderColor;
-                            stockInfoDiv.style.color = textColor;
                         }
                         
                         calculateSOTotal();
