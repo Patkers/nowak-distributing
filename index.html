@@ -17108,13 +17108,58 @@
                     @media (max-width: 768px) {
                         .pl-item {
                             grid-template-columns: 1fr;
-                            gap: 5px;
+                            gap: 8px;
+                            padding: 15px;
+                            background: white;
+                            border-bottom: 2px solid #e2e8f0;
                         }
                         .pl-item > div { text-align: left !important; }
-                        .pl-item .qty::before { content: 'Units: '; font-weight: normal; }
-                        .pl-item .cases::before { content: 'Cases: '; font-weight: normal; }
-                        .pl-item .stock::before { content: 'Stock: '; font-weight: normal; }
-                        .pl-item .price::before { content: 'Price: '; font-weight: normal; }
+                        
+                        /* Hide the header row on mobile */
+                        .pl-item.pl-item-header {
+                            display: none !important;
+                        }
+                        
+                        /* Style data rows as cards on mobile */
+                        .pl-item .pl-item-desc {
+                            font-size: 15px;
+                            font-weight: 600;
+                            color: #0f172a;
+                            margin-bottom: 4px;
+                        }
+                        .pl-item .pl-item-sku {
+                            font-size: 12px;
+                            color: #64748b;
+                        }
+                        .pl-item .pl-item-supplier {
+                            font-size: 12px;
+                            color: #0891b2;
+                            margin-bottom: 8px;
+                        }
+                        
+                        /* Inline labels on mobile */
+                        .pl-item .qty::before { content: 'Units: '; font-weight: 500; color: #64748b; }
+                        .pl-item .cases::before { content: '📦 Cases: '; font-weight: 500; color: #64748b; }
+                        .pl-item .stock::before { content: 'Stock: '; font-weight: 500; color: #64748b; }
+                        .pl-item .after::before { content: 'After: '; font-weight: 500; color: #64748b; }
+                        .pl-item .price::before { content: 'Price: '; font-weight: 500; color: #64748b; }
+                        
+                        /* Make values stand out */
+                        .pl-item .qty, .pl-item .cases, .pl-item .stock, .pl-item .after, .pl-item .price {
+                            display: inline-block;
+                            margin-right: 15px;
+                            padding: 4px 0;
+                        }
+                        
+                        /* Order header on mobile */
+                        .pl-order-header {
+                            flex-direction: column;
+                            align-items: flex-start;
+                        }
+                        .pl-order-header > div:last-child {
+                            text-align: left !important;
+                            margin-top: 8px;
+                        }
                     }
                     
                     @media print {
@@ -17293,7 +17338,7 @@
                             </div>
                             
                             <div class="pl-items">
-                                <div class="pl-item" style="background: #f8fafc; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #64748b;">
+                                <div class="pl-item pl-item-header" style="background: #f8fafc; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #64748b;">
                                     <div>Item</div>
                                     <div style="text-align: center;">Units</div>
                                     <div style="text-align: center;">📦 Cases</div>
@@ -17315,7 +17360,7 @@
                                         <div class="stock ${line.qtyOnHand < line.qty ? 'low' : 'ok'}">
                                             ${line.qtyOnHand}
                                         </div>
-                                        <div class="stock ${line.afterPick < 0 ? 'low' : 'ok'}">
+                                        <div class="after ${line.afterPick < 0 ? 'low' : 'ok'}">
                                             ${line.afterPick}
                                         </div>
                                         <div class="price">${formatMoney(line.lineSale)}</div>
