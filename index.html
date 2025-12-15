@@ -6820,8 +6820,10 @@
         const pickerTouchState = {
             startX: 0,
             startY: 0,
+            startTime: 0,
             moved: false,
-            threshold: 10  // pixels - if finger moves more than this, it's a scroll not a tap
+            threshold: 20,  // pixels - increased from 10 for less sensitivity
+            maxHoldTime: 500  // ms - if held longer than this without moving, still count as tap
         };
         
         // Call this on touchstart for picker cards
@@ -6829,6 +6831,7 @@
             const touch = e.touches[0];
             pickerTouchState.startX = touch.clientX;
             pickerTouchState.startY = touch.clientY;
+            pickerTouchState.startTime = Date.now();
             pickerTouchState.moved = false;
         }
         
@@ -6838,6 +6841,7 @@
             const touch = e.touches[0];
             const deltaX = Math.abs(touch.clientX - pickerTouchState.startX);
             const deltaY = Math.abs(touch.clientY - pickerTouchState.startY);
+            // More forgiving threshold - 20px instead of 10px
             if (deltaX > pickerTouchState.threshold || deltaY > pickerTouchState.threshold) {
                 pickerTouchState.moved = true;
             }
@@ -6845,7 +6849,18 @@
         
         // Call this on touchend - returns true if it was a clean tap (not a scroll)
         function pickerTouchEnd() {
-            return !pickerTouchState.moved;
+            const holdTime = Date.now() - pickerTouchState.startTime;
+            // It's a valid tap if:
+            // 1. Finger didn't move much, OR
+            // 2. It was a very quick tap (under 200ms) even with slight movement
+            if (!pickerTouchState.moved) {
+                return true;
+            }
+            // Allow quick taps even with slight movement
+            if (holdTime < 200) {
+                return true;
+            }
+            return false;
         }
         
         // Wrapper for picker card selection - only fires callback if it was a clean tap
@@ -7022,7 +7037,7 @@
             
             // MOBILE TOUCH DEBOUNCE - Prevent rapid multiple taps on selects
             let lastSelectTap = 0;
-            const SELECT_DEBOUNCE_MS = 300; // Minimum ms between select taps
+            const SELECT_DEBOUNCE_MS = 400; // Minimum ms between select taps (increased from 300)
             
             document.addEventListener('touchstart', function(e) {
                 if (e.target.tagName === 'SELECT' || e.target.closest('select')) {
