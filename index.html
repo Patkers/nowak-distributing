@@ -1999,7 +1999,7 @@
         })();
     </script>
     <div class="container">
-        <div class="header">
+        <div class="header" onclick="showSplashScreen(true)" style="cursor: pointer;" title="Click to lock screen">
             <h1>🚚 Nowak Distributing <span style="transform: scaleX(-1); display: inline-block;">🚚</span></h1>
             <p>Professional Inventory & Order Management System</p>
         </div>
@@ -7393,9 +7393,9 @@
             }
         }
         
-        function showSplashScreen() {
+        function showSplashScreen(force = false) {
             const enabled = localStorage.getItem('splashEnabled') === 'true';
-            if (!enabled) return;
+            if (!enabled && !force) return;
             
             const background = localStorage.getItem('splashBackground') || 'gradient-blue';
             const bgValue = getSplashBackground(background);
