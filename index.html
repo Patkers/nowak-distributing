@@ -28686,9 +28686,48 @@ NOTE: Please print the attached PO document for full details.`;
                 const qtyInput = newRow.querySelector('.so-qty');
                 const priceInput = newRow.querySelector('.so-price');
                 const removeBtn = newRow.querySelector('.remove-btn');
+                const stockInfoDiv = newRow.querySelector('.so-stock-info');
                 
                 if (qtyInput) {
                     qtyInput.addEventListener('input', function() {
+                        // Update stock warning based on quantity
+                        const qtyVal = parseFloat(this.value) || 0;
+                        const stockAvailable = qty; // qty is the stock from the item
+                        const remaining = stockAvailable - qtyVal;
+                        
+                        if (stockInfoDiv) {
+                            let message = `📦 Stock: ${stockAvailable} available`;
+                            let bgColor = '#f1f8e9';
+                            let borderColor = '#e8f5e9';
+                            let textColor = '#333';
+                            
+                            if (qtyVal > 0) {
+                                message = `📦 Stock: ${stockAvailable} available → After sale: ${remaining}`;
+                                
+                                if (remaining < 0) {
+                                    bgColor = '#ffebee';
+                                    borderColor = '#ef5350';
+                                    textColor = '#c62828';
+                                    message += ' ⚠️ INSUFFICIENT STOCK!';
+                                } else if (remaining === 0) {
+                                    bgColor = '#fff3e0';
+                                    borderColor = '#ffb74d';
+                                    textColor = '#e65100';
+                                    message += ' ⚠️ Will deplete stock';
+                                } else if (remaining < 10) {
+                                    bgColor = '#fff3e0';
+                                    borderColor = '#ffb74d';
+                                    textColor = '#ef6c00';
+                                    message += ' ⚠️ Low stock warning';
+                                }
+                            }
+                            
+                            stockInfoDiv.textContent = message;
+                            stockInfoDiv.style.background = bgColor;
+                            stockInfoDiv.style.borderColor = borderColor;
+                            stockInfoDiv.style.color = textColor;
+                        }
+                        
                         calculateSOTotal();
                     });
                 }
