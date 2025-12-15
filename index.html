@@ -9438,11 +9438,11 @@
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('purchasesStatus', '✅ Purchase order created! Inventory updated.', 'success');
                 hideAddPurchaseForm();
                 loadPurchases();
+                showPopup(`Purchase order created successfully!\n\nTotal: ${formatMoney(calculatedTotal)}\nInventory has been updated.`, 'success', 'PO Created');
             } else {
-                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
             }
         }
 
@@ -11183,11 +11183,11 @@
             const result = await apiCall('updatePurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('purchasesStatus', '✅ Purchase order updated successfully!', 'success');
                 closeOrderModal();
                 loadPurchases();
+                showPopup('Purchase order updated successfully!', 'success', 'PO Updated');
             } else {
-                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
             }
         }
         
@@ -11441,11 +11441,11 @@
             const result = await apiCall('updateSalesOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('salesStatus', '✅ Sales order updated successfully!', 'success');
                 closeOrderModal();
                 loadSales();
+                showPopup('Sales order updated successfully!', 'success', 'Sale Updated');
             } else {
-                showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
             }
         }
         
@@ -11489,15 +11489,15 @@
             apiCall('recordPurchasePayment', { poId: poId, amountPaid: newTotalPaid, paymentDate: paymentDate })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
-                        showStatus('purchasesStatus', `✅ Payment recorded! ${formatMoney(newTotalPaid)} total paid. ${statusMsg}`, 'success');
+                        const statusMsg = result.paymentStatus === 'Paid' ? 'PAID IN FULL!' : `Status: ${result.paymentStatus}`;
                         loadPurchases();
+                        showPopup(`Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\n${statusMsg}`, 'success', 'Payment Recorded');
                     } else {
-                        showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                        showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
                 })
                 .catch(err => {
-                    showStatus('purchasesStatus', '❌ Error recording payment: ' + err.message, 'error');
+                    showPopup('Error recording payment: ' + err.message, 'error');
                 });
         }
 
@@ -11993,11 +11993,11 @@
                 const result = await apiCall('createSalesOrder', data);
                 
                 if (result && result.status === 'success') {
-                    showStatus('salesStatus', `✅ Sale recorded! Invoice #: ${invoiceNumber}`, 'success');
                     hideAddSaleForm();
                     loadSales();
+                    showPopup(`Sale recorded successfully!\n\nInvoice #: ${invoiceNumber}\nTotal: ${formatMoney(calculatedTotal)}`, 'success', 'Sale Created');
                 } else {
-                    showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                    showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
             } finally {
                 // UNLOCK
@@ -12561,15 +12561,15 @@
             apiCall('recordSalesPayment', { soId: soId, amountPaid: newTotalPaid })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
-                        showStatus('salesStatus', `✅ Payment received! ${formatMoney(newTotalPaid)} total paid. ${statusMsg}`, 'success');
+                        const statusMsg = result.paymentStatus === 'Paid' ? 'PAID IN FULL!' : `Status: ${result.paymentStatus}`;
                         loadSales();
+                        showPopup(`Payment received!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\n${statusMsg}`, 'success', 'Payment Received');
                     } else {
-                        showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                        showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
                 })
                 .catch(err => {
-                    showStatus('salesStatus', '❌ Error recording payment: ' + err.message, 'error');
+                    showPopup('Error recording payment: ' + err.message, 'error');
                 });
         }
 
@@ -29140,32 +29140,35 @@ NOTE: Please print the attached PO document for full details.`;
                 // Add Backorder badge if there's quantity on backorder
                 const backorderBadge = onBackorder > 0 ? `<span class="item-picker-stock" style="background: #fff3e0; color: #e65100; border: 2px solid #ffb74d; margin-left: 6px;">⚠️ Backorder: ${onBackorder}</span>` : '';
                 
-                // Add Expected Date badge if available
+                // Add Expected Date badge if available and valid
                 let expectedDateBadge = '';
                 if (expectedDate && onOrder > 0) {
                     const expDate = new Date(expectedDate);
-                    const today = new Date();
-                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                    let dateColor = '#2e7d32';
-                    let dateBg = '#e8f5e9';
-                    let dateBorder = '#81c784';
-                    
-                    if (daysUntil < 0) {
-                        dateColor = '#c62828';
-                        dateBg = '#ffebee';
-                        dateBorder = '#e57373';
-                    } else if (daysUntil <= 3) {
-                        dateColor = '#e65100';
-                        dateBg = '#fff3e0';
-                        dateBorder = '#ffb74d';
+                    // Check if date is valid (not NaN)
+                    if (!isNaN(expDate.getTime())) {
+                        const today = new Date();
+                        const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                        let dateColor = '#2e7d32';
+                        let dateBg = '#e8f5e9';
+                        let dateBorder = '#81c784';
+                        
+                        if (daysUntil < 0) {
+                            dateColor = '#c62828';
+                            dateBg = '#ffebee';
+                            dateBorder = '#e57373';
+                        } else if (daysUntil <= 3) {
+                            dateColor = '#e65100';
+                            dateBg = '#fff3e0';
+                            dateBorder = '#ffb74d';
+                        }
+                        
+                        const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                         daysUntil === 0 ? 'Today' : 
+                                         daysUntil === 1 ? 'Tomorrow' : 
+                                         `${daysUntil} days`;
+                        
+                        expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
                     }
-                    
-                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
-                                     daysUntil === 0 ? 'Today' : 
-                                     daysUntil === 1 ? 'Tomorrow' : 
-                                     `${daysUntil} days`;
-                    
-                    expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
                 }
                 
                 // Add Top Seller badge if applicable
@@ -30036,7 +30039,7 @@ NOTE: Please print the attached PO document for full details.`;
                                     </span>
                                     ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">⚠️ Gap: ${gap}</span>` : ''}
                                 </div>
-                                ${expectedDate ? `
+                                ${expectedDate && !isNaN(new Date(expectedDate).getTime()) ? `
                                     <div style="margin-top: 8px; font-size: 13px; color: #555;">
                                         📅 Expected: ${new Date(expectedDate).toLocaleDateString()}
                                     </div>
@@ -34078,29 +34081,32 @@ NOTE: Please print the attached PO document for full details.`;
                 // Add Backorder badge if there's quantity on backorder
                 const backorderBadge = onBackorder > 0 ? `<span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #ffb74d; margin-left: 4px;">⚠️ ${onBackorder} Backorder</span>` : '';
                 
-                // Add Expected Date badge if available
+                // Add Expected Date badge if available and valid
                 let expectedDateBadge = '';
                 if (expectedDate && onOrder > 0) {
                     const expDate = new Date(expectedDate);
-                    const today = new Date();
-                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                    let dateColor = '#2e7d32';
-                    let dateBg = '#e8f5e9';
-                    
-                    if (daysUntil < 0) {
-                        dateColor = '#c62828';
-                        dateBg = '#ffebee';
-                    } else if (daysUntil <= 3) {
-                        dateColor = '#e65100';
-                        dateBg = '#fff3e0';
+                    // Check if date is valid (not NaN)
+                    if (!isNaN(expDate.getTime())) {
+                        const today = new Date();
+                        const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                        let dateColor = '#2e7d32';
+                        let dateBg = '#e8f5e9';
+                        
+                        if (daysUntil < 0) {
+                            dateColor = '#c62828';
+                            dateBg = '#ffebee';
+                        } else if (daysUntil <= 3) {
+                            dateColor = '#e65100';
+                            dateBg = '#fff3e0';
+                        }
+                        
+                        const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                         daysUntil === 0 ? 'Today' : 
+                                         daysUntil === 1 ? 'Tomorrow' : 
+                                         `${daysUntil} days`;
+                        
+                        expectedDateBadge = `<div style="margin-top: 6px;"><span style="background: ${dateBg}; color: ${dateColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid ${dateColor === '#2e7d32' ? '#81c784' : dateColor === '#e65100' ? '#ffb74d' : '#e57373'};">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span></div>`;
                     }
-                    
-                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
-                                     daysUntil === 0 ? 'Today' : 
-                                     daysUntil === 1 ? 'Tomorrow' : 
-                                     `${daysUntil} days`;
-                    
-                    expectedDateBadge = `<div style="margin-top: 6px;"><span style="background: ${dateBg}; color: ${dateColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid ${dateColor === '#2e7d32' ? '#81c784' : dateColor === '#e65100' ? '#ffb74d' : '#e57373'};">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span></div>`;
                 }
                 
                 // Add Top Seller badge if applicable
@@ -35922,6 +35928,7 @@ NOTE: Please print the attached PO document for full details.`;
             // Reset footer to single OK button
             footer.innerHTML = '<button class="popup-btn" onclick="closePopup()">OK</button>';
             
+            overlay.style.display = 'flex';  // Ensure display is set
             overlay.classList.add('show');
             
             // Return a promise for async usage
@@ -35960,6 +35967,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <button class="popup-btn" onclick="closePopup(true)">OK</button>
             `;
             
+            overlay.style.display = 'flex';  // Ensure display is set
             overlay.classList.add('show');
             
             return new Promise(resolve => {
@@ -35969,7 +35977,10 @@ NOTE: Please print the attached PO document for full details.`;
         
         function closePopup(result = true) {
             const overlay = document.getElementById('popupOverlay');
-            overlay.classList.remove('show');
+            if (overlay) {
+                overlay.classList.remove('show');
+                overlay.style.display = 'none';  // Force hide as backup
+            }
             
             if (popupConfirmCallback) {
                 popupConfirmCallback(result);
