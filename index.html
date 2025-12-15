@@ -35850,8 +35850,6 @@ NOTE: Please print the attached PO document for full details.`;
     
     <script>
         // ==================== POPUP MODAL SYSTEM ====================
-        let popupCallback = null;
-        let popupConfirmCallback = null;
         
         function showPopup(message, type = 'auto', title = null) {
             const overlay = document.getElementById('popupOverlay');
@@ -35860,6 +35858,12 @@ NOTE: Please print the attached PO document for full details.`;
             const titleEl = document.getElementById('popupTitle');
             const body = document.getElementById('popupBody');
             const footer = document.getElementById('popupFooter');
+            
+            if (!overlay) {
+                console.error('Popup overlay not found!');
+                alert(message); // Fallback to alert
+                return;
+            }
             
             // Auto-detect type from message content if not specified
             if (type === 'auto') {
@@ -35926,73 +35930,23 @@ NOTE: Please print the attached PO document for full details.`;
             // Reset footer to single OK button
             footer.innerHTML = '<button class="popup-btn" onclick="closePopup()">OK</button>';
             
-            overlay.style.display = 'flex';  // Ensure display is set
+            // Show the overlay
+            overlay.style.display = 'flex';
             overlay.classList.add('show');
-            
-            // Return a promise for async usage
-            return new Promise(resolve => {
-                popupCallback = resolve;
-            });
         }
         
-        function showConfirm(message, type = 'warning', title = null) {
-            const overlay = document.getElementById('popupOverlay');
-            const header = document.getElementById('popupHeader');
-            const icon = document.getElementById('popupIcon');
-            const titleEl = document.getElementById('popupTitle');
-            const body = document.getElementById('popupBody');
-            const footer = document.getElementById('popupFooter');
-            
-            const types = {
-                error: { icon: '⚠️', title: 'Confirm', class: 'error' },
-                success: { icon: '✅', title: 'Confirm', class: 'success' },
-                warning: { icon: '⚡', title: 'Confirm', class: 'warning' },
-                info: { icon: '❓', title: 'Confirm', class: 'info' }
-            };
-            
-            const config = types[type] || types.warning;
-            header.className = 'popup-header ' + config.class;
-            icon.textContent = config.icon;
-            titleEl.textContent = title || config.title;
-            
-            // Parse message
-            body.innerHTML = message.replace(/\n/g, '<br>');
-            body.className = 'popup-body';
-            
-            // Add Cancel and OK buttons
-            footer.innerHTML = `
-                <button class="popup-btn secondary" onclick="closePopup(false)">Cancel</button>
-                <button class="popup-btn" onclick="closePopup(true)">OK</button>
-            `;
-            
-            overlay.style.display = 'flex';  // Ensure display is set
-            overlay.classList.add('show');
-            
-            return new Promise(resolve => {
-                popupConfirmCallback = resolve;
-            });
-        }
-        
-        function closePopup(result = true) {
+        function closePopup() {
             const overlay = document.getElementById('popupOverlay');
             if (overlay) {
+                overlay.style.display = 'none';
                 overlay.classList.remove('show');
-                overlay.style.display = 'none';  // Force hide as backup
-            }
-            
-            if (popupConfirmCallback) {
-                popupConfirmCallback(result);
-                popupConfirmCallback = null;
-            } else if (popupCallback) {
-                popupCallback();
-                popupCallback = null;
             }
         }
         
         // Close on Escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && document.getElementById('popupOverlay').classList.contains('show')) {
-                closePopup(false);
+            if (e.key === 'Escape') {
+                closePopup();
             }
         });
     </script>
