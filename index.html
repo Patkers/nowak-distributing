@@ -17397,12 +17397,15 @@
                         display: flex;
                         flex-direction: column;
                         align-items: center;
+                        justify-content: flex-end;
+                        height: 100%;
                     }
                     .sp-trend-fill {
                         width: 100%;
                         max-width: 40px;
                         border-radius: 4px 4px 0 0;
                         transition: height 0.3s;
+                        flex-shrink: 0;
                     }
                     .sp-trend-label {
                         font-size: 11px;
@@ -23841,6 +23844,17 @@
             let periodEnd = toDate || now;
             const periodDays = Math.ceil((periodEnd - periodStart) / (1000 * 60 * 60 * 24));
             
+            // Calculate WORKING days (exclude weekends)
+            let workingDays = 0;
+            let currentDate = new Date(periodStart);
+            while (currentDate <= periodEnd) {
+                const dayOfWeek = currentDate.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0=Sunday, 6=Saturday
+                    workingDays++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
             // Last year same period
             const lyStart = new Date(periodStart);
             lyStart.setFullYear(lyStart.getFullYear() - 1);
@@ -24141,6 +24155,7 @@
                         display: flex;
                         flex-direction: column;
                         align-items: center;
+                        justify-content: flex-end;
                         height: 100%;
                     }
                     .biz-monthly-bar-fill {
@@ -24150,6 +24165,7 @@
                         border-radius: 6px 6px 0 0;
                         transition: height 0.5s ease;
                         position: relative;
+                        flex-shrink: 0;
                     }
                     .biz-monthly-bar-fill:hover {
                         background: linear-gradient(180deg, #60a5fa, #3b82f6);
@@ -24442,12 +24458,12 @@
                             <span class="biz-stat-value">${Object.keys(productSales).length}</span>
                         </div>
                         <div class="biz-stat-row">
-                            <span class="biz-stat-label">📅 Period Days</span>
-                            <span class="biz-stat-value">${periodDays} days</span>
+                            <span class="biz-stat-label">📅 Working Days</span>
+                            <span class="biz-stat-value">${workingDays} days</span>
                         </div>
                         <div class="biz-stat-row">
                             <span class="biz-stat-label">📊 Daily Avg Revenue</span>
-                            <span class="biz-stat-value">${formatMoney(totalRevenue / Math.max(periodDays, 1))}</span>
+                            <span class="biz-stat-value">${formatMoney(totalRevenue / Math.max(workingDays, 1))}</span>
                         </div>
                     </div>
                 </div>
