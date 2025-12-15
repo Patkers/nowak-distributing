@@ -1879,43 +1879,71 @@
         
         /* ==================== IN-PLACE PRINT STYLES ==================== */
         @media print {
-            /* Hide everything except the report content */
-            body * {
-                visibility: hidden;
+            /* Reset everything for print */
+            * {
+                position: static !important;
+                float: none !important;
+                overflow: visible !important;
+                visibility: visible !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
             }
             
-            /* Show only the report modal and its contents */
-            #reportSetupModal,
-            #reportSetupModal *,
-            #reportSetupModalInner,
-            #reportSetupModalInner * {
-                visibility: visible;
+            /* Hide everything except report content */
+            body > *:not(#reportSetupModal) {
+                display: none !important;
             }
             
-            /* Position the report content for printing */
+            /* Hide these elements from main page */
+            .container, .header, .nav-container, #settingsBtn, #envBadge,
+            .tab-content:not(#reports), #orderModal, #itemPickerModal,
+            #supplierPickerModal, #customerPickerModal, #uomPickerModal {
+                display: none !important;
+            }
+            
+            /* Reset body for printing */
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                overflow: visible !important;
+                height: auto !important;
+                width: 100% !important;
+            }
+            
+            html {
+                overflow: visible !important;
+                height: auto !important;
+            }
+            
+            /* Show and reset the report modal */
             #reportSetupModal {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
+                display: block !important;
+                position: static !important;
+                left: auto !important;
+                top: auto !important;
                 width: 100% !important;
                 height: auto !important;
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 overflow: visible !important;
+                z-index: auto !important;
             }
             
             #reportSetupModalInner {
-                position: relative !important;
+                position: static !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
                 max-height: none !important;
+                min-height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
                 overflow: visible !important;
+                display: block !important;
             }
             
             /* Hide modal header, filters, and footer when printing */
@@ -1925,56 +1953,115 @@
                 display: none !important;
             }
             
-            /* Report content takes full page */
+            /* Report content flows naturally */
             #reportSetupContent {
-                padding: 0.5in !important;
+                padding: 0.25in !important;
                 overflow: visible !important;
                 height: auto !important;
                 max-height: none !important;
+                min-height: 0 !important;
+                display: block !important;
+                position: static !important;
             }
             
             /* Show chart images, hide canvases */
             .print-chart-image {
                 display: block !important;
                 max-width: 100% !important;
+                height: auto !important;
             }
             
-            canvas.print-chart {
+            canvas.print-chart,
+            canvas {
                 display: none !important;
-            }
-            
-            /* Ensure colors print */
-            * {
-                print-color-adjust: exact !important;
-                -webkit-print-color-adjust: exact !important;
             }
             
             /* Table styling for print */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
-                font-size: 10pt !important;
+                font-size: 9pt !important;
+                page-break-inside: auto !important;
+            }
+            
+            thead {
+                display: table-header-group !important;
+            }
+            
+            tbody {
+                display: table-row-group !important;
+            }
+            
+            tr {
+                page-break-inside: avoid !important;
             }
             
             th {
-                background: #1a365d !important;
+                background: #333 !important;
                 color: white !important;
-                padding: 8px !important;
+                padding: 6px !important;
+                font-size: 9pt !important;
+                border: 1px solid #333 !important;
             }
             
             td {
-                border: 1px solid #ddd !important;
-                padding: 6px !important;
+                border: 1px solid #ccc !important;
+                padding: 4px 6px !important;
+                font-size: 9pt !important;
             }
             
-            /* Page breaks */
-            .page-break {
-                page-break-before: always;
+            /* Headers and sections */
+            h1, h2, h3, h4 {
+                page-break-after: avoid !important;
             }
             
-            /* Prevent breaking inside elements */
-            tr, .content-card, .biz-section {
-                page-break-inside: avoid;
+            /* Prevent orphaned content */
+            p, li, .content-card, .biz-section, .backorder-section, .action-section {
+                page-break-inside: avoid !important;
+            }
+            
+            /* KPI grids - simpler for print */
+            .biz-kpi-grid, .backorder-kpi-grid, .pl-summary {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+            }
+            
+            .biz-kpi, .backorder-kpi, .pl-stat {
+                flex: 1 1 100px !important;
+                padding: 8px !important;
+                border: 1px solid #ccc !important;
+                background: white !important;
+            }
+            
+            /* Hide buttons and interactive elements */
+            button, .btn, .create-po-btn, .oval-action-btn, input[type="number"],
+            input[type="checkbox"], .pl-print-btn {
+                display: none !important;
+            }
+            
+            /* Simplify gradients for print */
+            [style*="linear-gradient"] {
+                background: #f0f0f0 !important;
+            }
+            
+            /* Action dashboard sections */
+            .action-section, .backorder-section, .customer-card {
+                border: 1px solid #ccc !important;
+                margin-bottom: 10px !important;
+                page-break-inside: avoid !important;
+            }
+            
+            /* Links should be plain text */
+            a {
+                color: #333 !important;
+                text-decoration: none !important;
+            }
+            
+            /* Page setup */
+            @page {
+                margin: 0.5in;
+                size: auto;
             }
         }
     </style>
@@ -2701,7 +2788,10 @@
                         <div class="form-group">
                             <label>Current Quantity <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
                             <input type="number" id="editQtyOnHand" readonly style="background: #f0f0f0;">
-                            <small style="color: #666;">Use Purchases/Sales to adjust quantity</small>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                <small style="color: #666;">Use Purchases/Sales to adjust quantity</small>
+                                <a href="#" onclick="goToAdjustInventory(); return false;" style="font-size: 12px; color: #3b82f6; text-decoration: none; font-weight: 600;">📊 Adjust Inventory →</a>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Reorder Point <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
@@ -3884,6 +3974,7 @@
                     </div>
                     <div id="dashboardReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border-left: 4px solid #b91c1c !important;">🚨 Action Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('customer-backorders')" style="background: linear-gradient(135deg, #f59e0b, #fbbf24) !important; color: white !important; font-weight: 600; border-left: 4px solid #d97706 !important;">📦 Customer Backorders</button>
                         <button class="btn report-btn" onclick="showReport('business-overview')">📊 Business Overview</button>
                         <button class="btn report-btn" onclick="showReport('daily-dashboard')">🎯 Sales Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('product-dashboard')">📦 Product Dashboard</button>
@@ -8173,6 +8264,33 @@
             
             // Scroll to the edit form
             document.getElementById('editItemForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        function goToAdjustInventory() {
+            // Get the current item ID from the edit form
+            const itemId = document.getElementById('editItemId').value;
+            
+            // Hide the edit form
+            hideEditItemForm();
+            
+            // Switch to inventory tab
+            switchTab('inventory');
+            
+            // Wait for tab to load, then pre-select the item
+            setTimeout(() => {
+                const itemSelect = document.getElementById('adjustItem');
+                if (itemSelect && itemId) {
+                    itemSelect.value = itemId;
+                    // Trigger change event to load current quantity
+                    itemSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // Scroll to the adjustment form
+                const adjustForm = document.getElementById('inventory');
+                if (adjustForm) {
+                    adjustForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
         }
         
         function hideEditItemForm() {
@@ -12972,6 +13090,21 @@
                     ]
                 }
             },
+            'customer-backorders': {
+                title: '📦 Customer Backorders',
+                filters: ['customer', 'supplier'],
+                noFilters: true, // Skip setup and go directly to report
+                dateLabel: '',
+                description: {
+                    purpose: 'View items on backorder for customers and create POs to fulfill those orders.',
+                    insights: [
+                        'See which customers are waiting for products',
+                        'Create POs for just the backorder quantity (not up to reorder point)',
+                        'Ideal for discontinuing items - only order what\'s needed to fulfill existing orders',
+                        'Consolidated view across all customers needing the same product'
+                    ]
+                }
+            },
             'business-overview': {
                 title: '📊 Business Overview',
                 filters: ['dateRange', 'topN'],
@@ -14218,6 +14351,9 @@
                         break;
                     case 'action-dashboard':
                         reportHtml = await generateActionDashboard();
+                        break;
+                    case 'customer-backorders':
+                        reportHtml = await generateCustomerBackordersModal();
                         break;
                     case 'daily-dashboard':
                         reportHtml = await generateDailyDashboardModal();
@@ -15930,6 +16066,7 @@
             const turnoverData = items.map(item => {
                 const itemId = item.Item_ID;
                 const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                const qtyOnBackorder = parseInt(item.Qty_On_Backorder) || 0;
                 const unitsSold = unitsSoldByItem[itemId] || 0;
                 const packageCost = parseFloat(item.Package_Cost) || 0;
                 const unitsPerPkg = parseInt(item.Units_Per_Package) || 1;
@@ -15985,6 +16122,7 @@
                     description: item.Item_Description || itemId,
                     supplier: supplier?.Supplier_Name || 'Unknown',
                     qtyOnHand,
+                    qtyOnBackorder,
                     unitsSold,
                     dailySalesRate,
                     daysOfSupply,
@@ -16109,6 +16247,7 @@
                                     <th>SKU</th>
                                     <th>Description</th>
                                     <th style="text-align: right;">On Hand</th>
+                                    <th style="text-align: right;">Backorder</th>
                                     <th style="text-align: right;">Sold (${daysPeriod}d)</th>
                                     <th style="text-align: right;">Daily Rate</th>
                                     <th style="text-align: right;">Days Supply</th>
@@ -16127,6 +16266,7 @@
                                         <td style="font-family: monospace;">${item.sku}</td>
                                         <td>${item.description}</td>
                                         <td style="text-align: right; color: ${item.qtyOnHand <= 0 ? '#ef4444' : '#333'};">${item.qtyOnHand}</td>
+                                        <td style="text-align: right; color: ${item.qtyOnBackorder > 0 ? '#dc2626' : '#666'}; font-weight: ${item.qtyOnBackorder > 0 ? '600' : 'normal'};">${item.qtyOnBackorder > 0 ? item.qtyOnBackorder : '-'}</td>
                                         <td style="text-align: right; font-weight: ${item.unitsSold > 0 ? 'bold' : 'normal'}; color: ${item.unitsSold > 0 ? '#22c55e' : '#999'};">${item.unitsSold}</td>
                                         <td style="text-align: right;">${item.dailySalesRate.toFixed(2)}</td>
                                         <td style="text-align: right;">
@@ -17185,12 +17325,6 @@
                         /* Hide buttons */
                         .pl-print-btn { display: none !important; }
                         
-                        /* Reset any fixed positioning */
-                        * {
-                            position: static !important;
-                            overflow: visible !important;
-                        }
-                        
                         /* Make everything visible and print-friendly */
                         .pl-header {
                             background: #0891b2 !important;
@@ -17211,13 +17345,14 @@
                         
                         /* Summary stats - 3 per row for print */
                         .pl-summary {
-                            display: grid !important;
-                            grid-template-columns: repeat(3, 1fr) !important;
+                            display: flex !important;
+                            flex-wrap: wrap !important;
                             gap: 8px !important;
                             margin-bottom: 15px !important;
                         }
                         
                         .pl-stat {
+                            flex: 1 1 100px !important;
                             padding: 8px !important;
                             border: 1px solid #ddd !important;
                         }
@@ -17248,28 +17383,6 @@
                             padding: 5px 0 !important;
                         }
                         
-                        /* Consolidated table - ensure it prints */
-                        table.data-table {
-                            width: 100% !important;
-                            font-size: 9pt !important;
-                            border-collapse: collapse !important;
-                        }
-                        
-                        table.data-table th {
-                            background: #0891b2 !important;
-                            color: white !important;
-                            -webkit-print-color-adjust: exact !important;
-                            print-color-adjust: exact !important;
-                            padding: 6px !important;
-                            font-size: 8pt !important;
-                        }
-                        
-                        table.data-table td {
-                            padding: 5px !important;
-                            border: 1px solid #ddd !important;
-                            font-size: 9pt !important;
-                        }
-                        
                         /* Orders */
                         .pl-order {
                             page-break-inside: avoid !important;
@@ -17280,8 +17393,6 @@
                         .pl-order-header {
                             padding: 10px !important;
                             background: #f8f8f8 !important;
-                            -webkit-print-color-adjust: exact !important;
-                            print-color-adjust: exact !important;
                         }
                         
                         .pl-order-header .customer {
@@ -17294,33 +17405,28 @@
                             font-size: 9pt !important;
                         }
                         
-                        /* Item rows - use grid for print */
+                        /* Item rows - table layout for print */
                         .pl-item {
-                            display: grid !important;
-                            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr !important;
-                            padding: 6px 10px !important;
+                            display: table-row !important;
                             font-size: 9pt !important;
+                        }
+                        
+                        .pl-item > div {
+                            display: table-cell !important;
+                            padding: 4px 6px !important;
                             border-bottom: 1px solid #eee !important;
                         }
                         
                         .pl-item.pl-item-header {
-                            display: grid !important;
+                            display: table-row !important;
                             background: #f0f0f0 !important;
                             font-size: 8pt !important;
                             font-weight: bold !important;
                         }
                         
-                        .pl-item-desc {
-                            font-size: 10pt !important;
-                            font-weight: 600 !important;
-                        }
-                        
-                        .pl-item-sku {
-                            font-size: 8pt !important;
-                        }
-                        
-                        .pl-item-supplier {
-                            font-size: 8pt !important;
+                        .pl-items {
+                            display: table !important;
+                            width: 100% !important;
                         }
                         
                         /* Remove ::before labels in print */
@@ -17332,30 +17438,11 @@
                             content: none !important;
                         }
                         
-                        .pl-item .qty,
-                        .pl-item .cases,
-                        .pl-item .stock,
-                        .pl-item .after,
-                        .pl-item .price {
-                            text-align: center !important;
-                            display: block !important;
-                            margin: 0 !important;
-                        }
-                        
-                        .pl-item .price {
-                            text-align: right !important;
-                        }
-                        
                         /* Order footer */
                         .pl-order-footer {
                             padding: 8px 10px !important;
                             font-size: 9pt !important;
                             background: #f8f8f8 !important;
-                        }
-                        
-                        /* Page margins */
-                        @page {
-                            margin: 0.5in;
                         }
                     }
                 </style>
@@ -18714,12 +18801,13 @@
             }
             
             // Calculate totals and margin data
-            let totalQty = 0, totalValue = 0, totalSellValue = 0;
+            let totalQty = 0, totalValue = 0, totalSellValue = 0, totalBackorder = 0;
             let negativeCount = 0, lowStockCount = 0, inStockCount = 0;
             const marginData = [];
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
                 const cost = parseFloat(item.Package_Cost) || 0;
                 const sell = parseFloat(item.Unit_Sell_Price) || parseFloat(item.Sell_Price) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
@@ -18728,6 +18816,7 @@
                 const margin = sell > 0 ? ((sell - unitCost) / sell * 100) : 0;
                 
                 totalQty += qty;
+                totalBackorder += backorder;
                 totalValue += Math.abs(qty) * unitCost;
                 totalSellValue += Math.abs(qty) * sell;
                 
@@ -18762,6 +18851,10 @@
                     <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
                         <div style="font-size: 12px; color: #1565c0; margin-bottom: 5px;">📦 Total Units</div>
                         <div style="font-size: 22px; font-weight: bold; color: #1976d2;">${totalQty.toLocaleString()}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${totalBackorder > 0 ? '#fef2f2 0%, #fecaca 100%' : '#f5f5f5 0%, #e0e0e0 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalBackorder > 0 ? '#dc2626' : '#9e9e9e'};">
+                        <div style="font-size: 12px; color: ${totalBackorder > 0 ? '#991b1b' : '#666'}; margin-bottom: 5px;">⚠️ On Backorder</div>
+                        <div style="font-size: 22px; font-weight: bold; color: ${totalBackorder > 0 ? '#dc2626' : '#666'};">${totalBackorder > 0 ? totalBackorder.toLocaleString() : '0'}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">
                         <div style="font-size: 12px; color: #2e7d32; margin-bottom: 5px;">💰 Cost Value</div>
@@ -18869,6 +18962,7 @@
                                 <th>SKU</th>
                                 <th>Description</th>
                                 <th style="text-align: right;">Qty</th>
+                                <th style="text-align: right;">Backorder</th>
                                 <th style="text-align: right;">Cost</th>
                                 <th style="text-align: right;">Sell</th>
                                 <th style="text-align: right;">Value</th>
@@ -18877,6 +18971,7 @@
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
                 const cost = parseFloat(item.Package_Cost) || 0;
                 const sell = parseFloat(item.Unit_Sell_Price) || parseFloat(item.Sell_Price) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
@@ -18889,6 +18984,7 @@
                     <td>${item.SKU || '-'}</td>
                     <td>${item.Item_Description || '-'}</td>
                     <td style="text-align: right; color: ${qty <= 0 ? '#c62828' : '#333'};">${qty}</td>
+                    <td style="text-align: right; color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                     <td style="text-align: right;">${formatMoney(unitCost)}</td>
                     <td style="text-align: right;">${formatMoney(sell)}</td>
                     <td style="text-align: right;">${formatMoney(itemValue)}</td>
@@ -18899,6 +18995,7 @@
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td colspan="2">TOTAL</td>
                 <td style="text-align: right;">${totalQty}</td>
+                <td style="text-align: right; color: ${totalBackorder > 0 ? '#dc2626' : '#666'};">${totalBackorder > 0 ? totalBackorder : '-'}</td>
                 <td colspan="2" style="text-align: right;">Inventory Value:</td>
                 <td style="text-align: right;">${formatMoney(totalValue)}</td>
                 ${type === 'margin' ? `<td style="text-align: right;">${totalMargin.toFixed(1)}%</td>` : ''}
@@ -21446,6 +21543,7 @@
                                 <th>Item</th>
                                 <th>Supplier</th>
                                 <th style="text-align: center;">On Hand</th>
+                                <th style="text-align: center;">Backorder</th>
                                 <th style="text-align: center;">Committed</th>
                                 <th style="text-align: center;">Available</th>
                                 <th style="text-align: center;">Reorder Pt</th>
@@ -21457,6 +21555,7 @@
                 `;
                 
                 lowStock.forEach(item => {
+                    const backorder = parseInt(item.Qty_On_Backorder) || 0;
                     html += `
                         <tr>
                             <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
@@ -21464,6 +21563,7 @@
                             <td>${item.Item_Description}</td>
                             <td>${item.Supplier_Name}</td>
                             <td style="text-align: center;">${item.Qty}</td>
+                            <td style="text-align: center; color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                             <td style="text-align: center; color: ${item.Committed > 0 ? '#dc2626' : '#666'};">${item.Committed > 0 ? '-' + item.Committed : '0'}</td>
                             <td style="text-align: center; font-weight: 600; color: ${item.Available < 0 ? '#dc2626' : '#059669'};">${item.Available}</td>
                             <td style="text-align: center;">${item.Reorder_Point}</td>
@@ -21676,6 +21776,572 @@
             html += '</div>'; // End action-dashboard-container
             
             return html;
+        }
+        
+        // ========== CUSTOMER BACKORDERS REPORT ==========
+        async function generateCustomerBackordersModal() {
+            // Fetch all necessary data
+            const [salesResult, itemsResult, customersResult, suppliersResult, poResult] = await Promise.all([
+                apiCall('getSalesOrders'),
+                apiCall('getItems'),
+                apiCall('getCustomers'),
+                apiCall('getSuppliers'),
+                apiCall('getPurchaseOrders')
+            ]);
+            
+            if (!salesResult?.data || !itemsResult?.data) {
+                throw new Error('Failed to load data');
+            }
+            
+            const sales = salesResult.data.filter(s => s.Status !== 'Voided');
+            const items = itemsResult.data;
+            const customers = customersResult?.data || [];
+            const suppliers = suppliersResult?.data || [];
+            const purchases = (poResult?.data || []).filter(p => p.Status !== 'Voided' && p.Status !== 'Cancelled');
+            
+            // Build item lookup with supplier info
+            const itemMap = {};
+            items.forEach(item => {
+                const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                itemMap[item.Item_ID] = {
+                    ...item,
+                    supplierName: supplier?.Supplier_Name || 'Unknown',
+                    qtyOnHand: parseInt(item.Qty_On_Hand) || 0,
+                    qtyOnOrder: parseInt(item.Qty_On_Order) || 0,
+                    qtyOnBackorder: parseInt(item.Qty_On_Backorder) || 0
+                };
+            });
+            
+            // Find pending sales orders (not yet fulfilled)
+            const pendingSales = sales.filter(s => 
+                s.Status === 'Pending' || s.Status === 'Ready' || s.Status === 'Out for Delivery'
+            );
+            
+            // Track backorders by customer and by item
+            const customerBackorders = {}; // customerId -> { customerName, orders: [{ soId, invoiceNum, items: [...] }] }
+            const itemBackorders = {}; // itemId -> { item info, customers: [{ customerId, customerName, qty, soId }], totalNeeded }
+            
+            // Fetch line items for each pending order
+            for (const so of pendingSales) {
+                try {
+                    const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
+                    if (!linesResult?.data) continue;
+                    
+                    const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
+                    const customerName = customer?.Customer_Name || 'Unknown';
+                    
+                    for (const line of linesResult.data) {
+                        const item = itemMap[line.Item_ID];
+                        if (!item) continue;
+                        
+                        const qty = parseInt(line.Quantity) || 0;
+                        const qtyOnHand = item.qtyOnHand;
+                        
+                        // Check if this item is on backorder (insufficient stock)
+                        if (qtyOnHand < 0 || item.qtyOnBackorder > 0) {
+                            // Add to customer backorders
+                            if (!customerBackorders[so.Customer_ID]) {
+                                customerBackorders[so.Customer_ID] = {
+                                    customerName: customerName,
+                                    customerId: so.Customer_ID,
+                                    orders: []
+                                };
+                            }
+                            
+                            // Find or create order entry
+                            let orderEntry = customerBackorders[so.Customer_ID].orders.find(o => o.soId === so.SO_ID);
+                            if (!orderEntry) {
+                                orderEntry = {
+                                    soId: so.SO_ID,
+                                    invoiceNum: so.Invoice_Number || so.SO_ID,
+                                    soDate: so.Sale_Date || so.SO_Date,
+                                    items: []
+                                };
+                                customerBackorders[so.Customer_ID].orders.push(orderEntry);
+                            }
+                            
+                            orderEntry.items.push({
+                                itemId: line.Item_ID,
+                                itemDesc: item.Item_Description,
+                                sku: item.SKU,
+                                supplierName: item.supplierName,
+                                supplierId: item.Supplier_ID,
+                                qtyOrdered: qty,
+                                qtyOnHand: qtyOnHand,
+                                qtyOnOrder: item.qtyOnOrder,
+                                qtyOnBackorder: item.qtyOnBackorder
+                            });
+                            
+                            // Add to item backorders
+                            if (!itemBackorders[line.Item_ID]) {
+                                itemBackorders[line.Item_ID] = {
+                                    itemId: line.Item_ID,
+                                    itemDesc: item.Item_Description,
+                                    sku: item.SKU,
+                                    supplierName: item.supplierName,
+                                    supplierId: item.Supplier_ID,
+                                    qtyOnHand: qtyOnHand,
+                                    qtyOnOrder: item.qtyOnOrder,
+                                    qtyOnBackorder: item.qtyOnBackorder,
+                                    customers: [],
+                                    totalNeeded: 0
+                                };
+                            }
+                            
+                            itemBackorders[line.Item_ID].customers.push({
+                                customerId: so.Customer_ID,
+                                customerName: customerName,
+                                qty: qty,
+                                soId: so.SO_ID,
+                                invoiceNum: so.Invoice_Number || so.SO_ID
+                            });
+                            itemBackorders[line.Item_ID].totalNeeded += qty;
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Error fetching lines for SO:', so.SO_ID, e);
+                }
+            }
+            
+            // Calculate totals
+            const totalCustomersAffected = Object.keys(customerBackorders).length;
+            const totalItemsOnBackorder = Object.keys(itemBackorders).length;
+            const totalUnitsBackordered = Object.values(itemBackorders).reduce((sum, i) => sum + i.qtyOnBackorder, 0);
+            
+            // Build HTML
+            let html = `
+                <style>
+                    .backorder-container {
+                        max-width: 100%;
+                    }
+                    .backorder-header {
+                        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+                        color: white;
+                        padding: 25px;
+                        border-radius: 12px;
+                        margin-bottom: 20px;
+                        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                    }
+                    .backorder-header h2 {
+                        margin: 0 0 8px 0;
+                        font-size: 24px;
+                    }
+                    .backorder-header p {
+                        margin: 0;
+                        opacity: 0.9;
+                    }
+                    .backorder-kpi-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                        gap: 12px;
+                        margin-bottom: 20px;
+                    }
+                    .backorder-kpi {
+                        background: white;
+                        border-radius: 10px;
+                        padding: 15px;
+                        text-align: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                    }
+                    .backorder-kpi .value {
+                        font-size: 28px;
+                        font-weight: 700;
+                    }
+                    .backorder-kpi .label {
+                        font-size: 12px;
+                        color: #666;
+                        text-transform: uppercase;
+                        margin-top: 5px;
+                    }
+                    .backorder-section {
+                        background: white;
+                        border-radius: 12px;
+                        margin-bottom: 20px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                        overflow: hidden;
+                    }
+                    .backorder-section-header {
+                        background: #f8fafc;
+                        padding: 15px 20px;
+                        border-bottom: 1px solid #e2e8f0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+                    .backorder-section-title {
+                        font-weight: 700;
+                        font-size: 16px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .backorder-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 13px;
+                    }
+                    .backorder-table th {
+                        background: #f1f5f9;
+                        padding: 10px 12px;
+                        text-align: left;
+                        font-weight: 600;
+                        color: #475569;
+                        border-bottom: 1px solid #e2e8f0;
+                    }
+                    .backorder-table td {
+                        padding: 10px 12px;
+                        border-bottom: 1px solid #f1f5f9;
+                    }
+                    .backorder-table tr:hover {
+                        background: #f8fafc;
+                    }
+                    .customer-card {
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        margin: 15px;
+                        overflow: hidden;
+                    }
+                    .customer-card-header {
+                        background: #f0f9ff;
+                        padding: 12px 15px;
+                        border-bottom: 1px solid #e2e8f0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .customer-name {
+                        font-weight: 700;
+                        color: #0369a1;
+                    }
+                    .order-badge {
+                        background: #0891b2;
+                        color: white;
+                        padding: 4px 10px;
+                        border-radius: 12px;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+                    .item-summary-card {
+                        background: #fffbeb;
+                        border: 2px solid #fbbf24;
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin: 15px;
+                    }
+                    .item-summary-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 12px;
+                    }
+                    .item-summary-title {
+                        font-weight: 700;
+                        color: #92400e;
+                    }
+                    .item-summary-stats {
+                        display: flex;
+                        gap: 15px;
+                        flex-wrap: wrap;
+                        margin-bottom: 12px;
+                        font-size: 13px;
+                    }
+                    .item-stat {
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .item-stat-label {
+                        font-size: 10px;
+                        color: #666;
+                        text-transform: uppercase;
+                    }
+                    .item-stat-value {
+                        font-weight: 700;
+                        font-size: 16px;
+                    }
+                    .create-po-btn {
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 13px;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                    }
+                    .create-po-btn:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+                    }
+                    .create-po-btn:disabled {
+                        background: #9ca3af;
+                        cursor: not-allowed;
+                        transform: none;
+                        box-shadow: none;
+                    }
+                    .qty-input {
+                        width: 70px;
+                        padding: 6px 8px;
+                        border: 2px solid #d1d5db;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        text-align: center;
+                    }
+                    .qty-input:focus {
+                        border-color: #10b981;
+                        outline: none;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .backorder-table {
+                            font-size: 11px;
+                        }
+                        .backorder-table th,
+                        .backorder-table td {
+                            padding: 8px 6px;
+                        }
+                        .item-summary-stats {
+                            gap: 10px;
+                        }
+                    }
+                </style>
+                
+                <div class="backorder-container">
+                    <div class="backorder-header">
+                        <h2>📦 Customer Backorders</h2>
+                        <p>Items on backorder for pending customer orders • Create POs to fulfill</p>
+                    </div>
+                    
+                    <div class="backorder-kpi-grid">
+                        <div class="backorder-kpi" style="border-top: 4px solid #f59e0b;">
+                            <div class="value" style="color: #f59e0b;">${totalCustomersAffected}</div>
+                            <div class="label">Customers Waiting</div>
+                        </div>
+                        <div class="backorder-kpi" style="border-top: 4px solid #dc2626;">
+                            <div class="value" style="color: #dc2626;">${totalItemsOnBackorder}</div>
+                            <div class="label">Items on Backorder</div>
+                        </div>
+                        <div class="backorder-kpi" style="border-top: 4px solid #7c3aed;">
+                            <div class="value" style="color: #7c3aed;">${totalUnitsBackordered}</div>
+                            <div class="label">Total Units Needed</div>
+                        </div>
+                    </div>
+            `;
+            
+            if (totalItemsOnBackorder === 0) {
+                html += `
+                    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                        <h3 style="margin: 0; color: #10b981;">No Backorders!</h3>
+                        <p style="color: #666;">All customer orders can be fulfilled with current inventory.</p>
+                    </div>
+                `;
+            } else {
+                // SECTION 1: CONSOLIDATED VIEW BY ITEM
+                html += `
+                    <div class="backorder-section">
+                        <div class="backorder-section-header">
+                            <div class="backorder-section-title">
+                                📋 Consolidated by Product
+                                <span style="background: #f59e0b; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px;">${totalItemsOnBackorder} items</span>
+                            </div>
+                            <div style="font-size: 12px; color: #666;">Create POs for backorder quantities only (not up to reorder point)</div>
+                        </div>
+                        <div style="padding: 0;">
+                `;
+                
+                // Sort items by backorder quantity
+                const sortedItems = Object.values(itemBackorders).sort((a, b) => b.qtyOnBackorder - a.qtyOnBackorder);
+                
+                for (const item of sortedItems) {
+                    const netNeeded = Math.max(0, item.qtyOnBackorder - item.qtyOnOrder);
+                    const alreadyCovered = Math.min(item.qtyOnOrder, item.qtyOnBackorder);
+                    
+                    html += `
+                        <div class="item-summary-card">
+                            <div class="item-summary-header">
+                                <div>
+                                    <div class="item-summary-title">${item.itemDesc}</div>
+                                    <div style="font-size: 12px; color: #666;">SKU: ${item.sku} • ${item.supplierName}</div>
+                                </div>
+                            </div>
+                            <div class="item-summary-stats">
+                                <div class="item-stat">
+                                    <span class="item-stat-label">On Hand</span>
+                                    <span class="item-stat-value" style="color: ${item.qtyOnHand < 0 ? '#dc2626' : '#333'};">${item.qtyOnHand}</span>
+                                </div>
+                                <div class="item-stat">
+                                    <span class="item-stat-label">On Backorder</span>
+                                    <span class="item-stat-value" style="color: #dc2626;">${item.qtyOnBackorder}</span>
+                                </div>
+                                <div class="item-stat">
+                                    <span class="item-stat-label">Already On Order</span>
+                                    <span class="item-stat-value" style="color: ${item.qtyOnOrder > 0 ? '#f59e0b' : '#666'};">${item.qtyOnOrder}</span>
+                                </div>
+                                <div class="item-stat">
+                                    <span class="item-stat-label">Still Need</span>
+                                    <span class="item-stat-value" style="color: ${netNeeded > 0 ? '#dc2626' : '#10b981'}; font-weight: 800;">${netNeeded}</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 12px; font-size: 13px; color: #666;">
+                                <strong>Customers waiting:</strong> 
+                                ${item.customers.map(c => `${c.customerName} (${c.qty} units - ${c.invoiceNum})`).join(', ')}
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                ${netNeeded > 0 ? `
+                                    <label style="font-size: 13px; color: #333;">Order Qty:</label>
+                                    <input type="number" class="qty-input" id="backorderQty_${item.itemId}" value="${netNeeded}" min="1" max="${netNeeded + 100}">
+                                    <button class="create-po-btn" onclick="createBackorderPO('${item.itemId}', '${item.supplierId}')">
+                                        🛒 Create PO
+                                    </button>
+                                    <span style="font-size: 11px; color: #666;">(Just enough to fulfill backorders)</span>
+                                ` : `
+                                    <span style="color: #10b981; font-weight: 600;">✅ Covered by existing PO</span>
+                                    <span style="font-size: 11px; color: #666;">(${alreadyCovered} on order)</span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                
+                // SECTION 2: BY CUSTOMER VIEW
+                html += `
+                    <div class="backorder-section">
+                        <div class="backorder-section-header">
+                            <div class="backorder-section-title">
+                                👥 By Customer
+                                <span style="background: #0891b2; color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px;">${totalCustomersAffected} customers</span>
+                            </div>
+                        </div>
+                `;
+                
+                // Sort customers by name
+                const sortedCustomers = Object.values(customerBackorders).sort((a, b) => a.customerName.localeCompare(b.customerName));
+                
+                for (const customer of sortedCustomers) {
+                    html += `
+                        <div class="customer-card">
+                            <div class="customer-card-header">
+                                <span class="customer-name">👤 ${customer.customerName}</span>
+                                <span class="order-badge">${customer.orders.length} order${customer.orders.length > 1 ? 's' : ''} affected</span>
+                            </div>
+                            <table class="backorder-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Item</th>
+                                        <th>SKU</th>
+                                        <th>Qty Ordered</th>
+                                        <th>On Hand</th>
+                                        <th>On Order</th>
+                                        <th>Backorder</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    for (const order of customer.orders) {
+                        for (const item of order.items) {
+                            html += `
+                                <tr>
+                                    <td><a href="#" onclick="viewSalesOrder('${order.soId}'); return false;" style="color: #0891b2; text-decoration: none;">${order.invoiceNum}</a></td>
+                                    <td>${item.itemDesc}</td>
+                                    <td style="font-family: monospace; font-size: 11px;">${item.sku}</td>
+                                    <td style="text-align: center;">${item.qtyOrdered}</td>
+                                    <td style="text-align: center; color: ${item.qtyOnHand < 0 ? '#dc2626' : '#333'};">${item.qtyOnHand}</td>
+                                    <td style="text-align: center; color: ${item.qtyOnOrder > 0 ? '#f59e0b' : '#666'};">${item.qtyOnOrder}</td>
+                                    <td style="text-align: center; color: #dc2626; font-weight: 600;">${item.qtyOnBackorder}</td>
+                                </tr>
+                            `;
+                        }
+                    }
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    </div>
+                `;
+            }
+            
+            html += '</div>'; // End backorder-container
+            
+            return html;
+        }
+        
+        // Create PO for backorder item
+        async function createBackorderPO(itemId, supplierId) {
+            const qtyInput = document.getElementById(`backorderQty_${itemId}`);
+            const qty = parseInt(qtyInput?.value) || 0;
+            
+            if (qty <= 0) {
+                alert('Please enter a quantity greater than 0');
+                return;
+            }
+            
+            // Get item details
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            if (!item) {
+                alert('Item not found. Please refresh and try again.');
+                return;
+            }
+            
+            const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+            const supplierName = supplier?.Supplier_Name || 'Unknown';
+            
+            if (!confirm(`Create PO for ${qty} units of:\n\n${item.Item_Description}\n\nFrom: ${supplierName}\n\nThis is for backorder fulfillment only (not up to reorder point).`)) {
+                return;
+            }
+            
+            // Create the PO
+            const poData = {
+                supplierId: supplierId,
+                poDate: new Date().toISOString().split('T')[0],
+                notes: 'Backorder fulfillment - Created from Customer Backorders report'
+            };
+            
+            const poResult = await apiCall('createPurchaseOrder', poData);
+            
+            if (!poResult || poResult.status !== 'success') {
+                alert('Error creating PO: ' + (poResult?.message || 'Unknown error'));
+                return;
+            }
+            
+            const poId = poResult.poId;
+            
+            // Add line item
+            const lineData = {
+                poId: poId,
+                itemId: itemId,
+                quantity: qty,
+                unitCost: parseFloat(item.Package_Cost) / parseFloat(item.Units_Per_Package || 1)
+            };
+            
+            const lineResult = await apiCall('addPurchaseOrderLine', lineData);
+            
+            if (!lineResult || lineResult.status !== 'success') {
+                alert('PO created but error adding line item: ' + (lineResult?.message || 'Unknown error'));
+            } else {
+                alert(`✅ PO Created Successfully!\n\nPO #: ${poResult.invoiceNumber || poId}\nItem: ${item.Item_Description}\nQuantity: ${qty}\n\nThe item's Qty On Order will be updated.`);
+                
+                // Refresh the report
+                executeReport();
+            }
         }
         
         // Helper functions for Action Dashboard
@@ -22355,6 +23021,17 @@
             const purchases = poResult?.data || [];
             let sales = salesResult.data.filter(so => so.Status !== 'Voided');
             
+            // Calculate inventory stats including backorder
+            let totalBackorder = 0;
+            let backorderItems = 0;
+            items.forEach(item => {
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                if (backorder > 0) {
+                    totalBackorder += backorder;
+                    backorderItems++;
+                }
+            });
+            
             // Filter purchases by date and calculate stats
             const filteredPurchases = purchases.filter(po => {
                 if (po.Status === 'Voided' || po.Status === 'Cancelled') return false;
@@ -22828,6 +23505,12 @@
                         <div class="icon">📦</div>
                         <div class="value">${Object.keys(productSales).length}</div>
                         <div class="label">Products Sold</div>
+                    </div>
+                    <div class="biz-kpi" style="border-top: 4px solid ${totalBackorder > 0 ? '#dc2626' : '#9ca3af'};">
+                        <div class="icon">⚠️</div>
+                        <div class="value" style="color: ${totalBackorder > 0 ? '#dc2626' : '#666'};">${totalBackorder}</div>
+                        <div class="label">On Backorder</div>
+                        <div class="change ${totalBackorder > 0 ? 'down' : 'up'}">${backorderItems} items</div>
                     </div>
                 </div>
                 
@@ -23341,6 +24024,7 @@
                                 unitCost: unitCost,
                                 unitPrice: parseFloat(item?.Unit_Sell_Price) || 0,
                                 qtyOnHand: parseInt(item?.Qty_On_Hand) || 0,
+                                qtyOnBackorder: parseInt(item?.Qty_On_Backorder) || 0,
                                 reorderPoint: parseInt(item?.Reorder_Point) || 0,
                                 qtySold: 0,
                                 revenue: 0,
@@ -23704,11 +24388,13 @@
                                     <th style="text-align: right;">Profit</th>
                                     <th style="text-align: right;">Margin</th>
                                     <th style="text-align: center;">Stock</th>
+                                    <th style="text-align: center;">Backorder</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${topSellers.map((p, i) => {
                                     let stockIcon = p.qtyOnHand <= 0 ? '🔴' : p.qtyOnHand <= p.reorderPoint ? '🟡' : '🟢';
+                                    const backorder = p.qtyOnBackorder || 0;
                                     return `
                                         <tr>
                                             <td><strong>${i + 1}</strong></td>
@@ -23720,6 +24406,7 @@
                                             <td style="text-align: right; color: ${p.profit >= 0 ? '#2e7d32' : '#c62828'};">${formatMoney(p.profit)}</td>
                                             <td style="text-align: right;">${p.margin.toFixed(1)}%</td>
                                             <td style="text-align: center;">${stockIcon} ${p.qtyOnHand}</td>
+                                            <td style="text-align: center; color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                                         </tr>
                                     `;
                                 }).join('')}
@@ -25308,6 +25995,7 @@
                 const sold = unitsSold[item.Item_ID] || 0;
                 const onHand = parseInt(item.Qty_On_Hand) || 0;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
                 const avgInventory = onHand + (sold / 2);
                 const turnover = avgInventory > 0 ? sold / avgInventory : 0;
                 
@@ -25324,6 +26012,7 @@
                     supplierId: item.Supplier_ID,
                     onHand: onHand,
                     onOrder: onOrder,
+                    backorder: backorder,
                     sold: sold,
                     turnover: turnover,
                     value: value,
@@ -25372,6 +26061,7 @@
                             <th>Product</th>
                             <th>SKU</th>
                             <th>On Hand</th>
+                            <th>Backorder</th>
                             <th>On Order</th>
                             <th>Units Sold</th>
                             <th>Turnover Rate</th>
@@ -25383,11 +26073,13 @@
                 turnoverData.forEach(item => {
                     const statusColor = item.status === 'Fast' ? 'green' : item.status === 'Normal' ? 'orange' : 'red';
                     const qtyOnOrder = parseFloat(item.onOrder) || 0;
+                    const backorder = parseInt(item.backorder) || 0;
                     
                     html += `<tr>
                         <td><strong>${item.description}</strong></td>
                         <td>${item.sku}</td>
                         <td>${item.onHand}</td>
+                        <td style="color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                         <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder}</span></td>
                         <td>${item.sold}</td>
                         <td>${item.turnover.toFixed(2)}</td>
@@ -25946,6 +26638,7 @@
                             <th>Supplier</th>
                             <th>UOM</th>
                             <th>Qty On Hand</th>
+                            <th>Backorder</th>
                             <th>On Order</th>
                             <th>Reorder Point</th>
                             <th>Cost</th>
@@ -25959,6 +26652,7 @@
                 inventory.forEach(item => {
                     const lowStock = item.Low_Stock;
                     const qtyOnOrder = parseFloat(item.Qty_On_Order) || 0;
+                    const backorder = parseInt(item.Qty_On_Backorder) || 0;
                     const rowStyle = lowStock ? 'background: #fff3cd;' : '';
                     const status = lowStock ? '⚠️ Low Stock' : '✅ OK';
                     const statusColor = lowStock ? '#f39c12' : 'green';
@@ -25969,6 +26663,7 @@
                         <td>${getSupplierName(item.Supplier_ID)}</td>
                         <td>${item.UOM}</td>
                         <td style="font-weight: bold;">${item.Qty_On_Hand}</td>
+                        <td style="color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                         <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder}</span></td>
                         <td>${item.Reorder_Point}</td>
                         <td>${formatMoney(parseFloat(item.Package_Cost) / parseFloat(item.Units_Per_Package || 1))}</td>
@@ -28585,8 +29280,8 @@ NOTE: Please print the attached PO document for full details.`;
     </script>
     
     <!-- Order View/Edit Modal -->
-    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto; padding: 20px 0;">
-        <div id="orderModalInner" style="background: white; margin: 0 auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: auto; min-width: 400px; min-height: 300px;">
+    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
+        <div id="orderModalInner" style="background: white; margin: 20px auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: auto; min-width: 400px; min-height: 300px;">
             <div id="orderModalHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
                 <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
@@ -29108,6 +29803,37 @@ NOTE: Please print the attached PO document for full details.`;
                 max-height: none !important;
                 height: auto !important;
                 overflow-y: visible !important;
+            }
+        }
+        
+        /* Landscape mode for receive modal */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .receive-modal-content {
+                max-height: none !important;
+                height: auto !important;
+                overflow-y: visible !important;
+                padding: 10px !important;
+            }
+            
+            .receive-modal-content h2 {
+                font-size: 16px !important;
+                padding: 5px 0 !important;
+                margin-bottom: 5px !important;
+            }
+            
+            .receive-modal-content table {
+                font-size: 11px !important;
+            }
+            
+            .receive-modal-content th,
+            .receive-modal-content td {
+                padding: 5px 4px !important;
+            }
+            
+            .receive-modal-content input[type="number"] {
+                width: 60px !important;
+                padding: 4px !important;
+                font-size: 14px !important;
             }
         }
         
@@ -33496,6 +34222,7 @@ NOTE: Please print the attached PO document for full details.`;
                                 <th>Cost</th>
                                 <th>Sell_Price</th>
                                 <th>Qty_On_Hand</th>
+                                <th>Qty_On_Backorder</th>
                                 <th>Reorder_Point</th>
                                 <th>Package_Cost</th>
                                 <th>Units_Per_Package</th>
@@ -33513,6 +34240,7 @@ NOTE: Please print the attached PO document for full details.`;
                                     <td>${parseFloat(item.Cost || 0).toFixed(2)}</td>
                                     <td>${parseFloat(item.Sell_Price || 0).toFixed(2)}</td>
                                     <td>${parseInt(item.Qty_On_Hand || 0)}</td>
+                                    <td>${parseInt(item.Qty_On_Backorder || 0)}</td>
                                     <td>${parseInt(item.Reorder_Point || 0)}</td>
                                     <td>${parseFloat(item.Package_Cost || 0).toFixed(2)}</td>
                                     <td>${parseInt(item.Units_Per_Package || 0)}</td>
