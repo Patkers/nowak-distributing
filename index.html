@@ -1292,6 +1292,25 @@
                 min-height: 0 !important; /* Important for flex scrolling */
                 touch-action: pan-y !important; /* Allow vertical scrolling */
                 overscroll-behavior: contain !important; /* Prevent scroll chaining */
+                contain: layout style !important; /* Contain layout to prevent escape */
+            }
+            
+            /* Action Dashboard specific containment */
+            #reportSetupContent .action-dashboard-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+            }
+            
+            #reportSetupContent .action-section {
+                max-width: 100% !important;
+                overflow-x: auto !important;
+            }
+            
+            #reportSetupContent table {
+                max-width: 100% !important;
+                display: block !important;
+                overflow-x: auto !important;
             }
             
             /* Prevent touch issues on modal */
@@ -17163,8 +17182,181 @@
                     }
                     
                     @media print {
-                        .pl-print-btn { display: none; }
-                        .pl-order { break-inside: avoid; }
+                        /* Hide buttons */
+                        .pl-print-btn { display: none !important; }
+                        
+                        /* Reset any fixed positioning */
+                        * {
+                            position: static !important;
+                            overflow: visible !important;
+                        }
+                        
+                        /* Make everything visible and print-friendly */
+                        .pl-header {
+                            background: #0891b2 !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            padding: 15px !important;
+                            margin-bottom: 15px !important;
+                        }
+                        
+                        .pl-header h2 {
+                            font-size: 18pt !important;
+                            margin: 0 !important;
+                        }
+                        
+                        .pl-header p {
+                            font-size: 10pt !important;
+                        }
+                        
+                        /* Summary stats - 3 per row for print */
+                        .pl-summary {
+                            display: grid !important;
+                            grid-template-columns: repeat(3, 1fr) !important;
+                            gap: 8px !important;
+                            margin-bottom: 15px !important;
+                        }
+                        
+                        .pl-stat {
+                            padding: 8px !important;
+                            border: 1px solid #ddd !important;
+                        }
+                        
+                        .pl-stat .value {
+                            font-size: 14pt !important;
+                        }
+                        
+                        .pl-stat .label {
+                            font-size: 8pt !important;
+                        }
+                        
+                        /* Stock alert */
+                        .pl-alert {
+                            border: 2px solid #dc2626 !important;
+                            padding: 10px !important;
+                            margin-bottom: 15px !important;
+                            page-break-inside: avoid !important;
+                        }
+                        
+                        .pl-alert h4 {
+                            font-size: 12pt !important;
+                            margin-bottom: 8px !important;
+                        }
+                        
+                        .pl-alert-item {
+                            font-size: 10pt !important;
+                            padding: 5px 0 !important;
+                        }
+                        
+                        /* Consolidated table - ensure it prints */
+                        table.data-table {
+                            width: 100% !important;
+                            font-size: 9pt !important;
+                            border-collapse: collapse !important;
+                        }
+                        
+                        table.data-table th {
+                            background: #0891b2 !important;
+                            color: white !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            padding: 6px !important;
+                            font-size: 8pt !important;
+                        }
+                        
+                        table.data-table td {
+                            padding: 5px !important;
+                            border: 1px solid #ddd !important;
+                            font-size: 9pt !important;
+                        }
+                        
+                        /* Orders */
+                        .pl-order {
+                            page-break-inside: avoid !important;
+                            margin-bottom: 15px !important;
+                            border: 1px solid #ddd !important;
+                        }
+                        
+                        .pl-order-header {
+                            padding: 10px !important;
+                            background: #f8f8f8 !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        
+                        .pl-order-header .customer {
+                            font-size: 12pt !important;
+                            font-weight: bold !important;
+                        }
+                        
+                        .pl-order-header .invoice,
+                        .pl-order-header .date {
+                            font-size: 9pt !important;
+                        }
+                        
+                        /* Item rows - use grid for print */
+                        .pl-item {
+                            display: grid !important;
+                            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr !important;
+                            padding: 6px 10px !important;
+                            font-size: 9pt !important;
+                            border-bottom: 1px solid #eee !important;
+                        }
+                        
+                        .pl-item.pl-item-header {
+                            display: grid !important;
+                            background: #f0f0f0 !important;
+                            font-size: 8pt !important;
+                            font-weight: bold !important;
+                        }
+                        
+                        .pl-item-desc {
+                            font-size: 10pt !important;
+                            font-weight: 600 !important;
+                        }
+                        
+                        .pl-item-sku {
+                            font-size: 8pt !important;
+                        }
+                        
+                        .pl-item-supplier {
+                            font-size: 8pt !important;
+                        }
+                        
+                        /* Remove ::before labels in print */
+                        .pl-item .qty::before,
+                        .pl-item .cases::before,
+                        .pl-item .stock::before,
+                        .pl-item .after::before,
+                        .pl-item .price::before {
+                            content: none !important;
+                        }
+                        
+                        .pl-item .qty,
+                        .pl-item .cases,
+                        .pl-item .stock,
+                        .pl-item .after,
+                        .pl-item .price {
+                            text-align: center !important;
+                            display: block !important;
+                            margin: 0 !important;
+                        }
+                        
+                        .pl-item .price {
+                            text-align: right !important;
+                        }
+                        
+                        /* Order footer */
+                        .pl-order-footer {
+                            padding: 8px 10px !important;
+                            font-size: 9pt !important;
+                            background: #f8f8f8 !important;
+                        }
+                        
+                        /* Page margins */
+                        @page {
+                            margin: 0.5in;
+                        }
                     }
                 </style>
                 
@@ -20866,13 +21058,82 @@
                         display: flex;
                         flex-direction: column;
                         gap: 0;
-                        min-height: 500px;
+                        min-height: auto;
+                        overflow: visible;
                     }
                     
                     /* Ensure sections don't shift */
                     .action-dashboard-container .action-section {
                         flex-shrink: 0;
                         position: relative;
+                    }
+                    
+                    /* Mobile-specific fixes for Action Dashboard */
+                    @media (max-width: 768px) {
+                        .action-dashboard-container {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            padding: 0 !important;
+                            margin: 0 !important;
+                        }
+                        
+                        .action-dashboard-container > div {
+                            max-width: 100% !important;
+                            overflow-x: hidden !important;
+                        }
+                        
+                        /* Header */
+                        .action-dashboard-container > div:first-child {
+                            padding: 20px !important;
+                            margin-bottom: 15px !important;
+                            border-radius: 10px !important;
+                        }
+                        
+                        .action-dashboard-container > div:first-child h2 {
+                            font-size: 22px !important;
+                        }
+                        
+                        .action-dashboard-container > div:first-child p {
+                            font-size: 13px !important;
+                        }
+                        
+                        /* Action sections */
+                        .action-section {
+                            padding: 15px !important;
+                            margin-bottom: 15px !important;
+                            border-radius: 10px !important;
+                        }
+                        
+                        .action-section-header {
+                            flex-direction: column !important;
+                            align-items: flex-start !important;
+                            gap: 10px !important;
+                        }
+                        
+                        .action-section-title {
+                            font-size: 16px !important;
+                        }
+                        
+                        /* Tables in Action Dashboard */
+                        .action-dashboard-container table {
+                            font-size: 12px !important;
+                        }
+                        
+                        .action-dashboard-container th,
+                        .action-dashboard-container td {
+                            padding: 8px 6px !important;
+                        }
+                        
+                        /* Action buttons */
+                        .oval-action-btn {
+                            padding: 5px 10px !important;
+                            font-size: 11px !important;
+                        }
+                        
+                        /* Summary box */
+                        .summary-box {
+                            padding: 12px !important;
+                        }
                     }
                 </style>
                 
@@ -28833,6 +29094,11 @@ NOTE: Please print the attached PO document for full details.`;
             #reportSetupModalInner,
             #orderModal > div,
             #orderModalInner {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
                 margin: 0 !important;
                 max-width: 100% !important;
                 min-width: 0 !important;
@@ -28844,6 +29110,7 @@ NOTE: Please print the attached PO document for full details.`;
                 display: flex !important;
                 flex-direction: column !important;
                 resize: none !important;
+                overflow: hidden !important;
             }
             
             /* Headers don't shrink */
@@ -28887,8 +29154,16 @@ NOTE: Please print the attached PO document for full details.`;
             /* Make modal overlay fill screen */
             #reportSetupModal,
             #orderModal {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
                 padding: 0 !important;
                 overflow: hidden !important;
+                z-index: 99999 !important;
             }
             
             /* Make inner container fullscreen */
@@ -28896,19 +29171,23 @@ NOTE: Please print the attached PO document for full details.`;
             #reportSetupModalInner,
             #orderModal > div,
             #orderModalInner {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
                 margin: 0 !important;
                 max-width: 100% !important;
                 min-width: 0 !important;
                 width: 100% !important;
-                height: 100vh !important;
-                height: 100dvh !important; /* Dynamic viewport height for mobile */
-                max-height: 100vh !important;
-                max-height: 100dvh !important;
+                height: 100% !important;
+                max-height: 100% !important;
                 min-height: 0 !important;
                 border-radius: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
                 resize: none !important;
+                overflow: hidden !important;
             }
             
             /* Compact header in landscape - DEBUG: red background */
