@@ -9427,12 +9427,69 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Order ${po.Invoice_Number || po.PO_ID}</title>
     <style>
         @media print {
             @page { margin: 0.5in; }
             body { margin: 0; }
             .no-print { display: none; }
+        }
+        /* Mobile responsive styles for PO */
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 10px !important;
+                font-size: 10pt !important;
+            }
+            .po-header h1 {
+                font-size: 16pt !important;
+            }
+            .po-header p {
+                font-size: 9pt !important;
+                margin: 3px 0 !important;
+            }
+            .po-number {
+                font-size: 12pt !important;
+            }
+            .po-info {
+                flex-direction: column !important;
+                gap: 15px !important;
+            }
+            .info-box {
+                width: 100% !important;
+                margin-bottom: 10px !important;
+            }
+            .info-box h3 {
+                font-size: 11pt !important;
+                margin-bottom: 8px !important;
+            }
+            .info-box p {
+                font-size: 9pt !important;
+                margin: 3px 0 !important;
+            }
+            table.items {
+                font-size: 9pt !important;
+            }
+            table.items th, table.items td {
+                padding: 6px 4px !important;
+                font-size: 9pt !important;
+            }
+            table.items th {
+                font-size: 8pt !important;
+            }
+            .totals {
+                width: 100% !important;
+                float: none !important;
+                margin-top: 20px !important;
+            }
+            .totals td {
+                font-size: 10pt !important;
+                padding: 6px 8px !important;
+            }
+            .no-print button {
+                padding: 10px 16px !important;
+                font-size: 12pt !important;
+            }
         }
         body {
             font-family: Arial, sans-serif;
@@ -9513,11 +9570,11 @@
 </head>
 <body>
     <div class="po-header">
-        <h1>${settings.companyName}</h1>
-        <p>${settings.address1}</p>
+        <h1>${settings.companyName || 'Nowak Distributing'}</h1>
+        ${settings.address1 ? `<p>${settings.address1}</p>` : ''}
         ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
-        <p>${settings.cityStateZip}</p>
-        <p>Phone: ${settings.phone} | Email: ${settings.email}</p>
+        ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
+        <p>${settings.phone ? `Phone: ${settings.phone}` : ''}${settings.phone && settings.email ? ' | ' : ''}${settings.email ? `Email: ${settings.email}` : ''}</p>
     </div>
 
     <div class="po-number">PURCHASE ORDER: ${po.Invoice_Number || po.PO_ID}</div>
@@ -9668,32 +9725,87 @@
                 font-size: 10pt !important;
             }
             .invoice-header h1 {
-                font-size: 20pt !important;
+                font-size: 18pt !important;
+            }
+            .invoice-header p {
+                font-size: 11pt !important;
             }
             .invoice-info {
                 flex-direction: column !important;
+                gap: 15px !important;
             }
             .info-box {
-                margin-bottom: 15px !important;
+                margin-bottom: 10px !important;
                 width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                border-left: none !important;
+                border-bottom: 1px solid #eee !important;
+                padding-bottom: 15px !important;
+            }
+            .info-box:last-child {
+                border-bottom: none !important;
+            }
+            .info-box h3 {
+                font-size: 12pt !important;
+                margin-bottom: 8px !important;
             }
             .info-box p {
+                font-size: 10pt !important;
                 word-wrap: break-word !important;
                 overflow-wrap: break-word !important;
+                margin: 3px 0 !important;
+            }
+            table.items {
+                font-size: 9pt !important;
             }
             table.items th, table.items td {
                 padding: 6px 4px !important;
                 font-size: 9pt !important;
             }
+            table.items th {
+                font-size: 8pt !important;
+            }
             table.items .desc { 
                 word-wrap: break-word !important;
-                max-width: 120px !important;
+                max-width: 100px !important;
             }
+            table.items .qty { width: 12% !important; }
+            table.items .price { width: 22% !important; }
+            table.items .amount { width: 22% !important; }
             .totals {
-                width: 60% !important;
+                width: 100% !important;
+                float: none !important;
+                margin-top: 20px !important;
+            }
+            .totals td {
+                font-size: 10pt !important;
+                padding: 6px 8px !important;
             }
             .signature-line {
-                flex: 0 0 150px !important;
+                flex: 1 !important;
+                min-width: 100px !important;
+            }
+            .footer {
+                font-size: 9pt !important;
+                margin-top: 30px !important;
+            }
+            .no-print button {
+                padding: 10px 16px !important;
+                font-size: 12pt !important;
+            }
+        }
+        /* Print-specific mobile optimization */
+        @media print and (max-width: 600px) {
+            body {
+                font-size: 9pt !important;
+            }
+            .invoice-info {
+                flex-direction: column !important;
+            }
+            .info-box {
+                border-left: none !important;
+                padding-left: 0 !important;
             }
         }
         body {
@@ -9816,17 +9928,16 @@
     </div>
 
     <div class="invoice-info">
-        <div class="info-box">
+        <div class="info-box" style="padding-right: 20px;">
             <h3>From:</h3>
-            <p><strong>${settings.companyName}</strong></p>
-            ${settings.contactName ? `<p>${settings.contactName}</p>` : ''}
-            <p>${settings.address1}</p>
+            <p><strong>${settings.companyName || 'Nowak Distributing'}</strong></p>
+            ${settings.address1 ? `<p>${settings.address1}</p>` : ''}
             ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
-            <p>${settings.cityStateZip}</p>
-            <p>Phone: ${settings.phone}</p>
-            <p>Email: ${settings.email}</p>
+            ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
+            ${settings.phone ? `<p>Phone: ${settings.phone}</p>` : ''}
+            ${settings.email ? `<p>Email: ${settings.email}</p>` : ''}
         </div>
-        <div class="info-box">
+        <div class="info-box" style="text-align: left; padding-left: 20px; border-left: 2px solid #eee;">
             <h3>Bill To:</h3>
             <p><strong>${customer?.Customer_Name || 'Unknown Customer'}</strong></p>
             ${customer?.Contact_Name ? `<p>Attn: ${customer.Contact_Name}</p>` : ''}
@@ -9847,19 +9958,26 @@
         </thead>
         <tbody>`;
             
-            // Add line items
+            // Add line items - CALCULATE line total from qty × price (don't rely on Line_Total field)
+            let calculatedSubtotal = 0;
             lines.forEach(line => {
                 const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
-                const lineTotal = parseFloat(line.Line_Total || 0);
+                const qty = parseFloat(line.Quantity) || 0;
+                const price = parseFloat(line.Unit_Price) || 0;
+                const lineTotal = qty * price;
+                calculatedSubtotal += lineTotal;
                 
                 invoiceHTML += `
             <tr>
                 <td class="qty">${line.Quantity}</td>
                 <td class="desc">${item?.Item_Description || line.Item_ID}</td>
-                <td class="price">${formatMoney(parseFloat(line.Unit_Price || 0))}</td>
+                <td class="price">${formatMoney(price)}</td>
                 <td class="amount">${formatMoney(lineTotal)}</td>
             </tr>`;
             });
+            
+            // Use calculated subtotal instead of summing Line_Total
+            subtotal = calculatedSubtotal;
             
             invoiceHTML += `
         </tbody>
@@ -10954,6 +11072,7 @@
             const onOrder = item ? (parseInt(item.Qty_On_Order) || 0) : 0;
             const onBackorder = item ? (parseInt(item.Qty_On_Backorder) || 0) : 0;
             const expectedArrival = window.itemExpectedArrivals?.[itemId] || null;
+            const expectedQty = window.itemExpectedQty?.[itemId] || 0;
             
             const row = selectElement.closest('.line-item-row');
             const priceInput = row.querySelector('.so-price');
@@ -10976,13 +11095,14 @@
                 let statusHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">`;
                 statusHtml += `<span>📦 <strong>On Hand:</strong> ${stock}</span>`;
                 if (onOrder > 0) {
-                    statusHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}</span>`;
+                    statusHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}`;
+                    if (expectedArrival) {
+                        statusHtml += ` (${expectedArrival})`;
+                    }
+                    statusHtml += `</span>`;
                 }
                 if (onBackorder > 0) {
-                    statusHtml += `<span style="color: #dc2626;">📤 <strong>Backorder:</strong> ${onBackorder}</span>`;
-                }
-                if (expectedArrival) {
-                    statusHtml += `<span style="color: #0891b2;">🚚 <strong>Expected:</strong> ${expectedArrival}</span>`;
+                    statusHtml += `<span style="color: #dc2626;">📤 <strong>Committed:</strong> ${onBackorder}</span>`;
                 }
                 statusHtml += `</div>`;
                 
@@ -28515,66 +28635,31 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         // Build a lookup of expected arrival dates from pending POs for each item
+        // OPTIMIZED: Uses single backend API call instead of multiple calls
         async function buildItemExpectedArrivals() {
             try {
-                // Get pending POs (Ordered or Partial status)
-                const poResult = await apiCall('getPurchaseOrders');
-                if (!poResult?.data) {
+                // Single API call - backend does all the heavy lifting
+                const result = await apiCall('getItemExpectedArrivals');
+                
+                if (result?.status === 'success' && result.data) {
                     window.itemExpectedArrivals = {};
-                    return;
-                }
-                
-                const pendingPOs = poResult.data.filter(po => 
-                    po.Status === 'Ordered' || po.Status === 'Partial'
-                );
-                
-                // Build map of item -> earliest due date
-                const arrivals = {};
-                
-                for (const po of pendingPOs) {
-                    const dueDate = po.Due_Date;
-                    if (!dueDate) continue;
+                    window.itemExpectedQty = {};
                     
-                    // Get line items for this PO
-                    try {
-                        const linesResult = await apiCall('getPurchaseOrderLines', { poId: po.PO_ID });
-                        if (!linesResult?.data) continue;
-                        
-                        for (const line of linesResult.data) {
-                            const itemId = line.Item_ID;
-                            if (!itemId) continue;
-                            
-                            // Format the date nicely
-                            let formattedDate;
-                            try {
-                                const d = new Date(dueDate);
-                                formattedDate = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
-                            } catch(e) {
-                                formattedDate = dueDate;
-                            }
-                            
-                            // Keep the earliest date for each item
-                            if (!arrivals[itemId]) {
-                                arrivals[itemId] = formattedDate;
-                            } else {
-                                // Compare dates and keep earlier one
-                                const existing = new Date(arrivals[itemId]);
-                                const current = new Date(dueDate);
-                                if (current < existing) {
-                                    arrivals[itemId] = formattedDate;
-                                }
-                            }
-                        }
-                    } catch(e) {
-                        console.warn('Error fetching PO lines for:', po.PO_ID, e);
+                    // Result is { itemId: { date: "MM/DD/YYYY", qty: N }, ... }
+                    for (const itemId in result.data) {
+                        window.itemExpectedArrivals[itemId] = result.data[itemId].date;
+                        window.itemExpectedQty[itemId] = result.data[itemId].qty;
                     }
+                    
+                    console.log('✅ Loaded expected arrivals for', Object.keys(window.itemExpectedArrivals).length, 'items (1 API call)');
+                } else {
+                    window.itemExpectedArrivals = {};
+                    window.itemExpectedQty = {};
                 }
-                
-                window.itemExpectedArrivals = arrivals;
-                console.log('Built expected arrivals for', Object.keys(arrivals).length, 'items');
             } catch(e) {
-                console.error('Error building expected arrivals:', e);
+                console.error('Error loading expected arrivals:', e);
                 window.itemExpectedArrivals = {};
+                window.itemExpectedQty = {};
             }
         }
         
@@ -28759,18 +28844,20 @@ NOTE: Please print the attached PO document for full details.`;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
                 const onBackorder = parseInt(item.Qty_On_Backorder) || 0;
                 const expectedArrival = window.itemExpectedArrivals?.[item.Item_ID] || null;
+                const expectedQty = window.itemExpectedQty?.[item.Item_ID] || 0;
                 
                 // Build comprehensive stock info HTML
                 let stockInfoHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">`;
                 stockInfoHtml += `<span>📦 <strong>On Hand:</strong> ${qty}</span>`;
                 if (onOrder > 0) {
-                    stockInfoHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}</span>`;
+                    stockInfoHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}`;
+                    if (expectedArrival) {
+                        stockInfoHtml += ` (${expectedArrival})`;
+                    }
+                    stockInfoHtml += `</span>`;
                 }
                 if (onBackorder > 0) {
-                    stockInfoHtml += `<span style="color: #dc2626;">📤 <strong>On Backorder:</strong> ${onBackorder}</span>`;
-                }
-                if (expectedArrival) {
-                    stockInfoHtml += `<span style="color: #0891b2;">🚚 <strong>Expected:</strong> ${expectedArrival}</span>`;
+                    stockInfoHtml += `<span style="color: #dc2626;">📤 <strong>Committed:</strong> ${onBackorder}</span>`;
                 }
                 stockInfoHtml += `</div>`;
                 
@@ -28819,13 +28906,14 @@ NOTE: Please print the attached PO document for full details.`;
                             let statusHtml = `<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">`;
                             statusHtml += `<span>📦 <strong>On Hand:</strong> ${stockAvailable}</span>`;
                             if (onOrder > 0) {
-                                statusHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}</span>`;
+                                statusHtml += `<span style="color: #f59e0b;">📥 <strong>On Order:</strong> ${onOrder}`;
+                                if (expectedArrival) {
+                                    statusHtml += ` (${expectedArrival})`;
+                                }
+                                statusHtml += `</span>`;
                             }
                             if (onBackorder > 0) {
-                                statusHtml += `<span style="color: #dc2626;">📤 <strong>Backorder:</strong> ${onBackorder}</span>`;
-                            }
-                            if (expectedArrival) {
-                                statusHtml += `<span style="color: #0891b2;">🚚 <strong>Expected:</strong> ${expectedArrival}</span>`;
+                                statusHtml += `<span style="color: #dc2626;">📤 <strong>Committed:</strong> ${onBackorder}</span>`;
                             }
                             statusHtml += `</div>`;
                             
