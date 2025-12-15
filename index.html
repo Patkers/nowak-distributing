@@ -705,6 +705,90 @@
             color: #666;
         }
         
+        /* ==================== POPUP MODAL STYLES ==================== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 999999;
+            align-items: center;
+            justify-content: center;
+        }
+        .popup-overlay.show {
+            display: flex;
+        }
+        .popup-box {
+            background: white;
+            margin: 20px;
+            max-width: 420px;
+            width: 90%;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            overflow: hidden;
+            animation: popupSlideIn 0.3s ease;
+        }
+        .popup-header {
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .popup-header.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .popup-header.success { background: linear-gradient(135deg, #10b981, #059669); }
+        .popup-header.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .popup-header.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .popup-header .popup-icon { font-size: 48px; margin-bottom: 10px; }
+        .popup-header h3 { margin: 0; font-size: 20px; font-weight: 600; }
+        .popup-body {
+            padding: 25px;
+            color: #374151;
+            font-size: 15px;
+            line-height: 1.6;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        .popup-body ul {
+            margin: 15px 0 0 0;
+            padding-left: 20px;
+        }
+        .popup-body li {
+            margin-bottom: 8px;
+        }
+        .popup-body.error-list li { color: #dc2626; }
+        .popup-footer {
+            padding: 15px 25px 25px;
+            text-align: center;
+        }
+        .popup-btn {
+            background: linear-gradient(135deg, #667eea, #5a67d8);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 120px;
+            touch-action: manipulation;
+        }
+        .popup-btn:hover {
+            background: linear-gradient(135deg, #5a67d8, #4c51bf);
+        }
+        .popup-btn.secondary {
+            background: #6b7280;
+            margin-right: 10px;
+        }
+        .popup-btn.secondary:hover {
+            background: #4b5563;
+        }
+        @keyframes popupSlideIn {
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
         /* ==================== MOBILE RESPONSIVE STYLES ==================== */
         
         /* Tablets and smaller (768px and below) */
@@ -6409,7 +6493,7 @@
         // Switch to a different environment
         function switchEnvironment(env) {
             if (!environments[env]) {
-                alert(`No URL configured for ${env} environment. Please enter a URL first.`);
+                showPopup(`No URL configured for ${env} environment. Please enter a URL first.`);
                 return;
             }
             
@@ -6469,7 +6553,7 @@
             API_URL = environments[currentEnvironment] || DEFAULT_PRODUCTION_URL;
             localStorage.setItem('apiUrl', API_URL);
             
-            alert('✅ Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
+            showPopup('✅ Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
             console.log('Default URLs restored:', environments);
         }
         
@@ -7531,7 +7615,7 @@
             const currentSupplier = document.getElementById('poSupplier')?.value;
             
             if (!currentSupplier) {
-                alert('Please select a supplier first before adding items');
+                showPopup('Please select a supplier first before adding items');
                 return;
             }
             
@@ -8099,11 +8183,11 @@
         
         function openBackup() {
             if (!API_URL) {
-                alert('Please configure your API URL first!');
+                showPopup('Please configure your API URL first!');
                 return;
             }
             // Extract the Google Sheets URL from API URL pattern
-            alert('To backup your data:\n\n1. Go to your Google Sheets database\n2. File → Make a copy\n3. Download as Excel or CSV\n\nYour Google Sheet contains all your data!');
+            showPopup('To backup your data:\n\n1. Go to your Google Sheets database\n2. File → Make a copy\n3. Download as Excel or CSV\n\nYour Google Sheet contains all your data!');
         }
         
         // Load theme on startup
@@ -8261,7 +8345,7 @@
         async function apiCall(action, data = {}) {
             if (!API_URL) {
                 console.error('API_URL not configured!');
-                alert('Please configure your API URL in Settings first!');
+                showPopup('Please configure your API URL in Settings first!');
                 switchTab('config');
                 return null;
             }
@@ -9142,7 +9226,7 @@
             const supplierId = document.getElementById('poSupplier').value;
             
             if (!supplierId) {
-                alert('Please select a supplier first');
+                showPopup('Please select a supplier first');
                 return;
             }
             
@@ -9233,6 +9317,28 @@
         async function addPurchase(e) {
             e.preventDefault();
             
+            // ===== COMPREHENSIVE VALIDATION =====
+            const validationErrors = [];
+            
+            // Check supplier
+            const supplier = document.getElementById('poSupplier').value;
+            if (!supplier) {
+                validationErrors.push('Select a Supplier');
+            }
+            
+            // Check status
+            const poStatus = document.getElementById('poStatus').value;
+            if (!poStatus) {
+                validationErrors.push('Select a Status');
+            }
+            
+            // Check due date
+            const poDueDate = document.getElementById('poDueDate').value;
+            if (!poDueDate) {
+                validationErrors.push('Enter an Expected Delivery Date');
+            }
+            
+            // Check line items
             const lineItems = [];
             let calculatedTotal = 0;
             
@@ -9255,23 +9361,13 @@
 
             // Validate at least one line item
             if (lineItems.length === 0) {
-                alert('⚠️ Please add at least one item to the purchase order.\n\nSelect an item and enter a quantity before saving.');
-                return;
-            }
-
-            // ===== VALIDATION #0: Check Required Fields =====
-            const poStatus = document.getElementById('poStatus').value;
-            const poDueDate = document.getElementById('poDueDate').value;
-            
-            if (!poStatus) {
-                showStatus('purchasesStatus', '❌ Please select a Status', 'error');
-                document.getElementById('poStatus').focus();
-                return;
+                validationErrors.push('Add at least one item with quantity');
             }
             
-            if (!poDueDate) {
-                showStatus('purchasesStatus', '❌ Please select an Expected Delivery Date', 'error');
-                document.getElementById('poDueDate').focus();
+            // Show all validation errors at once
+            if (validationErrors.length > 0) {
+                const errorList = validationErrors.map(e => '- ' + e).join('\n');
+                showPopup('Please complete the following before saving:\n\n' + errorList, 'error', 'Missing Required Fields');
                 return;
             }
 
@@ -9905,7 +10001,7 @@
             const paymentDate = paymentDateInput?.value || getTodayLocalDate();
             
             if (paymentAmount <= 0) {
-                alert('Please enter a payment amount greater than 0');
+                showPopup('Please enter a payment amount greater than 0');
                 return;
             }
             
@@ -9922,24 +10018,24 @@
             if (result && result.status === 'success') {
                 const total = parseFloat(currentEditingOrder?.Total_Amount) || 0;
                 const payStatus = newTotalPaid >= total - 0.01 ? 'Paid' : (newTotalPaid > 0 ? 'Partial' : 'Unpaid');
-                alert(`✅ Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
+                showPopup(`✅ Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
                 document.getElementById('orderModal').style.display = 'none'; document.body.classList.remove('modal-open');
                 loadPurchases();
             } else {
-                alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                showPopup('❌ Error: ' + (result?.message || 'Unknown error'));
             }
         }
         
         // PRINT PURCHASE ORDER FUNCTION
         async function printPurchaseOrder() {
             if (!currentEditingOrder || currentEditingType !== 'purchase') {
-                alert('Please select a purchase order first');
+                showPopup('Please select a purchase order first');
                 return;
             }
             
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                alert('Please allow popups for this site');
+                showPopup('Please allow popups for this site');
                 return;
             }
             printWindow.document.write('<html><body><h2>Loading PO...</h2></body></html>');
@@ -10213,14 +10309,14 @@
         // PRINT INVOICE FUNCTION
         async function printInvoice() {
             if (!currentEditingOrder || currentEditingType !== 'sales') {
-                alert('Please select a sales order first');
+                showPopup('Please select a sales order first');
                 return;
             }
             
             // CRITICAL: Open window BEFORE any async calls to avoid iPhone popup blocker
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                alert('Please allow popups for this site');
+                showPopup('Please allow popups for this site');
                 return;
             }
             printWindow.document.write('<html><body><h2>Loading invoice...</h2></body></html>');
@@ -11001,7 +11097,7 @@
             
             if (newLines.length === 0) {
                 const rowCount = document.querySelectorAll('#editPOLineItems .edit-line-item').length;
-                alert(`No valid line items found!\n\nRows found: ${rowCount}\n\nPlease make sure each line has:\n- An item selected\n- A quantity > 0`);
+                showPopup(`No valid line items found!\n\nRows found: ${rowCount}\n\nPlease make sure each line has:\n- An item selected\n- A quantity > 0`);
                 return;
             }
             
@@ -11262,7 +11358,7 @@
             });
             
             if (newLines.length === 0) {
-                alert('Please add at least one line item');
+                showPopup('Please add at least one line item');
                 return;
             }
             
@@ -11377,7 +11473,7 @@
             
             const paymentAmount = parseFloat(payment);
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                alert('Please enter a valid payment amount');
+                showPopup('Please enter a valid payment amount');
                 return;
             }
             
@@ -11538,7 +11634,7 @@
             
             // Get all items once
             if (cachedItems.length === 0) {
-                alert('Please wait for items to load');
+                showPopup('Please wait for items to load');
                 return;
             }
             
@@ -11732,6 +11828,28 @@
                 return;
             }
             
+            // ===== COMPREHENSIVE VALIDATION =====
+            const validationErrors = [];
+            
+            // Check customer
+            const customer = document.getElementById('soCustomer').value;
+            if (!customer) {
+                validationErrors.push('Select a Customer');
+            }
+            
+            // Check status
+            const status = document.getElementById('soStatus').value;
+            if (!status) {
+                validationErrors.push('Select a Status');
+            }
+            
+            // Check due date
+            const dueDate = document.getElementById('soDueDate').value;
+            if (!dueDate) {
+                validationErrors.push('Enter a Due Date');
+            }
+            
+            // Check line items
             const lineItems = [];
             let calculatedTotal = 0;
             
@@ -11754,7 +11872,13 @@
 
             // Validate at least one line item
             if (lineItems.length === 0) {
-                alert('⚠️ Please add at least one item to the sale.\n\nSelect an item and enter a quantity before saving.');
+                validationErrors.push('Add at least one item with quantity');
+            }
+            
+            // Show all validation errors at once
+            if (validationErrors.length > 0) {
+                const errorList = validationErrors.map(e => '- ' + e).join('\n');
+                showPopup('Please complete the following before saving:\n\n' + errorList, 'error', 'Missing Required Fields');
                 return;
             }
 
@@ -11813,30 +11937,6 @@
             }
             
             try {
-                // Validate required fields
-                const status = document.getElementById('soStatus').value;
-                const dueDate = document.getElementById('soDueDate').value;
-                
-                if (!status) {
-                    showStatus('salesStatus', '❌ Please select a Status', 'error');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                    }
-                    document.getElementById('soStatus').focus();
-                    return;
-                }
-                
-                if (!dueDate) {
-                    showStatus('salesStatus', '❌ Please select a Due Date', 'error');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                    }
-                    document.getElementById('soDueDate').focus();
-                    return;
-                }
-                
                 // AUTO-GENERATE INVOICE NUMBER
                 // Format: INV-MMDDYY-XXX (e.g., INV-120725-001)
                 const saleDate = document.getElementById('soDate').value;
@@ -12446,7 +12546,7 @@
             
             const paymentAmount = parseFloat(payment);
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                alert('Please enter a valid payment amount');
+                showPopup('Please enter a valid payment amount');
                 return;
             }
             
@@ -12760,15 +12860,15 @@
             
             // Validation with alerts
             if (!supplierId) {
-                alert('Please select a supplier');
+                showPopup('Please select a supplier');
                 return false;
             }
             if (!description) {
-                alert('Please enter a description');
+                showPopup('Please enter a description');
                 return false;
             }
             if (packageCost <= 0) {
-                alert('Please enter a package cost greater than 0');
+                showPopup('Please enter a package cost greater than 0');
                 return false;
             }
             
@@ -12820,7 +12920,7 @@
         
         async function saveNewItemsToDatabase() {
             if (simulatedNewItems.length === 0) {
-                alert('No new items to save!');
+                showPopup('No new items to save!');
                 return;
             }
             
@@ -13185,7 +13285,7 @@
             const count = checkboxes.length;
             
             if (count === 0) {
-                alert('No items selected!');
+                showPopup('No items selected!');
                 return;
             }
             
@@ -13408,20 +13508,20 @@
             
             // Validation - Item is required
             if (!itemId) {
-                alert('⚠️ Please select an item to adjust.');
+                showPopup('⚠️ Please select an item to adjust.');
                 return;
             }
             
             // Validation - Reason is required
             if (!reason || reason.trim() === '') {
-                alert('⚠️ Please select a reason for this adjustment.');
+                showPopup('⚠️ Please select a reason for this adjustment.');
                 document.getElementById('adjustReasonDisplay').focus();
                 return;
             }
             
             // Validation - Adjustment amount is required
             if (isNaN(adjustment) || adjustment === 0) {
-                alert('⚠️ Please enter an adjustment amount (positive or negative).');
+                showPopup('⚠️ Please enter an adjustment amount (positive or negative).');
                 document.getElementById('adjustQuantity').focus();
                 return;
             }
@@ -13763,7 +13863,7 @@
             try {
                 openReportSetup(reportType);
             } catch (e) {
-                alert('❌ Error opening report setup: ' + e.message);
+                showPopup('❌ Error opening report setup: ' + e.message);
                 console.error('Error in showReport:', e);
             }
         }
@@ -14590,7 +14690,7 @@
             console.log('📱 Modal element:', modalElement ? 'Found' : 'NOT FOUND');
             
             if (!modalElement) {
-                alert('❌ ERROR: Report modal element not found in DOM!');
+                showPopup('❌ ERROR: Report modal element not found in DOM!');
                 return;
             }
             
@@ -14800,7 +14900,7 @@
             const title = document.getElementById('reportSetupTitle').textContent;
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before printing.');
+                showPopup('Please run the report first before printing.');
                 return;
             }
             
@@ -14859,7 +14959,7 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before emailing.');
+                showPopup('Please run the report first before emailing.');
                 return;
             }
             
@@ -14882,7 +14982,7 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before texting.');
+                showPopup('Please run the report first before texting.');
                 return;
             }
             
@@ -14911,11 +15011,11 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before saving.');
+                showPopup('Please run the report first before saving.');
                 return;
             }
             
-            alert('💡 Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
+            showPopup('💡 Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
             printReport();
         }
         
@@ -18418,7 +18518,7 @@
             const labelData = window.pickListLabelData || [];
             
             if (labelData.length === 0) {
-                alert('No orders to print labels for!');
+                showPopup('No orders to print labels for!');
                 return;
             }
             
@@ -22027,7 +22127,7 @@
                             💰 PAST DUE PAYMENTS
                             <span class="action-count">${pastDuePayments.length}</span>
                         </div>
-                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="alert(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
+                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="showPopup(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
                     </div>
                     <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
                         <strong>Customer invoices (sales orders)</strong> where the due date has passed and payment is not yet received. Sorted by most overdue first.
@@ -22395,7 +22495,7 @@
                             <td>${item.Qty}</td>
                             <td>${item.Days_Since_Sale} days ago</td>
                             <td>
-                                <button class="oval-action-btn oval-action-info" onclick="alert('Promotion feature coming soon!')">📢 Promote</button>
+                                <button class="oval-action-btn oval-action-info" onclick="showPopup('Promotion feature coming soon!')">📢 Promote</button>
                             </td>
                         </tr>
                     `;
@@ -22991,14 +23091,14 @@
             const unitsNeeded = parseInt(qtyInput?.value) || 0;
             
             if (unitsNeeded <= 0) {
-                alert('Please enter a quantity greater than 0');
+                showPopup('Please enter a quantity greater than 0');
                 return;
             }
             
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showPopup('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -23094,7 +23194,7 @@
         function bulkReorder() {
             const checkboxes = document.querySelectorAll('.lowstock-checkbox:checked');
             if (checkboxes.length === 0) {
-                alert('Please select items to reorder first.\n\nUse the checkboxes next to each item, or "Select All" at the top.');
+                showPopup('Please select items to reorder first.\n\nUse the checkboxes next to each item, or "Select All" at the top.');
                 return;
             }
             
@@ -23104,7 +23204,7 @@
             const items = itemIds.map(id => (cachedItems || []).find(i => i.Item_ID === id)).filter(Boolean);
             
             if (items.length === 0) {
-                alert('Could not find selected items. Please refresh and try again.');
+                showPopup('Could not find selected items. Please refresh and try again.');
                 return;
             }
             
@@ -23119,7 +23219,7 @@
                     return `• ${sup?.Supplier_Name || 'Unknown'}: ${itemCount} item${itemCount > 1 ? 's' : ''}`;
                 }).join('\n');
                 
-                alert(`❌ Cannot create a single PO with items from multiple suppliers!\n\nYou selected items from ${suppliers.length} different suppliers:\n\n${supplierNames}\n\nPurchase orders can only contain items from ONE supplier.\n\nPlease select items from a single supplier, or create separate POs for each supplier.`);
+                showPopup(`❌ Cannot create a single PO with items from multiple suppliers!\n\nYou selected items from ${suppliers.length} different suppliers:\n\n${supplierNames}\n\nPurchase orders can only contain items from ONE supplier.\n\nPlease select items from a single supplier, or create separate POs for each supplier.`);
                 return;
             }
             
@@ -23198,7 +23298,7 @@
                 // Calculate total
                 calculateCreatePOTotal();
                 
-                alert(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save PO" when ready.`);
+                showPopup(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save PO" when ready.`);
                 
             }, 300);
         }
@@ -23207,7 +23307,7 @@
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showPopup('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -23294,7 +23394,7 @@
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showPopup('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -23338,18 +23438,18 @@
         
         function markForClearance(itemId) {
             if (confirm('Mark this item for clearance sale?')) {
-                alert('Clearance feature coming soon!');
+                showPopup('Clearance feature coming soon!');
                 // TODO: Implement clearance modal
             }
         }
         
         function scheduleCustomerVisit(customerId) {
-            alert('Schedule Visit feature coming soon!');
+            showPopup('Schedule Visit feature coming soon!');
             // TODO: Implement visit scheduling
         }
         
         function exportDormantCustomers() {
-            alert('Export feature coming soon!');
+            showPopup('Export feature coming soon!');
             // TODO: Implement CSV export
         }
         
@@ -24155,8 +24255,8 @@
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        justify-content: flex-end;
                         height: 100%;
+                        position: relative;
                     }
                     .biz-monthly-bar-fill {
                         width: 100%;
@@ -24164,8 +24264,10 @@
                         background: linear-gradient(180deg, #3b82f6, #1d4ed8);
                         border-radius: 6px 6px 0 0;
                         transition: height 0.5s ease;
-                        position: relative;
-                        flex-shrink: 0;
+                        position: absolute;
+                        bottom: 25px;
+                        left: 50%;
+                        transform: translateX(-50%);
                     }
                     .biz-monthly-bar-fill:hover {
                         background: linear-gradient(180deg, #60a5fa, #3b82f6);
@@ -24184,7 +24286,8 @@
                     .biz-monthly-label {
                         font-size: 11px;
                         color: #6b7280;
-                        margin-top: 8px;
+                        position: absolute;
+                        bottom: 0;
                         transform: rotate(-45deg);
                         white-space: nowrap;
                     }
@@ -27458,7 +27561,7 @@
                 await showSalesOrderDetails(so);
                 document.getElementById('orderModal').style.display = 'block'; document.body.classList.add('modal-open');
             } else {
-                alert('Sales order not found: ' + soId);
+                showPopup('Sales order not found: ' + soId);
             }
         }
         
@@ -27485,7 +27588,7 @@
                 await showPurchaseOrderDetails(po);
                 document.getElementById('orderModal').style.display = 'block'; document.body.classList.add('modal-open');
             } else {
-                alert('Purchase order not found: ' + poId);
+                showPopup('Purchase order not found: ' + poId);
             }
         }
         
@@ -27511,7 +27614,7 @@
                 // Show edit form
                 showEditCustomerForm(customer);
             } else {
-                alert('Customer not found: ' + customerId);
+                showPopup('Customer not found: ' + customerId);
             }
         }
         
@@ -27537,7 +27640,7 @@
                 // Show edit form
                 showEditSupplierForm(supplier);
             } else {
-                alert('Supplier not found: ' + supplierId);
+                showPopup('Supplier not found: ' + supplierId);
             }
         }
         
@@ -27583,7 +27686,7 @@
                 if (!supplierId) {
                     e.preventDefault();
                     e.target.blur(); // Remove focus
-                    alert('⚠️ Please select a supplier first');
+                    showPopup('⚠️ Please select a supplier first');
                     document.getElementById('createPOSupplier')?.focus();
                 }
             }
@@ -27596,7 +27699,7 @@
                 if (!supplierId) {
                     e.preventDefault();
                     e.stopPropagation();
-                    alert('⚠️ Please select a supplier first');
+                    showPopup('⚠️ Please select a supplier first');
                     document.getElementById('createPOSupplier')?.focus();
                 }
             }
@@ -27609,7 +27712,7 @@
                     e.preventDefault();
                     e.stopPropagation();
                     setTimeout(() => {
-                        alert('⚠️ Please select a supplier first');
+                        showPopup('⚠️ Please select a supplier first');
                         document.getElementById('createPOSupplier')?.focus();
                     }, 10);
                 }
@@ -27646,7 +27749,7 @@
             const supplierId = document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
-                alert('Please select a supplier first');
+                showPopup('Please select a supplier first');
                 return;
             }
             
@@ -27792,10 +27895,10 @@
                     closeModal();
                     loadPurchases();
                 } else {
-                    alert('Error voiding PO: ' + (result?.message || 'Unknown error'));
+                    showPopup('Error voiding PO: ' + (result?.message || 'Unknown error'));
                 }
             } catch (e) {
-                alert('Error: ' + e.message);
+                showPopup('Error: ' + e.message);
             }
         }
         
@@ -27805,13 +27908,13 @@
                 // Load the original PO
                 const result = await apiCall('getPurchaseOrders');
                 if (!result || result.status !== 'success') {
-                    alert('Error loading purchase order');
+                    showPopup('Error loading purchase order');
                     return;
                 }
                 
                 const originalPO = result.data.find(p => p.PO_ID === poId);
                 if (!originalPO) {
-                    alert('Purchase order not found');
+                    showPopup('Purchase order not found');
                     return;
                 }
                 
@@ -27820,7 +27923,7 @@
                 const originalLines = linesResult?.data || [];
                 
                 if (originalLines.length === 0) {
-                    alert('No line items found in original PO');
+                    showPopup('No line items found in original PO');
                     return;
                 }
                 
@@ -27873,7 +27976,7 @@
                 }, 500);
                 
             } catch (e) {
-                alert('Error duplicating PO: ' + e.message);
+                showPopup('Error duplicating PO: ' + e.message);
             }
         }
         
@@ -27881,25 +27984,25 @@
             // Load the OUTGOING PO
             const result = await apiCall('getPurchaseOrders');
             if (!result || result.status !== 'success') {
-                alert('Error loading purchase order');
+                showPopup('Error loading purchase order');
                 return;
             }
             
             const po = result.data.find(p => p.PO_ID === poId);
             if (!po) {
-                alert('Purchase order not found');
+                showPopup('Purchase order not found');
                 return;
             }
             
             if (po.Status !== 'Ordered' && po.Status !== 'Partial') {
-                alert('This PO has already been fully received');
+                showPopup('This PO has already been fully received');
                 return;
             }
             
             // Load line items
             const linesResult = await apiCall('getPurchaseOrderLines', { poId: poId });
             if (!linesResult || linesResult.status !== 'success') {
-                alert('Error loading PO line items');
+                showPopup('Error loading PO line items');
                 return;
             }
             
@@ -28188,7 +28291,7 @@
             });
             
             if (linesToReceive.length === 0) {
-                alert('No items to receive. Enter quantities greater than 0.');
+                showPopup('No items to receive. Enter quantities greater than 0.');
                 return;
             }
             
@@ -28246,7 +28349,7 @@
                         ? '✅ All items received! PO is now complete.' 
                         : `📦 Items received. PO status: ${result.newStatus} (${result.totalReceived}/${result.totalOrdered})`;
                     
-                    alert(statusMsg + '\n\nInventory has been updated.');
+                    showPopup(statusMsg + '\n\nInventory has been updated.');
                     
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
@@ -28255,11 +28358,11 @@
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                    showPopup('❌ Error: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error in commitReceivePartial:', error);
-                alert('❌ Error: ' + error.message);
+                showPopup('❌ Error: ' + error.message);
             } finally {
                 isCommittingReceivePartial = false;
                 if (commitBtn) {
@@ -28424,7 +28527,7 @@
             console.log('Collected ' + receivedLines.length + ' lines to receive');
             
             if (receivedLines.length === 0) {
-                alert('Please select at least one item to receive');
+                showPopup('Please select at least one item to receive');
                 return;
             }
             
@@ -28455,7 +28558,7 @@
                 console.log('API result:', JSON.stringify(result));
                 
                 if (result && result.status === 'success') {
-                    alert('✅ Items received successfully! Inventory has been updated.');
+                    showPopup('✅ Items received successfully! Inventory has been updated.');
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
                     
@@ -28463,11 +28566,11 @@
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    alert('❌ Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
+                    showPopup('❌ Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error in commitReceive:', error);
-                alert('❌ Error: ' + error.message);
+                showPopup('❌ Error: ' + error.message);
             } finally {
                 // UNLOCK
                 isCommittingReceive = false;
@@ -28495,12 +28598,12 @@
             const notes = document.getElementById('createPONotes')?.value;
             
             if (!supplierId || !poDate) {
-                alert('Please select supplier and date');
+                showPopup('Please select supplier and date');
                 return;
             }
             
             if (!expectedDeliveryDate) {
-                alert('Please select an Expected Delivery Date');
+                showPopup('Please select an Expected Delivery Date');
                 return;
             }
             
@@ -28527,7 +28630,7 @@
             });
             
             if (lineItems.length === 0) {
-                alert('Please add at least one line item');
+                showPopup('Please add at least one line item');
                 return;
             }
             
@@ -28601,13 +28704,13 @@
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                alert(`✅ OUTGOING PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
+                showPopup(`✅ OUTGOING PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
                 clearCreatePOForm();
                 
                 // Refresh items to update Qty_On_Order
                 await loadItems();
             } else {
-                alert('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
+                showPopup('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
             }
             } finally {
                 // UNLOCK - Always reset even if error
@@ -28627,7 +28730,7 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplierId || !poDate) {
-                alert('Please select supplier and date');
+                showPopup('Please select supplier and date');
                 return;
             }
             
@@ -28671,14 +28774,14 @@
             });
             
             if (lineItems.length === 0) {
-                alert('Please add at least one line item');
+                showPopup('Please add at least one line item');
                 return;
             }
             
             // Get supplier info
             const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
             if (!supplier) {
-                alert('Supplier not found');
+                showPopup('Supplier not found');
                 return;
             }
             
@@ -28804,7 +28907,7 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplier) {
-                alert('Supplier not found');
+                showPopup('Supplier not found');
                 return;
             }
             
@@ -28812,7 +28915,7 @@
             const fileName = `PO_${supplier.Supplier_Name.replace(/[^a-z0-9]/gi, '_')}_${poDate}.pdf`;
             
             // For now, trigger print dialog with instruction
-            alert('PDF Download:\n\n1. Click OK\n2. In the print dialog, select "Save as PDF"\n3. Click Save\n\nNote: Full automated PDF generation requires a backend service.');
+            showPopup('PDF Download:\n\n1. Click OK\n2. In the print dialog, select "Save as PDF"\n3. Click Save\n\nNote: Full automated PDF generation requires a backend service.');
             window.print();
         }
         
@@ -28823,14 +28926,14 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplier) {
-                alert('Supplier not found');
+                showPopup('Supplier not found');
                 return;
             }
             
             const supplierEmail = supplier.Email || '';
             
             if (!supplierEmail) {
-                alert('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
+                showPopup('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
                 return;
             }
             
@@ -28878,7 +28981,7 @@ NOTE: Please print the attached PO document for full details.`;
             const mailtoLink = `mailto:${supplierEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             
             // Inform user to attach the PO
-            alert('Email Instructions:\n\n1. Your email client will open with the supplier\'s email pre-filled\n2. IMPORTANT: Print or save this PO as PDF first (use Print button)\n3. Attach the PDF to the email before sending\n\nClick OK to open your email client.');
+            showPopup('Email Instructions:\n\n1. Your email client will open with the supplier\'s email pre-filled\n2. IMPORTANT: Print or save this PO as PDF first (use Print button)\n3. Attach the PDF to the email before sending\n\nClick OK to open your email client.');
             
             // Open email client
             window.location.href = mailtoLink;
@@ -29161,7 +29264,7 @@ NOTE: Please print the attached PO document for full details.`;
             const supplierId = document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
-                alert('Please select a supplier first');
+                showPopup('Please select a supplier first');
                 return;
             }
             
@@ -29231,7 +29334,7 @@ NOTE: Please print the attached PO document for full details.`;
             const customerId = document.getElementById('soCustomer').value;
             
             if (!customerId) {
-                alert('Please select a customer first');
+                showPopup('Please select a customer first');
                 return;
             }
             
@@ -29285,7 +29388,7 @@ NOTE: Please print the attached PO document for full details.`;
             const selectedItems = window.multiSelectedItems || new Set();
             
             if (selectedItems.size === 0) {
-                alert('Please select at least one item');
+                showPopup('Please select at least one item');
                 return;
             }
             
@@ -29360,7 +29463,7 @@ NOTE: Please print the attached PO document for full details.`;
                 if (firstEmptyQty) firstEmptyQty.focus();
             }, 100);
             
-            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+            showPopup(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
         }
         
         // Add selected items to Sales Order
@@ -29368,7 +29471,7 @@ NOTE: Please print the attached PO document for full details.`;
             const selectedItems = window.multiSelectedItems || new Set();
             
             if (selectedItems.size === 0) {
-                alert('Please select at least one item');
+                showPopup('Please select at least one item');
                 return;
             }
             
@@ -29552,7 +29655,7 @@ NOTE: Please print the attached PO document for full details.`;
                 if (firstEmptyQty) firstEmptyQty.focus();
             }, 100);
             
-            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+            showPopup(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
         }
         
         // ============================================================================
@@ -30667,6 +30770,39 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         /* ========== MOBILE MODAL FIXES ========== */
+        
+        /* Mobile Navigation FAB Button */
+        .mobile-nav-fab {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--primary-color, #667eea);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 9999;
+            font-size: 24px;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .mobile-nav-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        .mobile-nav-fab:active {
+            transform: scale(0.95);
+        }
+        @media (max-width: 768px) {
+            .mobile-nav-fab {
+                display: flex;
+            }
+        }
         
         /* Prevent horizontal scroll only */
         html, body {
@@ -34853,7 +34989,7 @@ NOTE: Please print the attached PO document for full details.`;
         function showTutorial(tutorialId) {
             const tutorial = tutorialContent[tutorialId];
             if (!tutorial) {
-                alert('Tutorial not found');
+                showPopup('Tutorial not found');
                 return;
             }
             
@@ -34980,7 +35116,7 @@ NOTE: Please print the attached PO document for full details.`;
 
         async function downloadItemsReport() {
             if (!cachedItems || cachedItems.length === 0) {
-                alert('No items to download. Please load items first.');
+                showPopup('No items to download. Please load items first.');
                 return;
             }
 
@@ -35188,7 +35324,7 @@ NOTE: Please print the attached PO document for full details.`;
             const file = fileInput.files[0];
             
             if (!file) {
-                alert('Please select a file to upload');
+                showPopup('Please select a file to upload');
                 return;
             }
 
@@ -35201,7 +35337,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const uploadedItems = await parseUploadedFile(file);
                 
                 if (!uploadedItems || uploadedItems.length === 0) {
-                    alert('No valid items found in file');
+                    showPopup('No valid items found in file');
                     return;
                 }
 
@@ -35410,7 +35546,7 @@ NOTE: Please print the attached PO document for full details.`;
 
         async function commitItemsUpload() {
             if (!pendingItemsUpload) {
-                alert('No upload pending');
+                showPopup('No upload pending');
                 return;
             }
 
@@ -35421,7 +35557,7 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 const finalConfirm = prompt('Type YES (in capital letters) to proceed with FULL REFRESH:');
                 if (finalConfirm !== 'YES') {
-                    alert('Upload cancelled');
+                    showPopup('Upload cancelled');
                     return;
                 }
             }
@@ -35690,6 +35826,206 @@ NOTE: Please print the attached PO document for full details.`;
                 observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
             }
         });
+    </script>
+    
+    <!-- Popup Modal for all messages -->
+    <div id="popupOverlay" class="popup-overlay" onclick="closePopup()">
+        <div class="popup-box" onclick="event.stopPropagation()">
+            <div id="popupHeader" class="popup-header info">
+                <div id="popupIcon" class="popup-icon">ℹ️</div>
+                <h3 id="popupTitle">Message</h3>
+            </div>
+            <div id="popupBody" class="popup-body">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div id="popupFooter" class="popup-footer">
+                <button id="popupBtn" class="popup-btn" onclick="closePopup()">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== POPUP MODAL SYSTEM ====================
+        let popupCallback = null;
+        let popupConfirmCallback = null;
+        
+        function showPopup(message, type = 'auto', title = null) {
+            const overlay = document.getElementById('popupOverlay');
+            const header = document.getElementById('popupHeader');
+            const icon = document.getElementById('popupIcon');
+            const titleEl = document.getElementById('popupTitle');
+            const body = document.getElementById('popupBody');
+            const footer = document.getElementById('popupFooter');
+            
+            // Auto-detect type from message content if not specified
+            if (type === 'auto') {
+                if (message.includes('✅') || message.toLowerCase().includes('success')) {
+                    type = 'success';
+                } else if (message.includes('❌') || message.includes('Error') || message.includes('error')) {
+                    type = 'error';
+                } else if (message.includes('⚠️') || message.includes('Warning') || message.includes('Please')) {
+                    type = 'warning';
+                } else if (message.includes('💡') || message.includes('Tip')) {
+                    type = 'info';
+                } else {
+                    type = 'info';
+                }
+            }
+            
+            // Set type-specific styling
+            const types = {
+                error: { icon: '⚠️', title: 'Error', class: 'error' },
+                success: { icon: '✅', title: 'Success', class: 'success' },
+                warning: { icon: '⚡', title: 'Attention', class: 'warning' },
+                info: { icon: 'ℹ️', title: 'Information', class: 'info' }
+            };
+            
+            const config = types[type] || types.info;
+            header.className = 'popup-header ' + config.class;
+            icon.textContent = config.icon;
+            titleEl.textContent = title || config.title;
+            
+            // Clean up emoji from message since we show it in header
+            let cleanMessage = message
+                .replace(/^[✅❌⚠️💡ℹ️⚡]\s*/g, '')
+                .replace(/^(Error|Warning|Success|Info):\s*/i, '');
+            
+            // Parse message - handle line breaks and lists
+            let htmlContent = '';
+            if (typeof cleanMessage === 'string') {
+                // Check if message has list items (lines starting with - or •)
+                const lines = cleanMessage.split('\n').filter(l => l.trim());
+                const listItems = lines.filter(l => l.trim().startsWith('-') || l.trim().startsWith('•') || l.trim().startsWith('✓') || l.trim().startsWith('✗'));
+                
+                if (listItems.length > 1) {
+                    const nonListLines = lines.filter(l => !l.trim().startsWith('-') && !l.trim().startsWith('•') && !l.trim().startsWith('✓') && !l.trim().startsWith('✗'));
+                    if (nonListLines.length > 0) {
+                        htmlContent += '<p style="margin-bottom: 15px;">' + nonListLines.join('<br>') + '</p>';
+                    }
+                    htmlContent += '<ul class="' + (type === 'error' ? 'error-list' : '') + '">';
+                    listItems.forEach(item => {
+                        const text = item.replace(/^[-•✓✗]\s*/, '').trim();
+                        htmlContent += '<li>' + text + '</li>';
+                    });
+                    htmlContent += '</ul>';
+                } else {
+                    // Simple message with line breaks
+                    htmlContent = cleanMessage.replace(/\n/g, '<br>');
+                }
+            } else {
+                htmlContent = String(cleanMessage);
+            }
+            
+            body.innerHTML = htmlContent;
+            body.className = 'popup-body' + (type === 'error' ? ' error-list' : '');
+            
+            // Reset footer to single OK button
+            footer.innerHTML = '<button class="popup-btn" onclick="closePopup()">OK</button>';
+            
+            overlay.classList.add('show');
+            
+            // Return a promise for async usage
+            return new Promise(resolve => {
+                popupCallback = resolve;
+            });
+        }
+        
+        function showConfirm(message, type = 'warning', title = null) {
+            const overlay = document.getElementById('popupOverlay');
+            const header = document.getElementById('popupHeader');
+            const icon = document.getElementById('popupIcon');
+            const titleEl = document.getElementById('popupTitle');
+            const body = document.getElementById('popupBody');
+            const footer = document.getElementById('popupFooter');
+            
+            const types = {
+                error: { icon: '⚠️', title: 'Confirm', class: 'error' },
+                success: { icon: '✅', title: 'Confirm', class: 'success' },
+                warning: { icon: '⚡', title: 'Confirm', class: 'warning' },
+                info: { icon: '❓', title: 'Confirm', class: 'info' }
+            };
+            
+            const config = types[type] || types.warning;
+            header.className = 'popup-header ' + config.class;
+            icon.textContent = config.icon;
+            titleEl.textContent = title || config.title;
+            
+            // Parse message
+            body.innerHTML = message.replace(/\n/g, '<br>');
+            body.className = 'popup-body';
+            
+            // Add Cancel and OK buttons
+            footer.innerHTML = `
+                <button class="popup-btn secondary" onclick="closePopup(false)">Cancel</button>
+                <button class="popup-btn" onclick="closePopup(true)">OK</button>
+            `;
+            
+            overlay.classList.add('show');
+            
+            return new Promise(resolve => {
+                popupConfirmCallback = resolve;
+            });
+        }
+        
+        function closePopup(result = true) {
+            const overlay = document.getElementById('popupOverlay');
+            overlay.classList.remove('show');
+            
+            if (popupConfirmCallback) {
+                popupConfirmCallback(result);
+                popupConfirmCallback = null;
+            } else if (popupCallback) {
+                popupCallback();
+                popupCallback = null;
+            }
+        }
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('popupOverlay').classList.contains('show')) {
+                closePopup(false);
+            }
+        });
+    </script>
+    
+    <!-- Mobile Navigation FAB -->
+    <button class="mobile-nav-fab" onclick="scrollToNav()" title="Go to Navigation">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+    
+    <script>
+        function scrollToNav() {
+            const nav = document.getElementById('nav');
+            if (nav) {
+                nav.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        // Show/hide FAB based on scroll position
+        (function() {
+            const fab = document.querySelector('.mobile-nav-fab');
+            if (fab) {
+                fab.style.opacity = '0';
+                fab.style.pointerEvents = 'none';
+                fab.style.transition = 'opacity 0.3s, transform 0.2s, box-shadow 0.2s';
+                
+                window.addEventListener('scroll', function() {
+                    const scrollY = window.scrollY || window.pageYOffset;
+                    // Show FAB when scrolled down more than 200px
+                    if (scrollY > 200) {
+                        fab.style.opacity = '1';
+                        fab.style.pointerEvents = 'auto';
+                    } else {
+                        fab.style.opacity = '0';
+                        fab.style.pointerEvents = 'none';
+                    }
+                });
+            }
+        })();
     </script>
 </body>
 </html>
