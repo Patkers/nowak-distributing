@@ -532,10 +532,21 @@
                 -webkit-overflow-scrolling: touch;
             }
             
-            /* Hide floating navigation buttons on mobile */
+            /* Mobile navigation buttons - slightly smaller */
             #backBtn,
             #backToTopBtn {
-                display: none !important;
+                width: 50px !important;
+                height: 50px !important;
+                font-size: 20px !important;
+                left: 15px !important;
+            }
+            
+            #backBtn {
+                bottom: 20px !important;
+            }
+            
+            #backToTopBtn {
+                bottom: 80px !important;
             }
         }
         
@@ -1232,13 +1243,6 @@
                 overflow-y: auto !important;
             }
             
-            /* Hide floating navigation buttons on mobile portrait */
-            #backBtn,
-            #backToTopBtn {
-                display: none !important;
-                visibility: hidden !important;
-            }
-            
             #reportSetupModal {
                 padding: 0 !important;
             }
@@ -1532,12 +1536,6 @@
                 height: auto;
                 max-height: none !important;
                 overflow-y: visible !important;
-            }
-            
-            /* Hide floating navigation buttons in landscape - use compact nav instead */
-            #backToTopBtn,
-            #backBtn {
-                display: none !important;
             }
             
             /* Make tables scroll horizontally in landscape */
@@ -21906,7 +21904,7 @@
             // Calculate totals
             const totalCustomersAffected = Object.keys(customerBackorders).length;
             const totalItemsOnBackorder = Object.keys(itemBackorders).length;
-            const totalUnitsBackordered = Object.values(itemBackorders).reduce((sum, i) => sum + i.qtyOnBackorder, 0);
+            const totalUnitsNeeded = Object.values(itemBackorders).reduce((sum, i) => sum + i.totalNeeded, 0);
             
             // Build HTML
             let html = `
@@ -22126,7 +22124,7 @@
                             <div class="label">Items on Backorder</div>
                         </div>
                         <div class="backorder-kpi" style="border-top: 4px solid #7c3aed;">
-                            <div class="value" style="color: #7c3aed;">${totalUnitsBackordered}</div>
+                            <div class="value" style="color: #7c3aed;">${totalUnitsNeeded}</div>
                             <div class="label">Total Units Needed</div>
                         </div>
                     </div>
@@ -22154,12 +22152,14 @@
                         <div style="padding: 0;">
                 `;
                 
-                // Sort items by backorder quantity
-                const sortedItems = Object.values(itemBackorders).sort((a, b) => b.qtyOnBackorder - a.qtyOnBackorder);
+                // Sort items by total units needed (from actual orders)
+                const sortedItems = Object.values(itemBackorders).sort((a, b) => b.totalNeeded - a.totalNeeded);
                 
                 for (const item of sortedItems) {
-                    const netNeeded = Math.max(0, item.qtyOnBackorder - item.qtyOnOrder);
-                    const alreadyCovered = Math.min(item.qtyOnOrder, item.qtyOnBackorder);
+                    // Use totalNeeded (sum of actual order quantities) instead of qtyOnBackorder
+                    const unitsNeeded = item.totalNeeded;
+                    const netNeeded = Math.max(0, unitsNeeded - item.qtyOnOrder);
+                    const alreadyCovered = Math.min(item.qtyOnOrder, unitsNeeded);
                     
                     html += `
                         <div class="item-summary-card">
@@ -22175,8 +22175,8 @@
                                     <span class="item-stat-value" style="color: ${item.qtyOnHand < 0 ? '#dc2626' : '#333'};">${item.qtyOnHand}</span>
                                 </div>
                                 <div class="item-stat">
-                                    <span class="item-stat-label">On Backorder</span>
-                                    <span class="item-stat-value" style="color: #dc2626;">${item.qtyOnBackorder}</span>
+                                    <span class="item-stat-label">Units Ordered</span>
+                                    <span class="item-stat-value" style="color: #dc2626;">${unitsNeeded}</span>
                                 </div>
                                 <div class="item-stat">
                                     <span class="item-stat-label">Already On Order</span>
@@ -22245,7 +22245,7 @@
                                         <th>Qty Ordered</th>
                                         <th>On Hand</th>
                                         <th>On Order</th>
-                                        <th>Backorder</th>
+                                        <th>Short</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -22253,6 +22253,7 @@
                     
                     for (const order of customer.orders) {
                         for (const item of order.items) {
+                            const shortQty = Math.max(0, item.qtyOrdered - Math.max(0, item.qtyOnHand));
                             html += `
                                 <tr>
                                     <td><a href="#" onclick="viewSalesOrder('${order.soId}'); return false;" style="color: #0891b2; text-decoration: none;">${order.invoiceNum}</a></td>
@@ -22261,7 +22262,7 @@
                                     <td style="text-align: center;">${item.qtyOrdered}</td>
                                     <td style="text-align: center; color: ${item.qtyOnHand < 0 ? '#dc2626' : '#333'};">${item.qtyOnHand}</td>
                                     <td style="text-align: center; color: ${item.qtyOnOrder > 0 ? '#f59e0b' : '#666'};">${item.qtyOnOrder}</td>
-                                    <td style="text-align: center; color: #dc2626; font-weight: 600;">${item.qtyOnBackorder}</td>
+                                    <td style="text-align: center; color: #dc2626; font-weight: 600;">${shortQty > 0 ? shortQty : '-'}</td>
                                 </tr>
                             `;
                         }
