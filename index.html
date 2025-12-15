@@ -3974,7 +3974,6 @@
                     </div>
                     <div id="dashboardReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('action-dashboard')" style="background: linear-gradient(135deg, #dc2626, #ef4444) !important; color: white !important; font-weight: 700; border-left: 4px solid #b91c1c !important;">🚨 Action Dashboard</button>
-                        <button class="btn report-btn" onclick="showReport('customer-backorders')" style="background: linear-gradient(135deg, #f59e0b, #fbbf24) !important; color: white !important; font-weight: 600; border-left: 4px solid #d97706 !important;">📦 Customer Backorders</button>
                         <button class="btn report-btn" onclick="showReport('business-overview')">📊 Business Overview</button>
                         <button class="btn report-btn" onclick="showReport('daily-dashboard')">🎯 Sales Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('product-dashboard')">📦 Product Dashboard</button>
@@ -3992,6 +3991,7 @@
                         <button class="btn report-btn" onclick="showReport('sales-by-customer')">👥 Sales by Customer</button>
                         <button class="btn report-btn" onclick="showReport('sales-order-detail')">📋 Sales Order Detail</button>
                         <button class="btn report-btn" onclick="showReport('sales-by-product')">📦 Sales by Item</button>
+                        <button class="btn report-btn" onclick="showReport('customer-backorders')">📦 Customer Backorders</button>
                         <button class="btn report-btn" onclick="showReport('pick-list')">🚚 Pick List</button>
                         <button class="btn report-btn" onclick="showReport('dormant-customers')">📞 Dormant Customers</button>
                     </div>
@@ -22284,12 +22284,12 @@
             return html;
         }
         
-        // Create PO for backorder item
-        async function createBackorderPO(itemId, supplierId) {
+        // Create PO for backorder item - navigates to Create PO tab with pre-filled data
+        function createBackorderPO(itemId, supplierId) {
             const qtyInput = document.getElementById(`backorderQty_${itemId}`);
-            const qty = parseInt(qtyInput?.value) || 0;
+            const unitsNeeded = parseInt(qtyInput?.value) || 0;
             
-            if (qty <= 0) {
+            if (unitsNeeded <= 0) {
                 alert('Please enter a quantity greater than 0');
                 return;
             }
@@ -22304,44 +22304,83 @@
             const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
             const supplierName = supplier?.Supplier_Name || 'Unknown';
             
-            if (!confirm(`Create PO for ${qty} units of:\n\n${item.Item_Description}\n\nFrom: ${supplierName}\n\nThis is for backorder fulfillment only (not up to reorder point).`)) {
+            if (!confirm(`Create PO for ${unitsNeeded} units of:\n\n${item.Item_Description}\n\nFrom: ${supplierName}\n\nThis is for backorder fulfillment only.`)) {
                 return;
             }
             
-            // Create the PO
-            const poData = {
-                supplierId: supplierId,
-                poDate: new Date().toISOString().split('T')[0],
-                notes: 'Backorder fulfillment - Created from Customer Backorders report'
-            };
+            // Close the report modal
+            closeReportSetup();
             
-            const poResult = await apiCall('createPurchaseOrder', poData);
+            // Skip clearing since we're pre-filling
+            window.skipCreatePOClear = true;
             
-            if (!poResult || poResult.status !== 'success') {
-                alert('Error creating PO: ' + (poResult?.message || 'Unknown error'));
-                return;
-            }
+            // Switch to CREATE PO tab
+            switchTab('createpo');
             
-            const poId = poResult.poId;
-            
-            // Add line item
-            const lineData = {
-                poId: poId,
-                itemId: itemId,
-                quantity: qty,
-                unitCost: parseFloat(item.Package_Cost) / parseFloat(item.Units_Per_Package || 1)
-            };
-            
-            const lineResult = await apiCall('addPurchaseOrderLine', lineData);
-            
-            if (!lineResult || lineResult.status !== 'success') {
-                alert('PO created but error adding line item: ' + (lineResult?.message || 'Unknown error'));
-            } else {
-                alert(`✅ PO Created Successfully!\n\nPO #: ${poResult.invoiceNumber || poId}\nItem: ${item.Item_Description}\nQuantity: ${qty}\n\nThe item's Qty On Order will be updated.`);
+            setTimeout(() => {
+                // Set supplier
+                const supplierSelect = document.getElementById('createPOSupplier');
+                if (supplierSelect) {
+                    supplierSelect.value = supplierId;
+                    filterItemsBySupplier();
+                }
                 
-                // Refresh the report
-                executeReport();
-            }
+                // Set today's date
+                const today = getTodayLocalDate();
+                document.getElementById('createPODate').value = today;
+                document.getElementById('createPOExpectedDate').value = '';
+                
+                // Set notes
+                const notesField = document.getElementById('createPONotes');
+                if (notesField) {
+                    notesField.value = 'Backorder fulfillment - Created from Customer Backorders report';
+                }
+                
+                // Clear existing line items
+                const container = document.getElementById('createPOLineItems');
+                container.innerHTML = '';
+                
+                // Calculate cases needed
+                const cost = parseFloat(item.Package_Cost) || 0;
+                const units = parseInt(item.Units_Per_Package) || 1;
+                const casesNeeded = Math.ceil(unitsNeeded / units);
+                
+                const newRow = document.createElement('div');
+                newRow.className = 'line-item-row';
+                newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
+                
+                newRow.innerHTML = `
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                        <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
+                            <option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                        <input type="number" class="createpo-qty" value="${casesNeeded > 0 ? casesNeeded : ''}" placeholder="Qty" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">${units}</div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">${casesNeeded > 0 ? casesNeeded * units : '-'}</div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">$${cost.toFixed(2)}</div>
+                    </div>
+                    <div style="margin-top: 26px;">
+                        <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">${casesNeeded > 0 ? '$' + (casesNeeded * cost).toFixed(2) : '$0.00'}</div>
+                    </div>
+                    <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px;">🗑️</button>
+                `;
+                
+                container.appendChild(newRow);
+                
+                // Calculate total
+                calculateCreatePOTotal();
+                
+            }, 300);
         }
         
         // Helper functions for Action Dashboard
