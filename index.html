@@ -704,6 +704,13 @@
                 position: static !important;
                 overflow-y: auto !important;
                 height: auto !important;
+                overscroll-behavior: none !important;
+            }
+            
+            /* Prevent scroll chaining on modals */
+            #reportSetupModal,
+            #orderModal {
+                overscroll-behavior: contain !important;
             }
             
             /* Floating Settings Gear - smaller on mobile */
@@ -1283,6 +1290,21 @@
                 padding: 12px !important;
                 padding-bottom: 80px !important;
                 min-height: 0 !important; /* Important for flex scrolling */
+                touch-action: pan-y !important; /* Allow vertical scrolling */
+                overscroll-behavior: contain !important; /* Prevent scroll chaining */
+            }
+            
+            /* Prevent touch issues on modal */
+            #reportSetupModalInner,
+            #reportSetupModal > div {
+                touch-action: auto !important;
+                overscroll-behavior: contain !important;
+            }
+            
+            /* Ensure canvases don't capture touch events */
+            #reportSetupContent canvas {
+                touch-action: none !important;
+                pointer-events: none !important;
             }
             
             /* Chart grid on mobile - single column */
@@ -1380,6 +1402,8 @@
                 -webkit-overflow-scrolling: touch !important;
                 padding: 8px !important;
                 padding-bottom: 60px !important;
+                touch-action: pan-y !important;
+                overscroll-behavior: contain !important;
             }
             
             #reportSetupFooter {
@@ -28708,9 +28732,16 @@ NOTE: Please print the attached PO document for full details.`;
         /* When any modal is open, prevent body scrolling */
         body.modal-open {
             overflow: hidden !important;
-            position: fixed !important;
-            width: 100% !important;
-            height: 100% !important;
+            /* Don't use position:fixed on iOS - causes scroll issues */
+            touch-action: none !important;
+        }
+        
+        /* iOS-specific fix for modal scrolling */
+        @supports (-webkit-touch-callout: none) {
+            body.modal-open {
+                position: relative !important;
+                height: 100% !important;
+            }
         }
         
         /* Base modal overlay styles */
