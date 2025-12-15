@@ -28682,14 +28682,36 @@ NOTE: Please print the attached PO document for full details.`;
                 
                 container.appendChild(newRow);
                 
-                // Attach remove handler
-                newRow.querySelector('.remove-btn').onclick = function() {
-                    this.closest('.line-item-row').remove();
-                };
+                // Attach event listeners for qty, price, and remove
+                const qtyInput = newRow.querySelector('.so-qty');
+                const priceInput = newRow.querySelector('.so-price');
+                const removeBtn = newRow.querySelector('.remove-btn');
+                
+                if (qtyInput) {
+                    qtyInput.addEventListener('input', function() {
+                        calculateSOTotal();
+                    });
+                }
+                
+                if (priceInput) {
+                    priceInput.addEventListener('input', function() {
+                        calculateSOTotal();
+                    });
+                }
+                
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() {
+                        this.closest('.line-item-row').remove();
+                        calculateSOTotal();
+                    });
+                }
             });
             
             // Close picker
             closeItemPicker();
+            
+            // Calculate total after adding items
+            calculateSOTotal();
             
             // Focus first empty quantity field
             setTimeout(() => {
