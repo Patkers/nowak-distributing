@@ -9191,7 +9191,47 @@
 
         function hideAddPurchaseForm() {
             document.getElementById('addPurchaseForm').style.display = 'none';
-            document.querySelector('#addPurchaseForm form').reset();
+            
+            // Reset the form
+            const form = document.querySelector('#addPurchaseForm form');
+            if (form) form.reset();
+            
+            // Explicitly reset dropdowns
+            const supplierSelect = document.getElementById('poSupplier');
+            if (supplierSelect) supplierSelect.selectedIndex = 0;
+            
+            const statusSelect = document.getElementById('poStatus');
+            if (statusSelect) statusSelect.selectedIndex = 0;
+            
+            const paymentTermsSelect = document.getElementById('poPaymentTerms');
+            if (paymentTermsSelect) paymentTermsSelect.selectedIndex = 0;
+            
+            // Clear date fields
+            const dueDateField = document.getElementById('poDueDate');
+            if (dueDateField) dueDateField.value = '';
+            
+            // Clear invoice number
+            const invoiceField = document.getElementById('poInvoiceNumber');
+            if (invoiceField) invoiceField.value = '';
+            
+            // Clear amount paid
+            const amountPaidField = document.getElementById('poAmountPaid');
+            if (amountPaidField) amountPaidField.value = '0';
+            
+            // Clear notes
+            const notesField = document.getElementById('poNotes');
+            if (notesField) notesField.value = '';
+            
+            // Reset summary boxes if they exist
+            const totalBox = document.getElementById('poTotalAmount');
+            if (totalBox) totalBox.textContent = '$0.00';
+            
+            // Clear all line items and add one fresh one
+            const lineItemsContainer = document.getElementById('poLineItems');
+            if (lineItemsContainer) {
+                lineItemsContainer.innerHTML = '';
+                addPOLineItem();
+            }
         }
 
         async function loadPurchaseDropdowns() {
@@ -11577,7 +11617,6 @@
 
         function hideAddSaleForm() {
             document.getElementById('addSaleForm').style.display = 'none';
-            document.querySelector('#addSaleForm form').reset();
             
             // MOBILE FIX: Always reset save lock and button state
             isSavingSale = false;
@@ -11586,6 +11625,32 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = '💾 Save Sale';
             }
+            
+            // Reset the form
+            const form = document.querySelector('#addSaleForm form');
+            if (form) form.reset();
+            
+            // Explicitly reset dropdowns (form.reset() doesn't always work on dynamic dropdowns)
+            const customerSelect = document.getElementById('soCustomer');
+            if (customerSelect) customerSelect.selectedIndex = 0;
+            
+            const statusSelect = document.getElementById('soStatus');
+            if (statusSelect) statusSelect.selectedIndex = 0;
+            
+            const paymentSelect = document.getElementById('soPayment');
+            if (paymentSelect) paymentSelect.selectedIndex = 0;
+            
+            // Clear date fields
+            const dueDateField = document.getElementById('soDueDate');
+            if (dueDateField) dueDateField.value = '';
+            
+            // Clear amount paid
+            const amountPaidField = document.getElementById('soAmountPaid');
+            if (amountPaidField) amountPaidField.value = '0';
+            
+            // Clear notes
+            const notesField = document.getElementById('soNotes');
+            if (notesField) notesField.value = '';
             
             // Reset summary boxes
             const qtyBox = document.getElementById('soTotalQty');
