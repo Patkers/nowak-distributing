@@ -9797,13 +9797,13 @@
             // Get the selected dates - standardize to YYYY-MM-DD format
             const selectedPODate = document.getElementById('poDate').value;
             const poDate = standardizeDate(selectedPODate);
-            const poDueDate = standardizeDate(document.getElementById('poDueDate').value);
+            const standardizedDueDate = standardizeDate(poDueDate);
 
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
                 poDate: poDate,
-                dueDate: poDueDate || null,
+                dueDate: standardizedDueDate || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: calculatedTotal,
                 amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
@@ -12373,17 +12373,16 @@
                 // Generate invoice number: INV-120725-001
                 const invoiceNumber = `INV-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
 
-                // Get the selected date - standardize to YYYY-MM-DD format
-                const selectedDate = document.getElementById('soDate').value;
-                const saleDate = standardizeDate(selectedDate);
-                const dueDate = standardizeDate(document.getElementById('soDueDate').value);
+                // Standardize dates to YYYY-MM-DD format
+                const standardizedSaleDate = standardizeDate(saleDate);
+                const standardizedDueDate = standardizeDate(document.getElementById('soDueDate').value);
 
                 const data = {
                     customerId: document.getElementById('soCustomer').value,
-                    saleDate: saleDate,
+                    saleDate: standardizedSaleDate,
                     invoiceNumber: invoiceNumber,
                     paymentMethod: document.getElementById('soPayment').value,
-                    dueDate: dueDate || null,
+                    dueDate: standardizedDueDate || null,
                     totalAmount: calculatedTotal,
                     amountPaid: parseFloat(document.getElementById('soAmountPaid').value) || 0,
                     status: document.getElementById('soStatus').value,
@@ -30982,8 +30981,8 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- Mobile-Friendly Item Picker Modal -->
     <div id="itemPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container">
-            <div class="item-picker-header">
+        <div class="item-picker-container" style="max-width: 600px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📦 Select Item(s)</h3>
                 <button class="item-picker-close" onclick="closeItemPicker(); closeItemPickerForReport();">&times;</button>
             </div>
@@ -30995,52 +30994,52 @@ NOTE: Please print the attached PO document for full details.`;
                     <option value="">All Suppliers</option>
                 </select>
             </div>
-            <div id="itemPickerList" class="item-picker-list" style="max-height: calc(100% - 240px);">
+            <div id="itemPickerList" class="item-picker-list" style="max-height: calc(85vh - 240px);">
                 <!-- Items will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
                 <div id="itemSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeItemPicker(); closeItemPickerForReport();" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
+                <button class="btn" onclick="closeItemPicker(); closeItemPickerForReport();" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
             </div>
         </div>
     </div>
 
     <!-- SUPPLIER PICKER MODAL -->
     <div id="supplierPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container">
-            <div class="item-picker-header">
+        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>🏭 Select Supplier(s)</h3>
                 <button class="item-picker-close" onclick="closeSupplierPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers..." oninput="filterSupplierPicker()" onkeyup="filterSupplierPicker()">
             </div>
-            <div id="supplierPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
+            <div id="supplierPickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
                 <!-- Suppliers will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
                 <div id="supplierSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeSupplierPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
+                <button class="btn" onclick="closeSupplierPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
             </div>
         </div>
     </div>
 
     <!-- CUSTOMER PICKER MODAL -->
     <div id="customerPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container">
-            <div class="item-picker-header">
+        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>👤 Select Customer(s)</h3>
                 <button class="item-picker-close" onclick="closeCustomerPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers..." oninput="filterCustomerPicker()" onkeyup="filterCustomerPicker()">
             </div>
-            <div id="customerPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
+            <div id="customerPickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
                 <!-- Customers will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
                 <div id="customerSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeCustomerPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
+                <button class="btn" onclick="closeCustomerPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
             </div>
         </div>
     </div>
@@ -31102,40 +31101,40 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- PO PICKER MODAL -->
     <div id="poPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container">
-            <div class="item-picker-header">
+        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📋 Select Purchase Order(s)</h3>
                 <button class="item-picker-close" onclick="closePOPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="poPickerSearch" placeholder="🔍 Search by PO number..." oninput="filterPOPicker()" onkeyup="filterPOPicker()">
             </div>
-            <div id="poPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
+            <div id="poPickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
                 <!-- POs will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
                 <div id="poSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closePOPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
+                <button class="btn" onclick="closePOPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
             </div>
         </div>
     </div>
 
     <!-- INVOICE PICKER MODAL -->
     <div id="invoicePickerModal" class="item-picker-overlay">
-        <div class="item-picker-container">
-            <div class="item-picker-header">
+        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>🧾 Select Invoice(s)</h3>
                 <button class="item-picker-close" onclick="closeInvoicePicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="invoicePickerSearch" placeholder="🔍 Search by invoice number..." oninput="filterInvoicePicker()" onkeyup="filterInvoicePicker()">
             </div>
-            <div id="invoicePickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
+            <div id="invoicePickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
                 <!-- Invoices will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
                 <div id="invoiceSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeInvoicePicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
+                <button class="btn" onclick="closeInvoicePicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
             </div>
         </div>
     </div>
@@ -31143,8 +31142,8 @@ NOTE: Please print the attached PO document for full details.`;
     <!-- ITEM PICKER MODAL (for reports) -->
     <!-- PO TYPE PICKER MODAL -->
     <div id="poTypePickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 400px;">
-            <div class="item-picker-header">
+        <div class="item-picker-container" style="max-width: 450px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
+            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📦 Select PO Type</h3>
                 <button class="item-picker-close" onclick="closePOTypePicker()">&times;</button>
             </div>
@@ -33970,22 +33969,67 @@ NOTE: Please print the attached PO document for full details.`;
         function renderStatusPickerList() {
             const listContainer = document.getElementById('statusPickerList');
             
+            // Define colors for different status types based on the option text
+            const getStatusStyle = (optValue, optText) => {
+                const text = optText.toLowerCase();
+                
+                // Default "All" option
+                if (optValue === '') {
+                    return { color: '#6c757d', bg: '#f8f9fa', icon: '📋' };
+                }
+                
+                // Green statuses (positive)
+                if (text.includes('paid') || text.includes('delivered') || text.includes('received') || 
+                    text.includes('completed') || text.includes('in stock') || text.includes('active') ||
+                    text.includes('fast') || text.includes('current')) {
+                    return { color: '#10b981', bg: '#d1fae5', icon: '✅' };
+                }
+                
+                // Yellow/Orange statuses (warning)
+                if (text.includes('partial') || text.includes('pending') || text.includes('ordered') || 
+                    text.includes('low') || text.includes('slow') || text.includes('30') || text.includes('60')) {
+                    return { color: '#f59e0b', bg: '#fef3c7', icon: '⚠️' };
+                }
+                
+                // Red statuses (critical)
+                if (text.includes('unpaid') || text.includes('negative') || text.includes('out') || 
+                    text.includes('voided') || text.includes('dead') || text.includes('90') || 
+                    text.includes('overdue') || text.includes('archived')) {
+                    return { color: '#dc2626', bg: '#fee2e2', icon: '🔴' };
+                }
+                
+                // Blue statuses (info)
+                if (text.includes('order') || text.includes('backorder') || text.includes('reorder')) {
+                    return { color: '#3b82f6', bg: '#dbeafe', icon: '📦' };
+                }
+                
+                // Purple statuses (neutral/other)
+                return { color: '#8b5cf6', bg: '#ede9fe', icon: '•' };
+            };
+            
             let html = '';
             statusPickerOptions.forEach((opt, index) => {
+                const style = getStatusStyle(opt.value, opt.text);
                 const isAll = opt.value === '';
-                const icon = isAll ? '📋' : (opt.text.match(/^[^\w\s]/) ? opt.text.charAt(0) : '•');
+                
+                // Extract icon if present in text, otherwise use computed icon
+                const hasEmoji = opt.text.match(/^[^\w\s]/);
+                const icon = hasEmoji ? opt.text.charAt(0) : style.icon;
                 const text = opt.text.replace(/^[^\w\s]\s*/, '');
                 
                 html += `
                     <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectStatusFromPicker('${opt.value}')" onclick="selectStatusFromPicker('${opt.value}')" 
-                         style="border-left: 4px solid #c0c0c0; 
-                                ${isAll ? 'background: #f8f9fa;' : ''}
-                                ${opt.selected ? 'background: #e8e8e8; border-left-color: #888;' : ''}">
-                        <div class="item-picker-desc" style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 20px;">${icon}</span>
-                            <span style="font-weight: ${opt.selected ? 'bold' : 'normal'};">${text}</span>
-                            ${opt.selected ? '<span style="margin-left: auto; color: #555;">✓</span>' : ''}
+                         style="border-left: 4px solid ${opt.selected ? style.color : '#e0e0e0'}; 
+                                background: ${opt.selected ? style.bg : (isAll ? '#f8f9fa' : 'white')};
+                                margin-bottom: 8px;
+                                cursor: pointer;
+                                transition: all 0.15s ease;">
+                        <div class="item-picker-desc" style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 22px; width: 30px; text-align: center;">${icon}</span>
+                            <span style="font-weight: ${opt.selected ? 'bold' : '500'}; color: ${opt.selected ? style.color : '#333'}; flex: 1;">${text}</span>
+                            ${opt.selected ? `<span style="color: ${style.color}; font-size: 18px;">✓</span>` : ''}
                         </div>
+                        ${isAll ? '<div style="font-size: 12px; color: #666; margin-left: 42px; margin-top: 4px;">Show all - no filter applied</div>' : ''}
                     </div>
                 `;
             });
@@ -35066,8 +35110,8 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function attachStatusPickerToSelects() {
-            // Stock Status selects
-            document.querySelectorAll('#filterItemStock, #filterInventoryStock, #pricesimStock').forEach(select => {
+            // Stock Status selects (main tabs + report filters)
+            document.querySelectorAll('#filterItemStock, #filterInventoryStock, #pricesimStock, #filter_stockStatus, #rptFilter_stockStatus').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
                     select.addEventListener('mousedown', function(e) {
@@ -35083,25 +35127,25 @@ NOTE: Please print the attached PO document for full details.`;
                 }
             });
             
-            // Order Status selects
-            document.querySelectorAll('#filterPurchaseStatus').forEach(select => {
+            // Order/Transaction Status selects
+            document.querySelectorAll('#filterPurchaseStatus, #filterSaleStatus, #filter_transactionStatus, #rptFilter_transactionStatus').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
                     select.addEventListener('mousedown', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        openStatusPicker(this, '📤 Order Status', 'order');
+                        openStatusPicker(this, '📤 Transaction Status', 'order');
                     });
                     select.addEventListener('touchstart', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        openStatusPicker(this, '📤 Order Status', 'order');
+                        openStatusPicker(this, '📤 Transaction Status', 'order');
                     });
                 }
             });
             
             // Payment Status selects
-            document.querySelectorAll('#filterPurchasePaymentStatus').forEach(select => {
+            document.querySelectorAll('#filterPurchasePaymentStatus, #filterSalePaymentStatus, #filter_paymentStatus, #rptFilter_paymentStatus').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
                     select.addEventListener('mousedown', function(e) {
@@ -35113,6 +35157,193 @@ NOTE: Please print the attached PO document for full details.`;
                         e.preventDefault();
                         e.stopPropagation();
                         openStatusPicker(this, '💵 Payment Status', 'payment');
+                    });
+                }
+            });
+            
+            // Delivery Status selects
+            document.querySelectorAll('#rptFilter_deliveryStatus').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '🚚 Delivery Status', 'delivery');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '🚚 Delivery Status', 'delivery');
+                    });
+                }
+            });
+            
+            // Turnover Status selects
+            document.querySelectorAll('#filter_turnoverStatus, #rptFilter_turnoverStatus').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '🔄 Turnover Status', 'turnover');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '🔄 Turnover Status', 'turnover');
+                    });
+                }
+            });
+            
+            // Aging selects
+            document.querySelectorAll('#filter_aging, #rptFilter_aging').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📅 Aging Period', 'aging');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📅 Aging Period', 'aging');
+                    });
+                }
+            });
+            
+            // Top N selects
+            document.querySelectorAll('#rptFilter_topN').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '🏆 Top N Results', 'topn');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '🏆 Top N Results', 'topn');
+                    });
+                }
+            });
+            
+            // Dormant Days selects
+            document.querySelectorAll('#rptFilter_dormantDays').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📞 Dormant Threshold', 'dormant');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📞 Dormant Threshold', 'dormant');
+                    });
+                }
+            });
+            
+            // Dormant Sort selects
+            document.querySelectorAll('#rptFilter_dormantSort').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📊 Sort By', 'sort');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📊 Sort By', 'sort');
+                    });
+                }
+            });
+            
+            // Adjustment Type selects
+            document.querySelectorAll('#rptFilter_adjustmentType').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📝 Adjustment Type', 'adjustment');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📝 Adjustment Type', 'adjustment');
+                    });
+                }
+            });
+            
+            // Year selects
+            document.querySelectorAll('#rptFilter_year').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📅 Select Year', 'year');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📅 Select Year', 'year');
+                    });
+                }
+            });
+            
+            // Quarter selects
+            document.querySelectorAll('#rptFilter_quarter').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📊 Select Quarter', 'quarter');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📊 Select Quarter', 'quarter');
+                    });
+                }
+            });
+            
+            // COGS Method selects
+            document.querySelectorAll('#rptFilter_cogsMethod').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📦 COGS Method', 'cogs');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '📦 COGS Method', 'cogs');
+                    });
+                }
+            });
+            
+            // Item Active Status selects
+            document.querySelectorAll('#filterItemActive').forEach(select => {
+                if (!select.dataset.statusPickerAttached) {
+                    select.dataset.statusPickerAttached = 'true';
+                    select.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '✅ Item Status', 'active');
+                    });
+                    select.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openStatusPicker(this, '✅ Item Status', 'active');
                     });
                 }
             });
