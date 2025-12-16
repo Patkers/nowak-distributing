@@ -6874,6 +6874,68 @@
             });
         }
         
+        // ==================== SUCCESS/INFO MODAL ====================
+        // Nice styled popup instead of browser alert()
+        function showSuccessModal(title, message, onClose) {
+            const modalHtml = `
+                <div id="successModalOverlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 99999;">
+                    <div style="background: white; border-radius: 16px; padding: 30px; max-width: 450px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: successModalPop 0.3s ease;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                        <h2 style="margin: 0 0 15px 0; color: #28a745; font-size: 22px;">${title}</h2>
+                        <p style="margin: 0 0 25px 0; color: #555; font-size: 15px; line-height: 1.6; white-space: pre-line;">${message}</p>
+                        <button onclick="closeSuccessModal()" style="padding: 12px 40px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">OK</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes successModalPop {
+                        0% { transform: scale(0.8); opacity: 0; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                </style>
+            `;
+            
+            // Store callback
+            window.successModalCallback = onClose;
+            
+            // Add to page
+            const container = document.createElement('div');
+            container.id = 'successModalContainer';
+            container.innerHTML = modalHtml;
+            document.body.appendChild(container);
+        }
+        
+        function closeSuccessModal() {
+            const container = document.getElementById('successModalContainer');
+            if (container) container.remove();
+            if (window.successModalCallback) {
+                window.successModalCallback();
+                window.successModalCallback = null;
+            }
+        }
+        
+        // Loading overlay functions
+        function showLoading(message) {
+            let overlay = document.getElementById('loadingOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'loadingOverlay';
+                overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 99998;';
+                overlay.innerHTML = `<div style="background: white; padding: 30px 40px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
+                    <div id="loadingMessage" style="font-size: 16px; color: #333;">${message || 'Loading...'}</div>
+                </div>`;
+                document.body.appendChild(overlay);
+            } else {
+                document.getElementById('loadingMessage').textContent = message || 'Loading...';
+                overlay.style.display = 'flex';
+            }
+        }
+        
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+        
         let cachedSuppliers = [];
         let cachedItems = [];
         let cachedCustomers = [];
@@ -29206,8 +29268,13 @@
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                alert(`✅ OUTGOING PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
-                clearCreatePOForm();
+                showSuccessModal(
+                    'Purchase Order Created!',
+                    `PO Number: ${result.poId || poNumber}\n\nItems marked as "On Order".`,
+                    () => {
+                        clearCreatePOForm();
+                    }
+                );
                 
                 // Refresh items to update Qty_On_Order
                 await loadItems();
@@ -31393,19 +31460,44 @@ NOTE: Please print the attached PO document for full details.`;
         #reportSetupModal { 
             z-index: 10000 !important; 
             padding: 20px; /* Desktop padding, overridden on mobile */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #orderModal { z-index: 10500 !important; } /* Higher so it appears above reports */
         #itemPickerModal,
         #supplierPickerModal,
         #customerPickerModal { z-index: 11000 !important; } /* Picker modals highest */
         
-        /* Modal content container - this is what scrolls */
+        /* Modal content container - DESKTOP: constrain to viewport */
         #reportSetupModal > div,
-        #reportSetupModalInner,
+        #reportSetupModalInner {
+            position: relative;
+            max-height: calc(100vh - 40px) !important;
+            max-width: 95vw !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        /* Desktop report content scrolls */
+        #reportSetupContent {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+            min-height: 0 !important;
+        }
+        
+        /* Desktop report footer stays at bottom */
+        #reportSetupFooter {
+            flex-shrink: 0 !important;
+            position: relative !important;
+        }
+        
         #orderModal > div,
         #orderModalInner {
             position: relative;
-            max-height: 100vh !important;
+            max-height: calc(100vh - 40px) !important;
             overflow-y: auto !important;
             -webkit-overflow-scrolling: touch;
         }
@@ -31668,6 +31760,9 @@ NOTE: Please print the attached PO document for full details.`;
             // Reset filter mode flag
             window.itemPickerIsFilter = false;
             
+            // ALWAYS refresh from cachedItems to get latest data
+            window.itemPickerItems = cachedItems && cachedItems.length > 0 ? [...cachedItems] : [];
+            
             // Check if we're in a context where supplier is already selected (PO forms)
             let supplierContext = preSelectedSupplierId;
             let isSalesContext = false;
@@ -31719,12 +31814,6 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 supplierSelect.value = '';
                 window.itemPickerSupplierContext = ''; // No preset context
-            }
-            
-            // Get items from cache
-            window.itemPickerItems = [];
-            if (cachedItems && cachedItems.length > 0) {
-                window.itemPickerItems = cachedItems;
             }
             
             // Clear search
@@ -35286,14 +35375,29 @@ NOTE: Please print the attached PO document for full details.`;
         
         let quickAdjustCurrentQty = 0;
         
-        function openQuickAdjustModal(itemId) {
+        async function openQuickAdjustModal(itemId) {
+            // Show loading state
+            showLoading('Loading item data...');
+            
+            // Fetch fresh item data to ensure we have current quantities
+            try {
+                const result = await apiCall('getItems');
+                if (result && result.status === 'success') {
+                    cachedItems = result.data;
+                }
+            } catch (e) {
+                console.error('Error refreshing items:', e);
+            }
+            
+            hideLoading();
+            
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
                 alert('Item not found. Please refresh and try again.');
                 return;
             }
             
-            // Populate modal
+            // Populate modal with FRESH data
             document.getElementById('quickAdjustItemId').value = itemId;
             document.getElementById('quickAdjustItemName').textContent = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
             quickAdjustCurrentQty = parseInt(item.Qty_On_Hand) || 0;
