@@ -2458,6 +2458,26 @@
                 box-sizing: border-box !important;
             }
             
+            /* Hide ALL scrollbars in print */
+            #reportSetupContent *::-webkit-scrollbar {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+            }
+            
+            #reportSetupContent * {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+            }
+            
+            /* Force overflow visible on all elements */
+            #reportSetupContent div,
+            #reportSetupContent section {
+                overflow: visible !important;
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+            }
+            
             /* CHARTS - Show images, hide canvases */
             canvas {
                 display: none !important;
@@ -2621,6 +2641,8 @@
     <link rel="stylesheet" href="sports-themes.css">
     <!-- Chart.js for report visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Chart.js DataLabels plugin for showing values ON charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script>
         // Disable ALL Chart.js animations globally to prevent looping
         Chart.defaults.animation = false;
@@ -2628,6 +2650,14 @@
         Chart.defaults.transitions = {};
         Chart.defaults.responsive = false;
         Chart.defaults.maintainAspectRatio = false;
+        
+        // Register datalabels plugin globally
+        Chart.register(ChartDataLabels);
+        
+        // Default datalabels to OFF (we'll enable per-chart where needed)
+        Chart.defaults.plugins.datalabels = {
+            display: false
+        };
     </script>
 </head>
 <body class="theme-purple">
@@ -12490,12 +12520,15 @@
                     document.getElementById('filterSaleDateTo').value = '';
                     filterSales();
                     
-                    // Update button active state
+                    // Update button active state - only within sales tab
                     if (evt) {
-                        document.querySelectorAll('.oval-filter-btn').forEach(btn => {
-                            btn.style.opacity = '0.6';
-                            btn.style.transform = 'scale(1)';
-                        });
+                        const salesCard = evt.target.closest('.sales-data-card');
+                        if (salesCard) {
+                            salesCard.querySelectorAll('.oval-filter-btn').forEach(btn => {
+                                btn.style.opacity = '0.6';
+                                btn.style.transform = 'scale(1)';
+                            });
+                        }
                         evt.target.style.opacity = '1';
                         evt.target.style.transform = 'scale(1.05)';
                     }
@@ -12517,12 +12550,15 @@
             
             console.log('Filter applied'); // Debug
             
-            // Update button active state
+            // Update button active state - only within sales tab
             if (evt) {
-                document.querySelectorAll('.oval-filter-btn').forEach(btn => {
-                    btn.style.opacity = '0.6';
-                    btn.style.transform = 'scale(1)';
-                });
+                const salesCard = evt.target.closest('.sales-data-card');
+                if (salesCard) {
+                    salesCard.querySelectorAll('.oval-filter-btn').forEach(btn => {
+                        btn.style.opacity = '0.6';
+                        btn.style.transform = 'scale(1)';
+                    });
+                }
                 evt.target.style.opacity = '1';
                 evt.target.style.transform = 'scale(1.05)';
             }
@@ -12610,7 +12646,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -12636,6 +12672,15 @@
                 else if (paymentStatus === 'Partial') paymentBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Partial</span>';
                 else paymentBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Unpaid</span>';
                 
+                // Order status badge
+                const orderStatus = so.Status || 'Pending';
+                let statusBadge = '';
+                if (orderStatus === 'Delivered') statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Delivered</span>';
+                else if (orderStatus === 'Out for Delivery') statusBadge = '<span style="background: #17a2b8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">🚚 Out for Delivery</span>';
+                else if (orderStatus === 'Ready') statusBadge = '<span style="background: #6f42c1; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📦 Ready</span>';
+                else if (orderStatus === 'Voided') statusBadge = '<span style="background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⊘ Voided</span>';
+                else statusBadge = '<span style="background: #fd7e14; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⏳ Pending</span>';
+                
                 html += `<tr style="cursor: pointer;" onclick="viewSalesOrder('${so.SO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${invoiceNum}</strong></td>
                     <td>${getCustomerName(so.Customer_ID)}</td>
@@ -12644,6 +12689,7 @@
                     <td>${formatMoney(amountPaid)}</td>
                     <td data-sort="${getSortableDate(so.Due_Date)}">${dueDate}</td>
                     <td>${paymentBadge}</td>
+                    <td>${statusBadge}</td>
                 </tr>`;
             });
 
@@ -15809,6 +15855,14 @@
                                             callbacks: {
                                                 label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
                                             }
+                                        },
+                                        datalabels: {
+                                            display: true,
+                                            anchor: 'end',
+                                            align: 'end',
+                                            color: '#333',
+                                            font: { weight: 'bold', size: 10 },
+                                            formatter: (value) => '$' + value.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})
                                         }
                                     },
                                     scales: {
@@ -15844,6 +15898,16 @@
                                         tooltip: {
                                             callbacks: {
                                                 label: (ctx) => ctx.label + ': $' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                                                return pct > 5 ? pct + '%' : '';
                                             }
                                         }
                                     }
@@ -16126,7 +16190,13 @@
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
-                                        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } }
+                                        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 12 },
+                                            formatter: (value) => value > 0 ? value : ''
+                                        }
                                     }
                                 }
                             });
@@ -16156,6 +16226,14 @@
                                             callbacks: {
                                                 label: (ctx) => '$' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
                                             }
+                                        },
+                                        datalabels: {
+                                            display: true,
+                                            anchor: 'end',
+                                            align: 'end',
+                                            color: '#333',
+                                            font: { weight: 'bold', size: 10 },
+                                            formatter: (value) => '$' + value.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})
                                         }
                                     },
                                     scales: {
@@ -16516,7 +16594,17 @@
                                         responsive: false, animation: false,
                                         maintainAspectRatio: false,
                                         plugins: {
-                                            legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
+                                            legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } },
+                                            datalabels: {
+                                                display: true,
+                                                color: '#fff',
+                                                font: { weight: 'bold', size: 11 },
+                                                formatter: (value, ctx) => {
+                                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                                                    return pct > 5 ? pct + '%' : '';
+                                                }
+                                            }
                                         }
                                     }
                                 });
@@ -16805,7 +16893,13 @@
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
-                                        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } }
+                                        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 12 },
+                                            formatter: (value) => value > 0 ? value : ''
+                                        }
                                     }
                                 }
                             });
@@ -17114,7 +17208,19 @@
                                 options: {
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
-                                    plugins: { legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } } }
+                                    plugins: { 
+                                        legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                                                return pct > 5 ? pct + '%' : '';
+                                            }
+                                        }
+                                    }
                                 }
                             });
                         }
@@ -17463,6 +17569,12 @@
                                         legend: {
                                             position: 'bottom',
                                             labels: { padding: 15, usePointStyle: true }
+                                        },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 12 },
+                                            formatter: (value) => value > 0 ? value : ''
                                         }
                                     }
                                 }
@@ -17659,7 +17771,8 @@
             
             // Calculate overall metrics
             const totalPOs = purchases.length;
-            const onTimeRate = totalPOs > 0 ? ((totalOnTime / (totalOnTime + totalLate)) * 100) : 0;
+            const totalWithTiming = totalOnTime + totalLate;
+            const onTimeRate = totalWithTiming > 0 ? ((totalOnTime / totalWithTiming) * 100) : 0;
             const avgFulfillmentDays = allFulfillmentDays.length > 0 
                 ? allFulfillmentDays.reduce((a, b) => a + b, 0) / allFulfillmentDays.length 
                 : 0;
@@ -19799,7 +19912,13 @@
                                             responsive: false, animation: false,
                                             maintainAspectRatio: false,
                                             plugins: {
-                                                legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } }
+                                                legend: { position: 'right', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } },
+                                                datalabels: {
+                                                    display: true,
+                                                    color: '#fff',
+                                                    font: { weight: 'bold', size: 12 },
+                                                    formatter: (value) => value > 0 ? value : ''
+                                                }
                                             }
                                         }
                                     });
@@ -20330,7 +20449,17 @@
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
                                     plugins: {
-                                        legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } }
+                                        legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                                                return pct > 5 ? pct + '%' : '';
+                                            }
+                                        }
                                     }
                                 }
                             });
@@ -20528,7 +20657,19 @@
                                 options: {
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
-                                    plugins: { legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } } }
+                                    plugins: { 
+                                        legend: { position: 'right', labels: { padding: 8, usePointStyle: true, font: { size: 10 } } },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                                                return pct > 5 ? pct + '%' : '';
+                                            }
+                                        }
+                                    }
                                 }
                             });
                         }
@@ -21612,6 +21753,16 @@
                                         tooltip: {
                                             callbacks: {
                                                 label: (ctx) => ctx.label + ': $' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits: 2})
+                                            }
+                                        },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                                                return pct > 5 ? pct + '%' : '';
                                             }
                                         }
                                     }
@@ -22972,7 +23123,12 @@
                 };
             });
             
-            // Find pending sales orders (not yet fulfilled)
+            // Find items that actually have backorders (Qty_On_Backorder > 0)
+            const backorderedItemIds = new Set(
+                items.filter(i => (parseInt(i.Qty_On_Backorder) || 0) > 0).map(i => i.Item_ID)
+            );
+            
+            // Find pending sales orders that contain backordered items
             const pendingSales = sales.filter(s => 
                 s.Status === 'Pending' || s.Status === 'Ready' || s.Status === 'Out for Delivery'
             );
@@ -22997,8 +23153,8 @@
                         const qty = parseInt(line.Quantity) || 0;
                         const qtyOnHand = item.qtyOnHand;
                         
-                        // Check if this item is on backorder (insufficient stock)
-                        if (qtyOnHand < 0 || item.qtyOnBackorder > 0) {
+                        // Check if this item is on backorder (has Qty_On_Backorder > 0 OR negative stock)
+                        if (backorderedItemIds.has(line.Item_ID) || qtyOnHand < 0) {
                             // Add to customer backorders
                             if (!customerBackorders[so.Customer_ID]) {
                                 customerBackorders[so.Customer_ID] = {
