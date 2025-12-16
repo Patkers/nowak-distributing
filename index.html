@@ -5,20 +5,22 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Monday, December 16, 2025
-         VERSION: V16I-20251216-DATEFIX
+         VERSION: V16N-20251216-STICKYFOOTER
          =====================================================
          CHANGES IN THIS VERSION:
-         - Payment confirmation popup shows breakdown
-         - Partial payments ask "Add another payment now?"
-         - Paid in full shows celebration message
-         - Report auto-refreshes after payment
-         - FIXED: Invalid Date (NaN days) badge when no valid expected date
-         - All dropdowns refresh on environment switch
+         - Cache control headers to force refresh
+         - Null-safe touch handlers
+         - Smoother scrolling CSS
+         - FIXED: Footer bars now sticky at bottom on mobile
+         - All modal/picker footers stay anchored to bottom
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Nowak Distributing - Inventory Management System</title>
     <style>
         * {
@@ -1379,15 +1381,18 @@
             
             /* Report Modal Footer - Ensure buttons are visible */
             #reportSetupFooter {
-                position: relative !important;
-                bottom: auto !important;
-                left: auto !important;
-                right: auto !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
                 width: 100% !important;
                 padding: 10px 12px !important;
                 gap: 8px !important;
-                z-index: 10 !important;
+                z-index: 100 !important;
                 flex-shrink: 0 !important;
+                background: #f8f9fa !important;
+                border-top: 2px solid #ddd !important;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important;
             }
         }
         
@@ -1609,14 +1614,17 @@
             
             /* Footer - fixed at bottom */
             #reportSetupFooter {
-                position: relative !important;
-                bottom: auto !important;
-                left: auto !important;
-                right: auto !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
                 width: 100% !important;
                 border-radius: 0 !important;
-                z-index: 10 !important;
+                z-index: 100 !important;
                 flex-shrink: 0 !important;
+                background: #f8f9fa !important;
+                border-top: 2px solid #ddd !important;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1) !important;
             }
         }
         
@@ -6890,17 +6898,19 @@
             threshold: 10  // pixels - if finger moves more than this, it's a scroll not a tap
         };
         
-        // Call this on touchstart for picker cards
+        // Call this on touchstart for picker cards - null-safe
         function pickerTouchStart(e) {
+            if (!e || !e.touches || !e.touches[0]) return;
             const touch = e.touches[0];
             pickerTouchState.startX = touch.clientX;
             pickerTouchState.startY = touch.clientY;
             pickerTouchState.moved = false;
         }
         
-        // Call this on touchmove for picker cards
+        // Call this on touchmove for picker cards - null-safe
         function pickerTouchMove(e) {
-            if (pickerTouchState.moved) return; // Already marked as moved
+            if (pickerTouchState.moved) return;
+            if (!e || !e.touches || !e.touches[0]) return;
             const touch = e.touches[0];
             const deltaX = Math.abs(touch.clientX - pickerTouchState.startX);
             const deltaY = Math.abs(touch.clientY - pickerTouchState.startY);
@@ -9119,9 +9129,52 @@
             
             if (result && result.status === 'success') {
                 cachedCustomers = result.data;
-                displayCustomers(result.data);
+                
+                // Calculate Top Customer rankings based on sales
+                await calculateCustomerRankings();
+                
+                displayCustomers(cachedCustomers);
             } else {
                 document.getElementById('customersTable').innerHTML = '<div class="loading">Error loading customers</div>';
+            }
+        }
+        
+        // Calculate customer rankings based on total sales
+        async function calculateCustomerRankings() {
+            try {
+                // Get sales data if not already loaded
+                const salesResult = await apiCall('getSalesOrders');
+                if (!salesResult || salesResult.status !== 'success') return;
+                
+                const sales = salesResult.data || [];
+                
+                // Calculate total revenue per customer
+                const customerRevenue = {};
+                sales.forEach(sale => {
+                    const custId = sale.Customer_ID;
+                    const amount = parseFloat(sale.Total_Amount) || 0;
+                    if (!customerRevenue[custId]) {
+                        customerRevenue[custId] = 0;
+                    }
+                    customerRevenue[custId] += amount;
+                });
+                
+                // Sort customers by revenue
+                const rankedCustomers = Object.entries(customerRevenue)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([custId, revenue], index) => ({ custId, revenue, rank: index + 1 }));
+                
+                // Assign ranks to cached customers
+                cachedCustomers.forEach(c => {
+                    const ranked = rankedCustomers.find(r => r.custId === c.Customer_ID);
+                    if (ranked) {
+                        c.Top_Customer_Rank = ranked.rank;
+                        c.Total_Revenue = ranked.revenue;
+                    }
+                });
+                
+            } catch (err) {
+                console.log('Could not calculate customer rankings:', err);
             }
         }
 
@@ -9136,8 +9189,21 @@
             html += '</tr></thead><tbody>';
 
             customers.forEach(c => {
+                // Build badge HTML
+                let badgeHtml = '';
+                if (c.Top_Customer_Rank) {
+                    const rank = parseInt(c.Top_Customer_Rank);
+                    if (rank === 1) {
+                        badgeHtml = `<span style="background: #ffd700; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px;">🥇 #1</span>`;
+                    } else if (rank <= 10) {
+                        badgeHtml = `<span style="background: #fff9c4; color: #f57f17; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px;">⭐ Top 10</span>`;
+                    } else if (rank <= 25) {
+                        badgeHtml = `<span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px;">⭐ Top 25</span>`;
+                    }
+                }
+                
                 html += `<tr style="cursor: pointer;" onclick='editCustomer(${JSON.stringify(c).replace(/'/g, "&#39;")})' onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-                    <td><strong>${c.Customer_Name}</strong></td>
+                    <td><strong>${c.Customer_Name}</strong>${badgeHtml}</td>
                     <td>${c.Contact_Name || '-'}</td>
                     <td>${c.Phone || '-'}</td>
                     <td>${c.Email || '-'}</td>
@@ -28120,7 +28186,7 @@
                 return;
             }
             
-            if (po.Status !== 'Ordered' && po.Status !== 'Partial') {
+            if (po.Status !== 'Ordered' && po.Status !== 'Partial' && po.Status !== 'In Transit') {
                 alert('This PO has already been fully received');
                 return;
             }
@@ -28220,6 +28286,8 @@
                 const qtyPrevReceived = parseFloat(line.Qty_Received) || 0;
                 const qtyPending = qtyOrdered - qtyPrevReceived;
                 const isComplete = qtyPrevReceived >= qtyOrdered;
+                const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                const expectedUnits = qtyPending * unitsPerPkg;
                 
                 // Status indicator
                 let statusBadge, statusBg;
@@ -28239,6 +28307,15 @@
                         <td style="padding: 12px; word-wrap: break-word;">
                             <strong style="font-size: 18px; line-height: 1.3; display: block;">${itemName}</strong>
                             <div style="font-size: 15px; color: #666; margin-top: 4px;">${item?.SKU || ''}</div>
+                            <div style="font-size: 13px; color: #1976d2; margin-top: 4px; font-weight: 600;">
+                                📦 ${unitsPerPkg} units/pkg ${!isComplete && qtyPending > 0 ? `• Expect <strong>${expectedUnits}</strong> units total` : ''}
+                            </div>
+                            ${!isComplete ? `
+                            <button type="button" onclick="adjustShortPackage('${line.Item_ID}', '${itemName}', ${unitsPerPkg})" 
+                                    style="margin-top: 8px; padding: 4px 10px; font-size: 12px; background: #fff3e0; color: #e65100; border: 1px solid #ffb74d; border-radius: 6px; cursor: pointer;">
+                                ⚠️ Short Package?
+                            </button>
+                            ` : ''}
                         </td>
                         <td style="text-align: center; padding: 12px 8px; font-weight: bold; font-size: 18px;">${qtyOrdered}</td>
                         <td style="text-align: center; padding: 12px 8px; color: ${qtyPrevReceived > 0 ? '#28a745' : '#999'}; font-weight: ${qtyPrevReceived > 0 ? 'bold' : 'normal'}; font-size: 18px;">
@@ -28316,6 +28393,7 @@
             `;
             
             document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('modalTitle').textContent = `Receive PO: ${po.Invoice_Number || po.PO_ID}`;
             document.getElementById('modalEditBtn').style.display = 'none';
             document.getElementById('modalPrintBtn').style.display = 'none';
             document.getElementById('modalSaveBtn').style.display = 'inline-block';
@@ -28329,6 +28407,58 @@
                     updateReceiveLinePartial(i);
                 }
             }, 100);
+        }
+        
+        // Handle short package - opens quick adjust modal
+        function adjustShortPackage(itemId, itemName, unitsPerPkg) {
+            const shortUnits = prompt(
+                `⚠️ Short Package Adjustment\n\n` +
+                `Item: ${itemName}\n` +
+                `Expected: ${unitsPerPkg} units per package\n\n` +
+                `How many units were MISSING from the package?\n` +
+                `(Enter a positive number, e.g., 4 if only 20 of 24 received)`
+            );
+            
+            if (shortUnits === null) return; // Cancelled
+            
+            const missing = parseInt(shortUnits);
+            if (isNaN(missing) || missing <= 0) {
+                alert('Please enter a valid number of missing units');
+                return;
+            }
+            
+            if (missing >= unitsPerPkg) {
+                alert(`That's the entire package! If you didn't receive the package at all, reduce the "Receive Now" quantity instead.`);
+                return;
+            }
+            
+            // Confirm and create adjustment
+            const reason = `Short Package - received ${unitsPerPkg - missing} of ${unitsPerPkg} units`;
+            
+            if (confirm(
+                `Create inventory adjustment?\n\n` +
+                `Item: ${itemName}\n` +
+                `Adjustment: -${missing} units\n` +
+                `Reason: ${reason}\n\n` +
+                `This will reduce the inventory by ${missing} units after receiving.`
+            )) {
+                // Create the adjustment
+                apiCall('adjustInventory', {
+                    itemId: itemId,
+                    quantity: -missing,
+                    adjustmentType: 'Manual',
+                    reason: reason,
+                    user: 'Receiving'
+                }).then(result => {
+                    if (result && result.status === 'success') {
+                        alert(`✅ Adjustment recorded!\n\n-${missing} units for: ${reason}\n\nContinue receiving the PO normally.`);
+                    } else {
+                        alert('❌ Error creating adjustment: ' + (result?.message || 'Unknown error'));
+                    }
+                }).catch(err => {
+                    alert('❌ Error: ' + err.message);
+                });
+            }
         }
         
         // Update line for partial receiving
@@ -28393,6 +28523,23 @@
             if (isCommittingReceivePartial) {
                 console.log('Already committing, ignoring duplicate click');
                 return;
+            }
+            
+            // SAFETY CHECK: Re-verify PO status before receiving
+            const poCheck = await apiCall('getPurchaseOrders');
+            if (poCheck && poCheck.status === 'success') {
+                const currentPO = poCheck.data.find(p => p.PO_ID === poId);
+                if (!currentPO) {
+                    alert('❌ Error: Purchase order not found. It may have been deleted.');
+                    return;
+                }
+                if (currentPO.Status === 'Received') {
+                    alert('⚠️ This PO has already been fully received!\n\nInventory was already updated. No changes made.');
+                    document.getElementById('orderModal').style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                    loadPurchases();
+                    return;
+                }
             }
             
             const notes = document.getElementById('receiveNotes')?.value || '';
@@ -29327,9 +29474,7 @@ NOTE: Please print the attached PO document for full details.`;
                 
                 html += `
                     <div class="item-picker-card" style="position: relative; ${cardStyle}"
-                         ontouchstart="pickerTouchStart(event)" 
-                         ontouchmove="pickerTouchMove(event)" 
-                         ontouchend="if(pickerTouchEnd()) ${clickHandler}"
+                         data-click-action="${clickHandler}"
                          onclick="${clickHandler}">
                         ${checkboxHtml}
                         <div class="item-picker-header-row" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px;">
@@ -30749,6 +30894,8 @@ NOTE: Please print the attached PO document for full details.`;
             overflow-y: auto;
             padding: 10px;
             -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            overscroll-behavior: contain;
         }
         
         .item-picker-card {
@@ -30758,16 +30905,32 @@ NOTE: Please print the attached PO document for full details.`;
             margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
+            transition: transform 0.1s, box-shadow 0.1s;
             border: 2px solid transparent;
             border-left: 4px solid #c0c0c0;
+            touch-action: pan-y;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
         }
         
-        .item-picker-card:hover,
+        .item-picker-footer {
+            position: sticky !important;
+            bottom: 0 !important;
+            z-index: 100 !important;
+            background: #f8f9fa !important;
+            flex-shrink: 0 !important;
+        }
+        
         .item-picker-card:active {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            border-color: #999;
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        @media (hover: hover) {
+            .item-picker-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+                border-color: #999;
+            }
         }
         
         .item-picker-card-header {
