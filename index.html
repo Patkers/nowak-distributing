@@ -5,7 +5,7 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Monday, December 16, 2025
-         VERSION: V16D-20251216-CUSTLOCATION
+         VERSION: V16G-20251216-PAYFIX
          =====================================================
          CHANGES IN THIS VERSION:
          - Embedded diagnostic tool as modal (no longer separate file)
@@ -13,8 +13,13 @@
          - Fixed horizontal scrolling in reports (was blocked by touch-action: pan-y)
          - Fixed Adjust Inventory button not working after selecting reason
          - Updated report supplier filter to use new picker style
-         - NEW: Quick Adjust Modal - adjust inventory from within reports without leaving
-         - NEW: Top Customers now show street address and city for identification
+         - Quick Adjust Modal - adjust inventory from within reports without leaving
+         - Top Customers now show street address and city for identification
+         - Quick View Item Modal - view item details from reports without leaving
+         - Supplier filter dropdown in Low Stock - Needs Reorder section
+         - FIXED: Past Due Payments using wrong field (Sale_ID vs SO_ID)
+         - FIXED: Pay button now works correctly with SO_ID
+         - FIXED: View button in Past Due now opens order modal
          - All dropdowns refresh on environment switch
          ===================================================== -->
     <meta charset="UTF-8">
@@ -6392,6 +6397,32 @@
                     <button onclick="closeQuickAdjustModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 16px; cursor: pointer;">Cancel</button>
                     <button onclick="submitQuickAdjustment()" style="flex: 2; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; font-size: 16px; font-weight: 600; cursor: pointer;">💾 Save Adjustment</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick View Item Modal (for use within reports) -->
+    <div id="quickViewItemModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10002; overflow-y: auto; padding: 20px;">
+        <div style="max-width: 550px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+            <!-- Header -->
+            <div id="quickViewItemHeader" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 700;">📦 Item Details</h2>
+                    <p id="quickViewItemSKU" style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;"></p>
+                </div>
+                <button onclick="closeQuickViewItemModal()" style="background: rgba(0,0,0,0.2); border: none; color: white; font-size: 24px; width: 36px; height: 36px; border-radius: 8px; cursor: pointer;">×</button>
+            </div>
+            
+            <!-- Body -->
+            <div id="quickViewItemBody" style="padding: 25px;">
+                <!-- Content populated by JS -->
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 15px 25px 25px; display: flex; gap: 10px;">
+                <button onclick="closeQuickViewItemModal()" style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 14px; cursor: pointer;">Close</button>
+                <button onclick="quickViewToAdjust()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: #f39c12; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">📝 Adjust Qty</button>
+                <button onclick="quickViewToCreatePO()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: #22c55e; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">📦 Create PO</button>
             </div>
         </div>
     </div>
@@ -22213,14 +22244,14 @@
                     html += `
                         <tr>
                             <td>${p.Customer_Name}</td>
-                            <td>SO-${p.Sale_ID}</td>
+                            <td>${p.Invoice_Number || p.SO_ID || 'N/A'}</td>
                             <td>${dueDateStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${formatMoney(p.Balance)}</td>
                             <td>
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <button class="oval-action-btn oval-action-primary" onclick="viewSaleOrder('${p.Sale_ID}')">👁️ View</button>
-                                    <button class="oval-action-btn oval-action-success" onclick="recordSalesPayment('${p.Sale_ID}', ${p.Total_Amount || 0}, ${p.Amount_Paid || 0})">💰 Pay</button>
+                                    <button class="oval-action-btn oval-action-primary" onclick="viewSaleOrder('${p.SO_ID}')">👁️ View</button>
+                                    <button class="oval-action-btn oval-action-success" onclick="recordSalesPayment('${p.SO_ID}', ${p.Total_Amount || 0}, ${p.Amount_Paid || 0})">💰 Pay</button>
                                 </div>
                             </td>
                         </tr>
@@ -22350,6 +22381,12 @@
             }
             html += '</div>';
             
+            // Get unique suppliers from lowStock for filter dropdown
+            const lowStockSuppliers = [...new Set(lowStock.map(item => item.Supplier_ID))].map(suppId => {
+                const supp = (cachedSuppliers || []).find(s => s.Supplier_ID === suppId);
+                return { id: suppId, name: supp?.Supplier_Name || suppId };
+            }).sort((a, b) => a.name.localeCompare(b.name));
+            
             // 4. LOW STOCK
             html += `
                 <div class="action-section warning">
@@ -22363,6 +22400,16 @@
                     <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
                         <strong>Items at or below reorder point</strong> (considering pending orders). Sorted by lowest availability first.
                     </p>
+                    ${lowStock.length > 0 ? `
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <label style="font-weight: 600; color: #666; font-size: 13px;">🔍 Filter by Supplier:</label>
+                        <select id="lowStockSupplierFilter" onchange="filterLowStockTable()" style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 200px;">
+                            <option value="">All Suppliers (${lowStock.length})</option>
+                            ${lowStockSuppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                        </select>
+                        <span id="lowStockFilterCount" style="font-size: 13px; color: #888;"></span>
+                    </div>
+                    ` : ''}
                     <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin-bottom: 15px;">
                         <div style="font-weight: 600; color: #92400e; margin-bottom: 6px;">📐 Gap Formula:</div>
                         <div style="font-family: monospace; font-size: 13px; color: #78350f; line-height: 1.6;">
@@ -22399,7 +22446,7 @@
                 lowStock.forEach(item => {
                     const backorder = parseInt(item.Qty_On_Backorder) || 0;
                     html += `
-                        <tr>
+                        <tr data-supplier-id="${item.Supplier_ID}">
                             <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
                             <td>${item.SKU || 'N/A'}</td>
                             <td>${item.Item_Description}</td>
@@ -23229,10 +23276,47 @@
         }
         
         // Helper functions for Action Dashboard
+        function filterLowStockTable() {
+            const filterValue = document.getElementById('lowStockSupplierFilter').value;
+            const rows = document.querySelectorAll('.action-table tbody tr[data-supplier-id]');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                if (!filterValue || row.dataset.supplierId === filterValue) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update count display
+            const countEl = document.getElementById('lowStockFilterCount');
+            if (countEl) {
+                if (filterValue) {
+                    countEl.textContent = `Showing ${visibleCount} items`;
+                } else {
+                    countEl.textContent = '';
+                }
+            }
+            
+            // Uncheck "select all" when filtering
+            const selectAll = document.getElementById('selectAllLowStock');
+            if (selectAll) selectAll.checked = false;
+        }
+        
         function toggleSelectAllLowStock() {
+            const filterValue = document.getElementById('lowStockSupplierFilter')?.value || '';
             const checkboxes = document.querySelectorAll('.lowstock-checkbox');
             const selectAll = document.getElementById('selectAllLowStock');
-            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            
+            checkboxes.forEach(cb => {
+                const row = cb.closest('tr');
+                // Only select visible rows (matching filter)
+                if (!filterValue || row.dataset.supplierId === filterValue) {
+                    cb.checked = selectAll.checked;
+                }
+            });
         }
         
         function bulkReorder() {
@@ -23448,8 +23532,8 @@
         }
         
         function viewSaleOrder(saleId) {
-            showSection('sales');
-            // TODO: Open sale order modal
+            // Use the existing viewSalesOrder function which opens the modal
+            viewSalesOrder(saleId);
         }
         
         function markForClearance(itemId) {
@@ -30272,8 +30356,9 @@ NOTE: Please print the attached PO document for full details.`;
          * View item details - opens Items tab and could highlight the item
          */
         function viewItemDetails(itemId) {
-            switchTab('items');
-            // TODO: Could add auto-filtering or highlighting of the specific item
+            // Use Quick View Modal instead of navigating away
+            // This keeps the report open so user can continue working
+            openQuickViewItemModal(itemId);
         }
         
         /**
@@ -34658,6 +34743,121 @@ NOTE: Please print the attached PO document for full details.`;
             await runDiagnosticTest('customers');
             
             resultsDiv.innerHTML += `<p style="color: #4ade80; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333;">✨ Diagnostic complete!</p>`;
+        }
+        
+        // ==================== QUICK VIEW ITEM MODAL ====================
+        // For viewing item details within reports without navigating away
+        
+        let quickViewCurrentItemId = null;
+        
+        function openQuickViewItemModal(itemId) {
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            if (!item) {
+                alert('Item not found. Please refresh and try again.');
+                return;
+            }
+            
+            quickViewCurrentItemId = itemId;
+            
+            // Get supplier name
+            const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === item.Supplier_ID);
+            const supplierName = supplier ? supplier.Supplier_Name : item.Supplier_ID || 'N/A';
+            
+            // Calculate stock status
+            const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+            const reorderPoint = parseInt(item.Reorder_Point) || 0;
+            const onOrder = parseInt(item.Qty_On_Order) || 0;
+            const backorder = parseInt(item.Qty_On_Backorder) || 0;
+            
+            let stockStatus = '', stockColor = '', stockBg = '';
+            if (qtyOnHand < 0) {
+                stockStatus = '🚨 NEGATIVE'; stockColor = '#dc2626'; stockBg = '#fef2f2';
+            } else if (qtyOnHand === 0) {
+                stockStatus = '🔴 Out of Stock'; stockColor = '#dc2626'; stockBg = '#fef2f2';
+            } else if (qtyOnHand <= reorderPoint) {
+                stockStatus = '🟡 Low Stock'; stockColor = '#f59e0b'; stockBg = '#fffbeb';
+            } else {
+                stockStatus = '🟢 In Stock'; stockColor = '#22c55e'; stockBg = '#f0fdf4';
+            }
+            
+            // Populate header
+            document.getElementById('quickViewItemSKU').textContent = item.SKU || item.Item_ID;
+            
+            // Build body content
+            const bodyHtml = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 5px 0; color: #333; font-size: 18px;">${item.Item_Description || 'No Description'}</h3>
+                    <p style="margin: 0; color: #666; font-size: 14px;">Supplier: ${supplierName}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: ${stockBg}; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid ${stockColor}20;">
+                        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">On Hand</div>
+                        <div style="font-size: 28px; font-weight: 700; color: ${stockColor};">${qtyOnHand}</div>
+                        <div style="font-size: 11px; color: ${stockColor}; font-weight: 600;">${stockStatus}</div>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Reorder Point</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #333;">${reorderPoint}</div>
+                        <div style="font-size: 11px; color: #888;">Min level</div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 11px; color: #666;">On Order</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #1976d2;">${onOrder}</div>
+                    </div>
+                    <div style="background: ${backorder > 0 ? '#fff3e0' : '#f8f9fa'}; padding: 12px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 11px; color: #666;">Backorder</div>
+                        <div style="font-size: 20px; font-weight: 700; color: ${backorder > 0 ? '#f57c00' : '#333'};">${backorder}</div>
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Package Cost:</span>
+                        <span style="font-weight: 600;">${formatMoney(parseFloat(item.Package_Cost) || 0)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Sell Price:</span>
+                        <span style="font-weight: 600;">${formatMoney(parseFloat(item.Sell_Price) || 0)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #666;">Units/Package:</span>
+                        <span style="font-weight: 600;">${item.Units_Per_Package || 1}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('quickViewItemBody').innerHTML = bodyHtml;
+            
+            // Show modal
+            document.getElementById('quickViewItemModal').style.display = 'block';
+            document.body.classList.add('modal-open');
+        }
+        
+        function closeQuickViewItemModal() {
+            document.getElementById('quickViewItemModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
+            quickViewCurrentItemId = null;
+        }
+        
+        function quickViewToAdjust() {
+            if (quickViewCurrentItemId) {
+                closeQuickViewItemModal();
+                openQuickAdjustModal(quickViewCurrentItemId);
+            }
+        }
+        
+        function quickViewToCreatePO() {
+            if (quickViewCurrentItemId) {
+                const item = (cachedItems || []).find(i => i.Item_ID === quickViewCurrentItemId);
+                closeQuickViewItemModal();
+                closeReportSetup();
+                switchTab('createpo');
+                // Could pre-populate supplier here if desired
+            }
         }
         
         // ==================== QUICK ADJUST INVENTORY MODAL ====================
