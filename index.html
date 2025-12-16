@@ -8951,11 +8951,15 @@
                 // Stock status calculations
                 const qtyOnHand = parseFloat(item.Qty_On_Hand) || 0;
                 const qtyOnOrder = parseFloat(item.Qty_On_Order) || 0;
+                const committed = parseFloat(item.Qty_On_Backorder) || 0;
                 const reorderPoint = parseFloat(item.Reorder_Point) || 0;
                 const negativeStock = qtyOnHand < 0;
                 const lowStock = qtyOnHand <= reorderPoint && qtyOnHand >= 0;
                 const hasOnOrder = qtyOnOrder > 0;
-                const needsReorder = (lowStock || negativeStock) && !hasOnOrder;
+                // Effective available = On Hand - Committed + On Order
+                const effectiveAvailable = qtyOnHand - committed + qtyOnOrder;
+                // Needs reorder only if effective available (with on-order) is still below reorder point
+                const needsReorder = effectiveAvailable < reorderPoint && reorderPoint > 0;
                 
                 let matchesStock = true;
                 if (stockFilter === 'negative') {
@@ -12879,12 +12883,18 @@
                 let matchesStock = true;
                 if (stockFilter) {
                     const qty = parseFloat(item.Qty_On_Hand) || 0;
+                    const onOrder = parseFloat(item.Qty_On_Order) || 0;
+                    const committed = parseFloat(item.Qty_On_Backorder) || 0;
                     const reorderPoint = parseFloat(item.Reorder_Point) || 0;
+                    const effectiveAvailable = qty - committed + onOrder;
                     
                     if (stockFilter === 'negative') matchesStock = qty < 0;
                     else if (stockFilter === 'out') matchesStock = qty === 0;
+                    // Low stock = physical qty is low (shows current shelf state)
                     else if (stockFilter === 'low') matchesStock = qty > 0 && qty <= reorderPoint;
                     else if (stockFilter === 'ok') matchesStock = qty > reorderPoint;
+                    // Needs reorder = effective available (with on-order) is still below reorder
+                    else if (stockFilter === 'reorder') matchesStock = effectiveAvailable < reorderPoint && reorderPoint > 0;
                 }
                 
                 return matchesSearch && matchesSupplier && matchesStock;
@@ -12936,7 +12946,10 @@
             
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const onOrder = parseFloat(item.Qty_On_Order) || 0;
+                const committed = parseFloat(item.Qty_On_Backorder) || 0;
                 const reorderPoint = parseFloat(item.Reorder_Point) || 0;
+                const effectiveAvailable = qty - committed + onOrder;
                 const packageCost = parseFloat(item.Package_Cost) || 0;
                 const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
                 const unitCost = packageCost / unitsPerPackage;
@@ -12947,9 +12960,11 @@
                 totalCostValue += Math.abs(qty) * unitCost;
                 totalSellValue += Math.abs(qty) * unitSellPrice;
                 
+                // Count based on physical qty for Negative/Out/In Stock
+                // But "Low Stock" means needs reorder (effective available below reorder point)
                 if (qty < 0) negativeCount++;
                 else if (qty === 0) outOfStockCount++;
-                else if (qty <= reorderPoint) lowStockCount++;
+                else if (effectiveAvailable < reorderPoint && reorderPoint > 0) lowStockCount++;
                 else inStockCount++;
             });
             
@@ -19846,6 +19861,7 @@
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
                 const backorder = parseInt(item.Qty_On_Backorder) || 0;
                 const cost = parseFloat(item.Package_Cost) || 0;
                 const sell = parseFloat(item.Unit_Sell_Price) || parseFloat(item.Sell_Price) || 0;
@@ -19853,14 +19869,16 @@
                 const unitCost = cost / units;
                 const reorder = parseInt(item.Reorder_Point) || 0;
                 const margin = sell > 0 ? ((sell - unitCost) / sell * 100) : 0;
+                const effectiveAvailable = qty - backorder + onOrder;
                 
                 totalQty += qty;
                 totalBackorder += backorder;
                 totalValue += Math.abs(qty) * unitCost;
                 totalSellValue += Math.abs(qty) * sell;
                 
+                // Low stock = effective available (with on-order) below reorder point
                 if (qty < 0) negativeCount++;
-                else if (qty <= reorder && reorder > 0) lowStockCount++;
+                else if (effectiveAvailable < reorder && reorder > 0) lowStockCount++;
                 else if (qty > 0) inStockCount++;
                 
                 // Collect margin data for chart
@@ -21820,27 +21838,36 @@
             
             const lowStock = items.filter(item => {
                 const qty = parseFloat(item.Qty_On_Hand || 0);
+                const onOrder = parseFloat(item.Qty_On_Order || 0);
                 const committed = committedByItem[item.Item_ID] || 0;
-                const available = qty - committed;
+                // Available NOW (for immediate orders)
+                const availableNow = qty - committed;
+                // Effective available INCLUDING pending orders
+                const effectiveAvailable = qty - committed + onOrder;
                 const reorder = parseFloat(item.Reorder_Point || 0);
-                return available <= reorder && reorder > 0;
+                // Only show if EFFECTIVE available (with on-order) is still below reorder point
+                return effectiveAvailable <= reorder && reorder > 0;
             }).map(item => {
                 const qty = parseFloat(item.Qty_On_Hand || 0);
+                const onOrder = parseFloat(item.Qty_On_Order || 0);
                 const committed = committedByItem[item.Item_ID] || 0;
-                const available = qty - committed;
+                const availableNow = qty - committed;
+                const effectiveAvailable = qty - committed + onOrder;
                 const reorder = parseFloat(item.Reorder_Point || 0);
                 const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
-                const unitsNeeded = reorder - available;
+                // Units needed = gap to reach reorder point (considering what's on order)
+                const unitsNeeded = Math.max(0, reorder - effectiveAvailable);
                 return {
                     ...item,
                     Qty: qty,
                     Committed: committed,
-                    Available: available,
+                    Available: availableNow,  // Show current available (without on-order)
+                    EffectiveAvailable: effectiveAvailable,  // Including on-order
                     Reorder_Point: reorder,
                     Units_Needed: unitsNeeded,
                     Supplier_Name: supplier?.Supplier_Name || 'Unknown'
                 };
-            }).sort((a, b) => (a.Available / a.Reorder_Point) - (b.Available / b.Reorder_Point));
+            }).sort((a, b) => (a.EffectiveAvailable / a.Reorder_Point) - (b.EffectiveAvailable / b.Reorder_Point));
             
             // ===== 5. DEAD STOCK (NO SALES) =====
             const deadStockDays = 180; // Configurable threshold
@@ -22582,9 +22609,9 @@
                     <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin-bottom: 15px;">
                         <div style="font-weight: 600; color: #92400e; margin-bottom: 6px;">📐 Gap Formula:</div>
                         <div style="font-family: monospace; font-size: 13px; color: #78350f; line-height: 1.6;">
-                            Available = On Hand − Committed (pending orders)<br>
-                            Gap = Reorder Point − Available<br>
-                            <em style="font-size: 12px; color: #a16207;">This ensures you order enough to cover existing orders AND maintain safety stock.</em>
+                            Effective Available = On Hand − Committed + On Order<br>
+                            Gap = Reorder Point − Effective Available<br>
+                            <em style="font-size: 12px; color: #a16207;">Items only appear here if Effective Available (including pending POs) is below Reorder Point.</em>
                         </div>
                     </div>
             `;
@@ -22601,6 +22628,7 @@
                                 <th>Item</th>
                                 <th>Supplier</th>
                                 <th style="text-align: center;">On Hand</th>
+                                <th style="text-align: center;">On Order</th>
                                 <th style="text-align: center;">Backorder</th>
                                 <th style="text-align: center;">Committed</th>
                                 <th style="text-align: center;">Available</th>
@@ -22614,6 +22642,7 @@
                 
                 lowStock.forEach(item => {
                     const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                    const onOrder = parseInt(item.Qty_On_Order) || 0;
                     html += `
                         <tr data-supplier-id="${item.Supplier_ID}">
                             <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
@@ -22621,13 +22650,17 @@
                             <td>${item.Item_Description}</td>
                             <td>${item.Supplier_Name}</td>
                             <td style="text-align: center;">${item.Qty}</td>
+                            <td style="text-align: center; color: ${onOrder > 0 ? '#2563eb' : '#666'}; font-weight: ${onOrder > 0 ? '600' : 'normal'}; background: ${onOrder > 0 ? '#eff6ff' : 'transparent'};">${onOrder > 0 ? '📦 ' + onOrder : '-'}</td>
                             <td style="text-align: center; color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                             <td style="text-align: center; color: ${item.Committed > 0 ? '#dc2626' : '#666'};">${item.Committed > 0 ? '-' + item.Committed : '0'}</td>
                             <td style="text-align: center; font-weight: 600; color: ${item.Available < 0 ? '#dc2626' : '#059669'};">${item.Available}</td>
                             <td style="text-align: center;">${item.Reorder_Point}</td>
                             <td style="text-align: center; font-weight: 700; color: #f59e0b;">${Math.ceil(item.Units_Needed)}</td>
                             <td>
-                                <button class="oval-action-btn oval-action-success" onclick="createPOForItem('${item.Item_ID}', ${Math.ceil(item.Units_Needed)})">🛒 Order</button>
+                                ${onOrder > 0 
+                                    ? `<span style="color: #2563eb; font-size: 12px; font-weight: 600;">PO Pending</span>`
+                                    : `<button class="oval-action-btn oval-action-success" onclick="createPOForItem('${item.Item_ID}', ${Math.ceil(item.Units_Needed)})">🛒 Order</button>`
+                                }
                             </td>
                         </tr>
                     `;
