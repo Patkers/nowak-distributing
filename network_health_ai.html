@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI + Enterprise Analytics | Network Health</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Network Health Colors */
+            --nh-orange: #e8a54b;
+            --nh-orange-bright: #f5b041;
+            --nh-green: #7fb069;
+            --nh-green-dark: #5a8f4a;
+            --nh-teal: #3d9999;
+            --nh-teal-light: #5bbfbf;
+            
+            /* Dark Theme */
+            --bg-dark: #0d0d0d;
+            --bg-card: #1a1a1a;
+            --bg-card-hover: #252525;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666;
+            
+            /* Accent Glows */
+            --glow-orange: 0 0 40px rgba(232, 165, 75, 0.3);
+            --glow-green: 0 0 40px rgba(127, 176, 105, 0.3);
+            --glow-teal: 0 0 40px rgba(61, 153, 153, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background Grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(232, 165, 75, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(232, 165, 75, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            background: radial-gradient(ellipse at center, #1a1a1a 0%, #0d0d0d 70%);
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg at 50% 50%, 
+                transparent 0deg, 
+                rgba(232, 165, 75, 0.03) 60deg, 
+                transparent 120deg,
+                rgba(127, 176, 105, 0.03) 180deg,
+                transparent 240deg,
+                rgba(61, 153, 153, 0.03) 300deg,
+                transparent 360deg);
+            animation: rotate 60s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+        }
+        
+        .company-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, #222 100%);
+            padding: 15px 30px;
+            border-radius: 60px;
+            margin-bottom: 40px;
+            border: 1px solid #333;
+            box-shadow: var(--glow-orange);
+        }
+        
+        .logo-icon {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .logo-bar {
+            width: 6px;
+            height: 35px;
+            border-radius: 3px;
+        }
+        
+        .logo-bar.orange { background: var(--nh-orange); }
+        .logo-bar.green { background: var(--nh-green); }
+        
+        .logo-circles {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-left: 2px;
+        }
+        
+        .logo-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+        
+        .logo-circle.orange { background: var(--nh-orange); }
+        .logo-circle.green { background: var(--nh-green); }
+        
+        .company-name {
+            font-size: 1.4rem;
+            font-weight: 300;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+        }
+        
+        .company-name strong {
+            font-weight: 700;
+        }
+        
+        .five-star {
+            color: var(--nh-orange);
+            font-size: 1.1rem;
+            margin-left: 10px;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 7vw, 5rem);
+            font-weight: 900;
+            margin-bottom: 25px;
+            line-height: 1.05;
+            letter-spacing: -2px;
+        }
+        
+        .hero h1 .line1 {
+            display: block;
+            color: var(--text-secondary);
+            font-weight: 300;
+            font-size: 0.5em;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .hero h1 .gradient-text {
+            background: linear-gradient(135deg, var(--nh-orange) 0%, var(--nh-green) 50%, var(--nh-teal) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero .tagline {
+            font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+            color: var(--text-secondary);
+            font-weight: 300;
+            max-width: 700px;
+            margin: 0 auto 50px;
+        }
+        
+        .hero .tagline strong {
+            color: var(--nh-orange);
+            font-weight: 600;
+        }
+        
+        .team-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(232, 165, 75, 0.15) 0%, rgba(127, 176, 105, 0.15) 100%);
+            border: 1px solid rgba(232, 165, 75, 0.3);
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--nh-orange);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-top: 60px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(180deg, var(--nh-orange) 0%, var(--nh-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
+        
+        /* Section Styles */
+        section {
+            padding: 100px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+        
+        .section-label {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--nh-teal);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+        }
+        
+        .section-header h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 .highlight {
+            color: var(--nh-orange);
+        }
+        
+        .section-header p {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* The Reality Section */
+        .reality-section {
+            background: linear-gradient(180deg, var(--bg-dark) 0%, #111 100%);
+        }
+        
+        .reality-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .reality-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 35px;
+            border: 1px solid #2a2a2a;
+            transition: all 0.3s ease;
+        }
+        
+        .reality-card:hover {
+            border-color: var(--nh-orange);
+            box-shadow: var(--glow-orange);
+            transform: translateY(-5px);
+        }
+        
+        .reality-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .reality-card h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .reality-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+        
+        .reality-card .time-waste {
+            display: inline-block;
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        
+        /* The Solution - Human + AI */
+        .solution-section {
+            background: #111;
+        }
+        
+        .hybrid-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 80px;
+            flex-wrap: wrap;
+        }
+        
+        .hybrid-box {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px 50px;
+            text-align: center;
+            border: 2px solid #333;
+            min-width: 250px;
+            transition: all 0.3s ease;
+        }
+        
+        .hybrid-box.human {
+            border-color: var(--nh-orange);
+            box-shadow: var(--glow-orange);
+        }
+        
+        .hybrid-box.ai {
+            border-color: var(--nh-green);
+            box-shadow: var(--glow-green);
+        }
+        
+        .hybrid-box .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .hybrid-box h3 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .hybrid-box.human h3 { color: var(--nh-orange); }
+        .hybrid-box.ai h3 { color: var(--nh-green); }
+        
+        .hybrid-box p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        .plus-sign {
+            font-size: 3rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        
+        .equals-result {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .equals-sign {
+            font-size: 3rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+        
+        .result-box {
+            background: linear-gradient(135deg, rgba(232, 165, 75, 0.2) 0%, rgba(127, 176, 105, 0.2) 100%);
+            border: 2px solid var(--nh-teal);
+            border-radius: 24px;
+            padding: 40px 50px;
+            text-align: center;
+            box-shadow: var(--glow-teal);
+        }
+        
+        .result-box .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .result-box h3 {
+            font-size: 1.5rem;
+            color: var(--nh-teal-light);
+            margin-bottom: 8px;
+        }
+        
+        .result-box p {
+            color: var(--text-secondary);
+        }
+        
+        /* Use Cases Grid */
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 30px;
+        }
+        
+        .use-case-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #2a2a2a;
+            transition: all 0.3s ease;
+        }
+        
+        .use-case-card:hover {
+            transform: translateY(-8px);
+            border-color: #444;
+        }
+        
+        .use-case-header {
+            padding: 25px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .use-case-header.sql { 
+            background: linear-gradient(135deg, rgba(61, 153, 153, 0.3) 0%, rgba(61, 153, 153, 0.1) 100%);
+            border-bottom: 2px solid var(--nh-teal);
+        }
+        .use-case-header.debug { 
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 100%);
+            border-bottom: 2px solid #dc3545;
+        }
+        .use-case-header.optimize { 
+            background: linear-gradient(135deg, rgba(127, 176, 105, 0.3) 0%, rgba(127, 176, 105, 0.1) 100%);
+            border-bottom: 2px solid var(--nh-green);
+        }
+        .use-case-header.docs { 
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.3) 0%, rgba(155, 89, 182, 0.1) 100%);
+            border-bottom: 2px solid #9b59b6;
+        }
+        .use-case-header.crossref { 
+            background: linear-gradient(135deg, rgba(232, 165, 75, 0.3) 0%, rgba(232, 165, 75, 0.1) 100%);
+            border-bottom: 2px solid var(--nh-orange);
+        }
+        .use-case-header.sas { 
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.3) 0%, rgba(52, 152, 219, 0.1) 100%);
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .use-case-header .icon {
+            font-size: 2.2rem;
+        }
+        
+        .use-case-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .use-case-body {
+            padding: 25px 30px;
+        }
+        
+        .use-case-body p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+        
+        .time-compare {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .time-box {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .time-box.before {
+            background: rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+        
+        .time-box.after {
+            background: rgba(127, 176, 105, 0.15);
+            border: 1px solid rgba(127, 176, 105, 0.3);
+        }
+        
+        .time-box .label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .time-box.before .label { color: #ff6b6b; }
+        .time-box.after .label { color: var(--nh-green); }
+        
+        .time-box .time {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+        
+        .time-box.before .time { color: #ff6b6b; }
+        .time-box.after .time { color: var(--nh-green); }
+        
+        /* Code Example */
+        .code-block {
+            background: #0a0a0a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid #2a2a2a;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #e0e0e0;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .string { color: #ce9178; }
+        .code-block .function { color: #dcdcaa; }
+        .code-block .number { color: #b5cea8; }
+        
+        /* Key Message Section */
+        .message-section {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            text-align: center;
+            border-top: 1px solid #2a2a2a;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .big-message {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 800;
+            line-height: 1.4;
+            max-width: 900px;
+            margin: 0 auto 50px;
+        }
+        
+        .big-message .orange { color: var(--nh-orange); }
+        .big-message .green { color: var(--nh-green); }
+        .big-message .teal { color: var(--nh-teal-light); }
+        
+        .message-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+        
+        .benefit-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid #2a2a2a;
+            transition: all 0.3s ease;
+        }
+        
+        .benefit-card:hover {
+            border-color: var(--nh-orange);
+        }
+        
+        .benefit-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .benefit-card h4 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .benefit-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Live Demo Section */
+        .demo-section {
+            background: #0a0a0a;
+        }
+        
+        .demo-container {
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 1px solid #2a2a2a;
+            overflow: hidden;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            background: linear-gradient(135deg, var(--nh-orange) 0%, var(--nh-green) 100%);
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .demo-header h3 {
+            font-size: 1.3rem;
+            color: #000;
+            font-weight: 700;
+        }
+        
+        .demo-body {
+            padding: 30px;
+        }
+        
+        .chat-message {
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        
+        .chat-message.user .chat-avatar {
+            background: linear-gradient(135deg, var(--nh-orange) 0%, var(--nh-green) 100%);
+        }
+        
+        .chat-message.ai .chat-avatar {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+        
+        .chat-bubble {
+            background: #252525;
+            border-radius: 16px;
+            padding: 18px 22px;
+            max-width: 80%;
+            border: 1px solid #333;
+        }
+        
+        .chat-message.user .chat-bubble {
+            background: rgba(232, 165, 75, 0.1);
+            border-color: rgba(232, 165, 75, 0.3);
+        }
+        
+        .chat-bubble p {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .chat-bubble .code-inline {
+            background: #1a1a1a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--nh-teal-light);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--bg-dark);
+            padding: 60px 20px;
+            text-align: center;
+            border-top: 1px solid #2a2a2a;
+        }
+        
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .footer p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .footer .tagline {
+            color: var(--nh-orange);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 15px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hybrid-visual {
+                flex-direction: column;
+            }
+            
+            .use-cases-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-row {
+                gap: 30px;
+            }
+            
+            .stat-number {
+                font-size: 2.5rem;
+            }
+        }
+        
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="company-badge">
+                <div class="logo-icon">
+                    <div class="logo-bar orange"></div>
+                    <div class="logo-circles">
+                        <div class="logo-circle orange"></div>
+                        <div class="logo-circle green"></div>
+                    </div>
+                    <div class="logo-bar green"></div>
+                </div>
+                <span class="company-name"><strong>network</strong> health</span>
+                <span class="five-star">★★★★★</span>
+            </div>
+            
+            <h1>
+                <span class="line1">Enterprise Analytics</span>
+                <span class="gradient-text">AI-Powered Analytics</span>
+            </h1>
+            
+            <p class="tagline">
+                How Claude AI becomes your <strong>instant coding partner</strong> — eliminating wait times, accelerating insights, and letting our team focus on what truly matters.
+            </p>
+            
+            <div class="team-badge">🧠 Enterprise Analytics Team</div>
+            
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number">10x</div>
+                    <div class="stat-label">Faster SQL Generation</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">0</div>
+                    <div class="stat-label">Jobs Replaced</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">More Strategic Time</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- The Reality Section -->
+    <section class="reality-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">The Reality</span>
+                <h2>Where Our Time <span class="highlight">Actually Goes</span></h2>
+                <p>As analytics professionals, we spend countless hours on tasks that don't require our expertise.</p>
+            </div>
+            
+            <div class="reality-grid">
+                <div class="reality-card fade-in">
+                    <div class="icon">🔍</div>
+                    <h3>Debugging Syntax Errors</h3>
+                    <p>Hunting for that missing semicolon, unmatched parenthesis, or typo in a column name across 500 lines of SQL.</p>
+                    <span class="time-waste">⏱️ 30-60 min per bug</span>
+                </div>
+                
+                <div class="reality-card fade-in">
+                    <div class="icon">📝</div>
+                    <h3>Writing Boilerplate SQL</h3>
+                    <p>Recreating the same JOIN patterns, date filters, and aggregation logic we've written hundreds of times.</p>
+                    <span class="time-waste">⏱️ 1-2 hours per query</span>
+                </div>
+                
+                <div class="reality-card fade-in">
+                    <div class="icon">🔄</div>
+                    <h3>Cross-Reference Research</h3>
+                    <p>Tracing data lineage, understanding table relationships, and documenting dependencies manually.</p>
+                    <span class="time-waste">⏱️ 2-4 hours per project</span>
+                </div>
+                
+                <div class="reality-card fade-in">
+                    <div class="icon">📊</div>
+                    <h3>SAS to SQL Translation</h3>
+                    <p>Converting legacy SAS code to modern SQL, or vice versa, while maintaining business logic integrity.</p>
+                    <span class="time-waste">⏱️ Days per conversion</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- The Solution Section -->
+    <section class="solution-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">The Solution</span>
+                <h2>Human Intelligence <span class="highlight">+ AI Power</span></h2>
+                <p>AI doesn't replace us. It amplifies what we can accomplish.</p>
+            </div>
+            
+            <div class="hybrid-visual">
+                <div class="hybrid-box human fade-in">
+                    <div class="icon">🧠</div>
+                    <h3>Human Expertise</h3>
+                    <p>Business knowledge<br>Strategic thinking<br>Quality assurance</p>
+                </div>
+                
+                <span class="plus-sign">+</span>
+                
+                <div class="hybrid-box ai fade-in">
+                    <div class="icon">🤖</div>
+                    <h3>Claude AI</h3>
+                    <p>Instant code generation<br>Pattern recognition<br>24/7 availability</p>
+                </div>
+                
+                <div class="equals-result">
+                    <span class="equals-sign">=</span>
+                </div>
+                
+                <div class="result-box fade-in">
+                    <div class="icon">🚀</div>
+                    <h3>Supercharged Analytics</h3>
+                    <p>Faster insights<br>More strategic work<br>Higher value delivery</p>
+                </div>
+            </div>
+            
+            <!-- Use Cases -->
+            <div class="use-cases-grid">
+                <div class="use-case-card fade-in">
+                    <div class="use-case-header sql">
+                        <span class="icon">⚡</span>
+                        <h3>Instant SQL Generation</h3>
+                    </div>
+                    <div class="use-case-body">
+                        <p>"Write a SQL Server query that joins Claims to Members, filters for Medicare Advantage plans in Q4 2024, and calculates per-member-per-month costs by service category."</p>
+                        <p><strong>Claude delivers production-ready SQL in seconds.</strong></p>
+                        <div class="time-compare">
+                            <div class="time-box before">
+                                <div class="label">Before</div>
+                                <div class="time">45 min</div>
+                            </div>
+                            <div class="time-box after">
+                                <div class="label">With AI</div>
+                                <div class="time">30 sec</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="use-case-card fade-in">
+                    <div class="use-case-header debug">
+                        <span class="icon">🔧</span>
+                        <h3>Instant Debugging</h3>
+                    </div>
+                    <div class="use-case-body">
+                        <p>Paste your error message and code. Claude identifies the issue, explains why it happened, and provides the corrected version immediately.</p>
+                        <p><strong>No more hunting through Stack Overflow.</strong></p>
+                        <div class="time-compare">
+                            <div class="time-box before">
+                                <div class="label">Before</div>
+                                <div class="time">1+ hour</div>
+                            </div>
+                            <div class="time-box after">
+                                <div class="label">With AI</div>
+                                <div class="time">1 min</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="use-case-card fade-in">
+                    <div class="use-case-header sas">
+                        <span class="icon">🔄</span>
+                        <h3>SAS ↔ SQL Translation</h3>
+                    </div>
+                    <div class="use-case-body">
+                        <p>Convert complex SAS DATA steps and PROC SQL to T-SQL, or translate SQL Server stored procedures to SAS. Claude understands both languages deeply.</p>
+                        <div class="code-block">
+                            <pre><span class="comment">/* SAS Input */</span>
+<span class="keyword">PROC SQL</span>;
+  <span class="keyword">SELECT</span> member_id, 
+         <span class="function">SUM</span>(paid_amt) <span class="keyword">as</span> total
+  <span class="keyword">FROM</span> claims
+  <span class="keyword">GROUP BY</span> member_id;
+<span class="keyword">QUIT</span>;
+
+<span class="comment">-- Instant T-SQL Output --</span>
+<span class="keyword">SELECT</span> member_id,
+       <span class="function">SUM</span>(paid_amt) <span class="keyword">AS</span> total
+<span class="keyword">FROM</span> dbo.claims
+<span class="keyword">GROUP BY</span> member_id;</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="use-case-card fade-in">
+                    <div class="use-case-header optimize">
+                        <span class="icon">📈</span>
+                        <h3>Query Optimization</h3>
+                    </div>
+                    <div class="use-case-body">
+                        <p>"This query takes 45 minutes to run. Here's the execution plan..." Claude analyzes and suggests index strategies, query rewrites, and performance improvements.</p>
+                        <p><strong>Turn slow reports into instant dashboards.</strong></p>
+                        <div class="time-compare">
+                            <div class="time-box before">
+                                <div class="label">Query Time</div>
+                                <div class="time">45 min</div>
+                            </div>
+                            <div class="time-box after">
+                                <div class="label">Optimized</div>
+                                <div class="time">30 sec</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="use-case-card fade-in">
+                    <div class="use-case-header crossref">
+                        <span class="icon">🔗</span>
+                        <h3>Data Cross-Reference</h3>
+                    </div>
+                    <div class="use-case-body">
+                        <p>Upload your table schemas or data dictionaries. Claude builds relationship maps, identifies foreign keys, and generates documentation automatically.</p>
+                        <p><strong>Instant data lineage and impact analysis.</strong></p>
+                        <div class="time-compare">
+                            <div class="time-box before">
+                                <div class="label">Before</div>
+                                <div class="time">4 hours</div>
+                            </div>
+                            <div class="time-box after">
+                                <div class="label">With AI</div>
+                                <div class="time">5 min</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="use-case-card fade-in">
+                    <div class="use-case-header docs">
+                        <span class="icon">📚</span>
+                        <h3>Auto-Documentation</h3>
+                    </div>
+                    <div class="use-case-body">
+                        <p>Paste any SQL procedure or SAS program. Claude generates comprehensive documentation with business logic explanations, parameter descriptions, and usage examples.</p>
+                        <p><strong>Never write documentation from scratch again.</strong></p>
+                        <div class="time-compare">
+                            <div class="time-box before">
+                                <div class="label">Before</div>
+                                <div class="time">2 hours</div>
+                            </div>
+                            <div class="time-box after">
+                                <div class="label">With AI</div>
+                                <div class="time">2 min</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Key Message -->
+    <section class="message-section">
+        <div class="container">
+            <p class="big-message fade-in">
+                AI isn't here to <span class="orange">replace</span> our jobs.<br>
+                It's here to <span class="green">eliminate the tedium</span><br>
+                so we can focus on <span class="teal">what matters</span>.
+            </p>
+            
+            <p class="message-subtitle fade-in">
+                Every minute saved on debugging syntax is a minute spent on strategic analysis.<br>
+                Every hour saved on boilerplate code is an hour spent solving real business problems.<br>
+                <strong>We become more valuable, not less.</strong>
+            </p>
+            
+            <div class="benefits-grid">
+                <div class="benefit-card fade-in">
+                    <div class="icon">⚡</div>
+                    <h4>Instant Results</h4>
+                    <p>No waiting. No back-and-forth. Answers in seconds.</p>
+                </div>
+                
+                <div class="benefit-card fade-in">
+                    <div class="icon">🎯</div>
+                    <h4>Focus on Strategy</h4>
+                    <p>Spend time on insights, not syntax.</p>
+                </div>
+                
+                <div class="benefit-card fade-in">
+                    <div class="icon">🔒</div>
+                    <h4>Human Oversight</h4>
+                    <p>We review, validate, and approve everything.</p>
+                </div>
+                
+                <div class="benefit-card fade-in">
+                    <div class="icon">📈</div>
+                    <h4>Higher Output</h4>
+                    <p>Deliver more value in less time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Live Demo Section -->
+    <section class="demo-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-label">See It In Action</span>
+                <h2>A Real <span class="highlight">Conversation</span></h2>
+                <p>This is what working with Claude actually looks like.</p>
+            </div>
+            
+            <div class="demo-container fade-in">
+                <div class="demo-header">
+                    <span style="font-size: 1.5rem;">💬</span>
+                    <h3>Claude + Enterprise Analytics</h3>
+                </div>
+                <div class="demo-body">
+                    <div class="chat-message user">
+                        <div class="chat-avatar">👤</div>
+                        <div class="chat-bubble">
+                            <p>I need a SQL Server query that calculates the risk score trend for our Medicare Advantage members over the last 12 months, broken down by county. Include month-over-month change percentages.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-message ai">
+                        <div class="chat-avatar">🤖</div>
+                        <div class="chat-bubble">
+                            <p>Here's a T-SQL query for your risk score trend analysis:</p>
+                            <div class="code-block">
+                                <pre><span class="keyword">WITH</span> MonthlyScores <span class="keyword">AS</span> (
+  <span class="keyword">SELECT</span> 
+    m.county,
+    <span class="function">FORMAT</span>(r.score_date, <span class="string">'yyyy-MM'</span>) <span class="keyword">AS</span> score_month,
+    <span class="function">AVG</span>(r.risk_score) <span class="keyword">AS</span> avg_risk_score,
+    <span class="function">COUNT</span>(<span class="keyword">DISTINCT</span> m.member_id) <span class="keyword">AS</span> member_count
+  <span class="keyword">FROM</span> dbo.Members m
+  <span class="keyword">JOIN</span> dbo.RiskScores r <span class="keyword">ON</span> m.member_id = r.member_id
+  <span class="keyword">WHERE</span> m.plan_type = <span class="string">'Medicare Advantage'</span>
+    <span class="keyword">AND</span> r.score_date >= <span class="function">DATEADD</span>(month, <span class="number">-12</span>, <span class="function">GETDATE</span>())
+  <span class="keyword">GROUP BY</span> m.county, <span class="function">FORMAT</span>(r.score_date, <span class="string">'yyyy-MM'</span>)
+)
+<span class="keyword">SELECT</span> 
+  county,
+  score_month,
+  avg_risk_score,
+  member_count,
+  <span class="function">LAG</span>(avg_risk_score) <span class="keyword">OVER</span> (
+    <span class="keyword">PARTITION BY</span> county <span class="keyword">ORDER BY</span> score_month
+  ) <span class="keyword">AS</span> prev_month_score,
+  <span class="function">ROUND</span>(
+    (avg_risk_score - <span class="function">LAG</span>(avg_risk_score) <span class="keyword">OVER</span> (
+      <span class="keyword">PARTITION BY</span> county <span class="keyword">ORDER BY</span> score_month
+    )) / <span class="function">NULLIF</span>(<span class="function">LAG</span>(avg_risk_score) <span class="keyword">OVER</span> (
+      <span class="keyword">PARTITION BY</span> county <span class="keyword">ORDER BY</span> score_month
+    ), <span class="number">0</span>) * <span class="number">100</span>, <span class="number">2</span>
+  ) <span class="keyword">AS</span> mom_change_pct
+<span class="keyword">FROM</span> MonthlyScores
+<span class="keyword">ORDER BY</span> county, score_month;</pre>
+                            </div>
+                            <p style="margin-top: 15px;">This uses a CTE for readability and <span class="code-inline">LAG()</span> window function for the month-over-month calculation. Want me to add YoY comparisons or adjust for any specific business rules?</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-message user">
+                        <div class="chat-avatar">👤</div>
+                        <div class="chat-bubble">
+                            <p>Perfect. Now convert this to SAS for our VA reporting team.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-message ai">
+                        <div class="chat-avatar">🤖</div>
+                        <div class="chat-bubble">
+                            <p>Here's the equivalent SAS code:</p>
+                            <div class="code-block">
+                                <pre><span class="keyword">PROC SQL</span>;
+  <span class="keyword">CREATE TABLE</span> work.monthly_scores <span class="keyword">AS</span>
+  <span class="keyword">SELECT</span> 
+    m.county,
+    <span class="function">PUT</span>(r.score_date, yymmn6.) <span class="keyword">AS</span> score_month,
+    <span class="function">AVG</span>(r.risk_score) <span class="keyword">AS</span> avg_risk_score,
+    <span class="function">COUNT</span>(<span class="keyword">DISTINCT</span> m.member_id) <span class="keyword">AS</span> member_count
+  <span class="keyword">FROM</span> lib.members m
+  <span class="keyword">INNER JOIN</span> lib.risk_scores r 
+    <span class="keyword">ON</span> m.member_id = r.member_id
+  <span class="keyword">WHERE</span> m.plan_type = <span class="string">'Medicare Advantage'</span>
+    <span class="keyword">AND</span> r.score_date >= <span class="function">INTNX</span>(<span class="string">'month'</span>, <span class="function">TODAY</span>(), <span class="number">-12</span>)
+  <span class="keyword">GROUP BY</span> m.county, <span class="keyword">CALCULATED</span> score_month
+  <span class="keyword">ORDER BY</span> county, score_month;
+<span class="keyword">QUIT</span>;
+
+<span class="comment">/* Add MoM calculations */</span>
+<span class="keyword">DATA</span> work.risk_trend;
+  <span class="keyword">SET</span> work.monthly_scores;
+  <span class="keyword">BY</span> county;
+  prev_score = <span class="function">LAG</span>(avg_risk_score);
+  <span class="keyword">IF FIRST</span>.county <span class="keyword">THEN</span> prev_score = .;
+  mom_change_pct = <span class="function">ROUND</span>(
+    (avg_risk_score - prev_score) / prev_score * <span class="number">100</span>, <span class="number">0.01</span>
+  );
+<span class="keyword">RUN</span>;</pre>
+                            </div>
+                            <p style="margin-top: 15px;">Done! Ready for SAS VA. 🎯</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-logo">
+            <div class="logo-icon">
+                <div class="logo-bar orange"></div>
+                <div class="logo-circles">
+                    <div class="logo-circle orange"></div>
+                    <div class="logo-circle green"></div>
+                </div>
+                <div class="logo-bar green"></div>
+            </div>
+            <span class="company-name"><strong>network</strong> health</span>
+        </div>
+        <p>Enterprise Analytics Team • Menasha, Wisconsin</p>
+        <p class="tagline">Amplifying Human Intelligence with AI</p>
+    </footer>
+    
+    <script>
+        // Scroll animations
+        const fadeElements = document.querySelectorAll('.fade-in');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+        
+        fadeElements.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
