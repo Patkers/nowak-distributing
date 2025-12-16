@@ -9628,17 +9628,16 @@
                 if (!continueWithOverpay) return;
             }
 
-            // Get the selected date and add current time
+            // Create proper datetime: combine selected date with current time
             const selectedPODate = document.getElementById('poDate').value;
             const nowPO = new Date();
-            const poDateWithTime = selectedPODate === getTodayLocalDate() 
-                ? nowPO.toISOString()  // Today - use actual current time
-                : `${selectedPODate}T${nowPO.toTimeString().split(' ')[0]}`; // Other date - add current time
+            const timeStrPO = nowPO.toTimeString().split(' ')[0]; // HH:MM:SS
+            const poDateTime = `${selectedPODate}T${timeStrPO}`; // YYYY-MM-DDTHH:MM:SS
 
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
-                poDate: poDateWithTime,
+                poDate: poDateTime,  // Full datetime format
                 dueDate: document.getElementById('poDueDate').value || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: calculatedTotal,
@@ -11821,21 +11820,18 @@
                 select.innerHTML += `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`;
             });
 
-            if (cachedItems.length === 0) {
-                const result = await apiCall('getItems');
-                if (result && result.status === 'success') {
-                    cachedItems = result.data;
-                    console.log('loadSaleDropdowns: Loaded items, first item Unit_Sell_Price:', cachedItems[0]?.Unit_Sell_Price); // DEBUG
-                }
+            // ALWAYS refresh items to get current stock quantities
+            const result = await apiCall('getItems');
+            if (result && result.status === 'success') {
+                cachedItems = result.data;
+                console.log('loadSaleDropdowns: Refreshed items with current stock'); // DEBUG
             }
 
             console.log('loadSaleDropdowns: Populating dropdowns with', cachedItems.length, 'items'); // DEBUG
-            console.log('loadSaleDropdowns: First item Unit_Sell_Price:', cachedItems[0]?.Unit_Sell_Price); // DEBUG
             
             document.querySelectorAll('.so-item').forEach(select => {
                 select.innerHTML = '<option value="">Select Item</option>';
                 cachedItems.forEach(item => {
-                    console.log(`Adding option: ${item.Item_Description}, Unit_Sell_Price: ${item.Unit_Sell_Price}`); // DEBUG
                     select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
                 });
             });
@@ -12206,6 +12202,8 @@
                     showStatus('salesStatus', `✅ Sale recorded! Invoice #: ${invoiceNumber}`, 'success');
                     hideAddSaleForm();
                     loadSales();
+                    // Refresh items to update stock quantities
+                    loadItems();
                 } else {
                     showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
@@ -23685,9 +23683,15 @@
                 return;
             }
             
+            // Create proper datetime: combine selected date with current time
+            const selectedDate = document.getElementById('bulkPODate').value;
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+            const poDateTime = `${selectedDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
+            
             const poData = {
                 supplierId: supplierId,
-                poDate: document.getElementById('bulkPODate').value,
+                poDate: poDateTime,  // Full datetime format
                 expectedDate: document.getElementById('bulkPOExpected').value || '',
                 notes: document.getElementById('bulkPONotes').value || '',
                 status: 'Ordered',
@@ -23832,9 +23836,15 @@
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             const cost = parseFloat(item?.Package_Cost) || 0;
             
+            // Create proper datetime: combine selected date with current time
+            const selectedDate = document.getElementById('quickPODate').value;
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+            const poDateTime = `${selectedDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
+            
             const poData = {
                 supplierId: supplierId,
-                poDate: document.getElementById('quickPODate').value,
+                poDate: poDateTime,  // Full datetime format
                 expectedDate: document.getElementById('quickPOExpected').value || '',
                 notes: document.getElementById('quickPONotes').value || '',
                 status: 'Ordered',
@@ -29244,25 +29254,24 @@
             // Generate PO number: PO-120725-001
             const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
             
-            // Get the selected date and add current time
+            // Create proper datetime: combine selected date with current time
             const now = new Date();
-            const poDateWithTime = poDate === getTodayLocalDate() 
-                ? now.toISOString()  // Today - use actual current time
-                : `${poDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
+            const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+            const poDateTime = `${poDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
             
             // Create OUTGOING PO
             const data = {
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
-                poDate: poDateWithTime,  // Fixed: was 'purchaseDate', backend expects 'poDate'
+                poDate: poDateTime,  // Full datetime format
                 dueDate: expectedDeliveryDate,
                 paymentTerms: 'Net 30',
                 status: 'Ordered', // OUTGOING status
                 totalAmount: total,
                 amountPaid: 0,
                 notes: notes || '',
-                lineItems: lineItems,  // Fixed: was 'lines', backend expects 'lineItems'
-                poType: 'INCOMING' // Fixed: should be INCOMING for supplier POs
+                lineItems: lineItems,
+                poType: 'INCOMING' // For supplier POs
             };
             
             const result = await apiCall('createPurchaseOrder', data);
