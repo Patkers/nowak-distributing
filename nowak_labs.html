@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nowak ERP - Hands-On Lab Exercises</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0B162A;
+            --primary-light: #1a2d4a;
+            --accent: #C83803;
+            --accent-light: #e85a2a;
+            --accent-text: #ffffff;
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --bg-section: #141414;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #707070;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+        }
+        
+        [data-theme="bears"] { --primary: #0B162A; --accent: #C83803; --accent-text: #ffffff; }
+        [data-theme="cubs"] { --primary: #0e3386; --accent: #CC3433; --accent-text: #ffffff; }
+        [data-theme="whitesox"] { --primary: #27251F; --accent: #C4CED4; --accent-text: #27251F; }
+        [data-theme="packers"] { --primary: #203731; --accent: #FFB612; --accent-text: #203731; }
+        [data-theme="barhorn"] { --primary: #2d5a27; --accent: #c9a227; --accent-text: #1a1a1a; }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+        
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333;
+            z-index: 1000;
+            padding: 12px 20px;
+        }
+        
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+        
+        .nav-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-badge {
+            background: var(--success);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .theme-select {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .main {
+            max-width: 900px;
+            margin: 80px auto 40px;
+            padding: 20px;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+            border-radius: 20px;
+            padding: 50px 40px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+        
+        .hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .lab-intro {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid #333;
+        }
+        
+        .lab-intro h2 {
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+        
+        .lab-intro p {
+            color: var(--text-secondary);
+        }
+        
+        .important-box {
+            background: rgba(245, 158, 11, 0.15);
+            border: 2px solid var(--warning);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .important-box .icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .important-box h4 {
+            color: var(--warning);
+            margin-bottom: 5px;
+        }
+        
+        .important-box p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* Lab Exercise Styles */
+        .lab {
+            background: var(--bg-card);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        
+        .lab-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            padding: 25px 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .lab-number {
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            color: var(--accent-text);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        
+        .lab-title h2 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+        
+        .lab-title p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .lab-time {
+            margin-left: auto;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .lab-body {
+            padding: 30px;
+        }
+        
+        .lab-objective {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--info);
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .lab-objective h4 {
+            color: var(--info);
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .lab-objective p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+        
+        /* Data Entry Box */
+        .data-entry {
+            background: #0d1117;
+            border: 2px solid #30363d;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .data-entry h4 {
+            color: var(--success);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .data-field {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        
+        .data-field .label {
+            width: 150px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .data-field .value {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px 15px;
+            color: var(--success);
+            font-family: monospace;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+        
+        /* Steps */
+        .steps {
+            counter-reset: labstep;
+        }
+        
+        .step {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+        }
+        
+        .step-num {
+            counter-increment: labstep;
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .step-num::before { content: counter(labstep); }
+        
+        .step-content { flex: 1; }
+        
+        .step-content h4 {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        .step-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .step-action {
+            background: var(--accent);
+            color: var(--accent-text);
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        /* Verification Box */
+        .verify {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid var(--success);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        
+        .verify h4 {
+            color: var(--success);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .verify-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        
+        .verify-item:last-child {
+            border: none;
+            padding-bottom: 0;
+        }
+        
+        .checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--success);
+            border-radius: 5px;
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .checkbox.checked {
+            background: var(--success);
+        }
+        
+        .verify-item p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .verify-item strong {
+            color: var(--text-primary);
+        }
+        
+        /* Decision Box */
+        .decision {
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid #8b5cf6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .decision h4 {
+            color: #8b5cf6;
+            margin-bottom: 15px;
+        }
+        
+        .decision-option {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .decision-option:last-child {
+            margin-bottom: 0;
+        }
+        
+        .decision-option .if {
+            color: #a78bfa;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .decision-option .then {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding-left: 15px;
+            border-left: 2px solid #8b5cf6;
+        }
+        
+        /* Alt Path Box */
+        .alt-path {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--info);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .alt-path h5 {
+            color: var(--info);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+        
+        .alt-path p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Tip */
+        .tip {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .tip .icon {
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+        
+        .tip p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Complete Lab */
+        .lab-complete {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-top: 1px solid #333;
+        }
+        
+        .lab-complete h3 {
+            color: var(--success);
+            margin-bottom: 10px;
+        }
+        
+        .lab-complete p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Progress */
+        .progress-tracker {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .progress-tracker .label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .progress-tracker .count {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+        
+        @media (max-width: 768px) {
+            .main { padding: 15px; margin-top: 70px; }
+            .hero { padding: 30px 20px; }
+            .hero h1 { font-size: 1.8rem; }
+            .lab-header { flex-wrap: wrap; }
+            .lab-time { margin-left: 0; margin-top: 10px; }
+            .data-field { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .data-field .label { width: auto; }
+            .progress-tracker { bottom: 10px; right: 10px; left: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-content">
+            <div class="nav-logo">
+                <div class="nav-logo-icon">🧪</div>
+                <span>Hands-On Labs</span>
+                <span class="nav-badge">LIVE DATA</span>
+            </div>
+            <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
+                <option value="bears">🐻 Bears</option>
+                <option value="cubs">🐻 Cubs</option>
+                <option value="whitesox">⚾ White Sox</option>
+                <option value="packers">🧀 Packers</option>
+                <option value="barhorn">🥨 Barhorn</option>
+            </select>
+        </div>
+    </nav>
+    
+    <main class="main">
+        <div class="hero">
+            <h1>🧪 Hands-On Lab Exercises</h1>
+            <p>Follow along step-by-step with real data entry. You'll create actual records and verify your work as you go!</p>
+        </div>
+        
+        <div class="lab-intro">
+            <h2>📋 Before You Start</h2>
+            <p>These labs use real data entry in the TEST environment. You'll create suppliers, items, customers, and orders - then verify everything works correctly.</p>
+            
+            <div class="important-box">
+                <span class="icon">⚠️</span>
+                <div>
+                    <h4>Use TEST Environment Only!</h4>
+                    <p>Before starting, make sure the environment indicator shows <strong style="color: var(--warning);">🟠 TEST</strong> (orange). Go to Settings to switch if needed. Never practice in Production!</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- LAB 1: Add a Supplier -->
+        <div class="lab" id="lab1">
+            <div class="lab-header">
+                <div class="lab-number">1</div>
+                <div class="lab-title">
+                    <h2>Add a New Supplier</h2>
+                    <p>Create your first supplier record</p>
+                </div>
+                <div class="lab-time">⏱️ 5 min</div>
+            </div>
+            
+            <div class="lab-body">
+                <div class="lab-objective">
+                    <h4>🎯 Objective</h4>
+                    <p>Learn how to add a supplier that you'll later use to create items and purchase orders.</p>
+                </div>
+                
+                <div class="data-entry">
+                    <h4>📝 Enter This Data:</h4>
+                    <div class="data-field">
+                        <span class="label">Supplier Name:</span>
+                        <span class="value">Joe's Training Supplier</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Contact Name:</span>
+                        <span class="value">Joe Nowak</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Phone:</span>
+                        <span class="value">920-555-0101</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Email:</span>
+                        <span class="value">joe@training.test</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">City:</span>
+                        <span class="value">Green Bay</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">State:</span>
+                        <span class="value">WI</span>
+                    </div>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Go to Suppliers Tab</span>
+                            <h4>Navigate to the Suppliers section</h4>
+                            <p>Click the "Suppliers" tab in the top navigation bar.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "+ Add New Supplier"</span>
+                            <h4>Open the add supplier form</h4>
+                            <p>Find the green button at the top of the page and click it. A form modal will appear.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Fill in the fields</span>
+                            <h4>Enter the data shown above</h4>
+                            <p>Type in each field using the exact values from the data entry box. The Supplier ID will be auto-generated.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "Save Supplier"</span>
+                            <h4>Save your new supplier</h4>
+                            <p>Click the save button. Wait for the success message (green toast notification).</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Your Work</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Do you see <strong>"Joe's Training Supplier"</strong> in the supplier list?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does the card show <strong>Green Bay, WI</strong> as the location?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Click on the supplier card - does all the info look correct?</p>
+                    </div>
+                </div>
+                
+                <div class="tip">
+                    <span class="icon">💡</span>
+                    <p><strong>Pro Tip:</strong> The Supplier ID (like SUP-001) is automatically assigned. You'll use this ID when adding items!</p>
+                </div>
+            </div>
+            
+            <div class="lab-complete">
+                <h3>🎉 Lab 1 Complete!</h3>
+                <p>You've added your first supplier. Next, you'll add items that belong to this supplier.</p>
+            </div>
+        </div>
+        
+        <!-- LAB 2: Add Items -->
+        <div class="lab" id="lab2">
+            <div class="lab-header">
+                <div class="lab-number">2</div>
+                <div class="lab-title">
+                    <h2>Add Products to the Catalog</h2>
+                    <p>Create items linked to your supplier</p>
+                </div>
+                <div class="lab-time">⏱️ 10 min</div>
+            </div>
+            
+            <div class="lab-body">
+                <div class="lab-objective">
+                    <h4>🎯 Objective</h4>
+                    <p>Add two items from your new supplier. You'll set pricing, reorder points, and see how items connect to suppliers.</p>
+                </div>
+                
+                <h4 style="color: var(--accent); margin-bottom: 15px;">Item #1</h4>
+                <div class="data-entry">
+                    <h4>📝 Enter This Data:</h4>
+                    <div class="data-field">
+                        <span class="label">Item Description:</span>
+                        <span class="value">Joe's Premium Chips</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Supplier:</span>
+                        <span class="value">Joe's Training Supplier</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Package Cost:</span>
+                        <span class="value">12.00</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Units Per Package:</span>
+                        <span class="value">24</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Sell Price:</span>
+                        <span class="value">1.25</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Reorder Point:</span>
+                        <span class="value">50</span>
+                    </div>
+                </div>
+                
+                <h4 style="color: var(--accent); margin: 25px 0 15px;">Item #2</h4>
+                <div class="data-entry">
+                    <h4>📝 Enter This Data:</h4>
+                    <div class="data-field">
+                        <span class="label">Item Description:</span>
+                        <span class="value">Joe's Cheese Curds</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Supplier:</span>
+                        <span class="value">Joe's Training Supplier</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Package Cost:</span>
+                        <span class="value">18.00</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Units Per Package:</span>
+                        <span class="value">12</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Sell Price:</span>
+                        <span class="value">2.50</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Reorder Point:</span>
+                        <span class="value">25</span>
+                    </div>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Go to Items Tab</span>
+                            <h4>Navigate to Items</h4>
+                            <p>Click the "Items" tab in the top navigation.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "+ Add New Item"</span>
+                            <h4>Open the add item form</h4>
+                            <p>A form will appear with fields for the item details.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Select the Supplier</span>
+                            <h4>Link to Joe's Training Supplier</h4>
+                            <p>Use the supplier dropdown to select "Joe's Training Supplier" that you created in Lab 1.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Fill in pricing</span>
+                            <h4>Enter package cost, units, and sell price</h4>
+                            <p>Notice how the system calculates the unit cost automatically! (Package Cost ÷ Units Per Package)</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Save and repeat</span>
+                            <h4>Save the first item, then add the second</h4>
+                            <p>Click Save, wait for success, then repeat for Item #2.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Your Work</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Do you see both <strong>"Joe's Premium Chips"</strong> and <strong>"Joe's Cheese Curds"</strong> in the item list?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Do the items show a <strong>🔴 red "Out of Stock"</strong> indicator? (They should - we haven't received any yet!)</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Use the <strong>Supplier filter</strong> dropdown - can you filter to show only Joe's Training Supplier items?</p>
+                    </div>
+                </div>
+                
+                <div class="alt-path">
+                    <h5>📍 Alternative: You can also add items from the Supplier detail view</h5>
+                    <p>Go to Suppliers → Click on a supplier → Look for "Add Item" button. This auto-selects the supplier for you!</p>
+                </div>
+            </div>
+            
+            <div class="lab-complete">
+                <h3>🎉 Lab 2 Complete!</h3>
+                <p>You've added products. They're out of stock because we need to order inventory. Let's do that next!</p>
+            </div>
+        </div>
+        
+        <!-- LAB 3: Create a Purchase Order -->
+        <div class="lab" id="lab3">
+            <div class="lab-header">
+                <div class="lab-number">3</div>
+                <div class="lab-title">
+                    <h2>Create a Purchase Order</h2>
+                    <p>Order inventory from your supplier</p>
+                </div>
+                <div class="lab-time">⏱️ 10 min</div>
+            </div>
+            
+            <div class="lab-body">
+                <div class="lab-objective">
+                    <h4>🎯 Objective</h4>
+                    <p>Create a purchase order, receive the inventory, and record payment. This is the complete purchasing workflow!</p>
+                </div>
+                
+                <div class="data-entry">
+                    <h4>📝 Order These Items:</h4>
+                    <div class="data-field">
+                        <span class="label">Supplier:</span>
+                        <span class="value">Joe's Training Supplier</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Item 1:</span>
+                        <span class="value">Joe's Premium Chips × 100 units</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Item 2:</span>
+                        <span class="value">Joe's Cheese Curds × 50 units</span>
+                    </div>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Go to Purchases Tab</span>
+                            <h4>Navigate to Purchase Orders</h4>
+                            <p>Click the "Purchases" tab in the navigation.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "+ Create Purchase Order"</span>
+                            <h4>Start a new PO</h4>
+                            <p>The purchase order form will open.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Select Supplier First!</span>
+                            <h4>Choose "Joe's Training Supplier"</h4>
+                            <p>You MUST select a supplier before adding items. This filters the item list to only show that supplier's products.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Add items with quantities</span>
+                            <h4>Use the item picker</h4>
+                            <p>Click the item picker, select "Joe's Premium Chips", enter 100. Repeat for "Joe's Cheese Curds" with 50.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Review the total</span>
+                            <h4>Check the order total</h4>
+                            <p>The system calculates: (100 × unit cost) + (50 × unit cost). Verify it looks correct.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Save the PO</span>
+                            <h4>Create the purchase order</h4>
+                            <p>Click Save. The PO is created with "Ordered" status. Note the PO number!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Your Work (After Creating PO)</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Is the new PO visible in the <strong>Purchases list</strong> with status "Ordered"?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Go to <strong>Items tab</strong> - do your items now show a <strong>🔵 blue "On Order" badge</strong>?</p>
+                    </div>
+                </div>
+                
+                <h3 style="color: var(--accent); margin: 30px 0 20px;">Part B: Receive the Shipment</h3>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click on your PO</span>
+                            <h4>Open the purchase order details</h4>
+                            <p>Find and click on the PO you just created.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "Receive"</span>
+                            <h4>Mark the shipment as received</h4>
+                            <p>This tells the system the goods have arrived. Inventory will update automatically!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Receiving Worked</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does the PO status now show <strong>"Received"</strong>?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Go to <strong>Items tab</strong> - do your items now show <strong>🟢 green "In Stock"</strong> with the correct quantities (100 and 50)?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Go to <strong>Inventory tab</strong> - can you find your items with the updated stock levels?</p>
+                    </div>
+                </div>
+                
+                <h3 style="color: var(--accent); margin: 30px 0 20px;">Part C: Record Payment</h3>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "Record Payment"</span>
+                            <h4>Mark the PO as paid</h4>
+                            <p>On the PO detail view, click the payment button and enter the full amount.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Payment</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does the PO now show payment status as <strong>"Paid"</strong>?</p>
+                    </div>
+                </div>
+                
+                <div class="alt-path">
+                    <h5>📍 Alternative: Check Inventory Flow</h5>
+                    <p>Go to Reports → Inventory Flow. You can see a visual of how your receiving affected inventory levels!</p>
+                </div>
+            </div>
+            
+            <div class="lab-complete">
+                <h3>🎉 Lab 3 Complete!</h3>
+                <p>You've completed the full purchasing cycle: Order → Receive → Pay. Now you have inventory to sell!</p>
+            </div>
+        </div>
+        
+        <!-- LAB 4: Add a Customer -->
+        <div class="lab" id="lab4">
+            <div class="lab-header">
+                <div class="lab-number">4</div>
+                <div class="lab-title">
+                    <h2>Add a Customer</h2>
+                    <p>Create a customer to sell to</p>
+                </div>
+                <div class="lab-time">⏱️ 5 min</div>
+            </div>
+            
+            <div class="lab-body">
+                <div class="lab-objective">
+                    <h4>🎯 Objective</h4>
+                    <p>Add a customer that you'll create sales orders for in the next lab.</p>
+                </div>
+                
+                <div class="data-entry">
+                    <h4>📝 Enter This Data:</h4>
+                    <div class="data-field">
+                        <span class="label">Customer Name:</span>
+                        <span class="value">Joe's Test Market</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Contact Name:</span>
+                        <span class="value">Joe Nowak Jr</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Phone:</span>
+                        <span class="value">920-555-0202</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Email:</span>
+                        <span class="value">market@test.com</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Route:</span>
+                        <span class="value">Route 1</span>
+                    </div>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Go to Customers Tab</span>
+                            <h4>Navigate to Customers</h4>
+                            <p>Click the "Customers" tab.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "+ Add New Customer"</span>
+                            <h4>Open the customer form</h4>
+                            <p>Fill in all the fields from the data entry box above.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Save</span>
+                            <h4>Create the customer</h4>
+                            <p>Click Save and wait for the success message.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Your Work</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Is <strong>"Joe's Test Market"</strong> visible in the customer list?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does it show <strong>Route 1</strong> as the route assignment?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lab-complete">
+                <h3>🎉 Lab 4 Complete!</h3>
+                <p>Customer created! Now let's sell them some snacks.</p>
+            </div>
+        </div>
+        
+        <!-- LAB 5: Create a Sales Order -->
+        <div class="lab" id="lab5">
+            <div class="lab-header">
+                <div class="lab-number">5</div>
+                <div class="lab-title">
+                    <h2>Create & Complete a Sale</h2>
+                    <p>Full sales workflow from order to payment</p>
+                </div>
+                <div class="lab-time">⏱️ 15 min</div>
+            </div>
+            
+            <div class="lab-body">
+                <div class="lab-objective">
+                    <h4>🎯 Objective</h4>
+                    <p>Create a sales order, deliver it (which decreases inventory), and record customer payment. This completes the full business cycle!</p>
+                </div>
+                
+                <div class="data-entry">
+                    <h4>📝 Create This Order:</h4>
+                    <div class="data-field">
+                        <span class="label">Customer:</span>
+                        <span class="value">Joe's Test Market</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Item 1:</span>
+                        <span class="value">Joe's Premium Chips × 20 units</span>
+                    </div>
+                    <div class="data-field">
+                        <span class="label">Item 2:</span>
+                        <span class="value">Joe's Cheese Curds × 10 units</span>
+                    </div>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Go to Sales Tab</span>
+                            <h4>Navigate to Sales Orders</h4>
+                            <p>Click the "Sales" tab in the navigation.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "+ Create Sales Order"</span>
+                            <h4>Start a new sale</h4>
+                            <p>The sales order form opens.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Select the Customer</span>
+                            <h4>Choose "Joe's Test Market"</h4>
+                            <p>Use the customer picker to select your customer.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Add items</span>
+                            <h4>Add both items with quantities</h4>
+                            <p>Notice: The item picker shows current stock levels. You can't sell more than you have!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Save the Order</span>
+                            <h4>Create the sales order</h4>
+                            <p>Click Save. Status will be "Pending" and Payment will be "Unpaid".</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Order Created</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Is the sales order visible in the <strong>Sales list</strong>?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does it show status <strong>"Pending"</strong> and payment <strong>"Unpaid"</strong>?</p>
+                    </div>
+                </div>
+                
+                <h3 style="color: var(--accent); margin: 30px 0 20px;">Part B: Deliver the Order</h3>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click on your Sales Order</span>
+                            <h4>Open the order details</h4>
+                            <p>Find and click on the order you just created.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "Deliver"</span>
+                            <h4>Mark as delivered</h4>
+                            <p>This simulates delivering the goods to the customer. <strong>Inventory will decrease!</strong></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Delivery</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does the order status now show <strong>"Delivered"</strong>?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Go to <strong>Items tab</strong> - did inventory decrease? (Chips should be 80, Curds should be 40)</p>
+                    </div>
+                </div>
+                
+                <h3 style="color: var(--accent); margin: 30px 0 20px;">Part C: Record Payment</h3>
+                
+                <div class="decision">
+                    <h4>🔀 What's the payment status?</h4>
+                    <div class="decision-option">
+                        <div class="if">IF the order shows "Unpaid":</div>
+                        <div class="then">Click "Record Payment" → Enter the full amount → Save. Status will change to "Paid".</div>
+                    </div>
+                    <div class="decision-option">
+                        <div class="if">IF you want to test partial payment:</div>
+                        <div class="then">Click "Record Payment" → Enter HALF the amount → Save. Status will show "Partial". Then record the rest to complete it.</div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Payment Complete</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does the payment status show <strong>"Paid"</strong>?</p>
+                    </div>
+                </div>
+                
+                <h3 style="color: var(--accent); margin: 30px 0 20px;">Part D: Print the Invoice</h3>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Click "Print"</span>
+                            <h4>Generate a professional invoice</h4>
+                            <p>The print preview shows a formatted invoice using your current theme colors!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tip">
+                    <span class="icon">💡</span>
+                    <p><strong>Pro Tip:</strong> Use "Print to PDF" in your browser to save invoices as PDF files for emailing!</p>
+                </div>
+                
+                <div class="alt-path">
+                    <h5>📍 Alternative Places to View This Order:</h5>
+                    <p><strong>Customer Dashboard:</strong> Reports → Customer Dashboard → Select "Joe's Test Market" - you'll see this order in their history!<br><br>
+                    <strong>Product Dashboard:</strong> Reports → Product Dashboard - your items will now show sales data!</p>
+                </div>
+            </div>
+            
+            <div class="lab-complete">
+                <h3>🎉 Lab 5 Complete!</h3>
+                <p>You've completed the entire business cycle: Supplier → Items → Purchase → Customer → Sale → Payment!</p>
+            </div>
+        </div>
+        
+        <!-- LAB 6: Run Reports -->
+        <div class="lab" id="lab6">
+            <div class="lab-header">
+                <div class="lab-number">6</div>
+                <div class="lab-title">
+                    <h2>Explore Reports & Dashboards</h2>
+                    <p>See your data come to life</p>
+                </div>
+                <div class="lab-time">⏱️ 10 min</div>
+            </div>
+            
+            <div class="lab-body">
+                <div class="lab-objective">
+                    <h4>🎯 Objective</h4>
+                    <p>Run several reports to see the data you've created throughout these labs. Explore the dashboards!</p>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Go to Reports Tab</span>
+                            <h4>Open the Reports section</h4>
+                            <p>Click "Reports" in the navigation. You'll see categories of reports.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Run "Inventory Valuation"</span>
+                            <h4>See what your stock is worth</h4>
+                            <p>This shows all items with quantities and total value. Find your items!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Run "Sales by Customer"</span>
+                            <h4>See customer sales totals</h4>
+                            <p>Find "Joe's Test Market" - does it show your sale?</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Open Product Dashboard</span>
+                            <h4>Visual product analysis</h4>
+                            <p>Click "Product Dashboard" - see top sellers, bottom sellers, and charts!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-content">
+                            <span class="step-action">Open Customer Dashboard</span>
+                            <h4>Customer deep-dive</h4>
+                            <p>Select "Joe's Test Market" to see their purchase history, favorite items, and spending trends.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verify">
+                    <h4>✅ Verify Reports Show Your Data</h4>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Can you find your items in <strong>Inventory Valuation</strong>?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does <strong>Sales by Customer</strong> show your sale amount?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Can you see data in the <strong>Product Dashboard</strong>?</p>
+                    </div>
+                    <div class="verify-item">
+                        <div class="checkbox" onclick="toggleCheck(this)"></div>
+                        <p>Does <strong>Customer Dashboard</strong> show Joe's Test Market's order?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lab-complete">
+                <h3>🎉 All Labs Complete!</h3>
+                <p>Congratulations! You've mastered the core workflows of the Nowak ERP system!</p>
+            </div>
+        </div>
+        
+        <!-- Final Summary -->
+        <div class="lab" style="background: linear-gradient(135deg, var(--primary), #000);">
+            <div class="lab-body" style="text-align: center; padding: 50px;">
+                <h2 style="font-size: 2rem; margin-bottom: 20px;">🏆 You Did It!</h2>
+                <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 30px;">
+                    You've completed all the hands-on labs. You now know how to:
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; max-width: 700px; margin: 0 auto;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Add Suppliers</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Create Items</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Add Customers</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Create Purchase Orders</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Receive Inventory</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Create Sales Orders</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Deliver Orders</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Record Payments</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Run Reports</div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">✅ Use Dashboards</div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div class="progress-tracker">
+        <span class="label">Checkboxes:</span>
+        <span class="count" id="checkCount">0</span>
+        <span class="label">/ 28</span>
+    </div>
+    
+    <script>
+        function changeTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('nowak-labs-theme', theme);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('nowak-labs-theme') || 'bears';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeSelect').value = savedTheme;
+        });
+        
+        function toggleCheck(el) {
+            el.classList.toggle('checked');
+            el.innerHTML = el.classList.contains('checked') ? '✓' : '';
+            updateCount();
+        }
+        
+        function updateCount() {
+            const checked = document.querySelectorAll('.checkbox.checked').length;
+            document.getElementById('checkCount').textContent = checked;
+        }
+    </script>
+</body>
+</html>

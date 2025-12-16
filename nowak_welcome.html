@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Nowak ERP - Joe's Training Portal</title>
+    <meta property="og:title" content="🎉 Welcome to Nowak ERP, Joe!">
+    <meta property="og:description" content="Your complete training portal for the Nowak Distributing ERP system. Built with love by Dad + AI.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #203731;
+            --primary-light: #2d4a42;
+            --accent: #FFB612;
+            --accent-light: #ffc940;
+            --accent-text: #203731;
+            --bg-dark: #0a0f0d;
+            --bg-card: #1a2420;
+            --text-primary: #ffffff;
+            --text-secondary: #a0b0a8;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 182, 18, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(32, 55, 49, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 182, 18, 0.03) 0%, transparent 70%);
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 60px 20px 80px;
+        }
+        
+        .hero-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            margin: 0 auto 30px;
+            box-shadow: 0 20px 60px rgba(255, 182, 18, 0.2);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+        
+        .hero h1 .name {
+            color: var(--accent);
+            display: block;
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin: 50px 0;
+            padding: 30px;
+            background: rgba(255, 182, 18, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 182, 18, 0.2);
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
+        /* Message from Dad */
+        .message-box {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 24px;
+            padding: 40px;
+            margin: 50px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .message-box::before {
+            content: '❤️';
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+        
+        .message-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .message-box p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 15px;
+        }
+        
+        .message-box .signature {
+            margin-top: 25px;
+            font-style: italic;
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+        
+        /* Training Cards */
+        .section-title {
+            text-align: center;
+            margin: 60px 0 30px;
+        }
+        
+        .section-title h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .section-title p {
+            color: var(--text-secondary);
+        }
+        
+        .training-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+        
+        .training-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 35px;
+            text-decoration: none;
+            color: inherit;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .training-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(255, 182, 18, 0.15);
+        }
+        
+        .training-card .card-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .training-card.guide .card-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .training-card.labs .card-icon { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .training-card.docs .card-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        
+        .training-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+        
+        .training-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+        
+        .training-card .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .training-card .feature-tag {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .training-card .arrow {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-text);
+            font-weight: bold;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+        
+        .training-card:hover .arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        /* ERP Link */
+        .erp-link {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: var(--accent-text);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin: 50px 0;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        
+        .erp-link:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 60px rgba(255, 182, 18, 0.3);
+        }
+        
+        .erp-link h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .erp-link p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* Take Home Section */
+        .take-home {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 50px 0;
+            border: 2px dashed rgba(255, 182, 18, 0.3);
+        }
+        
+        .take-home h2 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+        
+        .take-home p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+        }
+        
+        .take-home ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .take-home li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .take-home li:last-child { border: none; }
+        
+        .take-home li .icon {
+            font-size: 1.3rem;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 50px;
+        }
+        
+        .footer .built-with {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer .built-with span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.05);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .footer p {
+            font-size: 0.85rem;
+            margin-top: 15px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .stats-bar { gap: 25px; }
+            .stat-value { font-size: 2rem; }
+            .message-box { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <!-- Hero -->
+        <header class="hero">
+            <div class="hero-icon">📦</div>
+            <h1>
+                Welcome,
+                <span class="name">Joe!</span>
+            </h1>
+            <p>Your complete training portal for the Nowak Distributing ERP system. Everything you need to master the new system is right here.</p>
+        </header>
+        
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Database Tables</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">30+</div>
+                <div class="stat-label">Reports</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">280+</div>
+                <div class="stat-label">Themes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Mobile Ready</div>
+            </div>
+        </div>
+        
+        <!-- Message from Dad -->
+        <div class="message-box">
+            <h2>👨‍👦 A Message from Dad</h2>
+            <p>
+                Joe, I'm so excited to show you what we've built! This ERP system represents months of work and a whole new way of thinking about how to build business software.
+            </p>
+            <p>
+                What you're about to use was built using AI collaboration - I provided the business knowledge, requirements, and vision, while Claude (an AI assistant) helped with the implementation. Together we've created something that would have cost $500,000+ and taken a year with traditional consulting.
+            </p>
+            <p>
+                We did it in <strong>weeks</strong>. And it's <strong>exactly</strong> what we need.
+            </p>
+            <p>
+                Take your time going through the training. When you take this home, I want you to really use it - find bugs, think of improvements, and tell me what you'd change. This is YOUR system to run the business with!
+            </p>
+            <div class="signature">— Dad (Patrick) ❤️</div>
+        </div>
+        
+        <!-- Training Materials -->
+        <div class="section-title">
+            <h2>📚 Training Materials</h2>
+            <p>Three guides to take you from beginner to expert</p>
+        </div>
+        
+        <div class="training-grid">
+            <a href="nowak_training_guide.html" class="training-card guide">
+                <div class="card-icon">📖</div>
+                <h3>Training Guide</h3>
+                <p>Interactive step-by-step training with quizzes after each section. Track your progress as you learn!</p>
+                <div class="features">
+                    <span class="feature-tag">10 Modules</span>
+                    <span class="feature-tag">Quizzes</span>
+                    <span class="feature-tag">Progress Tracking</span>
+                </div>
+                <div class="arrow">→</div>
+            </a>
+            
+            <a href="nowak_labs.html" class="training-card labs">
+                <div class="card-icon">🧪</div>
+                <h3>Hands-On Labs</h3>
+                <p>Follow along with real data entry. Create actual records and verify your work as you go!</p>
+                <div class="features">
+                    <span class="feature-tag">6 Labs</span>
+                    <span class="feature-tag">Live Data</span>
+                    <span class="feature-tag">Step-by-Step</span>
+                </div>
+                <div class="arrow">→</div>
+            </a>
+            
+            <a href="nowak_documentation.html" class="training-card docs">
+                <div class="card-icon">📋</div>
+                <h3>Full Documentation</h3>
+                <p>Complete reference guide for every feature. Searchable with troubleshooting and FAQ sections.</p>
+                <div class="features">
+                    <span class="feature-tag">All Features</span>
+                    <span class="feature-tag">Searchable</span>
+                    <span class="feature-tag">FAQ</span>
+                </div>
+                <div class="arrow">→</div>
+            </a>
+        </div>
+        
+        <!-- ERP Link -->
+        <a href="https://patkers.github.io/nowak-distributing/" class="erp-link" target="_blank">
+            <h3>🚀 Launch the ERP System</h3>
+            <p>Open the Nowak Distributing ERP in a new tab</p>
+        </a>
+        
+        <!-- Take Home Section -->
+        <div class="take-home">
+            <h2>🏠 When You Take This Home</h2>
+            <p>The URL works from anywhere! Here's what I want you to do after training:</p>
+            <ul>
+                <li><span class="icon">🔍</span> <strong>Find Bugs:</strong> If something doesn't work right, write it down. Nothing is perfect!</li>
+                <li><span class="icon">💡</span> <strong>Suggest Features:</strong> "It would be nice if..." - I want to hear your ideas!</li>
+                <li><span class="icon">📝</span> <strong>Test Different Scenarios:</strong> Try creating orders with edge cases. What happens with zero quantity? Big orders?</li>
+                <li><span class="icon">📱</span> <strong>Try it on Mobile:</strong> Use it on your phone. Add it to your home screen!</li>
+                <li><span class="icon">🎨</span> <strong>Pick Your Theme:</strong> There are 280+ themes. Find your favorite!</li>
+                <li><span class="icon">📊</span> <strong>Explore Reports:</strong> Run different reports. What insights can you find?</li>
+            </ul>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="built-with">
+                <span>👨‍💻 Built by Patrick</span>
+                <span>🤖 Powered by Claude AI</span>
+                <span>❤️ Made for Joe</span>
+            </div>
+            <p>Nowak Distributing ERP v15 • Training Portal</p>
+            <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.6;">December 2024</p>
+        </footer>
+    </div>
+</body>
+</html>
