@@ -3798,22 +3798,13 @@
                     </div>
                     <div class="form-group">
                         <label>Order Status</label>
-                        <select id="filterPurchaseStatus" onchange="filterPurchases()">
-                            <option value="">All</option>
-                            <option value="Ordered">📤 Ordered (Pending)</option>
-                            <option value="Received">📥 Received</option>
-                            <option value="Voided">❌ Voided</option>
-                            <option value="exclude-voided">🚫 Exclude Voided</option>
-                        </select>
+                        <input type="text" id="filterPurchaseStatus_display" placeholder="📋 Click to select..." onclick="openStatusPicker('filterPurchaseStatus', 'filterPurchaseStatus', filterPurchases)" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="filterPurchaseStatus" value="">
                     </div>
                     <div class="form-group">
                         <label>💵 Payment Status</label>
-                        <select id="filterPurchasePaymentStatus" onchange="filterPurchases()">
-                            <option value="">All</option>
-                            <option value="Paid">✅ Paid</option>
-                            <option value="Partial">🟡 Partial</option>
-                            <option value="Unpaid">🔴 Unpaid</option>
-                        </select>
+                        <input type="text" id="filterPurchasePaymentStatus_display" placeholder="📋 Click to select..." onclick="openStatusPicker('paymentStatus', 'filterPurchasePaymentStatus', filterPurchases)" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="filterPurchasePaymentStatus" value="">
                     </div>
                     <div class="form-group">
                         <label>📅 PO Date From</label>
@@ -3953,15 +3944,8 @@
                     </div>
                     <div class="form-group">
                         <label>Order Status</label>
-                        <select id="filterSaleStatus" onchange="filterSales()">
-                            <option value="">All</option>
-                            <option value="Pending">⏳ Pending</option>
-                            <option value="Ready">📦 Ready</option>
-                            <option value="Out for Delivery">🚚 Out for Delivery</option>
-                            <option value="Delivered">✅ Delivered</option>
-                            <option value="Voided">❌ Voided</option>
-                            <option value="exclude-voided">🚫 Exclude Voided</option>
-                        </select>
+                        <input type="text" id="filterSaleStatus_display" placeholder="📋 Click to select..." onclick="openStatusPicker('filterSaleStatus', 'filterSaleStatus', filterSales)" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="filterSaleStatus" value="">
                     </div>
                     <div class="form-group">
                         <label>Date From</label>
@@ -11184,13 +11168,8 @@
                         </div>
                         <div class="form-group">
                             <label>Status</label>
-                            <select id="editPOStatus">
-                                <option value="Ordered" ${po.Status === 'Ordered' ? 'selected' : ''}>📝 Ordered - Sent to supplier</option>
-                                <option value="In Transit" ${po.Status === 'In Transit' ? 'selected' : ''}>🚚 In Transit - Shipped, on the way</option>
-                                <option value="Partial" ${po.Status === 'Partial' ? 'selected' : ''}>📦 Partial - Some items received</option>
-                                <option value="Received" ${po.Status === 'Received' ? 'selected' : ''}>✅ Received - All items received</option>
-                                <option value="Voided" ${po.Status === 'Voided' || po.Status === 'Void' || po.Status === 'Cancelled' ? 'selected' : ''}>❌ Voided - Cancelled</option>
-                            </select>
+                            <input type="text" id="editPOStatus_display" value="${getStatusDisplayText('poStatus', po.Status)}" onclick="openStatusPicker('poStatus', 'editPOStatus')" readonly style="cursor: pointer; background: #fff; font-weight: 600;">
+                            <input type="hidden" id="editPOStatus" value="${po.Status}">
                         </div>
                     </div>
                     <div>
@@ -11277,15 +11256,27 @@
             const originalPrice = parseFloat(line[priceField]) || 0;
             
             return `
-                <div class="edit-line-item" data-type="${type}" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 50px; gap: 10px; margin-bottom: 10px; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                    <select class="edit-item" required>
-                        <option value="">Select Item</option>
-                        ${itemOptions}
-                    </select>
-                    <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}">
-                    <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice}">
-                    <input type="text" class="edit-total" readonly style="background: #e9ecef; font-weight: bold;" value="${formatMoney(originalQty * originalPrice)}">
-                    <button type="button" class="remove-btn" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer;">🗑️</button>
+                <div class="edit-line-item" data-type="${type}" data-original-item="${line.Item_ID}" data-original-qty="${originalQty}" data-line-id="${line.Line_ID || ''}" style="display: grid; grid-template-columns: 2.5fr 0.8fr 0.8fr 0.8fr 50px; gap: 10px; margin-bottom: 12px; align-items: end; padding: 15px; background: linear-gradient(135deg, #f8f9fa, #fff); border-radius: 10px; border: 2px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #667eea;">📦 Item</label>
+                        <select class="edit-item" required style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 14px; min-height: 48px; background: white;">
+                            <option value="">Select Item</option>
+                            ${itemOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #333;">📦 Qty</label>
+                        <input type="number" class="edit-qty" placeholder="Qty" min="1" required value="${originalQty}" style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 14px; min-height: 48px; font-weight: 600; text-align: center;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #333;">💲 ${type === 'PO' ? 'Cost' : 'Price'}</label>
+                        <input type="number" class="edit-price" placeholder="${type === 'PO' ? 'Cost' : 'Price'}" step="0.01" min="0" required value="${originalPrice.toFixed(2)}" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; min-height: 48px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #333;">💰 Total</label>
+                        <input type="text" class="edit-total" readonly value="${formatMoney(originalQty * originalPrice)}" style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 14px; min-height: 48px; background: #e8f5e9; font-weight: 600; color: #2e7d32; text-align: center;">
+                    </div>
+                    <button type="button" class="remove-btn" style="background: #ef4444; color: white; border: none; border-radius: 8px; padding: 12px 0; cursor: pointer; font-size: 16px; min-height: 48px; align-self: end;">🗑️</button>
                 </div>
             `;
         }
@@ -11591,24 +11582,13 @@
                         </div>
                         <div class="form-group">
                             <label>Payment Method</label>
-                            <select id="editSOPaymentMethod">
-                                <option value="Cash" ${so.Payment_Method === 'Cash' ? 'selected' : ''}>Cash</option>
-                                <option value="Check" ${so.Payment_Method === 'Check' ? 'selected' : ''}>Check</option>
-                                <option value="Credit Card" ${so.Payment_Method === 'Credit Card' ? 'selected' : ''}>Credit Card</option>
-                                <option value="Invoice" ${so.Payment_Method === 'Invoice' ? 'selected' : ''}>Invoice</option>
-                                <option value="Terms (Net 30)" ${so.Payment_Method === 'Terms (Net 30)' ? 'selected' : ''}>Terms (Net 30)</option>
-                            </select>
+                            <input type="text" id="editSOPaymentMethod_display" value="${getStatusDisplayText('paymentMethod', so.Payment_Method)}" onclick="openStatusPicker('paymentMethod', 'editSOPaymentMethod')" readonly style="cursor: pointer; background: #fff; font-weight: 600;">
+                            <input type="hidden" id="editSOPaymentMethod" value="${so.Payment_Method || 'Cash'}">
                         </div>
                         <div class="form-group">
                             <label>Status</label>
-                            <select id="editSOStatus">
-                                <option value="Pending" ${so.Status === 'Pending' ? 'selected' : ''}>📝 Pending</option>
-                                <option value="Ready" ${so.Status === 'Ready' ? 'selected' : ''}>📦 Ready for Pickup</option>
-                                <option value="Out for Delivery" ${so.Status === 'Out for Delivery' ? 'selected' : ''}>🚚 Out for Delivery</option>
-                                <option value="Delivered" ${so.Status === 'Delivered' ? 'selected' : ''}>✅ Delivered</option>
-                                <option value="Completed" ${so.Status === 'Completed' ? 'selected' : ''}>💰 Completed</option>
-                                <option value="Voided" ${so.Status === 'Voided' ? 'selected' : ''}>❌ Voided</option>
-                            </select>
+                            <input type="text" id="editSOStatus_display" value="${getStatusDisplayText('soStatus', so.Status)}" onclick="openStatusPicker('soStatus', 'editSOStatus')" readonly style="cursor: pointer; background: #fff; font-weight: 600;">
+                            <input type="hidden" id="editSOStatus" value="${so.Status}">
                         </div>
                     </div>
                     <div>
@@ -14890,12 +14870,8 @@
                 filterHtml += `
                     <div class="form-group">
                         <label>💳 Payment Status</label>
-                        <select id="rptFilter_paymentStatus">
-                            <option value="">All</option>
-                            <option value="Paid">✅ Paid</option>
-                            <option value="Partial">🔶 Partial</option>
-                            <option value="Unpaid">❌ Unpaid</option>
-                        </select>
+                        <input type="text" id="rptFilter_paymentStatus_display" placeholder="📋 Click to select..." onclick="openStatusPicker('paymentStatus', 'rptFilter_paymentStatus')" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_paymentStatus" value="">
                     </div>`;
             }
             
@@ -14983,13 +14959,8 @@
                 filterHtml += `
                     <div class="form-group">
                         <label>📋 Transaction Status</label>
-                        <select id="rptFilter_transactionStatus">
-                            <option value="exclude-voided" selected>🚫 Exclude Voided</option>
-                            <option value="">All Transactions</option>
-                            <option value="Completed">✅ Completed Only</option>
-                            <option value="Pending">🟡 Pending Only</option>
-                            <option value="Voided">❌ Voided Only</option>
-                        </select>
+                        <input type="text" id="rptFilter_transactionStatus_display" value="🚫 Exclude Voided" onclick="openStatusPicker('transactionStatus', 'rptFilter_transactionStatus')" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_transactionStatus" value="exclude-voided">
                     </div>`;
             }
             
@@ -14998,14 +14969,8 @@
                 filterHtml += `
                     <div class="form-group">
                         <label>🚚 Delivery Status</label>
-                        <select id="rptFilter_deliveryStatus">
-                            <option value="needs-delivery" selected>📦 Needs Delivery (Pending/Ready/Out)</option>
-                            <option value="">All Orders</option>
-                            <option value="pending">📝 Pending Only</option>
-                            <option value="ready">📦 Ready for Pickup Only</option>
-                            <option value="out">🚚 Out for Delivery Only</option>
-                            <option value="delivered">✅ Delivered/Completed</option>
-                        </select>
+                        <input type="text" id="rptFilter_deliveryStatus_display" value="📦 Needs Delivery" onclick="openStatusPicker('deliveryStatus', 'rptFilter_deliveryStatus')" readonly style="cursor: pointer; background: #fff;">
+                        <input type="hidden" id="rptFilter_deliveryStatus" value="needs-delivery">
                     </div>`;
             }
             
@@ -15414,64 +15379,79 @@
                 return;
             }
             
-            // STEP 1: Expand all collapsible sections
-            const allDivs = content.querySelectorAll('div');
-            const hiddenDivs = [];
-            allDivs.forEach(div => {
+            // Clone content to avoid modifying original
+            const contentClone = content.cloneNode(true);
+            
+            // Expand all hidden sections in clone
+            contentClone.querySelectorAll('div').forEach(div => {
                 if (div.style.display === 'none') {
-                    hiddenDivs.push({ element: div, originalDisplay: 'none' });
-                    // Check if it should be grid or block
-                    if (div.parentElement?.querySelector('[onclick*="grid"]')) {
-                        div.style.display = 'grid';
-                    } else {
-                        div.style.display = 'block';
-                    }
+                    div.style.display = div.parentElement?.querySelector('[onclick*="grid"]') ? 'grid' : 'block';
                 }
             });
             
-            // STEP 2: Convert all canvas charts to images for printing
-            const canvases = content.querySelectorAll('canvas');
-            const chartImages = [];
-            
-            canvases.forEach((canvas) => {
+            // Convert canvases to images
+            const originalCanvases = content.querySelectorAll('canvas');
+            const cloneCanvases = contentClone.querySelectorAll('canvas');
+            originalCanvases.forEach((canvas, i) => {
                 try {
-                    // Remove any existing print images first
-                    const existingImg = canvas.parentNode.querySelector('.print-chart-image');
-                    if (existingImg) existingImg.remove();
-                    
-                    // Create new image from canvas
-                    const imgData = canvas.toDataURL('image/png', 1.0);
                     const img = document.createElement('img');
-                    img.src = imgData;
-                    img.className = 'print-chart-image';
-                    img.style.cssText = 'max-width: 100%; height: auto; display: none; margin: 10px auto; page-break-inside: avoid;';
-                    
-                    // Insert image after canvas
-                    canvas.parentNode.insertBefore(img, canvas.nextSibling);
-                    chartImages.push(img);
+                    img.src = canvas.toDataURL('image/png', 1.0);
+                    img.style.cssText = 'max-width: 100%; height: auto; margin: 10px auto; display: block;';
+                    if (cloneCanvases[i]) {
+                        cloneCanvases[i].parentNode.replaceChild(img, cloneCanvases[i]);
+                    }
                 } catch(e) {
-                    console.warn('Could not convert chart to image:', e);
+                    console.warn('Could not convert chart:', e);
                 }
             });
             
-            // STEP 3: Add print class to body for CSS targeting
-            document.body.classList.add('printing-report');
+            // Get current theme colors
+            const styles = getComputedStyle(document.documentElement);
+            const primaryColor = styles.getPropertyValue('--primary').trim() || '#667eea';
             
-            // Store the title for print header
-            document.body.dataset.printTitle = title.replace(/^[^\w]+/, '');
-            
-            // STEP 4: Small delay to ensure images are rendered, then print
-            setTimeout(() => {
-                window.print();
-                
-                // STEP 5: Restore hidden sections after printing
-                setTimeout(() => {
-                    document.body.classList.remove('printing-report');
-                    hiddenDivs.forEach(item => {
-                        item.element.style.display = item.originalDisplay;
-                    });
-                }, 1000);
-            }, 150);
+            // Open print window with clean HTML
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${title.replace(/^[^\w]+/, '')}</title>
+                    <style>
+                        * { box-sizing: border-box; }
+                        body { 
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            margin: 0; padding: 20px; color: #333;
+                        }
+                        h1 { color: ${primaryColor}; margin: 0 0 20px 0; font-size: 24px; }
+                        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background: #f5f5f5; font-weight: 600; }
+                        tr:nth-child(even) { background: #fafafa; }
+                        .summary-box, [style*="background: linear-gradient"] { 
+                            padding: 15px; margin: 10px 0; border-radius: 8px; 
+                        }
+                        img { max-width: 100%; height: auto; }
+                        @media print {
+                            body { padding: 0; }
+                            table { page-break-inside: auto; }
+                            tr { page-break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title.replace(/^[^\w]+/, '')}</h1>
+                    ${contentClone.innerHTML}
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() { 
+                                window.print(); 
+                            }, 300);
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
         
         // Helper to get current theme colors for printing
@@ -31022,7 +31002,7 @@ NOTE: Please print the attached PO document for full details.`;
                             </div>
                             <div style="display: flex; gap: 8px;">
                                 ${isUrgent ? `
-                                    <button class="btn-small" onclick="switchTab('createpo')" style="background: #ef4444; color: white; font-size: 12px;">⚠️ CREATE PO</button>
+                                    <button class="btn-small" onclick="createPOForBackorderItem('${item.Item_ID}')" style="background: #ef4444; color: white; font-size: 12px;">⚠️ CREATE PO</button>
                                 ` : ''}
                                 <button class="btn-small" onclick="viewItemDetails('${item.Item_ID}')" style="font-size: 12px;">View</button>
                             </div>
@@ -31040,6 +31020,120 @@ NOTE: Please print the attached PO document for full details.`;
             }
             
             container.innerHTML = html;
+        }
+        
+        // Create PO for a backorder item from Inventory tab
+        async function createPOForBackorderItem(itemId) {
+            // Get item from cache
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            if (!item) {
+                showStatus('inventoryStatus', '❌ Item not found. Please refresh.', 'error');
+                return;
+            }
+            
+            const supplierId = item.Supplier_ID;
+            const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+            const supplierName = supplier?.Supplier_Name || 'Unknown';
+            
+            const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+            const backorder = parseInt(item.Qty_On_Backorder) || 0;
+            const onOrder = parseInt(item.Qty_On_Order) || 0;
+            const unitsPerPackage = parseInt(item.Units_Per_Package) || 1;
+            
+            // Calculate needed quantity
+            const gap = Math.max(0, backorder - onOrder);
+            const suggestedUnits = Math.max(gap, backorder);
+            const suggestedCases = Math.ceil(suggestedUnits / unitsPerPackage);
+            
+            // Show styled confirmation modal
+            const confirmed = await showConfirmModal(
+                '📦 Create PO for Backorder Item',
+                `<div style="text-align: left; padding: 10px 0;">
+                    <p><strong>Item:</strong> ${item.Item_Description}</p>
+                    <p><strong>SKU:</strong> ${item.SKU || 'N/A'}</p>
+                    <p><strong>Supplier:</strong> ${supplierName}</p>
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+                    <p>📊 <strong>Current Status:</strong></p>
+                    <ul style="margin: 5px 0 15px 20px;">
+                        <li>On Hand: ${qtyOnHand} units</li>
+                        <li>On Backorder: ${backorder} units</li>
+                        <li>On Order: ${onOrder} units</li>
+                        <li style="color: #dc2626; font-weight: 600;">Gap to Fill: ${gap} units</li>
+                    </ul>
+                    <p>This will navigate to Create PO and pre-fill with <strong>${suggestedCases} cases</strong> (${suggestedCases * unitsPerPackage} units).</p>
+                </div>`,
+                'Create PO',
+                'Cancel'
+            );
+            
+            if (!confirmed) return;
+            
+            // Navigate to Create PO tab with pre-filled data
+            window.skipCreatePOClear = true;
+            switchTab('createpo');
+            
+            setTimeout(() => {
+                // Set supplier
+                const supplierSelect = document.getElementById('createPOSupplier');
+                if (supplierSelect) {
+                    supplierSelect.value = supplierId;
+                    filterItemsBySupplier();
+                }
+                
+                // Set today's date
+                const today = getTodayLocalDate();
+                document.getElementById('createPODate').value = today;
+                
+                // Set notes
+                const notesField = document.getElementById('createPONotes');
+                if (notesField) {
+                    notesField.value = `Backorder fulfillment for ${item.Item_Description}`;
+                }
+                
+                // Clear existing line items and add this item
+                const container = document.getElementById('createPOLineItems');
+                container.innerHTML = '';
+                
+                const cost = parseFloat(item.Package_Cost) || 0;
+                const units = parseInt(item.Units_Per_Package) || 1;
+                
+                const newRow = document.createElement('div');
+                newRow.className = 'line-item-row';
+                newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
+                
+                newRow.innerHTML = `
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                        <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
+                            <option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">💲 Cost</label>
+                        <input type="number" step="0.01" class="createpo-cost" value="${cost.toFixed(2)}" style="width: 100%; padding: 14px 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; min-height: 52px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">🔢 Units/Pkg</label>
+                        <input type="number" class="createpo-units" value="${units}" readonly style="width: 100%; padding: 14px 12px; border: 2px solid #eee; border-radius: 8px; font-size: 15px; min-height: 52px; background: #f5f5f5; color: #666;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Qty</label>
+                        <input type="number" class="createpo-qty" value="${suggestedCases}" min="1" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 600; background: white;" oninput="updateCreatePOLineTotal(this)">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📊 Total Units</label>
+                        <input type="text" class="createpo-total-units" value="${suggestedCases * units}" readonly style="width: 100%; padding: 14px 12px; border: 2px solid #eee; border-radius: 8px; font-size: 15px; min-height: 52px; background: #f5f5f5; color: #333; font-weight: 600;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">💰 Line Total</label>
+                        <input type="text" class="createpo-line-total" value="$${(suggestedCases * cost).toFixed(2)}" readonly style="width: 100%; padding: 14px 12px; border: 2px solid #eee; border-radius: 8px; font-size: 15px; min-height: 52px; background: #e8f5e9; color: #2e7d32; font-weight: 600;">
+                    </div>
+                    <button type="button" onclick="this.closest('.line-item-row').remove(); updateCreatePOTotal();" style="background: #ef4444; color: white; border: none; padding: 14px 0; border-radius: 8px; cursor: pointer; font-size: 18px; min-height: 52px; align-self: end;">🗑️</button>
+                `;
+                
+                container.appendChild(newRow);
+                updateCreatePOTotal();
+            }, 300);
         }
         
         /**
@@ -31257,8 +31351,8 @@ NOTE: Please print the attached PO document for full details.`;
     </script>
     
     <!-- Order View/Edit Modal -->
-    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; padding: 20px; box-sizing: border-box;">
-        <div id="orderModalInner" style="background: white; margin: 0 auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: hidden; min-width: 400px; min-height: 300px; position: relative; top: 50%; transform: translateY(-50%);">
+    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; padding: 20px; box-sizing: border-box; overflow-y: auto;">
+        <div id="orderModalInner" style="background: white; margin: 0 auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: hidden; min-width: 400px; min-height: 300px;">
             <div id="orderModalHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
                 <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
@@ -31276,8 +31370,8 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- Report Setup Modal -->
-    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box;">
-        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); height: auto; display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto; position: relative; top: 50%; transform: translateY(-50%);">
+    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto;">
+        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto;">
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
                 <div style="display: flex; gap: 8px; align-items: center;">
@@ -31449,6 +31543,19 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- UNIVERSAL STATUS PICKER MODAL -->
+    <div id="statusPickerModal" class="item-picker-overlay">
+        <div class="item-picker-container" style="max-width: 450px;">
+            <div class="item-picker-header">
+                <h3 id="statusPickerTitle">📋 Select Status</h3>
+                <button class="item-picker-close" onclick="closeStatusPicker()">&times;</button>
+            </div>
+            <div id="statusPickerList" class="item-picker-list" style="padding: 15px;">
+                <!-- Status options will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- INVOICE PICKER MODAL -->
     <div id="invoicePickerModal" class="item-picker-overlay">
         <div class="item-picker-container">
@@ -31606,6 +31713,8 @@ NOTE: Please print the attached PO document for full details.`;
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y;
             overscroll-behavior: contain;
+            display: flex;
+            flex-direction: column;
         }
         
         .item-picker-card {
@@ -31620,6 +31729,9 @@ NOTE: Please print the attached PO document for full details.`;
             border-left: 4px solid #c0c0c0;
             touch-action: pan-y;
             -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .item-picker-footer {
@@ -31885,11 +31997,11 @@ NOTE: Please print the attached PO document for full details.`;
         #supplierPickerModal,
         #customerPickerModal { z-index: 11000 !important; } /* Picker modals highest */
         
-        /* Modal content container - DESKTOP: constrain to viewport with vertical centering */
+        /* Modal content container - DESKTOP: constrain to viewport, position at TOP */
         #reportSetupModalInner {
             position: relative !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
+            top: 0 !important;
+            transform: none !important;
             max-height: calc(100vh - 40px) !important;
             max-width: 900px !important;
             margin: 0 auto !important;
@@ -31900,8 +32012,8 @@ NOTE: Please print the attached PO document for full details.`;
         
         #orderModalInner {
             position: relative !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
+            top: 0 !important;
+            transform: none !important;
             max-height: calc(100vh - 40px) !important;
             max-width: 900px !important;
             margin: 0 auto !important;
@@ -32744,6 +32856,215 @@ NOTE: Please print the attached PO document for full details.`;
             document.body.classList.remove('modal-open');
             window.invoicePickerForReport = false;
         }
+        
+        // ==================== UNIVERSAL STATUS PICKER ====================
+        let statusPickerCallback = null;
+        let statusPickerTargetId = null;
+        
+        const STATUS_OPTIONS = {
+            // Purchase Order Status
+            poStatus: {
+                title: '📦 Select PO Status',
+                options: [
+                    { value: 'Ordered', label: 'Ordered - Sent to supplier', icon: '📤', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'In Transit', label: 'In Transit - Shipped, on the way', icon: '🚚', color: '#3b82f6', bg: '#eff6ff' },
+                    { value: 'Partial', label: 'Partial - Some items received', icon: '📦', color: '#8b5cf6', bg: '#f5f3ff' },
+                    { value: 'Received', label: 'Received - All items received', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Voided', label: 'Voided - Cancelled', icon: '❌', color: '#ef4444', bg: '#fef2f2' }
+                ]
+            },
+            // Sales Order Status
+            soStatus: {
+                title: '🛒 Select Order Status',
+                options: [
+                    { value: 'Pending', label: 'Pending - Awaiting fulfillment', icon: '📋', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'Ready for Pickup', label: 'Ready for Pickup', icon: '📦', color: '#3b82f6', bg: '#eff6ff' },
+                    { value: 'Out for Delivery', label: 'Out for Delivery', icon: '🚚', color: '#8b5cf6', bg: '#f5f3ff' },
+                    { value: 'Delivered', label: 'Delivered - Order complete', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Completed', label: 'Completed - Paid & delivered', icon: '💰', color: '#059669', bg: '#d1fae5' },
+                    { value: 'Voided', label: 'Voided - Cancelled', icon: '❌', color: '#ef4444', bg: '#fef2f2' }
+                ]
+            },
+            // Payment Method
+            paymentMethod: {
+                title: '💳 Select Payment Method',
+                options: [
+                    { value: 'Cash', label: 'Cash', icon: '💵', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Check', label: 'Check', icon: '📝', color: '#3b82f6', bg: '#eff6ff' },
+                    { value: 'Credit Card', label: 'Credit Card', icon: '💳', color: '#8b5cf6', bg: '#f5f3ff' },
+                    { value: 'Invoice', label: 'Invoice (Net Terms)', icon: '📄', color: '#f59e0b', bg: '#fff7ed' }
+                ]
+            },
+            // Payment Status Filter
+            paymentStatus: {
+                title: '💰 Select Payment Status',
+                options: [
+                    { value: '', label: 'All Payment Statuses', icon: '📋', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: 'Paid', label: 'Paid - Fully paid', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Partial', label: 'Partial - Some paid', icon: '🟡', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'Unpaid', label: 'Unpaid - Nothing paid', icon: '🔴', color: '#ef4444', bg: '#fef2f2' }
+                ]
+            },
+            // Purchase Filter Status
+            filterPurchaseStatus: {
+                title: '📦 Filter by PO Status',
+                options: [
+                    { value: '', label: 'All Statuses', icon: '📋', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: 'Ordered', label: 'Ordered (Pending)', icon: '📤', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'Received', label: 'Received', icon: '📥', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Voided', label: 'Voided', icon: '❌', color: '#ef4444', bg: '#fef2f2' },
+                    { value: 'exclude-voided', label: 'Exclude Voided', icon: '🚫', color: '#6b7280', bg: '#f3f4f6' }
+                ]
+            },
+            // Sales Filter Status
+            filterSaleStatus: {
+                title: '🛒 Filter by Order Status',
+                options: [
+                    { value: '', label: 'All Statuses', icon: '📋', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: 'Pending', label: 'Pending', icon: '📋', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'Ready for Pickup', label: 'Ready for Pickup', icon: '📦', color: '#3b82f6', bg: '#eff6ff' },
+                    { value: 'Out for Delivery', label: 'Out for Delivery', icon: '🚚', color: '#8b5cf6', bg: '#f5f3ff' },
+                    { value: 'Delivered', label: 'Delivered', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Completed', label: 'Completed', icon: '💰', color: '#059669', bg: '#d1fae5' },
+                    { value: 'Voided', label: 'Voided', icon: '❌', color: '#ef4444', bg: '#fef2f2' },
+                    { value: 'exclude-voided', label: 'Exclude Voided', icon: '🚫', color: '#6b7280', bg: '#f3f4f6' }
+                ]
+            },
+            // Transaction Status (for reports)
+            transactionStatus: {
+                title: '📊 Transaction Status',
+                options: [
+                    { value: 'exclude-voided', label: 'Exclude Voided', icon: '🚫', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: '', label: 'All Transactions', icon: '📋', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: 'Completed', label: 'Completed Only', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Pending', label: 'Pending Only', icon: '🟡', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'Voided', label: 'Voided Only', icon: '❌', color: '#ef4444', bg: '#fef2f2' }
+                ]
+            },
+            // Delivery Status (for reports)
+            deliveryStatus: {
+                title: '🚚 Delivery Status',
+                options: [
+                    { value: 'needs-delivery', label: 'Needs Delivery (Pending/Ready/Out)', icon: '📦', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: '', label: 'All Orders', icon: '📋', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: 'pending', label: 'Pending Only', icon: '📝', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'ready', label: 'Ready for Pickup Only', icon: '📦', color: '#3b82f6', bg: '#eff6ff' },
+                    { value: 'out', label: 'Out for Delivery Only', icon: '🚚', color: '#8b5cf6', bg: '#f5f3ff' },
+                    { value: 'delivered', label: 'Delivered/Completed', icon: '✅', color: '#10b981', bg: '#ecfdf5' }
+                ]
+            }
+        };
+        
+        function openStatusPicker(type, targetId, callback) {
+            document.activeElement?.blur();
+            
+            const config = STATUS_OPTIONS[type];
+            if (!config) {
+                console.error('Unknown status type:', type);
+                return;
+            }
+            
+            statusPickerTargetId = targetId;
+            statusPickerCallback = callback;
+            
+            document.getElementById('statusPickerTitle').textContent = config.title;
+            
+            const currentValue = document.getElementById(targetId)?.value || '';
+            
+            let html = '';
+            config.options.forEach(opt => {
+                const isSelected = opt.value === currentValue;
+                html += `
+                    <div class="item-picker-card" 
+                        ontouchstart="pickerTouchStart(event)" 
+                        ontouchmove="pickerTouchMove(event)" 
+                        ontouchend="if(pickerTouchEnd()) selectStatus('${opt.value}')" 
+                        onclick="selectStatus('${opt.value}')"
+                        style="border-left: 4px solid ${opt.color}; background: ${isSelected ? opt.bg : 'white'}; ${isSelected ? 'border: 2px solid ' + opt.color + ';' : ''}">
+                        <div style="display: flex; align-items: center; gap: 12px; pointer-events: none;">
+                            <span style="font-size: 24px;">${opt.icon}</span>
+                            <div>
+                                <div style="font-weight: 600; color: ${opt.color};">${opt.label}</div>
+                            </div>
+                            ${isSelected ? '<span style="margin-left: auto; color: ' + opt.color + '; font-size: 20px;">✓</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('statusPickerList').innerHTML = html;
+            document.getElementById('statusPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function selectStatus(value) {
+            if (statusPickerTargetId) {
+                const el = document.getElementById(statusPickerTargetId);
+                if (el) {
+                    el.value = value;
+                    // Trigger change event
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            if (statusPickerCallback && typeof statusPickerCallback === 'function') {
+                statusPickerCallback(value);
+            }
+            closeStatusPicker();
+        }
+        
+        function closeStatusPicker() {
+            document.getElementById('statusPickerModal').style.display = 'none';
+            document.body.style.overflow = '';
+            statusPickerCallback = null;
+            statusPickerTargetId = null;
+        }
+        
+        // Helper to get display text for a status value
+        function getStatusDisplayText(type, value) {
+            const config = STATUS_OPTIONS[type];
+            if (!config) return value || 'Select...';
+            const opt = config.options.find(o => o.value === value);
+            return opt ? `${opt.icon} ${opt.label.split(' - ')[0]}` : (value || 'Select...');
+        }
+        
+        // Update display field after selection
+        function updateStatusDisplay(targetId) {
+            const hidden = document.getElementById(targetId);
+            const display = document.getElementById(targetId + '_display');
+            if (hidden && display) {
+                // Find the type from known mappings
+                const typeMap = {
+                    'filterPurchaseStatus': 'filterPurchaseStatus',
+                    'filterPurchasePaymentStatus': 'paymentStatus',
+                    'filterSaleStatus': 'filterSaleStatus',
+                    'editPOStatus': 'poStatus',
+                    'editSOStatus': 'soStatus',
+                    'editSOPaymentMethod': 'paymentMethod',
+                    'rptFilter_paymentStatus': 'paymentStatus',
+                    'rptFilter_transactionStatus': 'transactionStatus',
+                    'rptFilter_deliveryStatus': 'deliveryStatus'
+                };
+                const type = typeMap[targetId] || 'poStatus';
+                display.value = getStatusDisplayText(type, hidden.value);
+            }
+        }
+        
+        // Override selectStatus to also update display
+        const originalSelectStatus = selectStatus;
+        selectStatus = function(value) {
+            if (statusPickerTargetId) {
+                const el = document.getElementById(statusPickerTargetId);
+                if (el) {
+                    el.value = value;
+                    updateStatusDisplay(statusPickerTargetId);
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            if (statusPickerCallback && typeof statusPickerCallback === 'function') {
+                statusPickerCallback(value);
+            }
+            closeStatusPicker();
+        };
         
         // Supplier picker for Purchase Orders filter
         function openSupplierPickerForPurchases() {
@@ -34846,6 +35167,7 @@ NOTE: Please print the attached PO document for full details.`;
                                 <span class="item-picker-detail-label">Total</span>
                                 <span class="item-picker-detail-value item-picker-price">${formatMoney(total)}</span>
                             </div>
+                        </div>
                         </div>
                     </div>
                 `;
