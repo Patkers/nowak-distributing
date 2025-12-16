@@ -22445,7 +22445,7 @@
                             🔴 NEGATIVE INVENTORY
                             <span class="action-count">${negativeInventory.length}</span>
                         </div>
-                        ${negativeInventory.length > 0 ? '<button class="action-btn action-btn-danger" onclick="showSection(\'inventory\')">Fix Now</button>' : ''}
+                        ${negativeInventory.length > 0 ? '<button class="action-btn action-btn-danger" onclick="openQuickAdjustForNegative()">Fix Now</button>' : ''}
                     </div>
                     <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
                         <strong>Items sold before received</strong> - Qty On Hand is below zero. This indicates you sold more than you had in stock. Needs immediate correction.
@@ -23460,84 +23460,198 @@
                 return;
             }
             
-            // All items are from the same supplier - proceed!
+            // All items are from the same supplier - show bulk PO popup!
             const supplierId = suppliers[0];
             const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+            const supplierName = supplier?.Supplier_Name || 'Unknown Supplier';
             
-            // Close the report modal
-            closeReportSetup();
+            // Build line items HTML
+            let lineItemsHtml = '';
+            let grandTotal = 0;
             
-            // Skip clearing since we're pre-filling
-            window.skipCreatePOClear = true;
+            items.forEach((item, index) => {
+                const cost = parseFloat(item.Package_Cost) || 0;
+                const units = parseInt(item.Units_Per_Package) || 1;
+                const qtyNeeded = Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
+                const casesNeeded = Math.ceil(qtyNeeded / units);
+                const lineTotal = casesNeeded * cost;
+                grandTotal += lineTotal;
+                
+                lineItemsHtml += `
+                    <tr data-item-id="${item.Item_ID}" data-cost="${cost}" data-units="${units}">
+                        <td style="font-size: 13px;">${item.SKU || ''}</td>
+                        <td style="font-size: 12px;">${item.Item_Description?.substring(0, 30) || ''}</td>
+                        <td style="text-align: center;">
+                            <input type="number" class="bulk-po-qty" value="${casesNeeded}" min="1" 
+                                   onchange="updateBulkPOLine(this)" 
+                                   style="width: 60px; padding: 6px; text-align: center; border: 2px solid #f9a825; border-radius: 4px; font-weight: bold;">
+                        </td>
+                        <td style="text-align: center; color: #666;">${units}</td>
+                        <td style="text-align: center; color: #28a745; font-weight: 600;">$${cost.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 600;" class="bulk-line-total">$${lineTotal.toFixed(2)}</td>
+                        <td style="text-align: center;">
+                            <button type="button" onclick="removeBulkPOLine(this)" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">×</button>
+                        </td>
+                    </tr>
+                `;
+            });
             
-            // Switch to CREATE PO tab
-            switchTab('createpo');
+            // Show Bulk PO Modal
+            const modalHtml = `
+                <div id="bulkPOModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;">
+                    <div style="background: white; border-radius: 16px; padding: 25px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
+                            <h2 style="margin: 0; color: #667eea;">🛒 Bulk Purchase Order (${items.length} items)</h2>
+                            <button onclick="closeBulkPOModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+                        </div>
+                        
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                            <div style="font-weight: 600; color: #2e7d32;">🏭 Supplier: ${supplierName}</div>
+                        </div>
+                        
+                        <form id="bulkPOForm" onsubmit="submitBulkPO(event, '${supplierId}')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                                <div>
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Order Date</label>
+                                    <input type="date" id="bulkPODate" value="${getTodayLocalDate()}" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Expected Arrival</label>
+                                    <input type="date" id="bulkPOExpected" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                </div>
+                            </div>
+                            
+                            <div style="overflow-x: auto; margin-bottom: 15px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 14px;" id="bulkPOTable">
+                                    <thead>
+                                        <tr style="background: #667eea; color: white;">
+                                            <th style="padding: 10px; text-align: left;">SKU</th>
+                                            <th style="padding: 10px; text-align: left;">Description</th>
+                                            <th style="padding: 10px; text-align: center;">Cases</th>
+                                            <th style="padding: 10px; text-align: center;">Units/Pkg</th>
+                                            <th style="padding: 10px; text-align: center;">Cost</th>
+                                            <th style="padding: 10px; text-align: right;">Total</th>
+                                            <th style="padding: 10px; width: 40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${lineItemsHtml}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="background: #f8f9fa; font-weight: bold;">
+                                            <td colspan="5" style="padding: 12px; text-align: right;">Grand Total:</td>
+                                            <td style="padding: 12px; text-align: right; font-size: 18px; color: #28a745;" id="bulkPOGrandTotal">$${grandTotal.toFixed(2)}</td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="font-weight: 600; display: block; margin-bottom: 5px;">📝 Notes (optional)</label>
+                                <textarea id="bulkPONotes" rows="2" placeholder="Special instructions..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="button" onclick="closeBulkPOModal()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">Cancel</button>
+                                <button type="submit" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">✅ Create Purchase Order</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
             
-            setTimeout(() => {
-                // Set supplier
-                const supplierSelect = document.getElementById('createPOSupplier');
-                if (supplierSelect) {
-                    supplierSelect.value = supplierId;
-                    
-                    // Trigger change to populate items dropdown
-                    filterItemsBySupplier();
+            // Add modal to page
+            const modalContainer = document.createElement('div');
+            modalContainer.id = 'bulkPOModalContainer';
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer);
+        }
+        
+        function closeBulkPOModal() {
+            const container = document.getElementById('bulkPOModalContainer');
+            if (container) container.remove();
+        }
+        
+        function updateBulkPOLine(input) {
+            const row = input.closest('tr');
+            const cost = parseFloat(row.dataset.cost) || 0;
+            const qty = parseInt(input.value) || 0;
+            const lineTotal = qty * cost;
+            row.querySelector('.bulk-line-total').textContent = '$' + lineTotal.toFixed(2);
+            updateBulkPOGrandTotal();
+        }
+        
+        function removeBulkPOLine(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+            updateBulkPOGrandTotal();
+        }
+        
+        function updateBulkPOGrandTotal() {
+            const rows = document.querySelectorAll('#bulkPOTable tbody tr');
+            let total = 0;
+            rows.forEach(row => {
+                const cost = parseFloat(row.dataset.cost) || 0;
+                const qty = parseInt(row.querySelector('.bulk-po-qty')?.value) || 0;
+                total += cost * qty;
+            });
+            document.getElementById('bulkPOGrandTotal').textContent = '$' + total.toFixed(2);
+        }
+        
+        async function submitBulkPO(event, supplierId) {
+            event.preventDefault();
+            
+            const rows = document.querySelectorAll('#bulkPOTable tbody tr');
+            if (rows.length === 0) {
+                alert('No items in the order');
+                return;
+            }
+            
+            const lineItems = [];
+            rows.forEach(row => {
+                const itemId = row.dataset.itemId;
+                const qty = parseInt(row.querySelector('.bulk-po-qty')?.value) || 0;
+                const cost = parseFloat(row.dataset.cost) || 0;
+                if (qty > 0) {
+                    lineItems.push({ itemId, quantity: qty, unitCost: cost });
                 }
+            });
+            
+            if (lineItems.length === 0) {
+                alert('Please enter quantities for at least one item');
+                return;
+            }
+            
+            const poData = {
+                supplierId: supplierId,
+                poDate: document.getElementById('bulkPODate').value,
+                expectedDate: document.getElementById('bulkPOExpected').value || '',
+                notes: document.getElementById('bulkPONotes').value || '',
+                status: 'Ordered',
+                lineItems: lineItems
+            };
+            
+            showLoading('Creating Purchase Order...');
+            
+            try {
+                const result = await apiCall('createPurchaseOrder', poData);
+                hideLoading();
                 
-                // Set today's date
-                const today = getTodayLocalDate();
-                document.getElementById('createPODate').value = today;
-                document.getElementById('createPOExpectedDate').value = ''; // User must select
-                
-                // Clear existing line items
-                const container = document.getElementById('createPOLineItems');
-                container.innerHTML = '';
-                
-                // Add a row for each selected item
-                items.forEach(item => {
-                    const cost = parseFloat(item.Package_Cost) || 0;
-                    const units = parseInt(item.Units_Per_Package) || 1;
-                    const qtyNeeded = Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
-                    const casesNeeded = Math.ceil(qtyNeeded / units);
-                    
-                    const newRow = document.createElement('div');
-                    newRow.className = 'line-item-row';
-                    newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
-                    
-                    newRow.innerHTML = `
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                            <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
-                                <option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
-                            <input type="number" class="createpo-qty" value="${casesNeeded > 0 ? casesNeeded : ''}" placeholder="Qty" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
-                        </div>
-                        <div style="margin-top: 26px;">
-                            <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">${units}</div>
-                        </div>
-                        <div style="margin-top: 26px;">
-                            <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">${casesNeeded > 0 ? casesNeeded * units : '-'}</div>
-                        </div>
-                        <div style="margin-top: 26px;">
-                            <div class="createpo-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">$${cost.toFixed(2)}</div>
-                        </div>
-                        <div style="margin-top: 26px;">
-                            <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">${casesNeeded > 0 ? '$' + (casesNeeded * cost).toFixed(2) : '$0.00'}</div>
-                        </div>
-                        <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px;">🗑️</button>
-                    `;
-                    
-                    container.appendChild(newRow);
-                });
-                
-                // Calculate total
-                calculateCreatePOTotal();
-                
-                alert(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save PO" when ready.`);
-                
-            }, 300);
+                if (result && result.status === 'success') {
+                    closeBulkPOModal();
+                    alert('✅ Purchase Order ' + result.poId + ' created with ' + lineItems.length + ' items!');
+                    loadItems();
+                    if (typeof renderCriticalActionItems === 'function') {
+                        renderCriticalActionItems();
+                    }
+                } else {
+                    alert('❌ Error creating PO: ' + (result?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                hideLoading();
+                alert('❌ Error: ' + error.message);
+            }
         }
         
         function createPOForItem(itemId, unitsNeeded) {
@@ -23550,81 +23664,147 @@
             
             const supplierId = item.Supplier_ID;
             const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+            const supplierName = supplier?.Supplier_Name || 'Unknown Supplier';
             
-            // Close the report modal
-            closeReportSetup();
+            // Calculate values
+            const cost = parseFloat(item.Package_Cost) || 0;
+            const units = parseInt(item.Units_Per_Package) || 1;
+            const qtyNeeded = unitsNeeded !== undefined ? unitsNeeded : Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
+            const casesNeeded = Math.ceil(qtyNeeded / units);
+            const lineTotal = casesNeeded * cost;
             
-            // Skip clearing since we're pre-filling
-            window.skipCreatePOClear = true;
+            // Show Quick PO Modal (stays on critical report)
+            const modalHtml = `
+                <div id="quickPOModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;">
+                    <div style="background: white; border-radius: 16px; padding: 25px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
+                            <h2 style="margin: 0; color: #667eea;">🛒 Quick Purchase Order</h2>
+                            <button onclick="closeQuickPOModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+                        </div>
+                        
+                        <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                            <div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">🏭 Supplier: ${supplierName}</div>
+                            <div style="font-size: 14px; color: #666;">📦 ${item.SKU || ''} - ${item.Item_Description}</div>
+                        </div>
+                        
+                        <form id="quickPOForm" onsubmit="submitQuickPO(event, '${itemId}', '${supplierId}')">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                                <div>
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Order Date</label>
+                                    <input type="date" id="quickPODate" value="${getTodayLocalDate()}" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Expected Arrival</label>
+                                    <input type="date" id="quickPOExpected" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; align-items: end;">
+                                    <div>
+                                        <label style="font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px;">Item</label>
+                                        <div style="padding: 10px; background: #e9ecef; border-radius: 6px; font-size: 13px;">${item.SKU || item.Item_ID}</div>
+                                    </div>
+                                    <div>
+                                        <label style="font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px;">📦 Cases</label>
+                                        <input type="number" id="quickPOCases" value="${casesNeeded}" min="1" required onchange="updateQuickPOTotal(${cost}, ${units})" style="width: 100%; padding: 10px; border: 2px solid #f9a825; border-radius: 6px; text-align: center; font-size: 16px; font-weight: bold; background: #fffde7; box-sizing: border-box;">
+                                    </div>
+                                    <div>
+                                        <label style="font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px;">Units/Pkg</label>
+                                        <div style="padding: 10px; background: #e9ecef; border-radius: 6px; text-align: center; font-size: 14px;">${units}</div>
+                                    </div>
+                                    <div>
+                                        <label style="font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px;">Cost/Case</label>
+                                        <div style="padding: 10px; background: #e8f5e9; border-radius: 6px; text-align: center; font-size: 14px; font-weight: 600; color: #28a745;">$${cost.toFixed(2)}</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 15px; text-align: right; border-top: 1px solid #ddd; padding-top: 10px;">
+                                    <span style="font-size: 14px; color: #666;">Total Units: </span>
+                                    <span id="quickPOTotalUnits" style="font-weight: 700; color: #667eea; margin-right: 20px;">${casesNeeded * units}</span>
+                                    <span style="font-size: 14px; color: #666;">Order Total: </span>
+                                    <span id="quickPOTotal" style="font-size: 20px; font-weight: 700; color: #28a745;">$${lineTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="font-weight: 600; display: block; margin-bottom: 5px;">📝 Notes (optional)</label>
+                                <textarea id="quickPONotes" rows="2" placeholder="Special instructions..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;"></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="button" onclick="closeQuickPOModal()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">Cancel</button>
+                                <button type="submit" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">✅ Create Purchase Order</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
             
-            // Switch to CREATE PO tab
-            switchTab('createpo');
+            // Add modal to page
+            const modalContainer = document.createElement('div');
+            modalContainer.id = 'quickPOModalContainer';
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer);
+        }
+        
+        function closeQuickPOModal() {
+            const container = document.getElementById('quickPOModalContainer');
+            if (container) container.remove();
+        }
+        
+        function updateQuickPOTotal(cost, units) {
+            const cases = parseInt(document.getElementById('quickPOCases').value) || 0;
+            document.getElementById('quickPOTotalUnits').textContent = cases * units;
+            document.getElementById('quickPOTotal').textContent = '$' + (cases * cost).toFixed(2);
+        }
+        
+        async function submitQuickPO(event, itemId, supplierId) {
+            event.preventDefault();
             
-            setTimeout(() => {
-                // Set supplier
-                const supplierSelect = document.getElementById('createPOSupplier');
-                if (supplierSelect) {
-                    supplierSelect.value = supplierId;
-                    filterItemsBySupplier();
+            const cases = parseInt(document.getElementById('quickPOCases').value) || 0;
+            if (cases <= 0) {
+                alert('Please enter a valid quantity');
+                return;
+            }
+            
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            const cost = parseFloat(item?.Package_Cost) || 0;
+            
+            const poData = {
+                supplierId: supplierId,
+                poDate: document.getElementById('quickPODate').value,
+                expectedDate: document.getElementById('quickPOExpected').value || '',
+                notes: document.getElementById('quickPONotes').value || '',
+                status: 'Ordered',
+                lineItems: [{
+                    itemId: itemId,
+                    quantity: cases,
+                    unitCost: cost
+                }]
+            };
+            
+            showLoading('Creating Purchase Order...');
+            
+            try {
+                const result = await apiCall('createPurchaseOrder', poData);
+                hideLoading();
+                
+                if (result && result.status === 'success') {
+                    closeQuickPOModal();
+                    alert('✅ Purchase Order ' + result.poId + ' created successfully!');
+                    // Refresh items to update On Order quantities
+                    loadItems();
+                    // Refresh the critical report if still open
+                    if (typeof renderCriticalActionItems === 'function') {
+                        renderCriticalActionItems();
+                    }
+                } else {
+                    alert('❌ Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
-                
-                // Set today's date
-                const today = getTodayLocalDate();
-                document.getElementById('createPODate').value = today;
-                document.getElementById('createPOExpectedDate').value = ''; // User must select
-                
-                // Clear existing line items
-                const container = document.getElementById('createPOLineItems');
-                container.innerHTML = '';
-                
-                // Use passed unitsNeeded if provided, otherwise calculate simple gap
-                const cost = parseFloat(item.Package_Cost) || 0;
-                const units = parseInt(item.Units_Per_Package) || 1;
-                const qtyNeeded = unitsNeeded !== undefined ? unitsNeeded : Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
-                const casesNeeded = Math.ceil(qtyNeeded / units);
-                
-                const newRow = document.createElement('div');
-                newRow.className = 'line-item-row';
-                newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
-                
-                newRow.innerHTML = `
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                        <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
-                            <option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}" selected>${item.SKU || item.Item_ID} - ${item.Item_Description}</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
-                        <input type="number" class="createpo-qty" value="${casesNeeded > 0 ? casesNeeded : ''}" placeholder="Qty" min="1" oninput="calculateCreatePOTotal()" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
-                    </div>
-                    <div style="margin-top: 26px;">
-                        <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">${units}</div>
-                    </div>
-                    <div style="margin-top: 26px;">
-                        <div class="createpo-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">${casesNeeded > 0 ? casesNeeded * units : '-'}</div>
-                    </div>
-                    <div style="margin-top: 26px;">
-                        <div class="createpo-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">$${cost.toFixed(2)}</div>
-                    </div>
-                    <div style="margin-top: 26px;">
-                        <div class="createpo-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">${casesNeeded > 0 ? '$' + (casesNeeded * cost).toFixed(2) : '$0.00'}</div>
-                    </div>
-                    <button type="button" class="btn-danger" onclick="removeLineItem(this); calculateCreatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px;">🗑️</button>
-                `;
-                
-                container.appendChild(newRow);
-                
-                // Calculate total
-                calculateCreatePOTotal();
-                
-                // Focus quantity field
-                const qtyInput = container.querySelector('.createpo-qty');
-                if (qtyInput && !qtyInput.value) {
-                    qtyInput.focus();
-                }
-                
-            }, 300);
+            } catch (error) {
+                hideLoading();
+                alert('❌ Error: ' + error.message);
+            }
         }
         
         async function createInventoryAdjustment(itemId) {
@@ -23638,6 +23818,28 @@
             // Use the Quick Adjust Modal instead of navigating away
             // This keeps the report open so user can continue working
             openQuickAdjustModal(itemId);
+        }
+        
+        // Open adjustment modal for the first negative inventory item
+        function openQuickAdjustForNegative() {
+            // Find first negative inventory item from the displayed table
+            const negativeRows = document.querySelectorAll('.action-section.critical table tbody tr');
+            if (negativeRows.length > 0) {
+                const firstRow = negativeRows[0];
+                const adjustBtn = firstRow.querySelector('button[onclick*="createInventoryAdjustment"]');
+                if (adjustBtn) {
+                    adjustBtn.click();
+                    return;
+                }
+            }
+            
+            // Fallback: find any negative item from cached data
+            const negItem = (cachedItems || []).find(i => (parseInt(i.Qty_On_Hand) || 0) < 0);
+            if (negItem) {
+                openQuickAdjustModal(negItem.Item_ID);
+            } else {
+                alert('No negative inventory items found.');
+            }
         }
         
         function viewSaleOrder(saleId) {
