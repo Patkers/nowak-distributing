@@ -3137,6 +3137,7 @@
                 <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
                 <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
                 <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
+                <button class="btn" onclick="recalculateOnOrder()" style="background: #f39c12;" title="Recalculate On Order quantities based on pending POs">🔧 Fix On Order</button>
             </div>
             
             <!-- Filter Controls -->
@@ -8998,17 +8999,30 @@
             // Switch to inventory tab
             switchTab('inventory');
             
-            // Wait for tab to load, then pre-select the item
+            // Wait for tab to load, then show the adjustment form and pre-select the item
             setTimeout(() => {
-                const itemSelect = document.getElementById('adjustItem');
-                if (itemSelect && itemId) {
-                    itemSelect.value = itemId;
-                    // Trigger change event to load current quantity
-                    itemSelect.dispatchEvent(new Event('change'));
+                // Show the adjustment form
+                showAdjustInventoryForm();
+                
+                // Find the item and populate the fields
+                if (itemId && cachedItems.length > 0) {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    if (item) {
+                        // Set the hidden input value
+                        document.getElementById('adjustItem').value = itemId;
+                        // Set the display field
+                        document.getElementById('adjustItemDisplay').value = `${item.SKU || ''} - ${item.Item_Description || 'Unknown'}`.trim();
+                        // Set current quantity
+                        const currentQty = parseInt(item.Qty_On_Hand) || 0;
+                        document.getElementById('adjustCurrentQty').value = currentQty;
+                        // Clear adjustment fields
+                        document.getElementById('adjustQuantity').value = '';
+                        document.getElementById('adjustNewQty').value = '';
+                    }
                 }
                 
                 // Scroll to the adjustment form
-                const adjustForm = document.getElementById('inventory');
+                const adjustForm = document.getElementById('adjustInventoryForm');
                 if (adjustForm) {
                     adjustForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -21670,7 +21684,10 @@
             const pastDuePayments = sales.filter(s => {
                 if (s.Payment_Status === 'Paid' || !s.Due_Date) return false;
                 const dueDate = new Date(s.Due_Date);
-                return dueDate < today;
+                if (dueDate >= today) return false;
+                // Exclude $0 balances (already paid in full)
+                const balance = parseFloat(s.Total_Amount || 0) - parseFloat(s.Amount_Paid || 0);
+                return balance > 0.01;
             }).map(s => {
                 const dueDate = new Date(s.Due_Date);
                 const daysLate = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
@@ -24627,17 +24644,27 @@
                 ${sortedMonths.length > 0 ? `
                 <div class="biz-section">
                     <h3>📊 Sales Trend by Month</h3>
-                    <div class="biz-monthly-chart">
-                        ${sortedMonths.slice(-12).map(([month, data]) => {
-                            const height = (data.revenue / maxMonthlyRevenue) * 100;
-                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                            return `
-                                <div class="biz-monthly-bar">
-                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
-                                    <div class="biz-monthly-label">${monthName}</div>
-                                </div>
-                            `;
-                        }).join('')}
+                    <div style="display: flex; align-items: flex-end;">
+                        <!-- Y-axis labels -->
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 200px; padding-right: 10px; font-size: 11px; color: #6b7280;">
+                            <span>${formatMoney(maxMonthlyRevenue)}</span>
+                            <span>${formatMoney(maxMonthlyRevenue * 0.75)}</span>
+                            <span>${formatMoney(maxMonthlyRevenue * 0.5)}</span>
+                            <span>${formatMoney(maxMonthlyRevenue * 0.25)}</span>
+                            <span>$0</span>
+                        </div>
+                        <div class="biz-monthly-chart" style="flex: 1;">
+                            ${sortedMonths.slice(-12).map(([month, data]) => {
+                                const height = (data.revenue / maxMonthlyRevenue) * 100;
+                                const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                                return `
+                                    <div class="biz-monthly-bar">
+                                        <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
+                                        <div class="biz-monthly-label">${monthName}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
                     <div style="text-align: center; margin-top: 10px;">
                         <span style="font-size: 12px; color: #6b7280;">📈 Monthly Revenue Trend (Last 12 Months)</span>
@@ -35746,6 +35773,32 @@ NOTE: Please print the attached PO document for full details.`;
         // Store parsed items temporarily for commit
         let pendingItemsUpload = null;
         let pendingUploadMode = null;
+
+        // Recalculate Qty_On_Order for all items based on pending POs
+        async function recalculateOnOrder() {
+            if (!confirm('This will recalculate On Order quantities for ALL items based on pending Purchase Orders.\n\nThis fixes stale values that may not have been cleared when POs were received.\n\nContinue?')) {
+                return;
+            }
+            
+            showLoading('Recalculating On Order quantities...');
+            
+            try {
+                const result = await apiCall('recalculateQtyOnOrder');
+                
+                if (result && result.status === 'success') {
+                    hideLoading();
+                    alert(`✅ ${result.message}`);
+                    // Refresh items to show updated values
+                    await loadItems();
+                } else {
+                    hideLoading();
+                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                hideLoading();
+                alert('❌ Error recalculating: ' + error.message);
+            }
+        }
 
         async function downloadItemsReport() {
             if (!cachedItems || cachedItems.length === 0) {
