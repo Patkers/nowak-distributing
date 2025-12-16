@@ -4,15 +4,17 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Saturday, December 14, 2025 @ 3:50 AM CST
-         VERSION: V10Z-20251214-0350
+         LAST UPDATED: Monday, December 16, 2025
+         VERSION: V16D-20251216-CUSTLOCATION
          =====================================================
          CHANGES IN THIS VERSION:
-         - FIXED: Reduced mobile touch sensitivity on dropdowns
-         - Added 300ms debounce between select taps
-         - Added touch-action: manipulation to all buttons/selects
-         - Min 44px touch targets on mobile
-         - Environment buttons work on mobile
+         - Embedded diagnostic tool as modal (no longer separate file)
+         - Fixed diagnostic button opening wrong screen
+         - Fixed horizontal scrolling in reports (was blocked by touch-action: pan-y)
+         - Fixed Adjust Inventory button not working after selecting reason
+         - Updated report supplier filter to use new picker style
+         - NEW: Quick Adjust Modal - adjust inventory from within reports without leaving
+         - NEW: Top Customers now show street address and city for identification
          - All dropdowns refresh on environment switch
          ===================================================== -->
     <meta charset="UTF-8">
@@ -541,24 +543,16 @@
             /* Mobile nav bar styling */
             #mobileNavBar {
                 display: none;
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                z-index: 10000 !important;
-                background: white !important;
-                border-top: 2px solid var(--primary, #667eea) !important;
-                padding: 12px 20px !important;
-                box-shadow: 0 -4px 20px rgba(0,0,0,0.15) !important;
             }
             
-            #mobileNavBar.has-buttons {
+            #mobileNavBar.has-buttons,
+            #mobileNavBar:has(button[style*="display: block"]) {
                 display: block !important;
             }
             
             /* Add bottom padding to body when nav bar is visible */
             body:has(#mobileNavBar.has-buttons) {
-                padding-bottom: 80px !important;
+                padding-bottom: 70px !important;
             }
         }
         
@@ -711,90 +705,6 @@
             text-align: center;
             padding: 40px;
             color: #666;
-        }
-        
-        /* ==================== POPUP MODAL STYLES ==================== */
-        .popup-overlay {
-            display: none !important;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 999999;
-            align-items: center;
-            justify-content: center;
-        }
-        .popup-overlay.show {
-            display: flex !important;
-        }
-        .popup-box {
-            background: white;
-            margin: 20px;
-            max-width: 420px;
-            width: 90%;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-            overflow: hidden;
-            animation: popupSlideIn 0.3s ease;
-        }
-        .popup-header {
-            padding: 20px;
-            text-align: center;
-            color: white;
-        }
-        .popup-header.error { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .popup-header.success { background: linear-gradient(135deg, #10b981, #059669); }
-        .popup-header.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .popup-header.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .popup-header .popup-icon { font-size: 48px; margin-bottom: 10px; }
-        .popup-header h3 { margin: 0; font-size: 20px; font-weight: 600; }
-        .popup-body {
-            padding: 25px;
-            color: #374151;
-            font-size: 15px;
-            line-height: 1.6;
-            max-height: 50vh;
-            overflow-y: auto;
-        }
-        .popup-body ul {
-            margin: 15px 0 0 0;
-            padding-left: 20px;
-        }
-        .popup-body li {
-            margin-bottom: 8px;
-        }
-        .popup-body.error-list li { color: #dc2626; }
-        .popup-footer {
-            padding: 15px 25px 25px;
-            text-align: center;
-        }
-        .popup-btn {
-            background: linear-gradient(135deg, #667eea, #5a67d8);
-            color: white;
-            border: none;
-            padding: 14px 40px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            min-width: 120px;
-            touch-action: manipulation;
-        }
-        .popup-btn:hover {
-            background: linear-gradient(135deg, #5a67d8, #4c51bf);
-        }
-        .popup-btn.secondary {
-            background: #6b7280;
-            margin-right: 10px;
-        }
-        .popup-btn.secondary:hover {
-            background: #4b5563;
-        }
-        @keyframes popupSlideIn {
-            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
         }
         
         /* ==================== MOBILE RESPONSIVE STYLES ==================== */
@@ -1546,14 +1456,21 @@
             #reportSetupContent {
                 flex: 1 !important;
                 overflow-y: auto !important;
-                overflow-x: hidden !important;
+                overflow-x: auto !important; /* FIXED: Allow horizontal scroll for tables */
                 -webkit-overflow-scrolling: touch !important;
                 padding: 12px !important;
                 padding-bottom: 80px !important;
                 min-height: 0 !important; /* Important for flex scrolling */
-                touch-action: pan-y !important; /* Allow vertical scrolling */
+                touch-action: pan-x pan-y !important; /* FIXED: Allow both directions */
                 overscroll-behavior: contain !important; /* Prevent scroll chaining */
                 contain: layout style !important; /* Contain layout to prevent escape */
+            }
+            
+            /* Ensure tables inside reports can scroll horizontally */
+            #reportSetupContent [style*="overflow-x"],
+            #reportSetupContent .data-table-wrapper {
+                touch-action: pan-x pan-y !important;
+                -webkit-overflow-scrolling: touch !important;
             }
             
             /* ========== UNIVERSAL REPORT MOBILE STYLES ========== */
@@ -2633,241 +2550,10 @@
                 text-decoration: none !important;
             }
             
-            /* HIDE SCROLLBARS WHEN PRINTING */
-            *::-webkit-scrollbar {
-                display: none !important;
-                width: 0 !important;
-                height: 0 !important;
-            }
-            * {
-                scrollbar-width: none !important;
-                -ms-overflow-style: none !important;
-            }
-            
-            /* FULL WIDTH PRINTING FOR MOBILE */
-            html, body {
-                width: 100% !important;
-                min-width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            
-            #reportSetupModalInner,
-            #reportSetupContent {
-                width: 100% !important;
-                max-width: 100% !important;
-                min-width: 100% !important;
-                margin: 0 !important;
-                padding: 10px !important;
-                box-sizing: border-box !important;
-            }
-            
-            /* BAR CHART PRINT STYLES */
-            .biz-monthly-chart {
-                height: auto !important;
-                min-height: 180px !important;
-                padding: 20px 5px 50px 5px !important;
-                page-break-inside: avoid !important;
-            }
-            
-            .biz-monthly-bar {
-                height: 120px !important;
-            }
-            
-            .biz-monthly-bar-fill {
-                min-height: 5px !important;
-            }
-            
-            /* Always show data values on bar charts when printing */
-            .biz-monthly-bar-fill::after {
-                display: block !important;
-                visibility: visible !important;
-                font-size: 8px !important;
-                font-weight: 700 !important;
-            }
-            
-            .biz-monthly-label {
-                font-size: 8px !important;
-                bottom: -25px !important;
-            }
-            
-            /* KPI CARDS PRINT */
-            .biz-kpi-grid {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                gap: 8px !important;
-            }
-            
-            .biz-kpi-card {
-                flex: 1 1 100px !important;
-                min-width: 80px !important;
-                padding: 8px !important;
-                page-break-inside: avoid !important;
-            }
-            
-            .biz-kpi-value {
-                font-size: 16px !important;
-            }
-            
-            .biz-kpi-label {
-                font-size: 9px !important;
-            }
-            
-            /* SECTIONS - allow page breaks between sections */
-            .biz-section {
-                page-break-inside: avoid !important;
-                margin-bottom: 15px !important;
-            }
-            
-            /* Dashboard header */
-            .biz-header {
-                padding: 15px !important;
-                page-break-after: avoid !important;
-            }
-            
-            /* Year over Year comparison */
-            .biz-yoy-grid {
-                display: flex !important;
-                gap: 10px !important;
-            }
-            
-            .biz-yoy-card {
-                flex: 1 !important;
-                padding: 10px !important;
-            }
-            
             /* Page setup */
             @page {
-                margin: 0.4in;
+                margin: 0.5in;
                 size: auto;
-            }
-            
-            /* Multi-page support */
-            .print-page-break {
-                page-break-before: always !important;
-            }
-            
-            /* ========== UNIVERSAL BAR CHART PRINT STYLES ========== */
-            /* Product Dashboard bar charts */
-            .prod-bar-chart {
-                page-break-inside: avoid !important;
-            }
-            .prod-bar-row {
-                margin-bottom: 3px !important;
-            }
-            .prod-bar-label {
-                font-size: 9px !important;
-                width: 120px !important;
-            }
-            .prod-bar-value {
-                font-size: 10px !important;
-            }
-            .prod-bar-fill {
-                font-size: 9px !important;
-            }
-            
-            /* Supplier Performance mini bars */
-            .sp-mini-bar {
-                height: 16px !important;
-            }
-            .sp-mini-bar-fill {
-                font-size: 9px !important;
-            }
-            
-            /* All horizontal bar charts - always show values */
-            .biz-chart-bar-fill,
-            .prod-bar-fill,
-            .sp-mini-bar-fill {
-                color: white !important;
-                font-weight: 600 !important;
-            }
-            
-            /* Dashboard cards and grids */
-            .dash-card, .daily-card, .customer-card, .prod-section {
-                page-break-inside: avoid !important;
-                border: 1px solid #ddd !important;
-                margin-bottom: 10px !important;
-            }
-            
-            /* Row layouts become columns on print for better fit */
-            .biz-row, .prod-row, .dash-row {
-                display: block !important;
-            }
-            .biz-row > *, .prod-row > *, .dash-row > * {
-                width: 100% !important;
-                margin-bottom: 10px !important;
-            }
-            
-            /* Chart containers */
-            .chart-container, .chart-wrapper {
-                page-break-inside: avoid !important;
-                max-height: none !important;
-                overflow: visible !important;
-            }
-            
-            /* Hide Chart.js canvases - they don't print well */
-            canvas {
-                display: none !important;
-            }
-            
-            /* Show chart fallback text/tables if any */
-            .chart-print-fallback {
-                display: block !important;
-            }
-            
-            /* Table print improvements */
-            .report-table, .action-table, .data-table {
-                width: 100% !important;
-                font-size: 8pt !important;
-            }
-            .report-table th, .action-table th, .data-table th {
-                background: #333 !important;
-                color: white !important;
-                font-size: 8pt !important;
-                padding: 4px !important;
-            }
-            .report-table td, .action-table td, .data-table td {
-                font-size: 8pt !important;
-                padding: 3px 4px !important;
-            }
-            
-            /* Summary boxes */
-            .summary-box, .kpi-summary, .totals-row {
-                background: #f5f5f5 !important;
-                border: 1px solid #ccc !important;
-                padding: 8px !important;
-                page-break-inside: avoid !important;
-            }
-            
-            /* Headers */
-            .report-header, .dash-header, .section-header {
-                page-break-after: avoid !important;
-            }
-            
-            /* Customer Dashboard specific */
-            .customer-stat-grid {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                gap: 5px !important;
-            }
-            
-            /* Supplier Dashboard specific */
-            .supplier-card, .supplier-section {
-                page-break-inside: avoid !important;
-            }
-            
-            /* P&L Statement */
-            .pl-section {
-                page-break-inside: avoid !important;
-            }
-            .pl-row {
-                border-bottom: 1px solid #eee !important;
-            }
-            
-            /* Inventory reports */
-            .inv-category, .stock-section {
-                page-break-inside: avoid !important;
             }
         }
     </style>
@@ -2975,12 +2661,12 @@
         </div>
         
         <!-- Mobile Navigation Bar - Clean horizontal bar at bottom -->
-        <div id="mobileNavBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000; background: white; border-top: 3px solid var(--primary, #667eea); padding: 12px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.15);">
-            <div style="display: flex; justify-content: center; align-items: center; gap: 12px; max-width: 400px; margin: 0 auto;">
-                <button id="navBackBtn" onclick="goBack()" style="display: none; background: var(--primary, #667eea); color: white; border: none; border-radius: 12px; padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer; flex: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: all 0.2s;">
+        <div id="mobileNavBar" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: white; border-top: 2px solid #e0e0e0; padding: 8px 15px; box-shadow: 0 -4px 12px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-around; align-items: center; max-width: 400px; margin: 0 auto;">
+                <button id="navBackBtn" onclick="goBack()" style="display: none; background: var(--primary, #667eea); color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; margin-right: 8px;">
                     ← Back
                 </button>
-                <button id="navTopBtn" onclick="scrollToTop()" style="display: none; background: var(--primary, #667eea); color: white; border: none; border-radius: 12px; padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer; flex: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: all 0.2s;">
+                <button id="navTopBtn" onclick="scrollToTop()" style="display: none; background: #f5f5f5; color: #333; border: 2px solid #ddd; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; margin-left: 8px;">
                     ↑ Top
                 </button>
             </div>
@@ -3186,7 +2872,7 @@
                         </ul>
                     </div>
                     
-                    <button class="btn" onclick="window.open('mobile-diagnostic.html', '_blank')" style="background: #ffc107; color: #000; font-weight: bold;">
+                    <button class="btn" onclick="openDiagnosticTool()" style="background: #ffc107; color: #000; font-weight: bold;">
                         🔍 Open Diagnostic Tool
                     </button>
                     
@@ -4341,7 +4027,7 @@
                         <label>Notes</label>
                         <textarea id="adjustNotes" rows="2" placeholder="Additional details..."></textarea>
                     </div>
-                    <button type="submit" class="btn">💾 Save Adjustment</button>
+                    <button type="submit" class="btn" onclick="event.preventDefault(); submitInventoryAdjustment(event);">💾 Save Adjustment</button>
                     <button type="button" class="btn btn-secondary" onclick="hideAdjustInventoryForm()">Cancel</button>
                 </form>
             </div>
@@ -6585,6 +6271,131 @@
         </div>
     </div>
 
+    <!-- Diagnostic Tool Modal -->
+    <div id="diagnosticModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10001; overflow-y: auto; padding: 10px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #1a1a2e; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); max-height: calc(100vh - 20px); display: flex; flex-direction: column; color: #fff;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; padding: 20px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 700;">🔍 Diagnostic Tool</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.8;">Test API connectivity & troubleshoot issues</p>
+                </div>
+                <button onclick="closeDiagnosticTool()" style="background: rgba(0,0,0,0.2); border: none; color: #000; font-size: 24px; width: 36px; height: 36px; border-radius: 8px; cursor: pointer;">×</button>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                <!-- Current Environment -->
+                <div style="background: #16213e; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                    <h4 style="margin: 0 0 10px 0; color: #ffc107; font-size: 14px;">📍 Current Environment</h4>
+                    <div id="diagEnvDisplay" style="font-family: monospace; font-size: 13px; color: #4ade80; word-break: break-all;"></div>
+                </div>
+                
+                <!-- Test Buttons -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <button onclick="runDiagnosticTest('connection')" style="background: #3b82f6; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        🔌 Test Connection
+                    </button>
+                    <button onclick="runDiagnosticTest('suppliers')" style="background: #8b5cf6; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        🏭 Test Suppliers
+                    </button>
+                    <button onclick="runDiagnosticTest('items')" style="background: #22c55e; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        📦 Test Items
+                    </button>
+                    <button onclick="runDiagnosticTest('customers')" style="background: #f59e0b; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                        👥 Test Customers
+                    </button>
+                </div>
+                
+                <button onclick="runAllDiagnostics()" style="width: 100%; background: linear-gradient(135deg, #ffc107, #ff9800); color: #000; border: none; padding: 15px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-bottom: 20px; font-size: 16px;">
+                    🚀 Run All Tests
+                </button>
+                
+                <!-- Results -->
+                <div style="background: #0f0f1a; border-radius: 10px; padding: 15px; min-height: 200px;">
+                    <h4 style="margin: 0 0 10px 0; color: #a0a0a0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Test Results</h4>
+                    <div id="diagResults" style="font-family: monospace; font-size: 12px; line-height: 1.8; color: #e0e0e0;">
+                        <p style="color: #666;">Click a test button to begin...</p>
+                    </div>
+                </div>
+                
+                <!-- Tips -->
+                <div style="background: #1e3a5f; border-radius: 10px; padding: 15px; margin-top: 15px;">
+                    <h4 style="margin: 0 0 10px 0; color: #60a5fa; font-size: 14px;">💡 Troubleshooting Tips</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #94a3b8; line-height: 1.8;">
+                        <li>If tests fail, check your internet connection</li>
+                        <li>Try switching environments in Settings</li>
+                        <li>Clear browser cache and reload</li>
+                        <li>On mobile, try closing and reopening the app</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Adjust Inventory Modal (for use within reports) -->
+    <div id="quickAdjustModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10002; overflow-y: auto; padding: 20px;">
+        <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; padding: 20px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 700;">📝 Quick Inventory Adjustment</h2>
+                    <p id="quickAdjustItemName" style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;"></p>
+                </div>
+                <button onclick="closeQuickAdjustModal()" style="background: rgba(0,0,0,0.2); border: none; color: white; font-size: 24px; width: 36px; height: 36px; border-radius: 8px; cursor: pointer;">×</button>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding: 25px;">
+                <input type="hidden" id="quickAdjustItemId">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Current Stock</div>
+                        <div id="quickAdjustCurrentQty" style="font-size: 28px; font-weight: 700; color: #333;">0</div>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">New Stock</div>
+                        <div id="quickAdjustNewQty" style="font-size: 28px; font-weight: 700; color: #22c55e;">0</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Adjustment (+/-) *</label>
+                    <input type="number" id="quickAdjustAmount" placeholder="e.g., -5 or +10" 
+                           oninput="updateQuickAdjustPreview()"
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; text-align: center;">
+                    <small style="color: #666;">Negative to decrease, positive to increase</small>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Reason *</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button type="button" onclick="selectQuickReason('Physical Count')" class="quick-reason-btn" style="padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px;">📋 Physical Count</button>
+                        <button type="button" onclick="selectQuickReason('Damaged')" class="quick-reason-btn" style="padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px;">💔 Damaged</button>
+                        <button type="button" onclick="selectQuickReason('Shrinkage')" class="quick-reason-btn" style="padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px;">📉 Shrinkage</button>
+                        <button type="button" onclick="selectQuickReason('Found Stock')" class="quick-reason-btn" style="padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px;">🔍 Found Stock</button>
+                        <button type="button" onclick="selectQuickReason('Return')" class="quick-reason-btn" style="padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px;">↩️ Return</button>
+                        <button type="button" onclick="selectQuickReason('Correction')" class="quick-reason-btn" style="padding: 10px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 13px;">✏️ Correction</button>
+                    </div>
+                    <input type="hidden" id="quickAdjustReason">
+                    <div id="quickAdjustReasonDisplay" style="margin-top: 8px; padding: 8px; background: #f0f0f0; border-radius: 6px; font-size: 13px; color: #666; display: none;"></div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Notes (optional)</label>
+                    <input type="text" id="quickAdjustNotes" placeholder="Additional details..." 
+                           style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="closeQuickAdjustModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 16px; cursor: pointer;">Cancel</button>
+                    <button onclick="submitQuickAdjustment()" style="flex: 2; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; font-size: 16px; font-weight: 600; cursor: pointer;">💾 Save Adjustment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Upload Items Modal -->
     <div id="uploadItemsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto; padding: 20px 0;">
         <div style="max-width: 700px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); padding: 30px; max-height: calc(100vh - 40px); overflow-y: auto;">
@@ -6732,7 +6543,7 @@
         // Switch to a different environment
         function switchEnvironment(env) {
             if (!environments[env]) {
-                showPopup(`No URL configured for ${env} environment. Please enter a URL first.`);
+                alert(`No URL configured for ${env} environment. Please enter a URL first.`);
                 return;
             }
             
@@ -6792,7 +6603,7 @@
             API_URL = environments[currentEnvironment] || DEFAULT_PRODUCTION_URL;
             localStorage.setItem('apiUrl', API_URL);
             
-            showPopup('✅ Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
+            alert('✅ Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
             console.log('Default URLs restored:', environments);
         }
         
@@ -7051,10 +6862,8 @@
         const pickerTouchState = {
             startX: 0,
             startY: 0,
-            startTime: 0,
             moved: false,
-            threshold: 20,  // pixels - increased from 10 for less sensitivity
-            maxHoldTime: 500  // ms - if held longer than this without moving, still count as tap
+            threshold: 10  // pixels - if finger moves more than this, it's a scroll not a tap
         };
         
         // Call this on touchstart for picker cards
@@ -7062,7 +6871,6 @@
             const touch = e.touches[0];
             pickerTouchState.startX = touch.clientX;
             pickerTouchState.startY = touch.clientY;
-            pickerTouchState.startTime = Date.now();
             pickerTouchState.moved = false;
         }
         
@@ -7072,7 +6880,6 @@
             const touch = e.touches[0];
             const deltaX = Math.abs(touch.clientX - pickerTouchState.startX);
             const deltaY = Math.abs(touch.clientY - pickerTouchState.startY);
-            // More forgiving threshold - 20px instead of 10px
             if (deltaX > pickerTouchState.threshold || deltaY > pickerTouchState.threshold) {
                 pickerTouchState.moved = true;
             }
@@ -7080,18 +6887,7 @@
         
         // Call this on touchend - returns true if it was a clean tap (not a scroll)
         function pickerTouchEnd() {
-            const holdTime = Date.now() - pickerTouchState.startTime;
-            // It's a valid tap if:
-            // 1. Finger didn't move much, OR
-            // 2. It was a very quick tap (under 200ms) even with slight movement
-            if (!pickerTouchState.moved) {
-                return true;
-            }
-            // Allow quick taps even with slight movement
-            if (holdTime < 200) {
-                return true;
-            }
-            return false;
+            return !pickerTouchState.moved;
         }
         
         // Wrapper for picker card selection - only fires callback if it was a clean tap
@@ -7129,50 +6925,6 @@
         }
         
         /**
-         * Standardize any date input to YYYY-MM-DD format for database storage
-         * Handles: Date objects, ISO strings, date-time strings, YYYY-MM-DD strings
-         * @param {Date|string} dateInput - Date to standardize
-         * @returns {string} - Date string in YYYY-MM-DD format, or empty string if invalid
-         */
-        function standardizeDate(dateInput) {
-            if (!dateInput) return '';
-            
-            // If it's already a clean YYYY-MM-DD string, return as-is
-            if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
-                return dateInput;
-            }
-            
-            // If it's a string with time component (ISO or space-separated), extract just the date
-            if (typeof dateInput === 'string') {
-                // Handle ISO format: 2025-12-15T13:21:14.582Z
-                if (dateInput.includes('T')) {
-                    return dateInput.split('T')[0];
-                }
-                // Handle space format: 2025-12-15 7:23:51
-                if (dateInput.includes(' ')) {
-                    return dateInput.split(' ')[0];
-                }
-            }
-            
-            // If it's a Date object, format it
-            if (dateInput instanceof Date && !isNaN(dateInput)) {
-                return formatLocalDate(dateInput);
-            }
-            
-            // Try to parse as date and format
-            try {
-                const d = new Date(dateInput);
-                if (!isNaN(d)) {
-                    return formatLocalDate(d);
-                }
-            } catch (e) {
-                console.warn('Could not standardize date:', dateInput);
-            }
-            
-            return '';
-        }
-        
-        /**
          * Format a number with commas (e.g., 1234567 -> "1,234,567")
          * @param {number} num - Number to format
          * @param {number} decimals - Optional decimal places (default 0)
@@ -7193,8 +6945,6 @@
          */
         function formatMoney(num) {
             if (num === null || num === undefined || isNaN(num)) return '$0.00';
-            // Avoid displaying -$0.00 (negative zero)
-            if (Math.abs(num) < 0.005) num = 0;
             return '$' + Number(num).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -7287,6 +7037,16 @@
             return customer ? customer.Customer_Name : customerId;
         }
         
+        function getCustomerLocation(customerId) {
+            if (!cachedCustomers || cachedCustomers.length === 0) return '';
+            const customer = cachedCustomers.find(c => c.Customer_ID === customerId);
+            if (!customer) return '';
+            const parts = [];
+            if (customer.Address) parts.push(customer.Address);
+            if (customer.City) parts.push(customer.City);
+            return parts.join(', ');
+        }
+        
         function getSupplierName(supplierId) {
             if (!cachedSuppliers || cachedSuppliers.length === 0) return supplierId;
             const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
@@ -7314,7 +7074,7 @@
             
             // MOBILE TOUCH DEBOUNCE - Prevent rapid multiple taps on selects
             let lastSelectTap = 0;
-            const SELECT_DEBOUNCE_MS = 400; // Minimum ms between select taps (increased from 300)
+            const SELECT_DEBOUNCE_MS = 300; // Minimum ms between select taps
             
             document.addEventListener('touchstart', function(e) {
                 if (e.target.tagName === 'SELECT' || e.target.closest('select')) {
@@ -7875,20 +7635,18 @@
                 backToTopBtn.style.display = showTop ? 'block' : 'none';
             }
             
-            // Mobile nav bar - show if scrolled down or has back button
+            // Mobile nav bar - show if either button should be visible
             if (mobileNavBar && navTopBtn) {
                 navTopBtn.style.display = showTop ? 'block' : 'none';
                 
                 // Check if Back button is visible
-                const backVisible = navBackBtn && navBackBtn.style.display !== 'none' && navBackBtn.style.display !== '';
+                const backVisible = navBackBtn && navBackBtn.style.display !== 'none';
                 
                 // Show nav bar if any button is visible
                 if (showTop || backVisible) {
                     mobileNavBar.style.display = 'block';
-                    mobileNavBar.classList.add('has-buttons');
                 } else {
                     mobileNavBar.style.display = 'none';
-                    mobileNavBar.classList.remove('has-buttons');
                 }
             }
         });
@@ -7917,7 +7675,7 @@
             const currentSupplier = document.getElementById('poSupplier')?.value;
             
             if (!currentSupplier) {
-                showPopup('Please select a supplier first before adding items');
+                alert('Please select a supplier first before adding items');
                 return;
             }
             
@@ -8485,11 +8243,11 @@
         
         function openBackup() {
             if (!API_URL) {
-                showPopup('Please configure your API URL first!');
+                alert('Please configure your API URL first!');
                 return;
             }
             // Extract the Google Sheets URL from API URL pattern
-            showPopup('To backup your data:\n\n1. Go to your Google Sheets database\n2. File → Make a copy\n3. Download as Excel or CSV\n\nYour Google Sheet contains all your data!');
+            alert('To backup your data:\n\n1. Go to your Google Sheets database\n2. File → Make a copy\n3. Download as Excel or CSV\n\nYour Google Sheet contains all your data!');
         }
         
         // Load theme on startup
@@ -8647,7 +8405,7 @@
         async function apiCall(action, data = {}) {
             if (!API_URL) {
                 console.error('API_URL not configured!');
-                showPopup('Please configure your API URL in Settings first!');
+                alert('Please configure your API URL in Settings first!');
                 switchTab('config');
                 return null;
             }
@@ -9197,11 +8955,8 @@
         }
         
         function goToAdjustInventory() {
-            // Get the current item details from the edit form
+            // Get the current item ID from the edit form
             const itemId = document.getElementById('editItemId').value;
-            const itemSku = document.getElementById('editSku').value;
-            const itemDesc = document.getElementById('editDescription').value;
-            const currentQty = parseInt(document.getElementById('editQtyOnHand').value) || 0;
             
             // Hide the edit form
             hideEditItemForm();
@@ -9209,52 +8964,17 @@
             // Switch to inventory tab
             switchTab('inventory');
             
-            // Wait for tab to load, then populate the adjustment form
+            // Wait for tab to load, then pre-select the item
             setTimeout(() => {
-                // Show the adjust inventory form
-                const adjustForm = document.getElementById('adjustInventoryForm');
-                if (adjustForm) {
-                    adjustForm.style.display = 'block';
+                const itemSelect = document.getElementById('adjustItem');
+                if (itemSelect && itemId) {
+                    itemSelect.value = itemId;
+                    // Trigger change event to load current quantity
+                    itemSelect.dispatchEvent(new Event('change'));
                 }
-                
-                // Set the item fields
-                const adjustItemHidden = document.getElementById('adjustItem');
-                const adjustItemDisplay = document.getElementById('adjustItemDisplay');
-                const adjustCurrentQty = document.getElementById('adjustCurrentQty');
-                const adjustNewQty = document.getElementById('adjustNewQty');
-                const adjustQuantity = document.getElementById('adjustQuantity');
-                
-                if (adjustItemHidden && itemId) {
-                    adjustItemHidden.value = itemId;
-                }
-                
-                if (adjustItemDisplay) {
-                    adjustItemDisplay.value = `${itemSku} - ${itemDesc}`;
-                }
-                
-                if (adjustCurrentQty) {
-                    adjustCurrentQty.value = currentQty;
-                }
-                
-                if (adjustNewQty) {
-                    adjustNewQty.value = currentQty;
-                }
-                
-                if (adjustQuantity) {
-                    adjustQuantity.value = '';
-                    adjustQuantity.focus();
-                }
-                
-                // Clear reason and notes
-                const adjustReasonDisplay = document.getElementById('adjustReasonDisplay');
-                const adjustReason = document.getElementById('adjustReason');
-                const adjustNotes = document.getElementById('adjustNotes');
-                
-                if (adjustReasonDisplay) adjustReasonDisplay.value = '';
-                if (adjustReason) adjustReason.value = '';
-                if (adjustNotes) adjustNotes.value = '';
                 
                 // Scroll to the adjustment form
+                const adjustForm = document.getElementById('inventory');
                 if (adjustForm) {
                     adjustForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -9521,47 +9241,7 @@
 
         function hideAddPurchaseForm() {
             document.getElementById('addPurchaseForm').style.display = 'none';
-            
-            // Reset the form
-            const form = document.querySelector('#addPurchaseForm form');
-            if (form) form.reset();
-            
-            // Explicitly reset dropdowns
-            const supplierSelect = document.getElementById('poSupplier');
-            if (supplierSelect) supplierSelect.selectedIndex = 0;
-            
-            const statusSelect = document.getElementById('poStatus');
-            if (statusSelect) statusSelect.selectedIndex = 0;
-            
-            const paymentTermsSelect = document.getElementById('poPaymentTerms');
-            if (paymentTermsSelect) paymentTermsSelect.selectedIndex = 0;
-            
-            // Clear date fields
-            const dueDateField = document.getElementById('poDueDate');
-            if (dueDateField) dueDateField.value = '';
-            
-            // Clear invoice number
-            const invoiceField = document.getElementById('poInvoiceNumber');
-            if (invoiceField) invoiceField.value = '';
-            
-            // Clear amount paid
-            const amountPaidField = document.getElementById('poAmountPaid');
-            if (amountPaidField) amountPaidField.value = '0';
-            
-            // Clear notes
-            const notesField = document.getElementById('poNotes');
-            if (notesField) notesField.value = '';
-            
-            // Reset summary boxes if they exist
-            const totalBox = document.getElementById('poTotalAmount');
-            if (totalBox) totalBox.textContent = '$0.00';
-            
-            // Clear all line items and add one fresh one
-            const lineItemsContainer = document.getElementById('poLineItems');
-            if (lineItemsContainer) {
-                lineItemsContainer.innerHTML = '';
-                addPOLineItem();
-            }
+            document.querySelector('#addPurchaseForm form').reset();
         }
 
         async function loadPurchaseDropdowns() {
@@ -9606,7 +9286,7 @@
             const supplierId = document.getElementById('poSupplier').value;
             
             if (!supplierId) {
-                showPopup('Please select a supplier first');
+                alert('Please select a supplier first');
                 return;
             }
             
@@ -9697,28 +9377,6 @@
         async function addPurchase(e) {
             e.preventDefault();
             
-            // ===== COMPREHENSIVE VALIDATION =====
-            const validationErrors = [];
-            
-            // Check supplier
-            const supplier = document.getElementById('poSupplier').value;
-            if (!supplier) {
-                validationErrors.push('Select a Supplier');
-            }
-            
-            // Check status
-            const poStatus = document.getElementById('poStatus').value;
-            if (!poStatus) {
-                validationErrors.push('Select a Status');
-            }
-            
-            // Check due date
-            const poDueDate = document.getElementById('poDueDate').value;
-            if (!poDueDate) {
-                validationErrors.push('Enter an Expected Delivery Date');
-            }
-            
-            // Check line items
             const lineItems = [];
             let calculatedTotal = 0;
             
@@ -9741,13 +9399,23 @@
 
             // Validate at least one line item
             if (lineItems.length === 0) {
-                validationErrors.push('Add at least one item with quantity');
+                alert('⚠️ Please add at least one item to the purchase order.\n\nSelect an item and enter a quantity before saving.');
+                return;
+            }
+
+            // ===== VALIDATION #0: Check Required Fields =====
+            const poStatus = document.getElementById('poStatus').value;
+            const poDueDate = document.getElementById('poDueDate').value;
+            
+            if (!poStatus) {
+                showStatus('purchasesStatus', '❌ Please select a Status', 'error');
+                document.getElementById('poStatus').focus();
+                return;
             }
             
-            // Show all validation errors at once
-            if (validationErrors.length > 0) {
-                const errorList = validationErrors.map(e => '- ' + e).join('\n');
-                showPopup('Please complete the following before saving:\n\n' + errorList, 'error', 'Missing Required Fields');
+            if (!poDueDate) {
+                showStatus('purchasesStatus', '❌ Please select an Expected Delivery Date', 'error');
+                document.getElementById('poDueDate').focus();
                 return;
             }
 
@@ -9794,16 +9462,18 @@
                 if (!continueWithOverpay) return;
             }
 
-            // Get the selected dates - standardize to YYYY-MM-DD format
+            // Get the selected date and add current time
             const selectedPODate = document.getElementById('poDate').value;
-            const poDate = standardizeDate(selectedPODate);
-            const standardizedDueDate = standardizeDate(poDueDate);
+            const nowPO = new Date();
+            const poDateWithTime = selectedPODate === getTodayLocalDate() 
+                ? nowPO.toISOString()  // Today - use actual current time
+                : `${selectedPODate}T${nowPO.toTimeString().split(' ')[0]}`; // Other date - add current time
 
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
-                poDate: poDate,
-                dueDate: standardizedDueDate || null,
+                poDate: poDateWithTime,
+                dueDate: document.getElementById('poDueDate').value || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: calculatedTotal,
                 amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
@@ -9816,11 +9486,11 @@
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
+                showStatus('purchasesStatus', '✅ Purchase order created! Inventory updated.', 'success');
                 hideAddPurchaseForm();
                 loadPurchases();
-                showPopup(`Purchase order created successfully!\n\nTotal: ${formatMoney(calculatedTotal)}\nInventory has been updated.`, 'success', 'PO Created');
             } else {
-                showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
+                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
         }
 
@@ -10379,7 +10049,7 @@
             const paymentDate = paymentDateInput?.value || getTodayLocalDate();
             
             if (paymentAmount <= 0) {
-                showPopup('Please enter a payment amount greater than 0');
+                alert('Please enter a payment amount greater than 0');
                 return;
             }
             
@@ -10396,24 +10066,24 @@
             if (result && result.status === 'success') {
                 const total = parseFloat(currentEditingOrder?.Total_Amount) || 0;
                 const payStatus = newTotalPaid >= total - 0.01 ? 'Paid' : (newTotalPaid > 0 ? 'Partial' : 'Unpaid');
-                showPopup(`✅ Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
+                alert(`✅ Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
                 document.getElementById('orderModal').style.display = 'none'; document.body.classList.remove('modal-open');
                 loadPurchases();
             } else {
-                showPopup('❌ Error: ' + (result?.message || 'Unknown error'));
+                alert('❌ Error: ' + (result?.message || 'Unknown error'));
             }
         }
         
         // PRINT PURCHASE ORDER FUNCTION
         async function printPurchaseOrder() {
             if (!currentEditingOrder || currentEditingType !== 'purchase') {
-                showPopup('Please select a purchase order first');
+                alert('Please select a purchase order first');
                 return;
             }
             
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                showPopup('Please allow popups for this site');
+                alert('Please allow popups for this site');
                 return;
             }
             printWindow.document.write('<html><body><h2>Loading PO...</h2></body></html>');
@@ -10687,14 +10357,14 @@
         // PRINT INVOICE FUNCTION
         async function printInvoice() {
             if (!currentEditingOrder || currentEditingType !== 'sales') {
-                showPopup('Please select a sales order first');
+                alert('Please select a sales order first');
                 return;
             }
             
             // CRITICAL: Open window BEFORE any async calls to avoid iPhone popup blocker
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                showPopup('Please allow popups for this site');
+                alert('Please allow popups for this site');
                 return;
             }
             printWindow.document.write('<html><body><h2>Loading invoice...</h2></body></html>');
@@ -11475,7 +11145,7 @@
             
             if (newLines.length === 0) {
                 const rowCount = document.querySelectorAll('#editPOLineItems .edit-line-item').length;
-                showPopup(`No valid line items found!\n\nRows found: ${rowCount}\n\nPlease make sure each line has:\n- An item selected\n- A quantity > 0`);
+                alert(`No valid line items found!\n\nRows found: ${rowCount}\n\nPlease make sure each line has:\n- An item selected\n- A quantity > 0`);
                 return;
             }
             
@@ -11526,8 +11196,8 @@
                 poId: po.PO_ID,
                 supplierId: document.getElementById('editPOSupplier').value,
                 invoiceNumber: document.getElementById('editPOInvoiceNumber').value,
-                poDate: standardizeDate(document.getElementById('editPODate').value),
-                dueDate: standardizeDate(document.getElementById('editPODueDate').value),
+                poDate: document.getElementById('editPODate').value,
+                dueDate: document.getElementById('editPODueDate').value,
                 status: document.getElementById('editPOStatus').value,
                 notes: document.getElementById('editPONotes').value,
                 totalAmount: totalAmount,
@@ -11561,11 +11231,11 @@
             const result = await apiCall('updatePurchaseOrder', data);
             
             if (result && result.status === 'success') {
+                showStatus('purchasesStatus', '✅ Purchase order updated successfully!', 'success');
                 closeOrderModal();
                 loadPurchases();
-                showPopup('Purchase order updated successfully!', 'success', 'PO Updated');
             } else {
-                showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
+                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
         }
         
@@ -11736,7 +11406,7 @@
             });
             
             if (newLines.length === 0) {
-                showPopup('Please add at least one line item');
+                alert('Please add at least one line item');
                 return;
             }
             
@@ -11787,8 +11457,8 @@
                 soId: so.SO_ID,
                 customerId: document.getElementById('editSOCustomer').value,
                 invoiceNumber: document.getElementById('editSOInvoiceNumber').value,
-                saleDate: standardizeDate(document.getElementById('editSODate').value),
-                dueDate: standardizeDate(document.getElementById('editSODueDate').value),
+                saleDate: document.getElementById('editSODate').value,
+                dueDate: document.getElementById('editSODueDate').value,
                 paymentMethod: document.getElementById('editSOPaymentMethod').value,
                 status: document.getElementById('editSOStatus').value,
                 notes: document.getElementById('editSONotes').value,
@@ -11819,11 +11489,11 @@
             const result = await apiCall('updateSalesOrder', data);
             
             if (result && result.status === 'success') {
+                showStatus('salesStatus', '✅ Sales order updated successfully!', 'success');
                 closeOrderModal();
                 loadSales();
-                showPopup('Sales order updated successfully!', 'success', 'Sale Updated');
             } else {
-                showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
+                showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
         }
         
@@ -11851,7 +11521,7 @@
             
             const paymentAmount = parseFloat(payment);
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                showPopup('Please enter a valid payment amount');
+                alert('Please enter a valid payment amount');
                 return;
             }
             
@@ -11867,15 +11537,15 @@
             apiCall('recordPurchasePayment', { poId: poId, amountPaid: newTotalPaid, paymentDate: paymentDate })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const statusMsg = result.paymentStatus === 'Paid' ? 'PAID IN FULL!' : `Status: ${result.paymentStatus}`;
+                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
+                        showStatus('purchasesStatus', `✅ Payment recorded! ${formatMoney(newTotalPaid)} total paid. ${statusMsg}`, 'success');
                         loadPurchases();
-                        showPopup(`Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\n${statusMsg}`, 'success', 'Payment Recorded');
                     } else {
-                        showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
+                        showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
                 })
                 .catch(err => {
-                    showPopup('Error recording payment: ' + err.message, 'error');
+                    showStatus('purchasesStatus', '❌ Error recording payment: ' + err.message, 'error');
                 });
         }
 
@@ -11945,6 +11615,7 @@
 
         function hideAddSaleForm() {
             document.getElementById('addSaleForm').style.display = 'none';
+            document.querySelector('#addSaleForm form').reset();
             
             // MOBILE FIX: Always reset save lock and button state
             isSavingSale = false;
@@ -11953,32 +11624,6 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = '💾 Save Sale';
             }
-            
-            // Reset the form
-            const form = document.querySelector('#addSaleForm form');
-            if (form) form.reset();
-            
-            // Explicitly reset dropdowns (form.reset() doesn't always work on dynamic dropdowns)
-            const customerSelect = document.getElementById('soCustomer');
-            if (customerSelect) customerSelect.selectedIndex = 0;
-            
-            const statusSelect = document.getElementById('soStatus');
-            if (statusSelect) statusSelect.selectedIndex = 0;
-            
-            const paymentSelect = document.getElementById('soPayment');
-            if (paymentSelect) paymentSelect.selectedIndex = 0;
-            
-            // Clear date fields
-            const dueDateField = document.getElementById('soDueDate');
-            if (dueDateField) dueDateField.value = '';
-            
-            // Clear amount paid
-            const amountPaidField = document.getElementById('soAmountPaid');
-            if (amountPaidField) amountPaidField.value = '0';
-            
-            // Clear notes
-            const notesField = document.getElementById('soNotes');
-            if (notesField) notesField.value = '';
             
             // Reset summary boxes
             const qtyBox = document.getElementById('soTotalQty');
@@ -12037,7 +11682,7 @@
             
             // Get all items once
             if (cachedItems.length === 0) {
-                showPopup('Please wait for items to load');
+                alert('Please wait for items to load');
                 return;
             }
             
@@ -12231,28 +11876,6 @@
                 return;
             }
             
-            // ===== COMPREHENSIVE VALIDATION =====
-            const validationErrors = [];
-            
-            // Check customer
-            const customer = document.getElementById('soCustomer').value;
-            if (!customer) {
-                validationErrors.push('Select a Customer');
-            }
-            
-            // Check status
-            const status = document.getElementById('soStatus').value;
-            if (!status) {
-                validationErrors.push('Select a Status');
-            }
-            
-            // Check due date
-            const dueDate = document.getElementById('soDueDate').value;
-            if (!dueDate) {
-                validationErrors.push('Enter a Due Date');
-            }
-            
-            // Check line items
             const lineItems = [];
             let calculatedTotal = 0;
             
@@ -12275,13 +11898,7 @@
 
             // Validate at least one line item
             if (lineItems.length === 0) {
-                validationErrors.push('Add at least one item with quantity');
-            }
-            
-            // Show all validation errors at once
-            if (validationErrors.length > 0) {
-                const errorList = validationErrors.map(e => '- ' + e).join('\n');
-                showPopup('Please complete the following before saving:\n\n' + errorList, 'error', 'Missing Required Fields');
+                alert('⚠️ Please add at least one item to the sale.\n\nSelect an item and enter a quantity before saving.');
                 return;
             }
 
@@ -12340,6 +11957,30 @@
             }
             
             try {
+                // Validate required fields
+                const status = document.getElementById('soStatus').value;
+                const dueDate = document.getElementById('soDueDate').value;
+                
+                if (!status) {
+                    showStatus('salesStatus', '❌ Please select a Status', 'error');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                    document.getElementById('soStatus').focus();
+                    return;
+                }
+                
+                if (!dueDate) {
+                    showStatus('salesStatus', '❌ Please select a Due Date', 'error');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                    document.getElementById('soDueDate').focus();
+                    return;
+                }
+                
                 // AUTO-GENERATE INVOICE NUMBER
                 // Format: INV-MMDDYY-XXX (e.g., INV-120725-001)
                 const saleDate = document.getElementById('soDate').value;
@@ -12373,16 +12014,19 @@
                 // Generate invoice number: INV-120725-001
                 const invoiceNumber = `INV-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
 
-                // Standardize dates to YYYY-MM-DD format
-                const standardizedSaleDate = standardizeDate(saleDate);
-                const standardizedDueDate = standardizeDate(document.getElementById('soDueDate').value);
+                // Get the selected date and add current time
+                const selectedDate = document.getElementById('soDate').value;
+                const now = new Date();
+                const saleDateWithTime = selectedDate === getTodayLocalDate() 
+                    ? now.toISOString()  // Today - use actual current time
+                    : `${selectedDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
 
                 const data = {
                     customerId: document.getElementById('soCustomer').value,
-                    saleDate: standardizedSaleDate,
+                    saleDate: saleDateWithTime,
                     invoiceNumber: invoiceNumber,
                     paymentMethod: document.getElementById('soPayment').value,
-                    dueDate: standardizedDueDate || null,
+                    dueDate: document.getElementById('soDueDate').value || null,
                     totalAmount: calculatedTotal,
                     amountPaid: parseFloat(document.getElementById('soAmountPaid').value) || 0,
                     status: document.getElementById('soStatus').value,
@@ -12393,11 +12037,11 @@
                 const result = await apiCall('createSalesOrder', data);
                 
                 if (result && result.status === 'success') {
+                    showStatus('salesStatus', `✅ Sale recorded! Invoice #: ${invoiceNumber}`, 'success');
                     hideAddSaleForm();
                     loadSales();
-                    showPopup(`Sale recorded successfully!\n\nInvoice #: ${invoiceNumber}\nTotal: ${formatMoney(calculatedTotal)}`, 'success', 'Sale Created');
                 } else {
-                    showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
+                    showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
             } finally {
                 // UNLOCK
@@ -12926,131 +12570,50 @@
             let remaining = total - amountPaid;
             if (Math.abs(remaining) < 0.01) remaining = 0;
             
-            // Find invoice number for display
-            const so = (window.cachedSales || []).find(s => s.SO_ID === soId);
-            const invoiceNum = so?.Invoice_Number || soId;
+            // Create better formatted prompt
+            let message = `💰 Record Payment for ${soId}\n\n`;
+            message += `Invoice Total:    ${formatMoney(total)}\n`;
+            message += `Already Paid:     ${formatMoney(amountPaid)}\n`;
+            message += `───────────────────────────\n`;
+            message += `Balance Due:      ${formatMoney(remaining)}\n\n`;
             
-            // Create styled payment popup HTML
-            const popupHtml = `
-                <div style="text-align: left; padding: 10px 0;">
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: #666;">Invoice Total:</span>
-                            <span style="font-weight: 600;">${formatMoney(total)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="color: #666;">Already Paid:</span>
-                            <span style="font-weight: 600;">${formatMoney(amountPaid)}</span>
-                        </div>
-                        <hr style="border: none; border-top: 2px solid #e0e0e0; margin: 10px 0;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: #666; font-weight: 600;">Balance Due:</span>
-                            <span style="font-weight: 700; color: ${remaining > 0 ? '#dc2626' : '#059669'};">${formatMoney(remaining)}</span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Enter payment amount:</label>
-                        <input type="number" id="paymentAmountInput" step="0.01" min="0" 
-                               value="${remaining > 0 ? remaining.toFixed(2) : ''}"
-                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 18px; text-align: right;"
-                               placeholder="0.00">
-                    </div>
-                </div>
-            `;
+            // Suggest full payment if unpaid
+            if (amountPaid === 0) {
+                message += `Tip: Enter ${remaining.toFixed(2)} to pay in full\n\n`;
+            }
             
-            // Show the popup
-            const overlay = document.getElementById('popupOverlay');
-            const header = document.getElementById('popupHeader');
-            const icon = document.getElementById('popupIcon');
-            const titleEl = document.getElementById('popupTitle');
-            const body = document.getElementById('popupBody');
-            const footer = document.getElementById('popupFooter');
+            message += `Enter payment amount:`;
             
-            header.className = 'popup-header success';
-            icon.textContent = '💰';
-            titleEl.textContent = `Record Payment - ${invoiceNum}`;
-            body.innerHTML = popupHtml;
-            body.className = 'popup-body';
+            const payment = prompt(message);
             
-            // Custom footer with Cancel and Record Payment buttons
-            footer.innerHTML = `
-                <button class="popup-btn secondary" onclick="closePopup()">Cancel</button>
-                <button class="popup-btn" onclick="submitSalesPayment('${soId}', ${amountPaid}, ${remaining})">💰 Record Payment</button>
-            `;
+            if (payment === null) return; // Cancelled
             
-            overlay.classList.add('show');
-            
-            // Focus the input
-            setTimeout(() => {
-                const input = document.getElementById('paymentAmountInput');
-                if (input) {
-                    input.focus();
-                    input.select();
-                }
-            }, 100);
-        }
-        
-        function submitSalesPayment(soId, previousPaid, balanceDue) {
-            const input = document.getElementById('paymentAmountInput');
-            const paymentAmount = parseFloat(input?.value || 0);
-            
+            const paymentAmount = parseFloat(payment);
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                input.style.borderColor = '#dc2626';
-                input.focus();
+                alert('Please enter a valid payment amount');
                 return;
             }
             
-            // Close the popup
-            closePopup();
-            
-            // Check for overpayment
-            if (paymentAmount > balanceDue + 0.01) {
-                // Show confirmation popup for overpayment
-                const confirmHtml = `
-                    <p>Payment amount <strong>${formatMoney(paymentAmount)}</strong> is more than the balance due <strong>${formatMoney(balanceDue)}</strong>.</p>
-                    <p style="margin-top: 10px;">Continue anyway?</p>
-                `;
-                
-                const overlay = document.getElementById('popupOverlay');
-                const header = document.getElementById('popupHeader');
-                const icon = document.getElementById('popupIcon');
-                const titleEl = document.getElementById('popupTitle');
-                const body = document.getElementById('popupBody');
-                const footer = document.getElementById('popupFooter');
-                
-                header.className = 'popup-header warning';
-                icon.textContent = '⚠️';
-                titleEl.textContent = 'Overpayment Warning';
-                body.innerHTML = confirmHtml;
-                
-                footer.innerHTML = `
-                    <button class="popup-btn secondary" onclick="closePopup()">Cancel</button>
-                    <button class="popup-btn" onclick="closePopup(); processSalesPayment('${soId}', ${previousPaid}, ${paymentAmount})">Continue</button>
-                `;
-                
-                overlay.classList.add('show');
-                return;
+            if (paymentAmount > remaining + 0.01) { // Allow 1 cent rounding
+                if (!confirm(`Payment (${formatMoney(paymentAmount)}) is more than balance due (${formatMoney(remaining)}).\n\nContinue anyway?`)) {
+                    return;
+                }
             }
             
-            // Process the payment
-            processSalesPayment(soId, previousPaid, paymentAmount);
-        }
-        
-        function processSalesPayment(soId, previousPaid, paymentAmount) {
-            const newTotalPaid = previousPaid + paymentAmount;
-            
+            // Call backend - send TOTAL amount paid (existing + new payment)
+            const newTotalPaid = amountPaid + paymentAmount;
             apiCall('recordSalesPayment', { soId: soId, amountPaid: newTotalPaid })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const statusMsg = result.paymentStatus === 'Paid' ? 'PAID IN FULL!' : `Status: ${result.paymentStatus}`;
+                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
+                        showStatus('salesStatus', `✅ Payment received! ${formatMoney(newTotalPaid)} total paid. ${statusMsg}`, 'success');
                         loadSales();
-                        showPopup(`Payment of ${formatMoney(paymentAmount)} recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\n${statusMsg}`, 'success', 'Payment Received');
                     } else {
-                        showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
+                        showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
                 })
                 .catch(err => {
-                    showPopup('Error recording payment: ' + err.message, 'error');
+                    showStatus('salesStatus', '❌ Error recording payment: ' + err.message, 'error');
                 });
         }
 
@@ -13341,15 +12904,15 @@
             
             // Validation with alerts
             if (!supplierId) {
-                showPopup('Please select a supplier');
+                alert('Please select a supplier');
                 return false;
             }
             if (!description) {
-                showPopup('Please enter a description');
+                alert('Please enter a description');
                 return false;
             }
             if (packageCost <= 0) {
-                showPopup('Please enter a package cost greater than 0');
+                alert('Please enter a package cost greater than 0');
                 return false;
             }
             
@@ -13401,7 +12964,7 @@
         
         async function saveNewItemsToDatabase() {
             if (simulatedNewItems.length === 0) {
-                showPopup('No new items to save!');
+                alert('No new items to save!');
                 return;
             }
             
@@ -13766,7 +13329,7 @@
             const count = checkboxes.length;
             
             if (count === 0) {
-                showPopup('No items selected!');
+                alert('No items selected!');
                 return;
             }
             
@@ -13989,20 +13552,20 @@
             
             // Validation - Item is required
             if (!itemId) {
-                showPopup('⚠️ Please select an item to adjust.');
+                alert('⚠️ Please select an item to adjust.');
                 return;
             }
             
             // Validation - Reason is required
             if (!reason || reason.trim() === '') {
-                showPopup('⚠️ Please select a reason for this adjustment.');
+                alert('⚠️ Please select a reason for this adjustment.');
                 document.getElementById('adjustReasonDisplay').focus();
                 return;
             }
             
             // Validation - Adjustment amount is required
             if (isNaN(adjustment) || adjustment === 0) {
-                showPopup('⚠️ Please enter an adjustment amount (positive or negative).');
+                alert('⚠️ Please enter an adjustment amount (positive or negative).');
                 document.getElementById('adjustQuantity').focus();
                 return;
             }
@@ -14100,15 +13663,15 @@
                     </div>`;
             }
             
-            // Supplier dropdown
+            // Supplier dropdown - NEW PICKER STYLE
             if (options.supplier) {
                 html += `
                     <div class="form-group">
                         <label>Supplier</label>
-                        <select id="filter_supplier">
-                            <option value="">All Suppliers</option>
-                            ${options.supplierList.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                        </select>
+                        <input type="text" id="filter_supplier_display" placeholder="🔍 Click to select..." 
+                               onclick="openReportSupplierPicker()" readonly 
+                               style="cursor: pointer; background: #fff; border: 2px solid #e0e0e0;">
+                        <input type="hidden" id="filter_supplier" value="">
                     </div>`;
             }
             
@@ -14344,7 +13907,7 @@
             try {
                 openReportSetup(reportType);
             } catch (e) {
-                showPopup('❌ Error opening report setup: ' + e.message);
+                alert('❌ Error opening report setup: ' + e.message);
                 console.error('Error in showReport:', e);
             }
         }
@@ -15171,7 +14734,7 @@
             console.log('📱 Modal element:', modalElement ? 'Found' : 'NOT FOUND');
             
             if (!modalElement) {
-                showPopup('❌ ERROR: Report modal element not found in DOM!');
+                alert('❌ ERROR: Report modal element not found in DOM!');
                 return;
             }
             
@@ -15381,7 +14944,7 @@
             const title = document.getElementById('reportSetupTitle').textContent;
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                showPopup('Please run the report first before printing.');
+                alert('Please run the report first before printing.');
                 return;
             }
             
@@ -15440,7 +15003,7 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                showPopup('Please run the report first before emailing.');
+                alert('Please run the report first before emailing.');
                 return;
             }
             
@@ -15463,7 +15026,7 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                showPopup('Please run the report first before texting.');
+                alert('Please run the report first before texting.');
                 return;
             }
             
@@ -15492,11 +15055,11 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                showPopup('Please run the report first before saving.');
+                alert('Please run the report first before saving.');
                 return;
             }
             
-            showPopup('💡 Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
+            alert('💡 Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
             printReport();
         }
         
@@ -18999,7 +18562,7 @@
             const labelData = window.pickListLabelData || [];
             
             if (labelData.length === 0) {
-                showPopup('No orders to print labels for!');
+                alert('No orders to print labels for!');
                 return;
             }
             
@@ -22608,7 +22171,7 @@
                             💰 PAST DUE PAYMENTS
                             <span class="action-count">${pastDuePayments.length}</span>
                         </div>
-                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="showPopup(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
+                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="alert(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
                     </div>
                     <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
                         <strong>Customer invoices (sales orders)</strong> where the due date has passed and payment is not yet received. Sorted by most overdue first.
@@ -22647,18 +22210,17 @@
                 pastDuePayments.slice(0, 10).forEach(p => {
                     const dueDate = new Date(p.Due_Date);
                     const dueDateStr = (dueDate.getMonth()+1) + '/' + dueDate.getDate() + '/' + dueDate.getFullYear();
-                    const invoiceNum = p.Invoice_Number || p.SO_ID || 'N/A';
                     html += `
                         <tr>
                             <td>${p.Customer_Name}</td>
-                            <td>${invoiceNum}</td>
+                            <td>SO-${p.Sale_ID}</td>
                             <td>${dueDateStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${formatMoney(p.Balance)}</td>
                             <td>
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <button class="oval-action-btn oval-action-primary" onclick="viewSalesOrder('${p.SO_ID}')">👁️ View</button>
-                                    <button class="oval-action-btn oval-action-success" onclick="recordSalesPayment('${p.SO_ID}', ${p.Total_Amount || 0}, ${p.Amount_Paid || 0})">💰 Pay</button>
+                                    <button class="oval-action-btn oval-action-primary" onclick="viewSaleOrder('${p.Sale_ID}')">👁️ View</button>
+                                    <button class="oval-action-btn oval-action-success" onclick="recordSalesPayment('${p.Sale_ID}', ${p.Total_Amount || 0}, ${p.Amount_Paid || 0})">💰 Pay</button>
                                 </div>
                             </td>
                         </tr>
@@ -22814,28 +22376,14 @@
             if (lowStock.length === 0) {
                 html += '<p style="color: #10b981; font-weight: 600;">✅ All items adequately stocked!</p>';
             } else {
-                // Get unique suppliers from low stock items
-                const lowStockSuppliers = [...new Set(lowStock.map(i => i.Supplier_Name))].sort();
-                
                 html += `
-                    <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <label style="font-weight: 600; color: #333;">Filter by Supplier:</label>
-                        <select id="lowStockSupplierFilter" onchange="filterLowStockBySupplier()" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; min-width: 200px;">
-                            <option value="">All Suppliers (${lowStock.length} items)</option>
-                            ${lowStockSuppliers.map(s => {
-                                const count = lowStock.filter(i => i.Supplier_Name === s).length;
-                                return `<option value="${s}">${s} (${count} items)</option>`;
-                            }).join('')}
-                        </select>
-                        <button class="btn-small" onclick="selectAllVisibleLowStock()" style="background: var(--primary, #667eea); color: white;">Select All Visible</button>
-                    </div>
-                    <table class="action-table" id="lowStockTable">
+                    <table class="action-table">
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="selectAllLowStock" onclick="toggleSelectAllLowStock()"></th>
                                 <th>SKU</th>
                                 <th>Item</th>
-                                <th style="cursor: pointer;" onclick="sortLowStockBySupplier()">Supplier ⇅</th>
+                                <th>Supplier</th>
                                 <th style="text-align: center;">On Hand</th>
                                 <th style="text-align: center;">Backorder</th>
                                 <th style="text-align: center;">Committed</th>
@@ -22851,7 +22399,7 @@
                 lowStock.forEach(item => {
                     const backorder = parseInt(item.Qty_On_Backorder) || 0;
                     html += `
-                        <tr data-supplier="${item.Supplier_Name}">
+                        <tr>
                             <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
                             <td>${item.SKU || 'N/A'}</td>
                             <td>${item.Item_Description}</td>
@@ -22991,7 +22539,7 @@
                             <td>${item.Qty}</td>
                             <td>${item.Days_Since_Sale} days ago</td>
                             <td>
-                                <button class="oval-action-btn oval-action-info" onclick="showPopup('Promotion feature coming soon!')">📢 Promote</button>
+                                <button class="oval-action-btn oval-action-info" onclick="alert('Promotion feature coming soon!')">📢 Promote</button>
                             </td>
                         </tr>
                     `;
@@ -23587,14 +23135,14 @@
             const unitsNeeded = parseInt(qtyInput?.value) || 0;
             
             if (unitsNeeded <= 0) {
-                showPopup('Please enter a quantity greater than 0');
+                alert('Please enter a quantity greater than 0');
                 return;
             }
             
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                showPopup('Item not found. Please refresh and try again.');
+                alert('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -23687,77 +23235,10 @@
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
         }
         
-        // Filter low stock items by supplier
-        function filterLowStockBySupplier() {
-            const filterValue = document.getElementById('lowStockSupplierFilter').value;
-            const table = document.getElementById('lowStockTable');
-            if (!table) return;
-            
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const supplier = row.getAttribute('data-supplier');
-                if (!filterValue || supplier === filterValue) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                    // Uncheck hidden rows
-                    const cb = row.querySelector('.lowstock-checkbox');
-                    if (cb) cb.checked = false;
-                }
-            });
-            
-            // Uncheck "select all" when filtering
-            const selectAll = document.getElementById('selectAllLowStock');
-            if (selectAll) selectAll.checked = false;
-        }
-        
-        // Select all visible (non-hidden) low stock items
-        function selectAllVisibleLowStock() {
-            const table = document.getElementById('lowStockTable');
-            if (!table) return;
-            
-            const rows = table.querySelectorAll('tbody tr');
-            let count = 0;
-            rows.forEach(row => {
-                if (row.style.display !== 'none') {
-                    const cb = row.querySelector('.lowstock-checkbox');
-                    if (cb) {
-                        cb.checked = true;
-                        count++;
-                    }
-                }
-            });
-            
-            showPopup(`Selected ${count} item${count !== 1 ? 's' : ''} for reorder.`, 'success');
-        }
-        
-        // Sort low stock table by supplier
-        let lowStockSortAsc = true;
-        function sortLowStockBySupplier() {
-            const table = document.getElementById('lowStockTable');
-            if (!table) return;
-            
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            rows.sort((a, b) => {
-                const supplierA = a.getAttribute('data-supplier') || '';
-                const supplierB = b.getAttribute('data-supplier') || '';
-                return lowStockSortAsc ? 
-                    supplierA.localeCompare(supplierB) : 
-                    supplierB.localeCompare(supplierA);
-            });
-            
-            lowStockSortAsc = !lowStockSortAsc;
-            
-            // Re-append rows in sorted order
-            rows.forEach(row => tbody.appendChild(row));
-        }
-        
         function bulkReorder() {
             const checkboxes = document.querySelectorAll('.lowstock-checkbox:checked');
             if (checkboxes.length === 0) {
-                showPopup('Please select items to reorder first.\n\nUse the checkboxes next to each item, or "Select All" at the top.');
+                alert('Please select items to reorder first.\n\nUse the checkboxes next to each item, or "Select All" at the top.');
                 return;
             }
             
@@ -23767,7 +23248,7 @@
             const items = itemIds.map(id => (cachedItems || []).find(i => i.Item_ID === id)).filter(Boolean);
             
             if (items.length === 0) {
-                showPopup('Could not find selected items. Please refresh and try again.');
+                alert('Could not find selected items. Please refresh and try again.');
                 return;
             }
             
@@ -23782,7 +23263,7 @@
                     return `• ${sup?.Supplier_Name || 'Unknown'}: ${itemCount} item${itemCount > 1 ? 's' : ''}`;
                 }).join('\n');
                 
-                showPopup(`❌ Cannot create a single PO with items from multiple suppliers!\n\nYou selected items from ${suppliers.length} different suppliers:\n\n${supplierNames}\n\nPurchase orders can only contain items from ONE supplier.\n\nPlease select items from a single supplier, or create separate POs for each supplier.`);
+                alert(`❌ Cannot create a single PO with items from multiple suppliers!\n\nYou selected items from ${suppliers.length} different suppliers:\n\n${supplierNames}\n\nPurchase orders can only contain items from ONE supplier.\n\nPlease select items from a single supplier, or create separate POs for each supplier.`);
                 return;
             }
             
@@ -23861,7 +23342,7 @@
                 // Calculate total
                 calculateCreatePOTotal();
                 
-                showPopup(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save PO" when ready.`);
+                alert(`✅ Created PO with ${items.length} item${items.length > 1 ? 's' : ''} from ${supplier?.Supplier_Name || 'supplier'}!\n\nSuggested quantities are pre-filled based on reorder points.\n\nReview quantities and click "Save PO" when ready.`);
                 
             }, 300);
         }
@@ -23870,7 +23351,7 @@
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                showPopup('Item not found. Please refresh and try again.');
+                alert('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -23957,41 +23438,13 @@
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                showPopup('Item not found. Please refresh and try again.');
+                alert('Item not found. Please refresh and try again.');
                 return;
             }
             
-            // Store that we should return to Action Dashboard when done
-            returnToReport = 'action-dashboard';
-            
-            // Close the report modal
-            closeReportSetup();
-            
-            // Switch to inventory tab
-            switchTab('inventory');
-            
-            setTimeout(async () => {
-                // Show the adjustment form
-                await showAdjustInventoryForm();
-                
-                setTimeout(() => {
-                    // Pre-populate the item
-                    document.getElementById('adjustItem').value = item.Item_ID;
-                    document.getElementById('adjustItemDisplay').value = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
-                    document.getElementById('adjustCurrentQty').value = parseInt(item.Qty_On_Hand) || 0;
-                    
-                    // Focus on the new quantity or adjustment amount field
-                    const adjustQtyInput = document.getElementById('adjustQuantity');
-                    if (adjustQtyInput) {
-                        adjustQtyInput.focus();
-                    }
-                    
-                    // Show helpful message for negative inventory
-                    if (parseInt(item.Qty_On_Hand) < 0) {
-                        showStatus('inventoryStatus', `⚠️ ${item.SKU} has ${item.Qty_On_Hand} units. Enter adjustment to fix.`, 'warning');
-                    }
-                }, 300);
-            }, 300);
+            // Use the Quick Adjust Modal instead of navigating away
+            // This keeps the report open so user can continue working
+            openQuickAdjustModal(itemId);
         }
         
         function viewSaleOrder(saleId) {
@@ -24001,18 +23454,18 @@
         
         function markForClearance(itemId) {
             if (confirm('Mark this item for clearance sale?')) {
-                showPopup('Clearance feature coming soon!');
+                alert('Clearance feature coming soon!');
                 // TODO: Implement clearance modal
             }
         }
         
         function scheduleCustomerVisit(customerId) {
-            showPopup('Schedule Visit feature coming soon!');
+            alert('Schedule Visit feature coming soon!');
             // TODO: Implement visit scheduling
         }
         
         function exportDormantCustomers() {
-            showPopup('Export feature coming soon!');
+            alert('Export feature coming soon!');
             // TODO: Implement CSV export
         }
         
@@ -24123,7 +23576,8 @@
                 const custId = so.Customer_ID;
                 if (!customerSales[custId]) {
                     customerSales[custId] = { 
-                        name: getCustomerName(custId), 
+                        name: getCustomerName(custId),
+                        location: getCustomerLocation(custId),
                         sales: 0, 
                         orders: 0 
                     };
@@ -24361,7 +23815,7 @@
                                     <div class="top-item-rank ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</div>
                                     <div>
                                         <div style="font-weight: 500;">${c.name}</div>
-                                        <div style="font-size: 12px; color: #888;">${c.orders} order${c.orders !== 1 ? 's' : ''}</div>
+                                        <div style="font-size: 12px; color: #888;">${c.location || `${c.orders} order${c.orders !== 1 ? 's' : ''}`}</div>
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
@@ -24579,7 +24033,8 @@
                         // Customer breakdown
                         if (!customerSales[so.Customer_ID]) {
                             const cust = customers.find(c => c.Customer_ID === so.Customer_ID);
-                            customerSales[so.Customer_ID] = { name: cust?.Customer_Name || 'Unknown', revenue: 0, orders: 0 };
+                            const loc = cust ? [cust.Address, cust.City].filter(Boolean).join(', ') : '';
+                            customerSales[so.Customer_ID] = { name: cust?.Customer_Name || 'Unknown', location: loc, revenue: 0, orders: 0 };
                         }
                         customerSales[so.Customer_ID].revenue += revenue;
                         customerSales[so.Customer_ID].orders++;
@@ -24808,56 +24263,47 @@
                     .biz-monthly-chart {
                         display: flex;
                         align-items: flex-end;
-                        justify-content: space-around;
-                        height: 220px;
-                        padding: 30px 10px 40px 10px;
-                        gap: 4px;
-                        position: relative;
-                        border-bottom: 3px solid #e5e7eb;
-                        background: linear-gradient(to top, #f9fafb 0%, transparent 100%);
+                        justify-content: space-between;
+                        height: 200px;
+                        padding: 20px 10px 40px 10px;
+                        gap: 8px;
                     }
                     .biz-monthly-bar {
                         flex: 1;
-                        max-width: 60px;
-                        height: 150px;
                         display: flex;
                         flex-direction: column;
-                        justify-content: flex-end;
                         align-items: center;
-                        position: relative;
+                        justify-content: flex-end;
+                        height: 100%;
                     }
                     .biz-monthly-bar-fill {
-                        width: 70%;
-                        min-width: 20px;
-                        max-width: 45px;
+                        width: 100%;
+                        max-width: 50px;
                         background: linear-gradient(180deg, #3b82f6, #1d4ed8);
-                        border-radius: 4px 4px 0 0;
+                        border-radius: 6px 6px 0 0;
+                        transition: height 0.5s ease;
                         position: relative;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        flex-shrink: 0;
                     }
                     .biz-monthly-bar-fill:hover {
                         background: linear-gradient(180deg, #60a5fa, #3b82f6);
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
                     }
                     .biz-monthly-bar-fill::after {
                         content: attr(data-value);
                         position: absolute;
-                        top: -18px;
+                        top: -25px;
                         left: 50%;
                         transform: translateX(-50%);
-                        font-size: 9px;
-                        font-weight: 700;
-                        color: #374151;
+                        font-size: 10px;
+                        font-weight: 600;
+                        color: #1f2937;
                         white-space: nowrap;
                     }
                     .biz-monthly-label {
-                        position: absolute;
-                        bottom: -30px;
-                        left: 50%;
-                        transform: translateX(-50%) rotate(-45deg);
-                        font-size: 10px;
-                        font-weight: 500;
+                        font-size: 11px;
                         color: #6b7280;
+                        margin-top: 8px;
+                        transform: rotate(-45deg);
                         white-space: nowrap;
                     }
                     
@@ -24889,83 +24335,6 @@
                     .biz-stat-row:last-child { border-bottom: none; }
                     .biz-stat-label { color: #6b7280; }
                     .biz-stat-value { font-weight: 600; color: #1f2937; }
-                    
-                    /* Print styles for Business Overview */
-                    @media print {
-                        .biz-dashboard {
-                            width: 100% !important;
-                            max-width: 100% !important;
-                            padding: 0 !important;
-                        }
-                        .biz-header {
-                            padding: 10px !important;
-                            margin-bottom: 10px !important;
-                        }
-                        .biz-kpi-grid {
-                            display: flex !important;
-                            flex-wrap: wrap !important;
-                            gap: 5px !important;
-                        }
-                        .biz-kpi {
-                            flex: 1 1 calc(14% - 5px) !important;
-                            min-width: 80px !important;
-                            padding: 8px !important;
-                        }
-                        .biz-kpi .value {
-                            font-size: 14px !important;
-                        }
-                        .biz-kpi .label {
-                            font-size: 8px !important;
-                        }
-                        .biz-section {
-                            page-break-inside: avoid !important;
-                            margin-bottom: 10px !important;
-                        }
-                        .biz-section h3 {
-                            font-size: 12px !important;
-                            margin: 8px 0 !important;
-                        }
-                        .biz-monthly-chart {
-                            height: 150px !important;
-                            padding: 15px 5px 35px 5px !important;
-                        }
-                        .biz-monthly-bar {
-                            height: 100px !important;
-                        }
-                        .biz-monthly-bar-fill::after {
-                            font-size: 8px !important;
-                            top: -15px !important;
-                        }
-                        .biz-monthly-label {
-                            font-size: 7px !important;
-                            bottom: -22px !important;
-                        }
-                        .biz-row {
-                            display: block !important;
-                        }
-                        .biz-row .biz-section {
-                            width: 100% !important;
-                            margin-bottom: 10px !important;
-                        }
-                        .biz-chart-bar {
-                            margin-bottom: 4px !important;
-                        }
-                        .biz-chart-label {
-                            font-size: 9px !important;
-                            width: 100px !important;
-                        }
-                        .biz-chart-value {
-                            font-size: 10px !important;
-                            width: 60px !important;
-                        }
-                        .biz-compare-grid {
-                            display: flex !important;
-                            gap: 10px !important;
-                        }
-                        .biz-compare-card .amount {
-                            font-size: 20px !important;
-                        }
-                    }
                 </style>
                 
                 <div class="biz-header">
@@ -25082,21 +24451,17 @@
                 ${sortedMonths.length > 0 ? `
                 <div class="biz-section">
                     <h3>📊 Sales Trend by Month</h3>
-                    <div style="position: relative; padding-left: 40px;">
-                        <!-- Y-Axis label -->
-                        <div style="position: absolute; left: 0; top: 50%; transform: rotate(-90deg) translateX(-50%); transform-origin: left center; font-size: 11px; color: #6b7280; font-weight: 500;">Revenue ($)</div>
-                        <div class="biz-monthly-chart">
-                            ${sortedMonths.slice(-12).map(([month, data]) => {
-                                const heightPx = Math.max((data.revenue / maxMonthlyRevenue) * 150, 8);
-                                const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                                return `
-                                    <div class="biz-monthly-bar">
-                                        <div class="biz-monthly-bar-fill" style="height: ${heightPx}px;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
-                                        <div class="biz-monthly-label">${monthName}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
+                    <div class="biz-monthly-chart">
+                        ${sortedMonths.slice(-12).map(([month, data]) => {
+                            const height = (data.revenue / maxMonthlyRevenue) * 100;
+                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                            return `
+                                <div class="biz-monthly-bar">
+                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
+                                    <div class="biz-monthly-label">${monthName}</div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                     <div style="text-align: center; margin-top: 10px;">
                         <span style="font-size: 12px; color: #6b7280;">📈 Monthly Revenue Trend (Last 12 Months)</span>
@@ -25111,9 +24476,10 @@
                         ${topCustomers.length === 0 ? '<p style="color: #6b7280; text-align: center;">No customer data</p>' :
                         topCustomers.map((c, i) => {
                             const width = (c.revenue / maxCustomerRevenue) * 100;
+                            const displayName = c.location ? `${c.name} (${c.location})` : c.name;
                             return `
                                 <div class="biz-chart-bar">
-                                    <div class="biz-chart-label" title="${c.name}">${i + 1}. ${c.name}</div>
+                                    <div class="biz-chart-label" title="${displayName}">${i + 1}. ${c.name}${c.location ? `<br><span style="font-size: 10px; color: #888; font-weight: normal;">${c.location}</span>` : ''}</div>
                                     <div class="biz-chart-bar-bg">
                                         <div class="biz-chart-bar-fill" style="width: ${Math.max(width, 8)}%; background: ${chartColors[i % chartColors.length]};">
                                             ${c.orders}
@@ -25232,21 +24598,17 @@
                 ${sortedMonthlyPurchases.length > 0 ? `
                 <div class="biz-section">
                     <h3>📊 Purchases Trend by Month</h3>
-                    <div style="position: relative; padding-left: 40px;">
-                        <!-- Y-Axis label -->
-                        <div style="position: absolute; left: 0; top: 50%; transform: rotate(-90deg) translateX(-50%); transform-origin: left center; font-size: 11px; color: #6b7280; font-weight: 500;">Spend ($)</div>
-                        <div class="biz-monthly-chart">
-                            ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
-                                const heightPx = Math.max((data.spend / maxMonthlySpend) * 150, 8);
-                                const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                                return `
-                                    <div class="biz-monthly-bar">
-                                        <div class="biz-monthly-bar-fill" style="height: ${heightPx}px; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
-                                        <div class="biz-monthly-label">${monthName}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
+                    <div class="biz-monthly-chart">
+                        ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
+                            const height = (data.spend / maxMonthlySpend) * 100;
+                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                            return `
+                                <div class="biz-monthly-bar">
+                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
+                                    <div class="biz-monthly-label">${monthName}</div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                     <div style="text-align: center; margin-top: 10px;">
                         <span style="font-size: 12px; color: #6b7280;">📉 Monthly Purchase Spend (Last 12 Months)</span>
@@ -28215,7 +27577,7 @@
                 await showSalesOrderDetails(so);
                 document.getElementById('orderModal').style.display = 'block'; document.body.classList.add('modal-open');
             } else {
-                showPopup('Sales order not found: ' + soId);
+                alert('Sales order not found: ' + soId);
             }
         }
         
@@ -28242,7 +27604,7 @@
                 await showPurchaseOrderDetails(po);
                 document.getElementById('orderModal').style.display = 'block'; document.body.classList.add('modal-open');
             } else {
-                showPopup('Purchase order not found: ' + poId);
+                alert('Purchase order not found: ' + poId);
             }
         }
         
@@ -28268,7 +27630,7 @@
                 // Show edit form
                 showEditCustomerForm(customer);
             } else {
-                showPopup('Customer not found: ' + customerId);
+                alert('Customer not found: ' + customerId);
             }
         }
         
@@ -28294,7 +27656,7 @@
                 // Show edit form
                 showEditSupplierForm(supplier);
             } else {
-                showPopup('Supplier not found: ' + supplierId);
+                alert('Supplier not found: ' + supplierId);
             }
         }
         
@@ -28340,7 +27702,7 @@
                 if (!supplierId) {
                     e.preventDefault();
                     e.target.blur(); // Remove focus
-                    showPopup('⚠️ Please select a supplier first');
+                    alert('⚠️ Please select a supplier first');
                     document.getElementById('createPOSupplier')?.focus();
                 }
             }
@@ -28353,7 +27715,7 @@
                 if (!supplierId) {
                     e.preventDefault();
                     e.stopPropagation();
-                    showPopup('⚠️ Please select a supplier first');
+                    alert('⚠️ Please select a supplier first');
                     document.getElementById('createPOSupplier')?.focus();
                 }
             }
@@ -28366,7 +27728,7 @@
                     e.preventDefault();
                     e.stopPropagation();
                     setTimeout(() => {
-                        showPopup('⚠️ Please select a supplier first');
+                        alert('⚠️ Please select a supplier first');
                         document.getElementById('createPOSupplier')?.focus();
                     }, 10);
                 }
@@ -28403,7 +27765,7 @@
             const supplierId = document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
-                showPopup('Please select a supplier first');
+                alert('Please select a supplier first');
                 return;
             }
             
@@ -28549,10 +27911,10 @@
                     closeModal();
                     loadPurchases();
                 } else {
-                    showPopup('Error voiding PO: ' + (result?.message || 'Unknown error'));
+                    alert('Error voiding PO: ' + (result?.message || 'Unknown error'));
                 }
             } catch (e) {
-                showPopup('Error: ' + e.message);
+                alert('Error: ' + e.message);
             }
         }
         
@@ -28562,13 +27924,13 @@
                 // Load the original PO
                 const result = await apiCall('getPurchaseOrders');
                 if (!result || result.status !== 'success') {
-                    showPopup('Error loading purchase order');
+                    alert('Error loading purchase order');
                     return;
                 }
                 
                 const originalPO = result.data.find(p => p.PO_ID === poId);
                 if (!originalPO) {
-                    showPopup('Purchase order not found');
+                    alert('Purchase order not found');
                     return;
                 }
                 
@@ -28577,7 +27939,7 @@
                 const originalLines = linesResult?.data || [];
                 
                 if (originalLines.length === 0) {
-                    showPopup('No line items found in original PO');
+                    alert('No line items found in original PO');
                     return;
                 }
                 
@@ -28630,7 +27992,7 @@
                 }, 500);
                 
             } catch (e) {
-                showPopup('Error duplicating PO: ' + e.message);
+                alert('Error duplicating PO: ' + e.message);
             }
         }
         
@@ -28638,25 +28000,25 @@
             // Load the OUTGOING PO
             const result = await apiCall('getPurchaseOrders');
             if (!result || result.status !== 'success') {
-                showPopup('Error loading purchase order');
+                alert('Error loading purchase order');
                 return;
             }
             
             const po = result.data.find(p => p.PO_ID === poId);
             if (!po) {
-                showPopup('Purchase order not found');
+                alert('Purchase order not found');
                 return;
             }
             
             if (po.Status !== 'Ordered' && po.Status !== 'Partial') {
-                showPopup('This PO has already been fully received');
+                alert('This PO has already been fully received');
                 return;
             }
             
             // Load line items
             const linesResult = await apiCall('getPurchaseOrderLines', { poId: poId });
             if (!linesResult || linesResult.status !== 'success') {
-                showPopup('Error loading PO line items');
+                alert('Error loading PO line items');
                 return;
             }
             
@@ -28945,7 +28307,7 @@
             });
             
             if (linesToReceive.length === 0) {
-                showPopup('No items to receive. Enter quantities greater than 0.');
+                alert('No items to receive. Enter quantities greater than 0.');
                 return;
             }
             
@@ -29003,7 +28365,7 @@
                         ? '✅ All items received! PO is now complete.' 
                         : `📦 Items received. PO status: ${result.newStatus} (${result.totalReceived}/${result.totalOrdered})`;
                     
-                    showPopup(statusMsg + '\n\nInventory has been updated.');
+                    alert(statusMsg + '\n\nInventory has been updated.');
                     
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
@@ -29012,11 +28374,11 @@
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    showPopup('❌ Error: ' + (result?.message || 'Unknown error'));
+                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error in commitReceivePartial:', error);
-                showPopup('❌ Error: ' + error.message);
+                alert('❌ Error: ' + error.message);
             } finally {
                 isCommittingReceivePartial = false;
                 if (commitBtn) {
@@ -29181,7 +28543,7 @@
             console.log('Collected ' + receivedLines.length + ' lines to receive');
             
             if (receivedLines.length === 0) {
-                showPopup('Please select at least one item to receive');
+                alert('Please select at least one item to receive');
                 return;
             }
             
@@ -29212,7 +28574,7 @@
                 console.log('API result:', JSON.stringify(result));
                 
                 if (result && result.status === 'success') {
-                    showPopup('✅ Items received successfully! Inventory has been updated.');
+                    alert('✅ Items received successfully! Inventory has been updated.');
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
                     
@@ -29220,11 +28582,11 @@
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    showPopup('❌ Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
+                    alert('❌ Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error in commitReceive:', error);
-                showPopup('❌ Error: ' + error.message);
+                alert('❌ Error: ' + error.message);
             } finally {
                 // UNLOCK
                 isCommittingReceive = false;
@@ -29252,12 +28614,12 @@
             const notes = document.getElementById('createPONotes')?.value;
             
             if (!supplierId || !poDate) {
-                showPopup('Please select supplier and date');
+                alert('Please select supplier and date');
                 return;
             }
             
             if (!expectedDeliveryDate) {
-                showPopup('Please select an Expected Delivery Date');
+                alert('Please select an Expected Delivery Date');
                 return;
             }
             
@@ -29284,7 +28646,7 @@
             });
             
             if (lineItems.length === 0) {
-                showPopup('Please add at least one line item');
+                alert('Please add at least one line item');
                 return;
             }
             
@@ -29334,16 +28696,18 @@
             // Generate PO number: PO-120725-001
             const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
             
-            // Standardize dates to YYYY-MM-DD format
-            const standardizedPODate = standardizeDate(poDate);
-            const standardizedDueDate = standardizeDate(expectedDeliveryDate);
+            // Get the selected date and add current time
+            const now = new Date();
+            const poDateWithTime = poDate === getTodayLocalDate() 
+                ? now.toISOString()  // Today - use actual current time
+                : `${poDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
             
             // Create OUTGOING PO
             const data = {
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
-                poDate: standardizedPODate,
-                dueDate: standardizedDueDate,
+                poDate: poDateWithTime,  // Fixed: was 'purchaseDate', backend expects 'poDate'
+                dueDate: expectedDeliveryDate,
                 paymentTerms: 'Net 30',
                 status: 'Ordered', // OUTGOING status
                 totalAmount: total,
@@ -29356,13 +28720,13 @@
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                showPopup(`✅ OUTGOING PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
+                alert(`✅ OUTGOING PO created successfully!\n\nPO Number: ${poNumber}\n\nItems marked as "On Order".`);
                 clearCreatePOForm();
                 
                 // Refresh items to update Qty_On_Order
                 await loadItems();
             } else {
-                showPopup('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
+                alert('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
             }
             } finally {
                 // UNLOCK - Always reset even if error
@@ -29382,7 +28746,7 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplierId || !poDate) {
-                showPopup('Please select supplier and date');
+                alert('Please select supplier and date');
                 return;
             }
             
@@ -29426,14 +28790,14 @@
             });
             
             if (lineItems.length === 0) {
-                showPopup('Please add at least one line item');
+                alert('Please add at least one line item');
                 return;
             }
             
             // Get supplier info
             const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
             if (!supplier) {
-                showPopup('Supplier not found');
+                alert('Supplier not found');
                 return;
             }
             
@@ -29559,7 +28923,7 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplier) {
-                showPopup('Supplier not found');
+                alert('Supplier not found');
                 return;
             }
             
@@ -29567,7 +28931,7 @@
             const fileName = `PO_${supplier.Supplier_Name.replace(/[^a-z0-9]/gi, '_')}_${poDate}.pdf`;
             
             // For now, trigger print dialog with instruction
-            showPopup('PDF Download:\n\n1. Click OK\n2. In the print dialog, select "Save as PDF"\n3. Click Save\n\nNote: Full automated PDF generation requires a backend service.');
+            alert('PDF Download:\n\n1. Click OK\n2. In the print dialog, select "Save as PDF"\n3. Click Save\n\nNote: Full automated PDF generation requires a backend service.');
             window.print();
         }
         
@@ -29578,14 +28942,14 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplier) {
-                showPopup('Supplier not found');
+                alert('Supplier not found');
                 return;
             }
             
             const supplierEmail = supplier.Email || '';
             
             if (!supplierEmail) {
-                showPopup('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
+                alert('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
                 return;
             }
             
@@ -29633,7 +28997,7 @@ NOTE: Please print the attached PO document for full details.`;
             const mailtoLink = `mailto:${supplierEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             
             // Inform user to attach the PO
-            showPopup('Email Instructions:\n\n1. Your email client will open with the supplier\'s email pre-filled\n2. IMPORTANT: Print or save this PO as PDF first (use Print button)\n3. Attach the PDF to the email before sending\n\nClick OK to open your email client.');
+            alert('Email Instructions:\n\n1. Your email client will open with the supplier\'s email pre-filled\n2. IMPORTANT: Print or save this PO as PDF first (use Print button)\n3. Attach the PDF to the email before sending\n\nClick OK to open your email client.');
             
             // Open email client
             window.location.href = mailtoLink;
@@ -29792,35 +29156,32 @@ NOTE: Please print the attached PO document for full details.`;
                 // Add Backorder badge if there's quantity on backorder
                 const backorderBadge = onBackorder > 0 ? `<span class="item-picker-stock" style="background: #fff3e0; color: #e65100; border: 2px solid #ffb74d; margin-left: 6px;">⚠️ Backorder: ${onBackorder}</span>` : '';
                 
-                // Add Expected Date badge if available and valid
+                // Add Expected Date badge if available
                 let expectedDateBadge = '';
                 if (expectedDate && onOrder > 0) {
                     const expDate = new Date(expectedDate);
-                    // Check if date is valid (not NaN)
-                    if (!isNaN(expDate.getTime())) {
-                        const today = new Date();
-                        const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                        let dateColor = '#2e7d32';
-                        let dateBg = '#e8f5e9';
-                        let dateBorder = '#81c784';
-                        
-                        if (daysUntil < 0) {
-                            dateColor = '#c62828';
-                            dateBg = '#ffebee';
-                            dateBorder = '#e57373';
-                        } else if (daysUntil <= 3) {
-                            dateColor = '#e65100';
-                            dateBg = '#fff3e0';
-                            dateBorder = '#ffb74d';
-                        }
-                        
-                        const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
-                                         daysUntil === 0 ? 'Today' : 
-                                         daysUntil === 1 ? 'Tomorrow' : 
-                                         `${daysUntil} days`;
-                        
-                        expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
+                    const today = new Date();
+                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                    let dateColor = '#2e7d32';
+                    let dateBg = '#e8f5e9';
+                    let dateBorder = '#81c784';
+                    
+                    if (daysUntil < 0) {
+                        dateColor = '#c62828';
+                        dateBg = '#ffebee';
+                        dateBorder = '#e57373';
+                    } else if (daysUntil <= 3) {
+                        dateColor = '#e65100';
+                        dateBg = '#fff3e0';
+                        dateBorder = '#ffb74d';
                     }
+                    
+                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                     daysUntil === 0 ? 'Today' : 
+                                     daysUntil === 1 ? 'Tomorrow' : 
+                                     `${daysUntil} days`;
+                    
+                    expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
                 }
                 
                 // Add Top Seller badge if applicable
@@ -29919,7 +29280,7 @@ NOTE: Please print the attached PO document for full details.`;
             const supplierId = document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
-                showPopup('Please select a supplier first');
+                alert('Please select a supplier first');
                 return;
             }
             
@@ -29989,7 +29350,7 @@ NOTE: Please print the attached PO document for full details.`;
             const customerId = document.getElementById('soCustomer').value;
             
             if (!customerId) {
-                showPopup('Please select a customer first');
+                alert('Please select a customer first');
                 return;
             }
             
@@ -30043,7 +29404,7 @@ NOTE: Please print the attached PO document for full details.`;
             const selectedItems = window.multiSelectedItems || new Set();
             
             if (selectedItems.size === 0) {
-                showPopup('Please select at least one item');
+                alert('Please select at least one item');
                 return;
             }
             
@@ -30118,7 +29479,7 @@ NOTE: Please print the attached PO document for full details.`;
                 if (firstEmptyQty) firstEmptyQty.focus();
             }, 100);
             
-            showPopup(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
         }
         
         // Add selected items to Sales Order
@@ -30126,7 +29487,7 @@ NOTE: Please print the attached PO document for full details.`;
             const selectedItems = window.multiSelectedItems || new Set();
             
             if (selectedItems.size === 0) {
-                showPopup('Please select at least one item');
+                alert('Please select at least one item');
                 return;
             }
             
@@ -30310,7 +29671,7 @@ NOTE: Please print the attached PO document for full details.`;
                 if (firstEmptyQty) firstEmptyQty.focus();
             }, 100);
             
-            showPopup(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
         }
         
         // ============================================================================
@@ -30691,7 +30052,7 @@ NOTE: Please print the attached PO document for full details.`;
                                     </span>
                                     ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">⚠️ Gap: ${gap}</span>` : ''}
                                 </div>
-                                ${expectedDate && !isNaN(new Date(expectedDate).getTime()) ? `
+                                ${expectedDate ? `
                                     <div style="margin-top: 8px; font-size: 13px; color: #555;">
                                         📅 Expected: ${new Date(expectedDate).toLocaleDateString()}
                                     </div>
@@ -30981,8 +30342,8 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- Mobile-Friendly Item Picker Modal -->
     <div id="itemPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 600px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
-            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
                 <h3>📦 Select Item(s)</h3>
                 <button class="item-picker-close" onclick="closeItemPicker(); closeItemPickerForReport();">&times;</button>
             </div>
@@ -30994,52 +30355,52 @@ NOTE: Please print the attached PO document for full details.`;
                     <option value="">All Suppliers</option>
                 </select>
             </div>
-            <div id="itemPickerList" class="item-picker-list" style="max-height: calc(85vh - 240px);">
+            <div id="itemPickerList" class="item-picker-list" style="max-height: calc(100% - 240px);">
                 <!-- Items will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
                 <div id="itemSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeItemPicker(); closeItemPickerForReport();" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
+                <button class="btn" onclick="closeItemPicker(); closeItemPickerForReport();" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
 
     <!-- SUPPLIER PICKER MODAL -->
     <div id="supplierPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
-            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
                 <h3>🏭 Select Supplier(s)</h3>
                 <button class="item-picker-close" onclick="closeSupplierPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="supplierPickerSearch" placeholder="🔍 Search suppliers..." oninput="filterSupplierPicker()" onkeyup="filterSupplierPicker()">
             </div>
-            <div id="supplierPickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
+            <div id="supplierPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
                 <!-- Suppliers will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
                 <div id="supplierSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeSupplierPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
+                <button class="btn" onclick="closeSupplierPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
 
     <!-- CUSTOMER PICKER MODAL -->
     <div id="customerPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
-            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
                 <h3>👤 Select Customer(s)</h3>
                 <button class="item-picker-close" onclick="closeCustomerPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="customerPickerSearch" placeholder="🔍 Search customers..." oninput="filterCustomerPicker()" onkeyup="filterCustomerPicker()">
             </div>
-            <div id="customerPickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
+            <div id="customerPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
                 <!-- Customers will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
                 <div id="customerSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeCustomerPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
+                <button class="btn" onclick="closeCustomerPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
@@ -31101,40 +30462,40 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- PO PICKER MODAL -->
     <div id="poPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
-            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
                 <h3>📋 Select Purchase Order(s)</h3>
                 <button class="item-picker-close" onclick="closePOPicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="poPickerSearch" placeholder="🔍 Search by PO number..." oninput="filterPOPicker()" onkeyup="filterPOPicker()">
             </div>
-            <div id="poPickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
+            <div id="poPickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
                 <!-- POs will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
                 <div id="poSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closePOPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
+                <button class="btn" onclick="closePOPicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
 
     <!-- INVOICE PICKER MODAL -->
     <div id="invoicePickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 550px; max-height: 85vh; margin: 7vh auto; border-radius: 16px;">
-            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+        <div class="item-picker-container">
+            <div class="item-picker-header">
                 <h3>🧾 Select Invoice(s)</h3>
                 <button class="item-picker-close" onclick="closeInvoicePicker()">&times;</button>
             </div>
             <div class="item-picker-search">
                 <input type="text" id="invoicePickerSearch" placeholder="🔍 Search by invoice number..." oninput="filterInvoicePicker()" onkeyup="filterInvoicePicker()">
             </div>
-            <div id="invoicePickerList" class="item-picker-list" style="max-height: calc(85vh - 180px);">
+            <div id="invoicePickerList" class="item-picker-list" style="max-height: calc(100% - 180px);">
                 <!-- Invoices will be populated by JavaScript -->
             </div>
-            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
+            <div class="item-picker-footer" style="padding: 15px; border-top: 2px solid #e0e0e0; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
                 <div id="invoiceSelectionCount" style="color: #666; font-size: 14px; font-weight: 600;"></div>
-                <button class="btn" onclick="closeInvoicePicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px; border-radius: 8px;">✓ Done</button>
+                <button class="btn" onclick="closeInvoicePicker()" style="background: var(--primary, #667eea); color: white; padding: 10px 24px;">✓ Done</button>
             </div>
         </div>
     </div>
@@ -31142,8 +30503,8 @@ NOTE: Please print the attached PO document for full details.`;
     <!-- ITEM PICKER MODAL (for reports) -->
     <!-- PO TYPE PICKER MODAL -->
     <div id="poTypePickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 450px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
-            <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
+        <div class="item-picker-container" style="max-width: 400px;">
+            <div class="item-picker-header">
                 <h3>📦 Select PO Type</h3>
                 <button class="item-picker-close" onclick="closePOTypePicker()">&times;</button>
             </div>
@@ -32173,6 +31534,34 @@ NOTE: Please print the attached PO document for full details.`;
             focusOnDesktop('supplierPickerSearch');
         }
         
+        // NEW: Supplier picker for report setup modal filters (filter_supplier)
+        function openReportSupplierPicker() {
+            document.activeElement?.blur();
+            
+            window.reportPickerType = 'supplier';
+            window.supplierPickerIsFilter = true; // Allow "All Suppliers" option
+            window.supplierPickerTarget = 'filter_supplier'; // Target the filter_supplier input
+            supplierPickerCallback = {
+                tagName: 'REPORT_SETUP_FILTER',
+                value: document.getElementById('filter_supplier')?.value || ''
+            };
+            
+            // Initialize selected suppliers from current value
+            const currentValue = document.getElementById('filter_supplier')?.value || '';
+            if (currentValue) {
+                selectedSuppliersForReport = currentValue.split(',').filter(v => v);
+            } else {
+                selectedSuppliersForReport = [];
+            }
+            
+            document.getElementById('supplierPickerSearch').value = '';
+            renderSupplierPickerList();
+            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            document.body.classList.add('modal-open');
+            focusOnDesktop('supplierPickerSearch');
+        }
+        
         // Invoice picker for report filters (Pick List)
         async function openInvoicePickerForReport() {
             document.activeElement?.blur();
@@ -32774,6 +32163,23 @@ NOTE: Please print the attached PO document for full details.`;
         
         function selectSupplierFromPicker(supplierId) {
             if (supplierPickerCallback) {
+                // Check if this is the new report setup filter
+                if (supplierPickerCallback.tagName === 'REPORT_SETUP_FILTER') {
+                    const displayInput = document.getElementById('filter_supplier_display');
+                    const hiddenInput = document.getElementById('filter_supplier');
+                    if (supplierId === '') {
+                        if (displayInput) displayInput.value = '';
+                        if (hiddenInput) hiddenInput.value = '';
+                    } else {
+                        const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
+                        if (displayInput) displayInput.value = supplier ? supplier.Supplier_Name : supplierId;
+                        if (hiddenInput) hiddenInput.value = supplierId;
+                    }
+                    window.supplierPickerIsFilter = false;
+                    closeSupplierPicker();
+                    return;
+                }
+                
                 // Check if this is a report filter
                 if (supplierPickerCallback.tagName === 'REPORT_FILTER') {
                     const displayInput = document.getElementById('rptFilter_supplier_display');
@@ -33969,67 +33375,22 @@ NOTE: Please print the attached PO document for full details.`;
         function renderStatusPickerList() {
             const listContainer = document.getElementById('statusPickerList');
             
-            // Define colors for different status types based on the option text
-            const getStatusStyle = (optValue, optText) => {
-                const text = optText.toLowerCase();
-                
-                // Default "All" option
-                if (optValue === '') {
-                    return { color: '#6c757d', bg: '#f8f9fa', icon: '📋' };
-                }
-                
-                // Green statuses (positive)
-                if (text.includes('paid') || text.includes('delivered') || text.includes('received') || 
-                    text.includes('completed') || text.includes('in stock') || text.includes('active') ||
-                    text.includes('fast') || text.includes('current')) {
-                    return { color: '#10b981', bg: '#d1fae5', icon: '✅' };
-                }
-                
-                // Yellow/Orange statuses (warning)
-                if (text.includes('partial') || text.includes('pending') || text.includes('ordered') || 
-                    text.includes('low') || text.includes('slow') || text.includes('30') || text.includes('60')) {
-                    return { color: '#f59e0b', bg: '#fef3c7', icon: '⚠️' };
-                }
-                
-                // Red statuses (critical)
-                if (text.includes('unpaid') || text.includes('negative') || text.includes('out') || 
-                    text.includes('voided') || text.includes('dead') || text.includes('90') || 
-                    text.includes('overdue') || text.includes('archived')) {
-                    return { color: '#dc2626', bg: '#fee2e2', icon: '🔴' };
-                }
-                
-                // Blue statuses (info)
-                if (text.includes('order') || text.includes('backorder') || text.includes('reorder')) {
-                    return { color: '#3b82f6', bg: '#dbeafe', icon: '📦' };
-                }
-                
-                // Purple statuses (neutral/other)
-                return { color: '#8b5cf6', bg: '#ede9fe', icon: '•' };
-            };
-            
             let html = '';
             statusPickerOptions.forEach((opt, index) => {
-                const style = getStatusStyle(opt.value, opt.text);
                 const isAll = opt.value === '';
-                
-                // Extract icon if present in text, otherwise use computed icon
-                const hasEmoji = opt.text.match(/^[^\w\s]/);
-                const icon = hasEmoji ? opt.text.charAt(0) : style.icon;
+                const icon = isAll ? '📋' : (opt.text.match(/^[^\w\s]/) ? opt.text.charAt(0) : '•');
                 const text = opt.text.replace(/^[^\w\s]\s*/, '');
                 
                 html += `
                     <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectStatusFromPicker('${opt.value}')" onclick="selectStatusFromPicker('${opt.value}')" 
-                         style="border-left: 4px solid ${opt.selected ? style.color : '#e0e0e0'}; 
-                                background: ${opt.selected ? style.bg : (isAll ? '#f8f9fa' : 'white')};
-                                margin-bottom: 8px;
-                                cursor: pointer;
-                                transition: all 0.15s ease;">
-                        <div class="item-picker-desc" style="display: flex; align-items: center; gap: 12px;">
-                            <span style="font-size: 22px; width: 30px; text-align: center;">${icon}</span>
-                            <span style="font-weight: ${opt.selected ? 'bold' : '500'}; color: ${opt.selected ? style.color : '#333'}; flex: 1;">${text}</span>
-                            ${opt.selected ? `<span style="color: ${style.color}; font-size: 18px;">✓</span>` : ''}
+                         style="border-left: 4px solid #c0c0c0; 
+                                ${isAll ? 'background: #f8f9fa;' : ''}
+                                ${opt.selected ? 'background: #e8e8e8; border-left-color: #888;' : ''}">
+                        <div class="item-picker-desc" style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">${icon}</span>
+                            <span style="font-weight: ${opt.selected ? 'bold' : 'normal'};">${text}</span>
+                            ${opt.selected ? '<span style="margin-left: auto; color: #555;">✓</span>' : ''}
                         </div>
-                        ${isAll ? '<div style="font-size: 12px; color: #666; margin-left: 42px; margin-top: 4px;">Show all - no filter applied</div>' : ''}
                     </div>
                 `;
             });
@@ -34745,32 +34106,29 @@ NOTE: Please print the attached PO document for full details.`;
                 // Add Backorder badge if there's quantity on backorder
                 const backorderBadge = onBackorder > 0 ? `<span style="background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid #ffb74d; margin-left: 4px;">⚠️ ${onBackorder} Backorder</span>` : '';
                 
-                // Add Expected Date badge if available and valid
+                // Add Expected Date badge if available
                 let expectedDateBadge = '';
                 if (expectedDate && onOrder > 0) {
                     const expDate = new Date(expectedDate);
-                    // Check if date is valid (not NaN)
-                    if (!isNaN(expDate.getTime())) {
-                        const today = new Date();
-                        const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                        let dateColor = '#2e7d32';
-                        let dateBg = '#e8f5e9';
-                        
-                        if (daysUntil < 0) {
-                            dateColor = '#c62828';
-                            dateBg = '#ffebee';
-                        } else if (daysUntil <= 3) {
-                            dateColor = '#e65100';
-                            dateBg = '#fff3e0';
-                        }
-                        
-                        const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
-                                         daysUntil === 0 ? 'Today' : 
-                                         daysUntil === 1 ? 'Tomorrow' : 
-                                         `${daysUntil} days`;
-                        
-                        expectedDateBadge = `<div style="margin-top: 6px;"><span style="background: ${dateBg}; color: ${dateColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid ${dateColor === '#2e7d32' ? '#81c784' : dateColor === '#e65100' ? '#ffb74d' : '#e57373'};">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span></div>`;
+                    const today = new Date();
+                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                    let dateColor = '#2e7d32';
+                    let dateBg = '#e8f5e9';
+                    
+                    if (daysUntil < 0) {
+                        dateColor = '#c62828';
+                        dateBg = '#ffebee';
+                    } else if (daysUntil <= 3) {
+                        dateColor = '#e65100';
+                        dateBg = '#fff3e0';
                     }
+                    
+                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                     daysUntil === 0 ? 'Today' : 
+                                     daysUntil === 1 ? 'Tomorrow' : 
+                                     `${daysUntil} days`;
+                    
+                    expectedDateBadge = `<div style="margin-top: 6px;"><span style="background: ${dateBg}; color: ${dateColor}; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 2px solid ${dateColor === '#2e7d32' ? '#81c784' : dateColor === '#e65100' ? '#ffb74d' : '#e57373'};">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span></div>`;
                 }
                 
                 // Add Top Seller badge if applicable
@@ -35110,8 +34468,8 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function attachStatusPickerToSelects() {
-            // Stock Status selects (main tabs + report filters)
-            document.querySelectorAll('#filterItemStock, #filterInventoryStock, #pricesimStock, #filter_stockStatus, #rptFilter_stockStatus').forEach(select => {
+            // Stock Status selects
+            document.querySelectorAll('#filterItemStock, #filterInventoryStock, #pricesimStock').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
                     select.addEventListener('mousedown', function(e) {
@@ -35127,25 +34485,25 @@ NOTE: Please print the attached PO document for full details.`;
                 }
             });
             
-            // Order/Transaction Status selects
-            document.querySelectorAll('#filterPurchaseStatus, #filterSaleStatus, #filter_transactionStatus, #rptFilter_transactionStatus').forEach(select => {
+            // Order Status selects
+            document.querySelectorAll('#filterPurchaseStatus').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
                     select.addEventListener('mousedown', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        openStatusPicker(this, '📤 Transaction Status', 'order');
+                        openStatusPicker(this, '📤 Order Status', 'order');
                     });
                     select.addEventListener('touchstart', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        openStatusPicker(this, '📤 Transaction Status', 'order');
+                        openStatusPicker(this, '📤 Order Status', 'order');
                     });
                 }
             });
             
             // Payment Status selects
-            document.querySelectorAll('#filterPurchasePaymentStatus, #filterSalePaymentStatus, #filter_paymentStatus, #rptFilter_paymentStatus').forEach(select => {
+            document.querySelectorAll('#filterPurchasePaymentStatus').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
                     select.addEventListener('mousedown', function(e) {
@@ -35157,193 +34515,6 @@ NOTE: Please print the attached PO document for full details.`;
                         e.preventDefault();
                         e.stopPropagation();
                         openStatusPicker(this, '💵 Payment Status', 'payment');
-                    });
-                }
-            });
-            
-            // Delivery Status selects
-            document.querySelectorAll('#rptFilter_deliveryStatus').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '🚚 Delivery Status', 'delivery');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '🚚 Delivery Status', 'delivery');
-                    });
-                }
-            });
-            
-            // Turnover Status selects
-            document.querySelectorAll('#filter_turnoverStatus, #rptFilter_turnoverStatus').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '🔄 Turnover Status', 'turnover');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '🔄 Turnover Status', 'turnover');
-                    });
-                }
-            });
-            
-            // Aging selects
-            document.querySelectorAll('#filter_aging, #rptFilter_aging').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📅 Aging Period', 'aging');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📅 Aging Period', 'aging');
-                    });
-                }
-            });
-            
-            // Top N selects
-            document.querySelectorAll('#rptFilter_topN').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '🏆 Top N Results', 'topn');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '🏆 Top N Results', 'topn');
-                    });
-                }
-            });
-            
-            // Dormant Days selects
-            document.querySelectorAll('#rptFilter_dormantDays').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📞 Dormant Threshold', 'dormant');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📞 Dormant Threshold', 'dormant');
-                    });
-                }
-            });
-            
-            // Dormant Sort selects
-            document.querySelectorAll('#rptFilter_dormantSort').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📊 Sort By', 'sort');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📊 Sort By', 'sort');
-                    });
-                }
-            });
-            
-            // Adjustment Type selects
-            document.querySelectorAll('#rptFilter_adjustmentType').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📝 Adjustment Type', 'adjustment');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📝 Adjustment Type', 'adjustment');
-                    });
-                }
-            });
-            
-            // Year selects
-            document.querySelectorAll('#rptFilter_year').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📅 Select Year', 'year');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📅 Select Year', 'year');
-                    });
-                }
-            });
-            
-            // Quarter selects
-            document.querySelectorAll('#rptFilter_quarter').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📊 Select Quarter', 'quarter');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📊 Select Quarter', 'quarter');
-                    });
-                }
-            });
-            
-            // COGS Method selects
-            document.querySelectorAll('#rptFilter_cogsMethod').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📦 COGS Method', 'cogs');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📦 COGS Method', 'cogs');
-                    });
-                }
-            });
-            
-            // Item Active Status selects
-            document.querySelectorAll('#filterItemActive').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '✅ Item Status', 'active');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '✅ Item Status', 'active');
                     });
                 }
             });
@@ -35408,6 +34579,219 @@ NOTE: Please print the attached PO document for full details.`;
         function closeHowToGuide() {
             document.getElementById('howToGuideModal').style.display = 'none';
             document.body.style.overflow = '';
+        }
+        
+        // ==================== DIAGNOSTIC TOOL ====================
+        
+        function openDiagnosticTool() {
+            document.getElementById('diagnosticModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            // Show current environment
+            const envDisplay = document.getElementById('diagEnvDisplay');
+            envDisplay.innerHTML = `<strong>Environment:</strong> ${currentEnvironment.toUpperCase()}<br><strong>API URL:</strong> ${API_URL}`;
+        }
+        
+        function closeDiagnosticTool() {
+            document.getElementById('diagnosticModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        async function runDiagnosticTest(testType) {
+            const resultsDiv = document.getElementById('diagResults');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            resultsDiv.innerHTML += `<p style="color: #60a5fa;">[${timestamp}] Running ${testType} test...</p>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            
+            const startTime = Date.now();
+            
+            try {
+                let endpoint = '';
+                let testName = '';
+                
+                switch(testType) {
+                    case 'connection':
+                        endpoint = 'suppliers';
+                        testName = 'Connection';
+                        break;
+                    case 'suppliers':
+                        endpoint = 'suppliers';
+                        testName = 'Suppliers';
+                        break;
+                    case 'items':
+                        endpoint = 'items';
+                        testName = 'Items';
+                        break;
+                    case 'customers':
+                        endpoint = 'customers';
+                        testName = 'Customers';
+                        break;
+                }
+                
+                const response = await fetch(`${API_URL}?action=get${endpoint.charAt(0).toUpperCase() + endpoint.slice(1)}`);
+                const elapsed = Date.now() - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const count = Array.isArray(data) ? data.length : (data.data ? data.data.length : 'N/A');
+                    resultsDiv.innerHTML += `<p style="color: #4ade80;">✅ ${testName}: SUCCESS (${elapsed}ms) - ${count} records</p>`;
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: #f87171;">❌ ${testName}: FAILED - Status ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: #f87171;">❌ ${testType}: ERROR - ${error.message}</p>`;
+            }
+            
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        async function runAllDiagnostics() {
+            const resultsDiv = document.getElementById('diagResults');
+            resultsDiv.innerHTML = `<p style="color: #ffc107;">🚀 Starting full diagnostic suite...</p>`;
+            
+            await runDiagnosticTest('connection');
+            await new Promise(r => setTimeout(r, 300));
+            await runDiagnosticTest('suppliers');
+            await new Promise(r => setTimeout(r, 300));
+            await runDiagnosticTest('items');
+            await new Promise(r => setTimeout(r, 300));
+            await runDiagnosticTest('customers');
+            
+            resultsDiv.innerHTML += `<p style="color: #4ade80; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333;">✨ Diagnostic complete!</p>`;
+        }
+        
+        // ==================== QUICK ADJUST INVENTORY MODAL ====================
+        // For use within reports - doesn't close the report
+        
+        let quickAdjustCurrentQty = 0;
+        
+        function openQuickAdjustModal(itemId) {
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            if (!item) {
+                alert('Item not found. Please refresh and try again.');
+                return;
+            }
+            
+            // Populate modal
+            document.getElementById('quickAdjustItemId').value = itemId;
+            document.getElementById('quickAdjustItemName').textContent = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
+            quickAdjustCurrentQty = parseInt(item.Qty_On_Hand) || 0;
+            document.getElementById('quickAdjustCurrentQty').textContent = quickAdjustCurrentQty;
+            document.getElementById('quickAdjustNewQty').textContent = quickAdjustCurrentQty;
+            
+            // Reset form
+            document.getElementById('quickAdjustAmount').value = '';
+            document.getElementById('quickAdjustReason').value = '';
+            document.getElementById('quickAdjustNotes').value = '';
+            document.getElementById('quickAdjustReasonDisplay').style.display = 'none';
+            
+            // Reset reason button styles
+            document.querySelectorAll('.quick-reason-btn').forEach(btn => {
+                btn.style.borderColor = '#ddd';
+                btn.style.background = 'white';
+            });
+            
+            // Show modal
+            document.getElementById('quickAdjustModal').style.display = 'block';
+            document.body.classList.add('modal-open');
+            
+            // Focus on amount input
+            setTimeout(() => {
+                document.getElementById('quickAdjustAmount').focus();
+            }, 100);
+        }
+        
+        function closeQuickAdjustModal() {
+            document.getElementById('quickAdjustModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+        
+        function updateQuickAdjustPreview() {
+            const adjustment = parseInt(document.getElementById('quickAdjustAmount').value) || 0;
+            const newQty = quickAdjustCurrentQty + adjustment;
+            const newQtyEl = document.getElementById('quickAdjustNewQty');
+            newQtyEl.textContent = newQty;
+            newQtyEl.style.color = newQty < 0 ? '#ef4444' : '#22c55e';
+        }
+        
+        function selectQuickReason(reason) {
+            document.getElementById('quickAdjustReason').value = reason;
+            document.getElementById('quickAdjustReasonDisplay').textContent = `Selected: ${reason}`;
+            document.getElementById('quickAdjustReasonDisplay').style.display = 'block';
+            document.getElementById('quickAdjustReasonDisplay').style.background = '#e8f5e9';
+            document.getElementById('quickAdjustReasonDisplay').style.color = '#22c55e';
+            
+            // Update button styles
+            document.querySelectorAll('.quick-reason-btn').forEach(btn => {
+                btn.style.borderColor = '#ddd';
+                btn.style.background = 'white';
+            });
+            event.target.style.borderColor = '#22c55e';
+            event.target.style.background = '#e8f5e9';
+        }
+        
+        async function submitQuickAdjustment() {
+            const itemId = document.getElementById('quickAdjustItemId').value;
+            const adjustment = parseInt(document.getElementById('quickAdjustAmount').value);
+            const reason = document.getElementById('quickAdjustReason').value;
+            const notes = document.getElementById('quickAdjustNotes').value;
+            
+            // Validation
+            if (!itemId) {
+                alert('⚠️ Item not selected');
+                return;
+            }
+            if (isNaN(adjustment) || adjustment === 0) {
+                alert('⚠️ Please enter an adjustment amount');
+                document.getElementById('quickAdjustAmount').focus();
+                return;
+            }
+            if (!reason) {
+                alert('⚠️ Please select a reason');
+                return;
+            }
+            
+            const newQty = quickAdjustCurrentQty + adjustment;
+            const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+            
+            // Confirm
+            if (!confirm(`Adjust ${item.Item_Description}?\n\nCurrent: ${quickAdjustCurrentQty}\nAdjustment: ${adjustment > 0 ? '+' : ''}${adjustment}\nNew Total: ${newQty}\n\nReason: ${reason}`)) {
+                return;
+            }
+            
+            const data = {
+                itemId: itemId,
+                quantity: adjustment,
+                adjustmentType: 'Manual',
+                reason: reason + (notes ? ' - ' + notes : ''),
+                user: 'Manual'
+            };
+            
+            try {
+                const result = await apiCall('adjustInventory', data);
+                
+                if (result && result.status === 'success') {
+                    // Update cached items
+                    const itemsResult = await apiCall('getItems');
+                    if (itemsResult && itemsResult.status === 'success') {
+                        cachedItems = itemsResult.data;
+                    }
+                    
+                    alert(`✅ Adjusted! ${item.Item_Description}: ${quickAdjustCurrentQty} → ${newQty}`);
+                    closeQuickAdjustModal();
+                    
+                    // Refresh the current report if it's still open
+                    if (document.getElementById('reportSetupModal').style.display !== 'none') {
+                        // Re-run the report to show updated data
+                        const runBtn = document.querySelector('#reportSetupFilters button[onclick*="runReport"]');
+                        if (runBtn) runBtn.click();
+                    }
+                } else {
+                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
         }
         
         // ==================== TUTORIAL CONTENT ====================
@@ -35846,7 +35230,7 @@ NOTE: Please print the attached PO document for full details.`;
         function showTutorial(tutorialId) {
             const tutorial = tutorialContent[tutorialId];
             if (!tutorial) {
-                showPopup('Tutorial not found');
+                alert('Tutorial not found');
                 return;
             }
             
@@ -35973,7 +35357,7 @@ NOTE: Please print the attached PO document for full details.`;
 
         async function downloadItemsReport() {
             if (!cachedItems || cachedItems.length === 0) {
-                showPopup('No items to download. Please load items first.');
+                alert('No items to download. Please load items first.');
                 return;
             }
 
@@ -36181,7 +35565,7 @@ NOTE: Please print the attached PO document for full details.`;
             const file = fileInput.files[0];
             
             if (!file) {
-                showPopup('Please select a file to upload');
+                alert('Please select a file to upload');
                 return;
             }
 
@@ -36194,7 +35578,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const uploadedItems = await parseUploadedFile(file);
                 
                 if (!uploadedItems || uploadedItems.length === 0) {
-                    showPopup('No valid items found in file');
+                    alert('No valid items found in file');
                     return;
                 }
 
@@ -36403,7 +35787,7 @@ NOTE: Please print the attached PO document for full details.`;
 
         async function commitItemsUpload() {
             if (!pendingItemsUpload) {
-                showPopup('No upload pending');
+                alert('No upload pending');
                 return;
             }
 
@@ -36414,7 +35798,7 @@ NOTE: Please print the attached PO document for full details.`;
                 }
                 const finalConfirm = prompt('Type YES (in capital letters) to proceed with FULL REFRESH:');
                 if (finalConfirm !== 'YES') {
-                    showPopup('Upload cancelled');
+                    alert('Upload cancelled');
                     return;
                 }
             }
@@ -36684,135 +36068,5 @@ NOTE: Please print the attached PO document for full details.`;
             }
         });
     </script>
-    
-    <!-- Popup Modal for all messages -->
-    <div id="popupOverlay" class="popup-overlay" onclick="closePopup()">
-        <div class="popup-box" onclick="event.stopPropagation()">
-            <div id="popupHeader" class="popup-header info">
-                <div id="popupIcon" class="popup-icon">ℹ️</div>
-                <h3 id="popupTitle">Message</h3>
-            </div>
-            <div id="popupBody" class="popup-body">
-                <!-- Content populated by JavaScript -->
-            </div>
-            <div id="popupFooter" class="popup-footer">
-                <button id="popupBtn" class="popup-btn" onclick="closePopup()">OK</button>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        // ==================== POPUP MODAL SYSTEM ====================
-        
-        function showPopup(message, type = 'auto', title = null) {
-            const overlay = document.getElementById('popupOverlay');
-            const header = document.getElementById('popupHeader');
-            const icon = document.getElementById('popupIcon');
-            const titleEl = document.getElementById('popupTitle');
-            const body = document.getElementById('popupBody');
-            const footer = document.getElementById('popupFooter');
-            
-            if (!overlay) {
-                console.error('Popup overlay not found!');
-                alert(message); // Fallback to alert
-                return;
-            }
-            
-            // Auto-detect type from message content if not specified
-            if (type === 'auto') {
-                if (message.includes('✅') || message.toLowerCase().includes('success')) {
-                    type = 'success';
-                } else if (message.includes('❌') || message.includes('Error') || message.includes('error')) {
-                    type = 'error';
-                } else if (message.includes('⚠️') || message.includes('Warning') || message.includes('Please')) {
-                    type = 'warning';
-                } else if (message.includes('💡') || message.includes('Tip')) {
-                    type = 'info';
-                } else {
-                    type = 'info';
-                }
-            }
-            
-            // Set type-specific styling
-            const types = {
-                error: { icon: '⚠️', title: 'Error', class: 'error' },
-                success: { icon: '✅', title: 'Success', class: 'success' },
-                warning: { icon: '⚡', title: 'Attention', class: 'warning' },
-                info: { icon: 'ℹ️', title: 'Information', class: 'info' }
-            };
-            
-            const config = types[type] || types.info;
-            header.className = 'popup-header ' + config.class;
-            icon.textContent = config.icon;
-            titleEl.textContent = title || config.title;
-            
-            // Clean up emoji from message since we show it in header
-            let cleanMessage = message
-                .replace(/^[✅❌⚠️💡ℹ️⚡]\s*/g, '')
-                .replace(/^(Error|Warning|Success|Info):\s*/i, '');
-            
-            // Parse message - handle line breaks and lists
-            let htmlContent = '';
-            if (typeof cleanMessage === 'string') {
-                // Check if message has list items (lines starting with - or •)
-                const lines = cleanMessage.split('\n').filter(l => l.trim());
-                const listItems = lines.filter(l => l.trim().startsWith('-') || l.trim().startsWith('•') || l.trim().startsWith('✓') || l.trim().startsWith('✗'));
-                
-                if (listItems.length > 1) {
-                    const nonListLines = lines.filter(l => !l.trim().startsWith('-') && !l.trim().startsWith('•') && !l.trim().startsWith('✓') && !l.trim().startsWith('✗'));
-                    if (nonListLines.length > 0) {
-                        htmlContent += '<p style="margin-bottom: 15px;">' + nonListLines.join('<br>') + '</p>';
-                    }
-                    htmlContent += '<ul class="' + (type === 'error' ? 'error-list' : '') + '">';
-                    listItems.forEach(item => {
-                        const text = item.replace(/^[-•✓✗]\s*/, '').trim();
-                        htmlContent += '<li>' + text + '</li>';
-                    });
-                    htmlContent += '</ul>';
-                } else {
-                    // Simple message with line breaks
-                    htmlContent = cleanMessage.replace(/\n/g, '<br>');
-                }
-            } else {
-                htmlContent = String(cleanMessage);
-            }
-            
-            body.innerHTML = htmlContent;
-            body.className = 'popup-body' + (type === 'error' ? ' error-list' : '');
-            
-            // Reset footer to single OK button
-            footer.innerHTML = '<button class="popup-btn" onclick="closePopup()">OK</button>';
-            
-            // Show the overlay - clear any inline style first, then add class
-            overlay.removeAttribute('style');
-            overlay.classList.add('show');
-        }
-        
-        function closePopup() {
-            const overlay = document.getElementById('popupOverlay');
-            if (overlay) {
-                // Remove the show class
-                overlay.classList.remove('show');
-                // Force hide with inline style that overrides everything
-                overlay.setAttribute('style', 'display: none !important;');
-            }
-        }
-        
-        // Close on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closePopup();
-            }
-        });
-        
-        // Also close popup on any click on the overlay background
-        document.addEventListener('click', function(e) {
-            const overlay = document.getElementById('popupOverlay');
-            if (e.target === overlay) {
-                closePopup();
-            }
-        });
-    </script>
-    
 </body>
 </html>
