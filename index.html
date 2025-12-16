@@ -2381,6 +2381,13 @@
                COMPREHENSIVE REPORT PRINT STYLES
                ======================================== */
             
+            /* CRITICAL: Reset ALL elements to static flow */
+            * {
+                position: static !important;
+                transform: none !important;
+                float: none !important;
+            }
+            
             /* Hide EVERYTHING first */
             body > * {
                 display: none !important;
@@ -2390,10 +2397,12 @@
             #reportSetupModal {
                 display: block !important;
                 position: static !important;
-                left: 0 !important;
-                top: 0 !important;
+                left: auto !important;
+                top: auto !important;
+                transform: none !important;
                 width: 100% !important;
                 height: auto !important;
+                max-height: none !important;
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
@@ -2418,14 +2427,17 @@
                 height: auto !important;
             }
             
-            /* Modal inner container - CENTERED */
+            /* Modal inner container - RESET ALL POSITIONING FOR PRINT */
             #reportSetupModalInner {
                 position: static !important;
+                top: auto !important;
+                left: auto !important;
+                transform: none !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
                 max-height: none !important;
-                margin: 0 auto !important;
+                margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
@@ -2672,9 +2684,16 @@
         // Register datalabels plugin globally
         Chart.register(ChartDataLabels);
         
-        // Default datalabels to OFF (we'll enable per-chart where needed)
+        // Enable datalabels by default with white text
         Chart.defaults.plugins.datalabels = {
-            display: false
+            display: true,
+            color: '#fff',
+            font: { weight: 'bold', size: 12 },
+            formatter: (value, ctx) => {
+                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                return pct > 5 ? pct + '%' : '';
+            }
         };
     </script>
 </head>
@@ -9880,8 +9899,11 @@
             displayPurchases(purchasesData);
         }
         
+        let activePurchaseFilter = 'all'; // Track active filter
+        
         function applyPurchasesDateFilter(period, evt) {
             console.log('Purchase date filter clicked:', period);
+            activePurchaseFilter = period; // Track active filter
             
             const now = new Date();
             let fromDate = null;
@@ -9927,15 +9949,7 @@
                     document.getElementById('filterPurchaseDateFrom').value = '';
                     document.getElementById('filterPurchaseDateTo').value = '';
                     filterPurchases();
-                    
-                    if (evt) {
-                        document.querySelectorAll('.oval-filter-btn-po').forEach(btn => {
-                            btn.style.opacity = '0.6';
-                            btn.style.transform = 'scale(1)';
-                        });
-                        evt.target.style.opacity = '1';
-                        evt.target.style.transform = 'scale(1.05)';
-                    }
+                    updatePurchaseFilterButtons(period);
                     return;
             }
             
@@ -9946,15 +9960,19 @@
             document.getElementById('filterPurchaseDateTo').value = toDateStr;
             
             filterPurchases();
-            
-            if (evt) {
+            updatePurchaseFilterButtons(period);
+        }
+        
+        function updatePurchaseFilterButtons(activePeriod) {
+            setTimeout(() => {
                 document.querySelectorAll('.oval-filter-btn-po').forEach(btn => {
-                    btn.style.opacity = '0.6';
-                    btn.style.transform = 'scale(1)';
+                    const onclick = btn.getAttribute('onclick') || '';
+                    const isActive = onclick.includes(`'${activePeriod}'`);
+                    btn.style.opacity = isActive ? '1' : '0.6';
+                    btn.style.transform = isActive ? 'scale(1.05)' : 'scale(1)';
+                    btn.style.boxShadow = isActive ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)';
                 });
-                evt.target.style.opacity = '1';
-                evt.target.style.transform = 'scale(1.05)';
-            }
+            }, 50);
         }
 
         function displayPurchases(orders) {
@@ -11554,12 +11572,14 @@
                     <div>
                         <h3 style="margin-top: 0; color: #667eea;">Order Information</h3>
                         <div class="form-group">
-                            <label>Customer *</label>
-                            <select id="editSOCustomer" required>${customerOptions}</select>
+                            <label>Customer * <span style="font-size: 11px; color: #999;">(locked)</span></label>
+                            <select id="editSOCustomer" required disabled style="background: #f0f0f0; cursor: not-allowed;">${customerOptions}</select>
+                            <input type="hidden" id="editSOCustomerHidden" value="${so.Customer_ID}">
                         </div>
                         <div class="form-group">
-                            <label>Invoice Number</label>
-                            <input type="text" id="editSOInvoiceNumber" value="${so.Invoice_Number || ''}">
+                            <label>Invoice Number <span style="font-size: 11px; color: #999;">(locked)</span></label>
+                            <input type="text" id="editSOInvoiceNumber" value="${so.Invoice_Number || ''}" readonly style="background: #f0f0f0; cursor: not-allowed;">
+                        </div>
                         </div>
                         <div class="form-group">
                             <label>Sale Date</label>
@@ -11728,7 +11748,7 @@
             
             const data = {
                 soId: so.SO_ID,
-                customerId: document.getElementById('editSOCustomer').value,
+                customerId: document.getElementById('editSOCustomerHidden')?.value || document.getElementById('editSOCustomer').value,
                 invoiceNumber: document.getElementById('editSOInvoiceNumber').value,
                 saleDate: document.getElementById('editSODate').value,
                 dueDate: document.getElementById('editSODueDate').value,
@@ -22879,13 +22899,13 @@
                 `;
                 
                 latePOs.forEach(p => {
-                    const needByDate = new Date(p.Need_By_Date);
-                    const needByStr = (needByDate.getMonth()+1) + '/' + needByDate.getDate() + '/' + needByDate.getFullYear();
+                    const checkDate = new Date(p.Check_Date);
+                    const dateStr = !isNaN(checkDate) ? (checkDate.getMonth()+1) + '/' + checkDate.getDate() + '/' + checkDate.getFullYear() : 'N/A';
                     html += `
                         <tr>
                             <td>${p.Supplier_Name}</td>
                             <td>PO-${p.PO_ID}</td>
-                            <td>${needByStr}</td>
+                            <td>${dateStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${p.Status}</td>
                             <td>
@@ -26582,10 +26602,10 @@
                     </div>
                 `).join('')}
                 
-                <div class="partnership-box" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); margin-top: 30px;">
-                    <h3>💰 Total Customer Value</h3>
-                    <div class="partnership-value">$${periods['ALL TIME'].sales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    <div class="partnership-label">${periods['ALL TIME'].orders} sales orders • All Time</div>
+                <div class="partnership-box" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); margin-top: 30px; width: 100%; box-sizing: border-box; text-align: center; padding: 25px; border-radius: 12px; color: white;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 18px; color: white;">💰 Total Customer Value</h3>
+                    <div style="font-size: 42px; font-weight: bold; color: white;">$${periods['ALL TIME'].sales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div style="font-size: 14px; opacity: 0.9; margin-top: 8px; color: white;">${periods['ALL TIME'].orders} sales orders • All Time</div>
                 </div>
             `;
             
