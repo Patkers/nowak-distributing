@@ -5,13 +5,14 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Monday, December 16, 2025
-         VERSION: V16H-20251216-PAYCONFIRM
+         VERSION: V16I-20251216-DATEFIX
          =====================================================
          CHANGES IN THIS VERSION:
          - Payment confirmation popup shows breakdown
          - Partial payments ask "Add another payment now?"
          - Paid in full shows celebration message
          - Report auto-refreshes after payment
+         - FIXED: Invalid Date (NaN days) badge when no valid expected date
          - All dropdowns refresh on environment switch
          ===================================================== -->
     <meta charset="UTF-8">
@@ -29269,28 +29270,31 @@ NOTE: Please print the attached PO document for full details.`;
                 let expectedDateBadge = '';
                 if (expectedDate && onOrder > 0) {
                     const expDate = new Date(expectedDate);
-                    const today = new Date();
-                    const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                    let dateColor = '#2e7d32';
-                    let dateBg = '#e8f5e9';
-                    let dateBorder = '#81c784';
-                    
-                    if (daysUntil < 0) {
-                        dateColor = '#c62828';
-                        dateBg = '#ffebee';
-                        dateBorder = '#e57373';
-                    } else if (daysUntil <= 3) {
-                        dateColor = '#e65100';
-                        dateBg = '#fff3e0';
-                        dateBorder = '#ffb74d';
+                    // Check if date is valid
+                    if (!isNaN(expDate.getTime())) {
+                        const today = new Date();
+                        const daysUntil = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                        let dateColor = '#2e7d32';
+                        let dateBg = '#e8f5e9';
+                        let dateBorder = '#81c784';
+                        
+                        if (daysUntil < 0) {
+                            dateColor = '#c62828';
+                            dateBg = '#ffebee';
+                            dateBorder = '#e57373';
+                        } else if (daysUntil <= 3) {
+                            dateColor = '#e65100';
+                            dateBg = '#fff3e0';
+                            dateBorder = '#ffb74d';
+                        }
+                        
+                        const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
+                                         daysUntil === 0 ? 'Today' : 
+                                         daysUntil === 1 ? 'Tomorrow' : 
+                                         `${daysUntil} days`;
+                        
+                        expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
                     }
-                    
-                    const dateText = daysUntil < 0 ? `Overdue ${Math.abs(daysUntil)}d` : 
-                                     daysUntil === 0 ? 'Today' : 
-                                     daysUntil === 1 ? 'Tomorrow' : 
-                                     `${daysUntil} days`;
-                    
-                    expectedDateBadge = `<span class="item-picker-stock" style="background: ${dateBg}; color: ${dateColor}; border: 2px solid ${dateBorder}; margin-left: 6px;">📅 Expected: ${expDate.toLocaleDateString()} (${dateText})</span>`;
                 }
                 
                 // Add Top Seller badge if applicable
@@ -30161,7 +30165,7 @@ NOTE: Please print the attached PO document for full details.`;
                                     </span>
                                     ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">⚠️ Gap: ${gap}</span>` : ''}
                                 </div>
-                                ${expectedDate ? `
+                                ${expectedDate && !isNaN(new Date(expectedDate).getTime()) ? `
                                     <div style="margin-top: 8px; font-size: 13px; color: #555;">
                                         📅 Expected: ${new Date(expectedDate).toLocaleDateString()}
                                     </div>
