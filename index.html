@@ -2459,6 +2459,17 @@
             }
             
             /* Hide ALL scrollbars in print */
+            *::-webkit-scrollbar {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+            }
+            
+            * {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+            }
+            
             #reportSetupContent *::-webkit-scrollbar {
                 display: none !important;
                 width: 0 !important;
@@ -2470,12 +2481,16 @@
                 -ms-overflow-style: none !important;
             }
             
-            /* Force overflow visible on all elements */
+            /* Force overflow visible on all elements for multi-page printing */
+            #reportSetupContent,
             #reportSetupContent div,
-            #reportSetupContent section {
+            #reportSetupContent section,
+            #reportSetupModalInner {
                 overflow: visible !important;
                 overflow-x: visible !important;
                 overflow-y: visible !important;
+                max-height: none !important;
+                height: auto !important;
             }
             
             /* CHARTS - Show images, hide canvases */
@@ -2650,6 +2665,9 @@
         Chart.defaults.transitions = {};
         Chart.defaults.responsive = false;
         Chart.defaults.maintainAspectRatio = false;
+        
+        // Fix blurry charts - use device pixel ratio for crisp rendering
+        Chart.defaults.devicePixelRatio = window.devicePixelRatio || 1;
         
         // Register datalabels plugin globally
         Chart.register(ChartDataLabels);
@@ -3918,9 +3936,10 @@
                         <label>Order Status</label>
                         <select id="filterSaleStatus" onchange="filterSales()">
                             <option value="">All</option>
-                            <option value="Completed">✅ Completed</option>
-                            <option value="Pending">🟡 Pending</option>
-                            <option value="Cancelled">🚫 Cancelled</option>
+                            <option value="Pending">⏳ Pending</option>
+                            <option value="Ready">📦 Ready</option>
+                            <option value="Out for Delivery">🚚 Out for Delivery</option>
+                            <option value="Delivered">✅ Delivered</option>
                             <option value="Voided">❌ Voided</option>
                             <option value="exclude-voided">🚫 Exclude Voided</option>
                         </select>
@@ -9151,11 +9170,11 @@
             switchTab('inventory');
             
             // Wait for tab to load, then show the adjustment form and pre-select the item
-            setTimeout(() => {
-                // Show the adjustment form
-                showAdjustInventoryForm();
+            setTimeout(async () => {
+                // Show the adjustment form first (this loads fresh data)
+                await showAdjustInventoryForm();
                 
-                // Find the item and populate the fields
+                // NOW populate the fields after the form has loaded
                 if (itemId && cachedItems.length > 0) {
                     const item = cachedItems.find(i => i.Item_ID === itemId);
                     if (item) {
@@ -9177,7 +9196,7 @@
                 if (adjustForm) {
                     adjustForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            }, 300);
+            }, 100);
         }
         
         function hideEditItemForm() {
@@ -11743,8 +11762,24 @@
             const result = await apiCall('updateSalesOrder', data);
             
             if (result && result.status === 'success') {
-                showSuccessModal('Sales Order Updated!', 'Changes saved successfully.');
-                closeOrderModal();
+                showSuccessModal('Sales Order Updated!', 'Changes saved successfully.\n\nYou can now print the invoice or continue editing.');
+                // DON'T close the modal - let user print or close manually
+                // closeOrderModal();  // Removed - user will use Close button
+                
+                // Refresh the data in the modal to show updated values
+                const updatedResult = await apiCall('getSalesOrders');
+                if (updatedResult?.data) {
+                    const updatedSO = updatedResult.data.find(s => s.SO_ID === so.SO_ID);
+                    if (updatedSO) {
+                        currentEditingOrder = updatedSO;
+                        // Update displayed totals
+                        const totalDisplay = document.querySelector('#orderModal .order-total');
+                        if (totalDisplay) {
+                            totalDisplay.textContent = formatMoney(data.totalAmount);
+                        }
+                    }
+                }
+                
                 loadSales();
             } else {
                 showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
@@ -12839,37 +12874,123 @@
             let remaining = total - amountPaid;
             if (Math.abs(remaining) < 0.01) remaining = 0;
             
-            // Create better formatted prompt
-            let message = `💰 Record Payment for ${soId}\n\n`;
-            message += `Invoice Total:    ${formatMoney(total)}\n`;
-            message += `Already Paid:     ${formatMoney(amountPaid)}\n`;
-            message += `───────────────────────────\n`;
-            message += `Balance Due:      ${formatMoney(remaining)}\n\n`;
+            // Create beautiful payment modal
+            const modalHtml = `
+                <div id="paymentModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: white; border-radius: 16px; max-width: 420px; width: 100%; box-shadow: 0 25px 50px rgba(0,0,0,0.25); overflow: hidden;">
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px 25px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; font-size: 18px;">💰 Record Payment</h3>
+                                <button onclick="document.getElementById('paymentModal').remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px;">×</button>
+                            </div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">${soId}</div>
+                        </div>
+                        
+                        <!-- Summary Cards -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid #e5e7eb;">
+                            <div style="padding: 20px; text-align: center; background: #f0fdf4; border-right: 1px solid #e5e7eb;">
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Invoice Total</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #333;">${formatMoney(total)}</div>
+                            </div>
+                            <div style="padding: 20px; text-align: center; background: ${remaining > 0 ? '#fef2f2' : '#f0fdf4'};">
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px;">Balance Due</div>
+                                <div style="font-size: 24px; font-weight: bold; color: ${remaining > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(remaining)}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Already Paid -->
+                        <div style="padding: 15px 25px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #666;">Already Paid:</span>
+                                <span style="font-weight: 600; color: #16a34a;">${formatMoney(amountPaid)}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Input -->
+                        <div style="padding: 25px;">
+                            <label style="display: block; font-weight: 600; color: #333; margin-bottom: 8px;">Payment Amount *</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span style="font-size: 24px; color: #666;">$</span>
+                                <input type="number" id="paymentAmountInput" step="0.01" min="0" placeholder="${remaining.toFixed(2)}" value="${remaining.toFixed(2)}"
+                                    style="flex: 1; padding: 15px; font-size: 24px; border: 2px solid #e5e7eb; border-radius: 12px; text-align: right; font-weight: bold;"
+                                    onkeypress="if(event.key==='Enter')document.getElementById('submitPaymentBtn').click()">
+                            </div>
+                            <div style="margin-top: 8px; font-size: 13px; color: #666;">
+                                ${remaining > 0 ? `💡 Tip: Enter <strong>${remaining.toFixed(2)}</strong> to pay in full` : '✅ Already paid in full!'}
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Amount Buttons -->
+                        ${remaining > 0 ? `
+                        <div style="padding: 0 25px 20px 25px;">
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="document.getElementById('paymentAmountInput').value='${remaining.toFixed(2)}'" 
+                                    style="flex: 1; padding: 10px; background: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; color: #059669; font-weight: 600; cursor: pointer;">
+                                    Pay in Full
+                                </button>
+                                ${remaining > 10 ? `<button onclick="document.getElementById('paymentAmountInput').value='${(remaining/2).toFixed(2)}'" 
+                                    style="flex: 1; padding: 10px; background: #fff7ed; border: 2px solid #f97316; border-radius: 8px; color: #ea580c; font-weight: 600; cursor: pointer;">
+                                    Half (${formatMoney(remaining/2)})
+                                </button>` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Buttons -->
+                        <div style="padding: 20px 25px; background: #f9fafb; display: flex; gap: 12px;">
+                            <button onclick="document.getElementById('paymentModal').remove()" 
+                                style="flex: 1; padding: 14px; background: white; border: 2px solid #d1d5db; border-radius: 10px; font-weight: 600; cursor: pointer; color: #374151;">
+                                Cancel
+                            </button>
+                            <button id="submitPaymentBtn" onclick="submitPaymentFromModal('${soId}', ${total}, ${amountPaid})" 
+                                style="flex: 2; padding: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; font-size: 16px;">
+                                💰 Record Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            // Suggest full payment if unpaid
-            if (amountPaid === 0) {
-                message += `Tip: Enter ${remaining.toFixed(2)} to pay in full\n\n`;
-            }
+            // Remove any existing modal
+            const existing = document.getElementById('paymentModal');
+            if (existing) existing.remove();
             
-            message += `Enter payment amount:`;
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
             
-            const payment = prompt(message);
+            // Focus on input
+            setTimeout(() => {
+                const input = document.getElementById('paymentAmountInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 100);
+        }
+        
+        function submitPaymentFromModal(soId, total, amountPaid) {
+            const input = document.getElementById('paymentAmountInput');
+            const paymentAmount = parseFloat(input.value);
             
-            if (payment === null) return; // Cancelled
-            
-            const paymentAmount = parseFloat(payment);
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                alert('Please enter a valid payment amount');
+                input.style.borderColor = '#dc2626';
+                input.focus();
                 return;
             }
             
-            if (paymentAmount > remaining + 0.01) { // Allow 1 cent rounding
+            const remaining = total - amountPaid;
+            
+            if (paymentAmount > remaining + 0.01) {
                 if (!confirm(`Payment (${formatMoney(paymentAmount)}) is more than balance due (${formatMoney(remaining)}).\n\nContinue anyway?`)) {
                     return;
                 }
             }
             
-            // Call backend - send TOTAL amount paid (existing + new payment)
+            // Close modal
+            document.getElementById('paymentModal').remove();
+            
+            // Call backend
             const newTotalPaid = amountPaid + paymentAmount;
             const invoiceTotal = total;
             
@@ -12882,18 +13003,7 @@
                         if (isPaidInFull) {
                             showSuccessModal('Payment Recorded!', `Payment Applied: ${formatMoney(paymentAmount)}\nInvoice Total: ${formatMoney(invoiceTotal)}\nTotal Paid: ${formatMoney(newTotalPaid)}\n\n🎉 PAID IN FULL!`);
                         } else {
-                            // Build confirmation message for partial payment
-                            let confirmMsg = `Payment Applied: ${formatMoney(paymentAmount)}\n`;
-                            confirmMsg += `Invoice Total: ${formatMoney(invoiceTotal)}\n`;
-                            confirmMsg += `Total Paid: ${formatMoney(newTotalPaid)}\n`;
-                            confirmMsg += `Amount Owed: ${formatMoney(remaining)}\n\n`;
-                            confirmMsg += `Add another payment now?`;
-                            
-                            if (confirm(`✅ Payment Recorded!\n\n${confirmMsg}`)) {
-                                // Recursively call to add another payment
-                                recordSalesPayment(soId, invoiceTotal, newTotalPaid);
-                                return; // Don't refresh yet
-                            }
+                            showSuccessModal('Payment Recorded!', `Payment Applied: ${formatMoney(paymentAmount)}\nInvoice Total: ${formatMoney(invoiceTotal)}\nTotal Paid: ${formatMoney(newTotalPaid)}\nRemaining: ${formatMoney(remaining)}`);
                         }
                         
                         // Refresh the report if we're in Action Dashboard
@@ -12904,11 +13014,11 @@
                         
                         loadSales();
                     } else {
-                        showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                        alert('❌ Error: ' + (result?.message || 'Unknown error'));
                     }
                 })
                 .catch(err => {
-                    showStatus('salesStatus', '❌ Error recording payment: ' + err.message, 'error');
+                    alert('❌ Error recording payment: ' + err.message);
                 });
         }
 
@@ -15142,6 +15252,37 @@
             document.getElementById('reportSetupModal').style.display = 'none';
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open');
+        }
+        
+        // Toggle report modal between maximized and normal size
+        let reportModalMaximized = false;
+        function toggleReportModalSize() {
+            const modal = document.getElementById('reportSetupModalInner');
+            const icon = document.getElementById('reportMaximizeIcon');
+            
+            if (reportModalMaximized) {
+                // Restore to normal - centered with transform
+                modal.style.width = '100%';
+                modal.style.maxWidth = '900px';
+                modal.style.maxHeight = 'calc(100vh - 40px)';
+                modal.style.borderRadius = '12px';
+                modal.style.top = '50%';
+                modal.style.transform = 'translateY(-50%)';
+                modal.style.margin = '0 auto';
+                icon.textContent = '⬜';
+                reportModalMaximized = false;
+            } else {
+                // Maximize - fill viewport
+                modal.style.width = 'calc(100vw - 40px)';
+                modal.style.maxWidth = 'calc(100vw - 40px)';
+                modal.style.maxHeight = 'calc(100vh - 40px)';
+                modal.style.borderRadius = '8px';
+                modal.style.top = '0';
+                modal.style.transform = 'none';
+                modal.style.margin = '0 auto';
+                icon.textContent = '❐';
+                reportModalMaximized = true;
+            }
         }
         
         // Sort report table by column
@@ -20255,7 +20396,14 @@
             const salesResult = await apiCall('getSalesOrders');
             if (!salesResult?.data) throw new Error('Failed to load sales');
             
-            let unpaid = salesResult.data.filter(s => s.Payment_Status !== 'Paid');
+            // Filter to only show invoices with outstanding balance
+            let unpaid = salesResult.data.filter(s => {
+                if (s.Status === 'Voided') return false;
+                const amt = parseFloat(s.Total_Amount) || 0;
+                const paid = parseFloat(s.Amount_Paid) || 0;
+                const balance = amt - paid;
+                return balance > 0.01; // Has outstanding balance
+            });
             
             if (reportFilters.customer) {
                 unpaid = unpaid.filter(s => matchesFilter(s.Customer_ID, reportFilters.customer));
@@ -22002,17 +22150,26 @@
             
             // ===== 2. LATE PURCHASE ORDERS =====
             const latePOs = purchases.filter(p => {
-                if (!p.Need_By_Date) return false;
-                const needBy = new Date(p.Need_By_Date);
-                return needBy < today && p.Status !== 'Received';
+                // Check if PO is past due (not yet received)
+                if (p.Status === 'Received') return false;
+                
+                // Check Need By Date first, then fall back to Due Date
+                const checkDate = p.Need_By_Date || p.Due_Date;
+                if (!checkDate) return false;
+                
+                const dueDate = new Date(checkDate);
+                return dueDate < today;
             }).map(p => {
-                const needBy = new Date(p.Need_By_Date);
-                const daysLate = Math.floor((today - needBy) / (1000 * 60 * 60 * 24));
+                const checkDate = p.Need_By_Date || p.Due_Date;
+                const dueDate = new Date(checkDate);
+                const daysLate = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
                 const supplier = suppliers.find(s => s.Supplier_ID === p.Supplier_ID);
                 return {
                     ...p,
                     Supplier_Name: supplier?.Supplier_Name || 'Unknown',
-                    Days_Late: daysLate
+                    Days_Late: daysLate,
+                    Check_Date: checkDate,
+                    Date_Type: p.Need_By_Date ? 'Need By' : 'Due'
                 };
             }).sort((a, b) => b.Days_Late - a.Days_Late);
             
@@ -22645,6 +22802,7 @@
                             <tr>
                                 <th>Customer</th>
                                 <th>Invoice</th>
+                                <th>Sale Date</th>
                                 <th>Due Date</th>
                                 <th>Days Late</th>
                                 <th>Balance</th>
@@ -22657,10 +22815,13 @@
                 pastDuePayments.slice(0, 10).forEach(p => {
                     const dueDate = new Date(p.Due_Date);
                     const dueDateStr = (dueDate.getMonth()+1) + '/' + dueDate.getDate() + '/' + dueDate.getFullYear();
+                    const saleDate = p.Sale_Date ? new Date(p.Sale_Date) : null;
+                    const saleDateStr = saleDate ? (saleDate.getMonth()+1) + '/' + saleDate.getDate() + '/' + saleDate.getFullYear() : '-';
                     html += `
                         <tr>
                             <td>${p.Customer_Name}</td>
                             <td>${p.Invoice_Number || p.SO_ID || 'N/A'}</td>
+                            <td>${saleDateStr}</td>
                             <td>${dueDateStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${formatMoney(p.Balance)}</td>
@@ -23157,9 +23318,14 @@
                         if (backorderedItemIds.has(line.Item_ID) || qtyOnHand < 0) {
                             // Add to customer backorders
                             if (!customerBackorders[so.Customer_ID]) {
+                                // Get full customer info including address
+                                const customerInfo = customers.find(c => c.Customer_ID === so.Customer_ID);
+                                const address = customerInfo ? [customerInfo.Address, customerInfo.City, customerInfo.State].filter(Boolean).join(', ') : '';
+                                
                                 customerBackorders[so.Customer_ID] = {
                                     customerName: customerName,
                                     customerId: so.Customer_ID,
+                                    customerAddress: address,
                                     orders: []
                                 };
                             }
@@ -23551,7 +23717,10 @@
                     html += `
                         <div class="customer-card">
                             <div class="customer-card-header">
-                                <span class="customer-name">👤 ${customer.customerName}</span>
+                                <div style="flex: 1;">
+                                    <span class="customer-name">👤 ${customer.customerName}</span>
+                                    ${customer.customerAddress ? `<div style="font-size: 12px; color: #666; margin-top: 2px;">📍 ${customer.customerAddress}</div>` : ''}
+                                </div>
                                 <span class="order-badge">${customer.orders.length} order${customer.orders.length > 1 ? 's' : ''} affected</span>
                             </div>
                             <table class="backorder-table">
@@ -25172,38 +25341,6 @@
                     </div>
                 </div>
                 
-                <!-- Monthly Sales Trend -->
-                ${sortedMonths.length > 0 ? `
-                <div class="biz-section">
-                    <h3>📊 Sales Trend by Month</h3>
-                    <div style="display: flex; align-items: flex-end;">
-                        <!-- Y-axis labels -->
-                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 200px; padding-right: 10px; font-size: 11px; color: #6b7280;">
-                            <span>${formatMoney(maxMonthlyRevenue)}</span>
-                            <span>${formatMoney(maxMonthlyRevenue * 0.75)}</span>
-                            <span>${formatMoney(maxMonthlyRevenue * 0.5)}</span>
-                            <span>${formatMoney(maxMonthlyRevenue * 0.25)}</span>
-                            <span>$0</span>
-                        </div>
-                        <div class="biz-monthly-chart" style="flex: 1;">
-                            ${sortedMonths.slice(-12).map(([month, data]) => {
-                                const height = (data.revenue / maxMonthlyRevenue) * 100;
-                                const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                                return `
-                                    <div class="biz-monthly-bar">
-                                        <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
-                                        <div class="biz-monthly-label">${monthName}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                    <div style="text-align: center; margin-top: 10px;">
-                        <span style="font-size: 12px; color: #6b7280;">📈 Monthly Revenue Trend (Last 12 Months)</span>
-                    </div>
-                </div>
-                ` : ''}
-                
                 <div class="biz-row">
                     <!-- Top Customers -->
                     <div class="biz-section">
@@ -25328,28 +25465,6 @@
                         📋 Purchase Orders Analysis
                     </h2>
                 </div>
-                
-                <!-- Monthly Purchases Trend -->
-                ${sortedMonthlyPurchases.length > 0 ? `
-                <div class="biz-section">
-                    <h3>📊 Purchases Trend by Month</h3>
-                    <div class="biz-monthly-chart">
-                        ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
-                            const height = (data.spend / maxMonthlySpend) * 100;
-                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                            return `
-                                <div class="biz-monthly-bar">
-                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
-                                    <div class="biz-monthly-label">${monthName}</div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    <div style="text-align: center; margin-top: 10px;">
-                        <span style="font-size: 12px; color: #6b7280;">📉 Monthly Purchase Spend (Last 12 Months)</span>
-                    </div>
-                </div>
-                ` : ''}
                 
                 <div class="biz-row">
                     <!-- Top Suppliers by Spend -->
@@ -31122,8 +31237,8 @@ NOTE: Please print the attached PO document for full details.`;
     </script>
     
     <!-- Order View/Edit Modal -->
-    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow-y: auto;">
-        <div id="orderModalInner" style="background: white; margin: 20px auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: auto; min-width: 400px; min-height: 300px;">
+    <div id="orderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; padding: 20px; box-sizing: border-box;">
+        <div id="orderModalInner" style="background: white; margin: 0 auto; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; resize: both; overflow: hidden; min-width: 400px; min-height: 300px; position: relative; top: 50%; transform: translateY(-50%);">
             <div id="orderModalHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="modalTitle" style="margin: 0;">Order Details</h2>
                 <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
@@ -31141,11 +31256,17 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- Report Setup Modal -->
-    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center;">
-        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; height: 90vh; display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px;">
-            <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                <h2 id="reportSetupTitle" style="margin: 0;">📊 Report Setup</h2>
-                <button onclick="closeReportSetup()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box;">
+        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); height: auto; display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto; position: relative; top: 50%; transform: translateY(-50%);">
+            <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <!-- Window Controls -->
+                    <button onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 14px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                        <span id="reportMaximizeIcon">⬜</span>
+                    </button>
+                    <button onclick="closeReportSetup()" title="Close" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                </div>
             </div>
             <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
                 <!-- Filters will be populated by JavaScript -->
@@ -31732,22 +31853,38 @@ NOTE: Please print the attached PO document for full details.`;
         /* Z-index hierarchy - detail modals above report modals */
         #reportSetupModal { 
             z-index: 10000 !important; 
-            padding: 20px; /* Desktop padding, overridden on mobile */
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 20px !important;
+            box-sizing: border-box !important;
         }
-        #orderModal { z-index: 10500 !important; } /* Higher so it appears above reports */
+        #orderModal { 
+            z-index: 10500 !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+        }
         #itemPickerModal,
         #supplierPickerModal,
         #customerPickerModal { z-index: 11000 !important; } /* Picker modals highest */
         
-        /* Modal content container - DESKTOP: constrain to viewport */
-        #reportSetupModal > div,
+        /* Modal content container - DESKTOP: constrain to viewport with vertical centering */
         #reportSetupModalInner {
-            position: relative;
+            position: relative !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
             max-height: calc(100vh - 40px) !important;
-            max-width: 95vw !important;
+            max-width: 900px !important;
+            margin: 0 auto !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        #orderModalInner {
+            position: relative !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            max-height: calc(100vh - 40px) !important;
+            max-width: 900px !important;
+            margin: 0 auto !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
@@ -31767,12 +31904,11 @@ NOTE: Please print the attached PO document for full details.`;
             position: relative !important;
         }
         
-        #orderModal > div,
-        #orderModalInner {
-            position: relative;
-            max-height: calc(100vh - 40px) !important;
+        /* Order modal content scrolls */
+        #modalContent {
+            flex: 1 !important;
             overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch;
+            min-height: 0 !important;
         }
         
         /* Mobile-specific modal fixes */
