@@ -2633,10 +2633,241 @@
                 text-decoration: none !important;
             }
             
+            /* HIDE SCROLLBARS WHEN PRINTING */
+            *::-webkit-scrollbar {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
+            }
+            * {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+            }
+            
+            /* FULL WIDTH PRINTING FOR MOBILE */
+            html, body {
+                width: 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            #reportSetupModalInner,
+            #reportSetupContent {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                margin: 0 !important;
+                padding: 10px !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* BAR CHART PRINT STYLES */
+            .biz-monthly-chart {
+                height: auto !important;
+                min-height: 180px !important;
+                padding: 20px 5px 50px 5px !important;
+                page-break-inside: avoid !important;
+            }
+            
+            .biz-monthly-bar {
+                height: 120px !important;
+            }
+            
+            .biz-monthly-bar-fill {
+                min-height: 5px !important;
+            }
+            
+            /* Always show data values on bar charts when printing */
+            .biz-monthly-bar-fill::after {
+                display: block !important;
+                visibility: visible !important;
+                font-size: 8px !important;
+                font-weight: 700 !important;
+            }
+            
+            .biz-monthly-label {
+                font-size: 8px !important;
+                bottom: -25px !important;
+            }
+            
+            /* KPI CARDS PRINT */
+            .biz-kpi-grid {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+            }
+            
+            .biz-kpi-card {
+                flex: 1 1 100px !important;
+                min-width: 80px !important;
+                padding: 8px !important;
+                page-break-inside: avoid !important;
+            }
+            
+            .biz-kpi-value {
+                font-size: 16px !important;
+            }
+            
+            .biz-kpi-label {
+                font-size: 9px !important;
+            }
+            
+            /* SECTIONS - allow page breaks between sections */
+            .biz-section {
+                page-break-inside: avoid !important;
+                margin-bottom: 15px !important;
+            }
+            
+            /* Dashboard header */
+            .biz-header {
+                padding: 15px !important;
+                page-break-after: avoid !important;
+            }
+            
+            /* Year over Year comparison */
+            .biz-yoy-grid {
+                display: flex !important;
+                gap: 10px !important;
+            }
+            
+            .biz-yoy-card {
+                flex: 1 !important;
+                padding: 10px !important;
+            }
+            
             /* Page setup */
             @page {
-                margin: 0.5in;
+                margin: 0.4in;
                 size: auto;
+            }
+            
+            /* Multi-page support */
+            .print-page-break {
+                page-break-before: always !important;
+            }
+            
+            /* ========== UNIVERSAL BAR CHART PRINT STYLES ========== */
+            /* Product Dashboard bar charts */
+            .prod-bar-chart {
+                page-break-inside: avoid !important;
+            }
+            .prod-bar-row {
+                margin-bottom: 3px !important;
+            }
+            .prod-bar-label {
+                font-size: 9px !important;
+                width: 120px !important;
+            }
+            .prod-bar-value {
+                font-size: 10px !important;
+            }
+            .prod-bar-fill {
+                font-size: 9px !important;
+            }
+            
+            /* Supplier Performance mini bars */
+            .sp-mini-bar {
+                height: 16px !important;
+            }
+            .sp-mini-bar-fill {
+                font-size: 9px !important;
+            }
+            
+            /* All horizontal bar charts - always show values */
+            .biz-chart-bar-fill,
+            .prod-bar-fill,
+            .sp-mini-bar-fill {
+                color: white !important;
+                font-weight: 600 !important;
+            }
+            
+            /* Dashboard cards and grids */
+            .dash-card, .daily-card, .customer-card, .prod-section {
+                page-break-inside: avoid !important;
+                border: 1px solid #ddd !important;
+                margin-bottom: 10px !important;
+            }
+            
+            /* Row layouts become columns on print for better fit */
+            .biz-row, .prod-row, .dash-row {
+                display: block !important;
+            }
+            .biz-row > *, .prod-row > *, .dash-row > * {
+                width: 100% !important;
+                margin-bottom: 10px !important;
+            }
+            
+            /* Chart containers */
+            .chart-container, .chart-wrapper {
+                page-break-inside: avoid !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            
+            /* Hide Chart.js canvases - they don't print well */
+            canvas {
+                display: none !important;
+            }
+            
+            /* Show chart fallback text/tables if any */
+            .chart-print-fallback {
+                display: block !important;
+            }
+            
+            /* Table print improvements */
+            .report-table, .action-table, .data-table {
+                width: 100% !important;
+                font-size: 8pt !important;
+            }
+            .report-table th, .action-table th, .data-table th {
+                background: #333 !important;
+                color: white !important;
+                font-size: 8pt !important;
+                padding: 4px !important;
+            }
+            .report-table td, .action-table td, .data-table td {
+                font-size: 8pt !important;
+                padding: 3px 4px !important;
+            }
+            
+            /* Summary boxes */
+            .summary-box, .kpi-summary, .totals-row {
+                background: #f5f5f5 !important;
+                border: 1px solid #ccc !important;
+                padding: 8px !important;
+                page-break-inside: avoid !important;
+            }
+            
+            /* Headers */
+            .report-header, .dash-header, .section-header {
+                page-break-after: avoid !important;
+            }
+            
+            /* Customer Dashboard specific */
+            .customer-stat-grid {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 5px !important;
+            }
+            
+            /* Supplier Dashboard specific */
+            .supplier-card, .supplier-section {
+                page-break-inside: avoid !important;
+            }
+            
+            /* P&L Statement */
+            .pl-section {
+                page-break-inside: avoid !important;
+            }
+            .pl-row {
+                border-bottom: 1px solid #eee !important;
+            }
+            
+            /* Inventory reports */
+            .inv-category, .stock-section {
+                page-break-inside: avoid !important;
             }
         }
     </style>
@@ -6898,6 +7129,50 @@
         }
         
         /**
+         * Standardize any date input to YYYY-MM-DD format for database storage
+         * Handles: Date objects, ISO strings, date-time strings, YYYY-MM-DD strings
+         * @param {Date|string} dateInput - Date to standardize
+         * @returns {string} - Date string in YYYY-MM-DD format, or empty string if invalid
+         */
+        function standardizeDate(dateInput) {
+            if (!dateInput) return '';
+            
+            // If it's already a clean YYYY-MM-DD string, return as-is
+            if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+                return dateInput;
+            }
+            
+            // If it's a string with time component (ISO or space-separated), extract just the date
+            if (typeof dateInput === 'string') {
+                // Handle ISO format: 2025-12-15T13:21:14.582Z
+                if (dateInput.includes('T')) {
+                    return dateInput.split('T')[0];
+                }
+                // Handle space format: 2025-12-15 7:23:51
+                if (dateInput.includes(' ')) {
+                    return dateInput.split(' ')[0];
+                }
+            }
+            
+            // If it's a Date object, format it
+            if (dateInput instanceof Date && !isNaN(dateInput)) {
+                return formatLocalDate(dateInput);
+            }
+            
+            // Try to parse as date and format
+            try {
+                const d = new Date(dateInput);
+                if (!isNaN(d)) {
+                    return formatLocalDate(d);
+                }
+            } catch (e) {
+                console.warn('Could not standardize date:', dateInput);
+            }
+            
+            return '';
+        }
+        
+        /**
          * Format a number with commas (e.g., 1234567 -> "1,234,567")
          * @param {number} num - Number to format
          * @param {number} decimals - Optional decimal places (default 0)
@@ -6918,6 +7193,8 @@
          */
         function formatMoney(num) {
             if (num === null || num === undefined || isNaN(num)) return '$0.00';
+            // Avoid displaying -$0.00 (negative zero)
+            if (Math.abs(num) < 0.005) num = 0;
             return '$' + Number(num).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -9517,18 +9794,16 @@
                 if (!continueWithOverpay) return;
             }
 
-            // Get the selected date and add current time
+            // Get the selected dates - standardize to YYYY-MM-DD format
             const selectedPODate = document.getElementById('poDate').value;
-            const nowPO = new Date();
-            const poDateWithTime = selectedPODate === getTodayLocalDate() 
-                ? nowPO.toISOString()  // Today - use actual current time
-                : `${selectedPODate}T${nowPO.toTimeString().split(' ')[0]}`; // Other date - add current time
+            const poDate = standardizeDate(selectedPODate);
+            const poDueDate = standardizeDate(document.getElementById('poDueDate').value);
 
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 invoiceNumber: document.getElementById('poInvoiceNumber').value,
-                poDate: poDateWithTime,
-                dueDate: document.getElementById('poDueDate').value || null,
+                poDate: poDate,
+                dueDate: poDueDate || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: calculatedTotal,
                 amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
@@ -11251,8 +11526,8 @@
                 poId: po.PO_ID,
                 supplierId: document.getElementById('editPOSupplier').value,
                 invoiceNumber: document.getElementById('editPOInvoiceNumber').value,
-                poDate: document.getElementById('editPODate').value,
-                dueDate: document.getElementById('editPODueDate').value,
+                poDate: standardizeDate(document.getElementById('editPODate').value),
+                dueDate: standardizeDate(document.getElementById('editPODueDate').value),
                 status: document.getElementById('editPOStatus').value,
                 notes: document.getElementById('editPONotes').value,
                 totalAmount: totalAmount,
@@ -11512,8 +11787,8 @@
                 soId: so.SO_ID,
                 customerId: document.getElementById('editSOCustomer').value,
                 invoiceNumber: document.getElementById('editSOInvoiceNumber').value,
-                saleDate: document.getElementById('editSODate').value,
-                dueDate: document.getElementById('editSODueDate').value,
+                saleDate: standardizeDate(document.getElementById('editSODate').value),
+                dueDate: standardizeDate(document.getElementById('editSODueDate').value),
                 paymentMethod: document.getElementById('editSOPaymentMethod').value,
                 status: document.getElementById('editSOStatus').value,
                 notes: document.getElementById('editSONotes').value,
@@ -12098,19 +12373,17 @@
                 // Generate invoice number: INV-120725-001
                 const invoiceNumber = `INV-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
 
-                // Get the selected date and add current time
+                // Get the selected date - standardize to YYYY-MM-DD format
                 const selectedDate = document.getElementById('soDate').value;
-                const now = new Date();
-                const saleDateWithTime = selectedDate === getTodayLocalDate() 
-                    ? now.toISOString()  // Today - use actual current time
-                    : `${selectedDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
+                const saleDate = standardizeDate(selectedDate);
+                const dueDate = standardizeDate(document.getElementById('soDueDate').value);
 
                 const data = {
                     customerId: document.getElementById('soCustomer').value,
-                    saleDate: saleDateWithTime,
+                    saleDate: saleDate,
                     invoiceNumber: invoiceNumber,
                     paymentMethod: document.getElementById('soPayment').value,
-                    dueDate: document.getElementById('soDueDate').value || null,
+                    dueDate: dueDate || null,
                     totalAmount: calculatedTotal,
                     amountPaid: parseFloat(document.getElementById('soAmountPaid').value) || 0,
                     status: document.getElementById('soStatus').value,
@@ -12654,44 +12927,125 @@
             let remaining = total - amountPaid;
             if (Math.abs(remaining) < 0.01) remaining = 0;
             
-            // Create better formatted prompt
-            let message = `💰 Record Payment for ${soId}\n\n`;
-            message += `Invoice Total:    ${formatMoney(total)}\n`;
-            message += `Already Paid:     ${formatMoney(amountPaid)}\n`;
-            message += `───────────────────────────\n`;
-            message += `Balance Due:      ${formatMoney(remaining)}\n\n`;
+            // Find invoice number for display
+            const so = (window.cachedSales || []).find(s => s.SO_ID === soId);
+            const invoiceNum = so?.Invoice_Number || soId;
             
-            // Suggest full payment if unpaid
-            if (amountPaid === 0) {
-                message += `Tip: Enter ${remaining.toFixed(2)} to pay in full\n\n`;
-            }
+            // Create styled payment popup HTML
+            const popupHtml = `
+                <div style="text-align: left; padding: 10px 0;">
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #666;">Invoice Total:</span>
+                            <span style="font-weight: 600;">${formatMoney(total)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: #666;">Already Paid:</span>
+                            <span style="font-weight: 600;">${formatMoney(amountPaid)}</span>
+                        </div>
+                        <hr style="border: none; border-top: 2px solid #e0e0e0; margin: 10px 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #666; font-weight: 600;">Balance Due:</span>
+                            <span style="font-weight: 700; color: ${remaining > 0 ? '#dc2626' : '#059669'};">${formatMoney(remaining)}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Enter payment amount:</label>
+                        <input type="number" id="paymentAmountInput" step="0.01" min="0" 
+                               value="${remaining > 0 ? remaining.toFixed(2) : ''}"
+                               style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 18px; text-align: right;"
+                               placeholder="0.00">
+                    </div>
+                </div>
+            `;
             
-            message += `Enter payment amount:`;
+            // Show the popup
+            const overlay = document.getElementById('popupOverlay');
+            const header = document.getElementById('popupHeader');
+            const icon = document.getElementById('popupIcon');
+            const titleEl = document.getElementById('popupTitle');
+            const body = document.getElementById('popupBody');
+            const footer = document.getElementById('popupFooter');
             
-            const payment = prompt(message);
+            header.className = 'popup-header success';
+            icon.textContent = '💰';
+            titleEl.textContent = `Record Payment - ${invoiceNum}`;
+            body.innerHTML = popupHtml;
+            body.className = 'popup-body';
             
-            if (payment === null) return; // Cancelled
+            // Custom footer with Cancel and Record Payment buttons
+            footer.innerHTML = `
+                <button class="popup-btn secondary" onclick="closePopup()">Cancel</button>
+                <button class="popup-btn" onclick="submitSalesPayment('${soId}', ${amountPaid}, ${remaining})">💰 Record Payment</button>
+            `;
             
-            const paymentAmount = parseFloat(payment);
+            overlay.classList.add('show');
+            
+            // Focus the input
+            setTimeout(() => {
+                const input = document.getElementById('paymentAmountInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 100);
+        }
+        
+        function submitSalesPayment(soId, previousPaid, balanceDue) {
+            const input = document.getElementById('paymentAmountInput');
+            const paymentAmount = parseFloat(input?.value || 0);
+            
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                showPopup('Please enter a valid payment amount');
+                input.style.borderColor = '#dc2626';
+                input.focus();
                 return;
             }
             
-            if (paymentAmount > remaining + 0.01) { // Allow 1 cent rounding
-                if (!confirm(`Payment (${formatMoney(paymentAmount)}) is more than balance due (${formatMoney(remaining)}).\n\nContinue anyway?`)) {
-                    return;
-                }
+            // Close the popup
+            closePopup();
+            
+            // Check for overpayment
+            if (paymentAmount > balanceDue + 0.01) {
+                // Show confirmation popup for overpayment
+                const confirmHtml = `
+                    <p>Payment amount <strong>${formatMoney(paymentAmount)}</strong> is more than the balance due <strong>${formatMoney(balanceDue)}</strong>.</p>
+                    <p style="margin-top: 10px;">Continue anyway?</p>
+                `;
+                
+                const overlay = document.getElementById('popupOverlay');
+                const header = document.getElementById('popupHeader');
+                const icon = document.getElementById('popupIcon');
+                const titleEl = document.getElementById('popupTitle');
+                const body = document.getElementById('popupBody');
+                const footer = document.getElementById('popupFooter');
+                
+                header.className = 'popup-header warning';
+                icon.textContent = '⚠️';
+                titleEl.textContent = 'Overpayment Warning';
+                body.innerHTML = confirmHtml;
+                
+                footer.innerHTML = `
+                    <button class="popup-btn secondary" onclick="closePopup()">Cancel</button>
+                    <button class="popup-btn" onclick="closePopup(); processSalesPayment('${soId}', ${previousPaid}, ${paymentAmount})">Continue</button>
+                `;
+                
+                overlay.classList.add('show');
+                return;
             }
             
-            // Call backend - send TOTAL amount paid (existing + new payment)
-            const newTotalPaid = amountPaid + paymentAmount;
+            // Process the payment
+            processSalesPayment(soId, previousPaid, paymentAmount);
+        }
+        
+        function processSalesPayment(soId, previousPaid, paymentAmount) {
+            const newTotalPaid = previousPaid + paymentAmount;
+            
             apiCall('recordSalesPayment', { soId: soId, amountPaid: newTotalPaid })
                 .then(result => {
                     if (result && result.status === 'success') {
                         const statusMsg = result.paymentStatus === 'Paid' ? 'PAID IN FULL!' : `Status: ${result.paymentStatus}`;
                         loadSales();
-                        showPopup(`Payment received!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\n${statusMsg}`, 'success', 'Payment Received');
+                        showPopup(`Payment of ${formatMoney(paymentAmount)} recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\n${statusMsg}`, 'success', 'Payment Received');
                     } else {
                         showPopup('Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
@@ -22294,17 +22648,18 @@
                 pastDuePayments.slice(0, 10).forEach(p => {
                     const dueDate = new Date(p.Due_Date);
                     const dueDateStr = (dueDate.getMonth()+1) + '/' + dueDate.getDate() + '/' + dueDate.getFullYear();
+                    const invoiceNum = p.Invoice_Number || p.SO_ID || 'N/A';
                     html += `
                         <tr>
                             <td>${p.Customer_Name}</td>
-                            <td>SO-${p.Sale_ID}</td>
+                            <td>${invoiceNum}</td>
                             <td>${dueDateStr}</td>
                             <td class="days-late">${p.Days_Late} days</td>
                             <td>${formatMoney(p.Balance)}</td>
                             <td>
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                    <button class="oval-action-btn oval-action-primary" onclick="viewSaleOrder('${p.Sale_ID}')">👁️ View</button>
-                                    <button class="oval-action-btn oval-action-success" onclick="recordSalesPayment('${p.Sale_ID}', ${p.Total_Amount || 0}, ${p.Amount_Paid || 0})">💰 Pay</button>
+                                    <button class="oval-action-btn oval-action-primary" onclick="viewSalesOrder('${p.SO_ID}')">👁️ View</button>
+                                    <button class="oval-action-btn oval-action-success" onclick="recordSalesPayment('${p.SO_ID}', ${p.Total_Amount || 0}, ${p.Amount_Paid || 0})">💰 Pay</button>
                                 </div>
                             </td>
                         </tr>
@@ -22460,14 +22815,28 @@
             if (lowStock.length === 0) {
                 html += '<p style="color: #10b981; font-weight: 600;">✅ All items adequately stocked!</p>';
             } else {
+                // Get unique suppliers from low stock items
+                const lowStockSuppliers = [...new Set(lowStock.map(i => i.Supplier_Name))].sort();
+                
                 html += `
-                    <table class="action-table">
+                    <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <label style="font-weight: 600; color: #333;">Filter by Supplier:</label>
+                        <select id="lowStockSupplierFilter" onchange="filterLowStockBySupplier()" style="padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; min-width: 200px;">
+                            <option value="">All Suppliers (${lowStock.length} items)</option>
+                            ${lowStockSuppliers.map(s => {
+                                const count = lowStock.filter(i => i.Supplier_Name === s).length;
+                                return `<option value="${s}">${s} (${count} items)</option>`;
+                            }).join('')}
+                        </select>
+                        <button class="btn-small" onclick="selectAllVisibleLowStock()" style="background: var(--primary, #667eea); color: white;">Select All Visible</button>
+                    </div>
+                    <table class="action-table" id="lowStockTable">
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="selectAllLowStock" onclick="toggleSelectAllLowStock()"></th>
                                 <th>SKU</th>
                                 <th>Item</th>
-                                <th>Supplier</th>
+                                <th style="cursor: pointer;" onclick="sortLowStockBySupplier()">Supplier ⇅</th>
                                 <th style="text-align: center;">On Hand</th>
                                 <th style="text-align: center;">Backorder</th>
                                 <th style="text-align: center;">Committed</th>
@@ -22483,7 +22852,7 @@
                 lowStock.forEach(item => {
                     const backorder = parseInt(item.Qty_On_Backorder) || 0;
                     html += `
-                        <tr>
+                        <tr data-supplier="${item.Supplier_Name}">
                             <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
                             <td>${item.SKU || 'N/A'}</td>
                             <td>${item.Item_Description}</td>
@@ -23317,6 +23686,73 @@
             const checkboxes = document.querySelectorAll('.lowstock-checkbox');
             const selectAll = document.getElementById('selectAllLowStock');
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+        
+        // Filter low stock items by supplier
+        function filterLowStockBySupplier() {
+            const filterValue = document.getElementById('lowStockSupplierFilter').value;
+            const table = document.getElementById('lowStockTable');
+            if (!table) return;
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const supplier = row.getAttribute('data-supplier');
+                if (!filterValue || supplier === filterValue) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                    // Uncheck hidden rows
+                    const cb = row.querySelector('.lowstock-checkbox');
+                    if (cb) cb.checked = false;
+                }
+            });
+            
+            // Uncheck "select all" when filtering
+            const selectAll = document.getElementById('selectAllLowStock');
+            if (selectAll) selectAll.checked = false;
+        }
+        
+        // Select all visible (non-hidden) low stock items
+        function selectAllVisibleLowStock() {
+            const table = document.getElementById('lowStockTable');
+            if (!table) return;
+            
+            const rows = table.querySelectorAll('tbody tr');
+            let count = 0;
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cb = row.querySelector('.lowstock-checkbox');
+                    if (cb) {
+                        cb.checked = true;
+                        count++;
+                    }
+                }
+            });
+            
+            showPopup(`Selected ${count} item${count !== 1 ? 's' : ''} for reorder.`, 'success');
+        }
+        
+        // Sort low stock table by supplier
+        let lowStockSortAsc = true;
+        function sortLowStockBySupplier() {
+            const table = document.getElementById('lowStockTable');
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            rows.sort((a, b) => {
+                const supplierA = a.getAttribute('data-supplier') || '';
+                const supplierB = b.getAttribute('data-supplier') || '';
+                return lowStockSortAsc ? 
+                    supplierA.localeCompare(supplierB) : 
+                    supplierB.localeCompare(supplierA);
+            });
+            
+            lowStockSortAsc = !lowStockSortAsc;
+            
+            // Re-append rows in sorted order
+            rows.forEach(row => tbody.appendChild(row));
         }
         
         function bulkReorder() {
@@ -24454,6 +24890,83 @@
                     .biz-stat-row:last-child { border-bottom: none; }
                     .biz-stat-label { color: #6b7280; }
                     .biz-stat-value { font-weight: 600; color: #1f2937; }
+                    
+                    /* Print styles for Business Overview */
+                    @media print {
+                        .biz-dashboard {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            padding: 0 !important;
+                        }
+                        .biz-header {
+                            padding: 10px !important;
+                            margin-bottom: 10px !important;
+                        }
+                        .biz-kpi-grid {
+                            display: flex !important;
+                            flex-wrap: wrap !important;
+                            gap: 5px !important;
+                        }
+                        .biz-kpi {
+                            flex: 1 1 calc(14% - 5px) !important;
+                            min-width: 80px !important;
+                            padding: 8px !important;
+                        }
+                        .biz-kpi .value {
+                            font-size: 14px !important;
+                        }
+                        .biz-kpi .label {
+                            font-size: 8px !important;
+                        }
+                        .biz-section {
+                            page-break-inside: avoid !important;
+                            margin-bottom: 10px !important;
+                        }
+                        .biz-section h3 {
+                            font-size: 12px !important;
+                            margin: 8px 0 !important;
+                        }
+                        .biz-monthly-chart {
+                            height: 150px !important;
+                            padding: 15px 5px 35px 5px !important;
+                        }
+                        .biz-monthly-bar {
+                            height: 100px !important;
+                        }
+                        .biz-monthly-bar-fill::after {
+                            font-size: 8px !important;
+                            top: -15px !important;
+                        }
+                        .biz-monthly-label {
+                            font-size: 7px !important;
+                            bottom: -22px !important;
+                        }
+                        .biz-row {
+                            display: block !important;
+                        }
+                        .biz-row .biz-section {
+                            width: 100% !important;
+                            margin-bottom: 10px !important;
+                        }
+                        .biz-chart-bar {
+                            margin-bottom: 4px !important;
+                        }
+                        .biz-chart-label {
+                            font-size: 9px !important;
+                            width: 100px !important;
+                        }
+                        .biz-chart-value {
+                            font-size: 10px !important;
+                            width: 60px !important;
+                        }
+                        .biz-compare-grid {
+                            display: flex !important;
+                            gap: 10px !important;
+                        }
+                        .biz-compare-card .amount {
+                            font-size: 20px !important;
+                        }
+                    }
                 </style>
                 
                 <div class="biz-header">
@@ -24570,17 +25083,21 @@
                 ${sortedMonths.length > 0 ? `
                 <div class="biz-section">
                     <h3>📊 Sales Trend by Month</h3>
-                    <div class="biz-monthly-chart">
-                        ${sortedMonths.slice(-12).map(([month, data]) => {
-                            const heightPx = Math.max((data.revenue / maxMonthlyRevenue) * 150, 8);
-                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                            return `
-                                <div class="biz-monthly-bar">
-                                    <div class="biz-monthly-bar-fill" style="height: ${heightPx}px;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
-                                    <div class="biz-monthly-label">${monthName}</div>
-                                </div>
-                            `;
-                        }).join('')}
+                    <div style="position: relative; padding-left: 40px;">
+                        <!-- Y-Axis label -->
+                        <div style="position: absolute; left: 0; top: 50%; transform: rotate(-90deg) translateX(-50%); transform-origin: left center; font-size: 11px; color: #6b7280; font-weight: 500;">Revenue ($)</div>
+                        <div class="biz-monthly-chart">
+                            ${sortedMonths.slice(-12).map(([month, data]) => {
+                                const heightPx = Math.max((data.revenue / maxMonthlyRevenue) * 150, 8);
+                                const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                                return `
+                                    <div class="biz-monthly-bar">
+                                        <div class="biz-monthly-bar-fill" style="height: ${heightPx}px;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
+                                        <div class="biz-monthly-label">${monthName}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
                     <div style="text-align: center; margin-top: 10px;">
                         <span style="font-size: 12px; color: #6b7280;">📈 Monthly Revenue Trend (Last 12 Months)</span>
@@ -24716,17 +25233,21 @@
                 ${sortedMonthlyPurchases.length > 0 ? `
                 <div class="biz-section">
                     <h3>📊 Purchases Trend by Month</h3>
-                    <div class="biz-monthly-chart">
-                        ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
-                            const heightPx = Math.max((data.spend / maxMonthlySpend) * 150, 8);
-                            const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                            return `
-                                <div class="biz-monthly-bar">
-                                    <div class="biz-monthly-bar-fill" style="height: ${heightPx}px; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
-                                    <div class="biz-monthly-label">${monthName}</div>
-                                </div>
-                            `;
-                        }).join('')}
+                    <div style="position: relative; padding-left: 40px;">
+                        <!-- Y-Axis label -->
+                        <div style="position: absolute; left: 0; top: 50%; transform: rotate(-90deg) translateX(-50%); transform-origin: left center; font-size: 11px; color: #6b7280; font-weight: 500;">Spend ($)</div>
+                        <div class="biz-monthly-chart">
+                            ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
+                                const heightPx = Math.max((data.spend / maxMonthlySpend) * 150, 8);
+                                const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                                return `
+                                    <div class="biz-monthly-bar">
+                                        <div class="biz-monthly-bar-fill" style="height: ${heightPx}px; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
+                                        <div class="biz-monthly-label">${monthName}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
                     <div style="text-align: center; margin-top: 10px;">
                         <span style="font-size: 12px; color: #6b7280;">📉 Monthly Purchase Spend (Last 12 Months)</span>
@@ -28814,18 +29335,16 @@
             // Generate PO number: PO-120725-001
             const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
             
-            // Get the selected date and add current time
-            const now = new Date();
-            const poDateWithTime = poDate === getTodayLocalDate() 
-                ? now.toISOString()  // Today - use actual current time
-                : `${poDate}T${now.toTimeString().split(' ')[0]}`; // Other date - add current time
+            // Standardize dates to YYYY-MM-DD format
+            const standardizedPODate = standardizeDate(poDate);
+            const standardizedDueDate = standardizeDate(expectedDeliveryDate);
             
             // Create OUTGOING PO
             const data = {
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
-                poDate: poDateWithTime,  // Fixed: was 'purchaseDate', backend expects 'poDate'
-                dueDate: expectedDeliveryDate,
+                poDate: standardizedPODate,
+                dueDate: standardizedDueDate,
                 paymentTerms: 'Net 30',
                 status: 'Ordered', // OUTGOING status
                 totalAmount: total,
