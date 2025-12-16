@@ -2377,49 +2377,21 @@
         
         /* ==================== IN-PLACE PRINT STYLES ==================== */
         @media print {
-            /* Reset everything for print */
-            * {
-                position: static !important;
-                float: none !important;
-                overflow: visible !important;
-                visibility: visible !important;
-                print-color-adjust: exact !important;
-                -webkit-print-color-adjust: exact !important;
-            }
+            /* ========================================
+               COMPREHENSIVE REPORT PRINT STYLES
+               ======================================== */
             
-            /* Hide everything except report content */
-            body > *:not(#reportSetupModal) {
+            /* Hide EVERYTHING first */
+            body > * {
                 display: none !important;
             }
             
-            /* Hide these elements from main page */
-            .container, .header, .nav-container, #settingsBtn, #envBadge,
-            .tab-content:not(#reports), #orderModal, #itemPickerModal,
-            #supplierPickerModal, #customerPickerModal, #uomPickerModal {
-                display: none !important;
-            }
-            
-            /* Reset body for printing */
-            body {
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-                overflow: visible !important;
-                height: auto !important;
-                width: 100% !important;
-            }
-            
-            html {
-                overflow: visible !important;
-                height: auto !important;
-            }
-            
-            /* Show and reset the report modal */
+            /* Show only the report modal */
             #reportSetupModal {
                 display: block !important;
                 position: static !important;
-                left: auto !important;
-                top: auto !important;
+                left: 0 !important;
+                top: 0 !important;
                 width: 100% !important;
                 height: auto !important;
                 background: white !important;
@@ -2429,14 +2401,31 @@
                 z-index: auto !important;
             }
             
+            /* Reset body */
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                overflow: visible !important;
+                height: auto !important;
+                width: 100% !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            html {
+                overflow: visible !important;
+                height: auto !important;
+            }
+            
+            /* Modal inner container - CENTERED */
             #reportSetupModalInner {
                 position: static !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
                 max-height: none !important;
-                min-height: 0 !important;
-                margin: 0 !important;
+                margin: 0 auto !important;
                 padding: 0 !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
@@ -2444,42 +2433,59 @@
                 display: block !important;
             }
             
-            /* Hide modal header, filters, and footer when printing */
+            /* Hide modal UI elements */
             #reportSetupHeader,
             #reportSetupFilters,
-            #reportSetupFooter {
+            #reportSetupFooter,
+            .report-setup-header,
+            .report-setup-filters,
+            .report-setup-footer {
                 display: none !important;
             }
             
-            /* Report content flows naturally */
+            /* Report content - CENTERED and properly styled */
             #reportSetupContent {
-                padding: 0.25in !important;
+                padding: 0.25in 0.5in !important;
                 overflow: visible !important;
                 height: auto !important;
                 max-height: none !important;
                 min-height: 0 !important;
                 display: block !important;
                 position: static !important;
-            }
-            
-            /* Show chart images, hide canvases */
-            .print-chart-image {
-                display: block !important;
+                width: 100% !important;
                 max-width: 100% !important;
-                height: auto !important;
+                margin: 0 auto !important;
+                box-sizing: border-box !important;
             }
             
-            canvas.print-chart,
+            /* CHARTS - Show images, hide canvases */
             canvas {
                 display: none !important;
             }
             
-            /* Table styling for print */
+            .print-chart-image {
+                display: block !important;
+                max-width: 100% !important;
+                height: auto !important;
+                margin: 15px auto !important;
+                page-break-inside: avoid !important;
+            }
+            
+            /* Chart containers - center them */
+            .biz-chart-container,
+            .chart-container,
+            [class*="chart"] {
+                text-align: center !important;
+                page-break-inside: avoid !important;
+            }
+            
+            /* Tables - full width and centered */
             table {
                 width: 100% !important;
                 border-collapse: collapse !important;
                 font-size: 9pt !important;
                 page-break-inside: auto !important;
+                margin: 10px 0 !important;
             }
             
             thead {
@@ -2500,6 +2506,8 @@
                 padding: 6px !important;
                 font-size: 9pt !important;
                 border: 1px solid #333 !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
             }
             
             td {
@@ -2508,57 +2516,104 @@
                 font-size: 9pt !important;
             }
             
-            /* Headers and sections */
+            /* Prevent page breaks in these elements */
             h1, h2, h3, h4 {
                 page-break-after: avoid !important;
             }
             
-            /* Prevent orphaned content */
             p, li, .content-card, .biz-section, .backorder-section, .action-section {
                 page-break-inside: avoid !important;
             }
             
-            /* KPI grids - simpler for print */
+            /* KPI grids - keep colors */
             .biz-kpi-grid, .backorder-kpi-grid, .pl-summary {
                 display: flex !important;
                 flex-wrap: wrap !important;
                 gap: 10px !important;
+                justify-content: center !important;
             }
             
             .biz-kpi, .backorder-kpi, .pl-stat {
-                flex: 1 1 100px !important;
+                flex: 1 1 120px !important;
                 padding: 8px !important;
                 border: 1px solid #ccc !important;
-                background: white !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
             }
             
-            /* Hide buttons and interactive elements */
-            button, .btn, .create-po-btn, .oval-action-btn, input[type="number"],
-            input[type="checkbox"], .pl-print-btn {
+            /* Summary cards - preserve styling */
+            .summary-grid, .period-grid {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+                justify-content: center !important;
+            }
+            
+            .summary-card, .period-card {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+            }
+            
+            /* Hide interactive elements */
+            button, .btn, .create-po-btn, .oval-action-btn, 
+            input[type="number"], input[type="checkbox"], 
+            .pl-print-btn, .toggle-section-btn {
                 display: none !important;
             }
             
-            /* Simplify gradients for print */
-            [style*="linear-gradient"] {
-                background: #f0f0f0 !important;
+            /* Preserve gradients and colors for presentation reports */
+            .pres-header, .partnership-box {
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
             }
             
-            /* Action dashboard sections */
-            .action-section, .backorder-section, .customer-card {
-                border: 1px solid #ccc !important;
-                margin-bottom: 10px !important;
+            /* Product rows */
+            .product-row {
+                border: 1px solid #eee !important;
+                padding: 8px !important;
+                margin: 5px 0 !important;
                 page-break-inside: avoid !important;
             }
             
-            /* Links should be plain text */
+            /* Links - plain text */
             a {
                 color: #333 !important;
                 text-decoration: none !important;
             }
             
+            /* Collapsible sections - ALWAYS show when printing */
+            .collapsible-content,
+            [class*="collapsible"] {
+                display: block !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            
+            /* Force show ALL divs inside report content that might be hidden */
+            #reportSetupContent div[style*="display: none"],
+            #reportSetupContent div[style*="display:none"] {
+                display: block !important;
+            }
+            
+            /* Force grid layouts to show */
+            #reportSetupContent div[style*="display: grid"],
+            #reportSetupContent div[style*="display:grid"] {
+                display: grid !important;
+            }
+            
+            /* Toggle icons - hide them */
+            .toggle-icon {
+                display: none !important;
+            }
+            
+            /* Hide "click to hide/show" text */
+            #reportSetupContent span[style*="click to hide"] {
+                display: none !important;
+            }
+            
             /* Page setup */
             @page {
-                margin: 0.5in;
+                margin: 0.4in;
                 size: auto;
             }
         }
@@ -8575,9 +8630,9 @@
             const result = await apiCall('addSupplier', data);
             
             if (result && result.status === 'success') {
-                showStatus('suppliersStatus', '✅ Supplier added successfully!', 'success');
                 hideAddSupplierForm();
                 loadSuppliers();
+                showSuccessModal('Supplier Added!', 'New supplier has been created successfully.');
             } else {
                 showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -8712,9 +8767,9 @@
             const result = await apiCall('updateSupplier', data);
             
             if (result && result.status === 'success') {
-                showStatus('suppliersStatus', '✅ Supplier updated successfully!', 'success');
                 hideEditSupplierForm();
                 loadSuppliers();
+                showSuccessModal('Supplier Updated!', 'Changes saved successfully.');
             } else {
                 showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -8728,8 +8783,8 @@
             const result = await apiCall('deleteSupplier', { supplierId });
             
             if (result && result.status === 'success') {
-                showStatus('suppliersStatus', '✅ Supplier deleted successfully!', 'success');
                 loadSuppliers();
+                showSuccessModal('Supplier Deleted!', `"${supplierName}" has been removed.`);
             } else {
                 showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -8797,9 +8852,9 @@
             const result = await apiCall('addItem', data);
             
             if (result && result.status === 'success') {
-                showStatus('itemsStatus', '✅ Item added successfully!', 'success');
                 hideAddItemForm();
                 loadItems();
+                showSuccessModal('Item Added!', 'New item has been created successfully.');
             } else {
                 showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -9129,9 +9184,9 @@
             const result = await apiCall('updateItem', data);
             
             if (result && result.status === 'success') {
-                showStatus('itemsStatus', '✅ Item updated successfully!', 'success');
                 hideEditItemForm();
                 loadItems();
+                showSuccessModal('Item Updated!', 'Changes saved successfully.');
             } else {
                 showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -9194,9 +9249,9 @@
             const result = await apiCall('addCustomer', data);
             
             if (result && result.status === 'success') {
-                showStatus('customersStatus', '✅ Customer added successfully!', 'success');
                 hideAddCustomerForm();
                 loadCustomers();
+                showSuccessModal('Customer Added!', 'New customer has been created successfully.');
             } else {
                 showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -9379,9 +9434,9 @@
             const result = await apiCall('updateCustomer', data);
             
             if (result && result.status === 'success') {
-                showStatus('customersStatus', '✅ Customer updated successfully!', 'success');
                 hideEditCustomerForm();
                 loadCustomers();
+                showSuccessModal('Customer Updated!', 'Changes saved successfully.');
             } else {
                 showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -9395,8 +9450,8 @@
             const result = await apiCall('deleteCustomer', { customerId });
             
             if (result && result.status === 'success') {
-                showStatus('customersStatus', '✅ Customer deleted successfully!', 'success');
                 loadCustomers();
+                showSuccessModal('Customer Deleted!', `"${customerName}" has been removed.`);
             } else {
                 showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -9655,9 +9710,9 @@
             const result = await apiCall('createPurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('purchasesStatus', '✅ Purchase order created! Inventory updated.', 'success');
                 hideAddPurchaseForm();
                 loadPurchases();
+                showSuccessModal('Purchase Order Created!', 'Inventory has been updated.');
             } else {
                 showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -10235,9 +10290,9 @@
             if (result && result.status === 'success') {
                 const total = parseFloat(currentEditingOrder?.Total_Amount) || 0;
                 const payStatus = newTotalPaid >= total - 0.01 ? 'Paid' : (newTotalPaid > 0 ? 'Partial' : 'Unpaid');
-                alert(`✅ Payment recorded!\n\nTotal Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
                 document.getElementById('orderModal').style.display = 'none'; document.body.classList.remove('modal-open');
                 loadPurchases();
+                showSuccessModal('Payment Recorded!', `Total Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
             } else {
                 alert('❌ Error: ' + (result?.message || 'Unknown error'));
             }
@@ -11658,7 +11713,7 @@
             const result = await apiCall('updateSalesOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('salesStatus', '✅ Sales order updated successfully!', 'success');
+                showSuccessModal('Sales Order Updated!', 'Changes saved successfully.');
                 closeOrderModal();
                 loadSales();
             } else {
@@ -11706,9 +11761,9 @@
             apiCall('recordPurchasePayment', { poId: poId, amountPaid: newTotalPaid, paymentDate: paymentDate })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
-                        showStatus('purchasesStatus', `✅ Payment recorded! ${formatMoney(newTotalPaid)} total paid. ${statusMsg}`, 'success');
+                        const statusMsg = result.paymentStatus === 'Paid' ? 'PAID IN FULL!' : `Status: ${result.paymentStatus}`;
                         loadPurchases();
+                        showSuccessModal('Payment Recorded!', `${formatMoney(newTotalPaid)} total paid.\n\n${statusMsg}`);
                     } else {
                         showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                     }
@@ -12203,11 +12258,11 @@
                 const result = await apiCall('createSalesOrder', data);
                 
                 if (result && result.status === 'success') {
-                    showStatus('salesStatus', `✅ Sale recorded! Invoice #: ${invoiceNumber}`, 'success');
                     hideAddSaleForm();
                     loadSales();
                     // Refresh items to update stock quantities
                     loadItems();
+                    showSuccessModal('Sale Recorded!', `Invoice #: ${invoiceNumber}\n\nInventory has been updated.`);
                 } else {
                     showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
@@ -12778,23 +12833,17 @@
                         const remaining = invoiceTotal - newTotalPaid;
                         const isPaidInFull = remaining < 0.01;
                         
-                        // Build confirmation message
-                        let confirmMsg = `✅ Payment Recorded!\n\n`;
-                        confirmMsg += `Payment Applied:  ${formatMoney(paymentAmount)}\n`;
-                        confirmMsg += `───────────────────────────\n`;
-                        confirmMsg += `Invoice Total:    ${formatMoney(invoiceTotal)}\n`;
-                        confirmMsg += `Total Paid:       ${formatMoney(newTotalPaid)}\n`;
-                        
                         if (isPaidInFull) {
-                            confirmMsg += `───────────────────────────\n`;
-                            confirmMsg += `🎉 PAID IN FULL!\n`;
-                            alert(confirmMsg);
+                            showSuccessModal('Payment Recorded!', `Payment Applied: ${formatMoney(paymentAmount)}\nInvoice Total: ${formatMoney(invoiceTotal)}\nTotal Paid: ${formatMoney(newTotalPaid)}\n\n🎉 PAID IN FULL!`);
                         } else {
-                            confirmMsg += `Amount Owed:      ${formatMoney(remaining)}\n`;
-                            confirmMsg += `───────────────────────────\n\n`;
+                            // Build confirmation message for partial payment
+                            let confirmMsg = `Payment Applied: ${formatMoney(paymentAmount)}\n`;
+                            confirmMsg += `Invoice Total: ${formatMoney(invoiceTotal)}\n`;
+                            confirmMsg += `Total Paid: ${formatMoney(newTotalPaid)}\n`;
+                            confirmMsg += `Amount Owed: ${formatMoney(remaining)}\n\n`;
                             confirmMsg += `Add another payment now?`;
                             
-                            if (confirm(confirmMsg)) {
+                            if (confirm(`✅ Payment Recorded!\n\n${confirmMsg}`)) {
                                 // Recursively call to add another payment
                                 recordSalesPayment(soId, invoiceTotal, newTotalPaid);
                                 return; // Don't refresh yet
@@ -12807,7 +12856,6 @@
                             if (runBtn) runBtn.click();
                         }
                         
-                        showStatus('salesStatus', `✅ Payment received! ${formatMoney(newTotalPaid)} total paid.`, 'success');
                         loadSales();
                     } else {
                         showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
@@ -13811,8 +13859,6 @@
             console.log('📝 Adjustment result:', result);
             
             if (result && result.status === 'success') {
-                showStatus('inventoryStatus', `✅ Inventory adjusted! ${item.Item_Description}: ${currentQty} → ${newQty}`, 'success');
-                
                 // Refresh cached items to get updated quantities
                 const itemsResult = await apiCall('getItems');
                 if (itemsResult && itemsResult.status === 'success') {
@@ -13822,6 +13868,7 @@
                 // Note: hideAdjustInventoryForm will handle returning to report if returnToReport is set
                 hideAdjustInventoryForm();
                 loadInventory();
+                showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${currentQty} → ${newQty}`);
             } else {
                 showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 console.error('Adjustment failed:', result);
@@ -15160,42 +15207,64 @@
                 return;
             }
             
-            // Convert all canvas charts to images for printing
+            // STEP 1: Expand all collapsible sections
+            const allDivs = content.querySelectorAll('div');
+            const hiddenDivs = [];
+            allDivs.forEach(div => {
+                if (div.style.display === 'none') {
+                    hiddenDivs.push({ element: div, originalDisplay: 'none' });
+                    // Check if it should be grid or block
+                    if (div.parentElement?.querySelector('[onclick*="grid"]')) {
+                        div.style.display = 'grid';
+                    } else {
+                        div.style.display = 'block';
+                    }
+                }
+            });
+            
+            // STEP 2: Convert all canvas charts to images for printing
             const canvases = content.querySelectorAll('canvas');
+            const chartImages = [];
+            
             canvases.forEach((canvas) => {
                 try {
-                    // Check if already converted
-                    if (canvas.dataset.printConverted) return;
+                    // Remove any existing print images first
+                    const existingImg = canvas.parentNode.querySelector('.print-chart-image');
+                    if (existingImg) existingImg.remove();
                     
-                    const imgData = canvas.toDataURL('image/png');
+                    // Create new image from canvas
+                    const imgData = canvas.toDataURL('image/png', 1.0);
                     const img = document.createElement('img');
                     img.src = imgData;
                     img.className = 'print-chart-image';
-                    img.style.maxWidth = '100%';
-                    img.style.height = 'auto';
-                    img.style.display = 'none'; // Hidden on screen, shown in print
+                    img.style.cssText = 'max-width: 100%; height: auto; display: none; margin: 10px auto; page-break-inside: avoid;';
                     
                     // Insert image after canvas
                     canvas.parentNode.insertBefore(img, canvas.nextSibling);
-                    canvas.dataset.printConverted = 'true';
+                    chartImages.push(img);
                 } catch(e) {
                     console.warn('Could not convert chart to image:', e);
                 }
             });
             
-            // Add print class to body for CSS targeting
+            // STEP 3: Add print class to body for CSS targeting
             document.body.classList.add('printing-report');
             
             // Store the title for print header
             document.body.dataset.printTitle = title.replace(/^[^\w]+/, '');
             
-            // Trigger print
-            window.print();
-            
-            // Remove print class after a delay
+            // STEP 4: Small delay to ensure images are rendered, then print
             setTimeout(() => {
-                document.body.classList.remove('printing-report');
-            }, 1000);
+                window.print();
+                
+                // STEP 5: Restore hidden sections after printing
+                setTimeout(() => {
+                    document.body.classList.remove('printing-report');
+                    hiddenDivs.forEach(item => {
+                        item.element.style.display = item.originalDisplay;
+                    });
+                }, 1000);
+            }, 150);
         }
         
         // Helper to get current theme colors for printing
@@ -23739,11 +23808,11 @@
                 
                 if (result && result.status === 'success') {
                     closeBulkPOModal();
-                    alert('✅ Purchase Order ' + result.poId + ' created with ' + lineItems.length + ' items!');
                     loadItems();
                     if (typeof renderCriticalActionItems === 'function') {
                         renderCriticalActionItems();
                     }
+                    showSuccessModal('Purchase Order Created!', `PO #: ${result.poId}\n\n${lineItems.length} item${lineItems.length > 1 ? 's' : ''} ordered.`);
                 } else {
                     alert('❌ Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
@@ -23896,13 +23965,13 @@
                 
                 if (result && result.status === 'success') {
                     closeQuickPOModal();
-                    alert('✅ Purchase Order ' + result.poId + ' created successfully!');
                     // Refresh items to update On Order quantities
                     loadItems();
                     // Refresh the critical report if still open
                     if (typeof renderCriticalActionItems === 'function') {
                         renderCriticalActionItems();
                     }
+                    showSuccessModal('Purchase Order Created!', `PO #: ${result.poId}\n\nItems marked as "On Order".`);
                 } else {
                     alert('❌ Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
@@ -26241,6 +26310,12 @@
                         </div>
                     </div>
                 `).join('')}
+                
+                <div class="partnership-box" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); margin-top: 30px;">
+                    <h3>💰 Total Customer Value</h3>
+                    <div class="partnership-value">$${periods['ALL TIME'].sales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="partnership-label">${periods['ALL TIME'].orders} sales orders • All Time</div>
+                </div>
             `;
             
             return html;
@@ -35544,8 +35619,8 @@ NOTE: Please print the attached PO document for full details.`;
                         cachedItems = itemsResult.data;
                     }
                     
-                    alert(`✅ Adjusted! ${item.Item_Description}: ${quickAdjustCurrentQty} → ${newQty}`);
                     closeQuickAdjustModal();
+                    showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${quickAdjustCurrentQty} → ${newQty}`);
                     
                     // Refresh the current report if it's still open
                     if (document.getElementById('reportSetupModal').style.display !== 'none') {
