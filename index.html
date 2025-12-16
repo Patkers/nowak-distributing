@@ -5,21 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Monday, December 16, 2025
-         VERSION: V16G-20251216-PAYFIX
+         VERSION: V16H-20251216-PAYCONFIRM
          =====================================================
          CHANGES IN THIS VERSION:
-         - Embedded diagnostic tool as modal (no longer separate file)
-         - Fixed diagnostic button opening wrong screen
-         - Fixed horizontal scrolling in reports (was blocked by touch-action: pan-y)
-         - Fixed Adjust Inventory button not working after selecting reason
-         - Updated report supplier filter to use new picker style
-         - Quick Adjust Modal - adjust inventory from within reports without leaving
-         - Top Customers now show street address and city for identification
-         - Quick View Item Modal - view item details from reports without leaving
-         - Supplier filter dropdown in Low Stock - Needs Reorder section
-         - FIXED: Past Due Payments using wrong field (Sale_ID vs SO_ID)
-         - FIXED: Pay button now works correctly with SO_ID
-         - FIXED: View button in Past Due now opens order modal
+         - Payment confirmation popup shows breakdown
+         - Partial payments ask "Add another payment now?"
+         - Paid in full shows celebration message
+         - Report auto-refreshes after payment
          - All dropdowns refresh on environment switch
          ===================================================== -->
     <meta charset="UTF-8">
@@ -12633,11 +12625,44 @@
             
             // Call backend - send TOTAL amount paid (existing + new payment)
             const newTotalPaid = amountPaid + paymentAmount;
+            const invoiceTotal = total;
+            
             apiCall('recordSalesPayment', { soId: soId, amountPaid: newTotalPaid })
                 .then(result => {
                     if (result && result.status === 'success') {
-                        const statusMsg = result.paymentStatus === 'Paid' ? '✅ PAID IN FULL!' : `Status: ${result.paymentStatus}`;
-                        showStatus('salesStatus', `✅ Payment received! ${formatMoney(newTotalPaid)} total paid. ${statusMsg}`, 'success');
+                        const remaining = invoiceTotal - newTotalPaid;
+                        const isPaidInFull = remaining < 0.01;
+                        
+                        // Build confirmation message
+                        let confirmMsg = `✅ Payment Recorded!\n\n`;
+                        confirmMsg += `Payment Applied:  ${formatMoney(paymentAmount)}\n`;
+                        confirmMsg += `───────────────────────────\n`;
+                        confirmMsg += `Invoice Total:    ${formatMoney(invoiceTotal)}\n`;
+                        confirmMsg += `Total Paid:       ${formatMoney(newTotalPaid)}\n`;
+                        
+                        if (isPaidInFull) {
+                            confirmMsg += `───────────────────────────\n`;
+                            confirmMsg += `🎉 PAID IN FULL!\n`;
+                            alert(confirmMsg);
+                        } else {
+                            confirmMsg += `Amount Owed:      ${formatMoney(remaining)}\n`;
+                            confirmMsg += `───────────────────────────\n\n`;
+                            confirmMsg += `Add another payment now?`;
+                            
+                            if (confirm(confirmMsg)) {
+                                // Recursively call to add another payment
+                                recordSalesPayment(soId, invoiceTotal, newTotalPaid);
+                                return; // Don't refresh yet
+                            }
+                        }
+                        
+                        // Refresh the report if we're in Action Dashboard
+                        if (document.getElementById('reportSetupModal').style.display !== 'none') {
+                            const runBtn = document.querySelector('#reportSetupFilters button[onclick*="runReport"]');
+                            if (runBtn) runBtn.click();
+                        }
+                        
+                        showStatus('salesStatus', `✅ Payment received! ${formatMoney(newTotalPaid)} total paid.`, 'success');
                         loadSales();
                     } else {
                         showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
