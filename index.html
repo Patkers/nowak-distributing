@@ -8920,8 +8920,11 @@
         }
         
         function goToAdjustInventory() {
-            // Get the current item ID from the edit form
+            // Get the current item details from the edit form
             const itemId = document.getElementById('editItemId').value;
+            const itemSku = document.getElementById('editSku').value;
+            const itemDesc = document.getElementById('editDescription').value;
+            const currentQty = parseInt(document.getElementById('editQtyOnHand').value) || 0;
             
             // Hide the edit form
             hideEditItemForm();
@@ -8929,17 +8932,52 @@
             // Switch to inventory tab
             switchTab('inventory');
             
-            // Wait for tab to load, then pre-select the item
+            // Wait for tab to load, then populate the adjustment form
             setTimeout(() => {
-                const itemSelect = document.getElementById('adjustItem');
-                if (itemSelect && itemId) {
-                    itemSelect.value = itemId;
-                    // Trigger change event to load current quantity
-                    itemSelect.dispatchEvent(new Event('change'));
+                // Show the adjust inventory form
+                const adjustForm = document.getElementById('adjustInventoryForm');
+                if (adjustForm) {
+                    adjustForm.style.display = 'block';
                 }
                 
+                // Set the item fields
+                const adjustItemHidden = document.getElementById('adjustItem');
+                const adjustItemDisplay = document.getElementById('adjustItemDisplay');
+                const adjustCurrentQty = document.getElementById('adjustCurrentQty');
+                const adjustNewQty = document.getElementById('adjustNewQty');
+                const adjustQuantity = document.getElementById('adjustQuantity');
+                
+                if (adjustItemHidden && itemId) {
+                    adjustItemHidden.value = itemId;
+                }
+                
+                if (adjustItemDisplay) {
+                    adjustItemDisplay.value = `${itemSku} - ${itemDesc}`;
+                }
+                
+                if (adjustCurrentQty) {
+                    adjustCurrentQty.value = currentQty;
+                }
+                
+                if (adjustNewQty) {
+                    adjustNewQty.value = currentQty;
+                }
+                
+                if (adjustQuantity) {
+                    adjustQuantity.value = '';
+                    adjustQuantity.focus();
+                }
+                
+                // Clear reason and notes
+                const adjustReasonDisplay = document.getElementById('adjustReasonDisplay');
+                const adjustReason = document.getElementById('adjustReason');
+                const adjustNotes = document.getElementById('adjustNotes');
+                
+                if (adjustReasonDisplay) adjustReasonDisplay.value = '';
+                if (adjustReason) adjustReason.value = '';
+                if (adjustNotes) adjustNotes.value = '';
+                
                 // Scroll to the adjustment form
-                const adjustForm = document.getElementById('inventory');
                 if (adjustForm) {
                     adjustForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -24335,49 +24373,57 @@
                     .biz-monthly-chart {
                         display: flex;
                         align-items: flex-end;
-                        justify-content: space-between;
-                        height: 200px;
-                        padding: 20px 10px 10px 10px;
-                        gap: 8px;
-                        border-bottom: 2px solid #e5e7eb;
+                        justify-content: space-around;
+                        height: 220px;
+                        padding: 30px 10px 40px 10px;
+                        gap: 4px;
+                        position: relative;
+                        border-bottom: 3px solid #e5e7eb;
+                        background: linear-gradient(to top, #f9fafb 0%, transparent 100%);
                     }
                     .biz-monthly-bar {
                         flex: 1;
+                        max-width: 60px;
+                        height: 150px;
                         display: flex;
                         flex-direction: column;
-                        align-items: center;
                         justify-content: flex-end;
-                        height: 100%;
+                        align-items: center;
+                        position: relative;
                     }
                     .biz-monthly-bar-fill {
-                        width: 100%;
-                        max-width: 50px;
+                        width: 70%;
+                        min-width: 20px;
+                        max-width: 45px;
                         background: linear-gradient(180deg, #3b82f6, #1d4ed8);
-                        border-radius: 6px 6px 0 0;
-                        transition: height 0.5s ease;
+                        border-radius: 4px 4px 0 0;
                         position: relative;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                     }
                     .biz-monthly-bar-fill:hover {
                         background: linear-gradient(180deg, #60a5fa, #3b82f6);
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
                     }
                     .biz-monthly-bar-fill::after {
                         content: attr(data-value);
                         position: absolute;
-                        top: -20px;
+                        top: -18px;
                         left: 50%;
                         transform: translateX(-50%);
-                        font-size: 10px;
-                        font-weight: 600;
-                        color: #1f2937;
+                        font-size: 9px;
+                        font-weight: 700;
+                        color: #374151;
                         white-space: nowrap;
                     }
                     .biz-monthly-label {
-                        font-size: 11px;
+                        position: absolute;
+                        bottom: -30px;
+                        left: 50%;
+                        transform: translateX(-50%) rotate(-45deg);
+                        font-size: 10px;
+                        font-weight: 500;
                         color: #6b7280;
-                        margin-top: 8px;
-                        transform: rotate(-45deg);
                         white-space: nowrap;
-                        transform-origin: center;
                     }
                     
                     .biz-pie-legend {
@@ -24526,11 +24572,11 @@
                     <h3>📊 Sales Trend by Month</h3>
                     <div class="biz-monthly-chart">
                         ${sortedMonths.slice(-12).map(([month, data]) => {
-                            const height = (data.revenue / maxMonthlyRevenue) * 100;
+                            const heightPx = Math.max((data.revenue / maxMonthlyRevenue) * 150, 8);
                             const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
                             return `
                                 <div class="biz-monthly-bar">
-                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
+                                    <div class="biz-monthly-bar-fill" style="height: ${heightPx}px;" data-value="$${(data.revenue/1000).toFixed(1)}k"></div>
                                     <div class="biz-monthly-label">${monthName}</div>
                                 </div>
                             `;
@@ -24672,11 +24718,11 @@
                     <h3>📊 Purchases Trend by Month</h3>
                     <div class="biz-monthly-chart">
                         ${sortedMonthlyPurchases.slice(-12).map(([month, data]) => {
-                            const height = (data.spend / maxMonthlySpend) * 100;
+                            const heightPx = Math.max((data.spend / maxMonthlySpend) * 150, 8);
                             const monthName = new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
                             return `
                                 <div class="biz-monthly-bar">
-                                    <div class="biz-monthly-bar-fill" style="height: ${Math.max(height, 5)}%; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
+                                    <div class="biz-monthly-bar-fill" style="height: ${heightPx}px; background: linear-gradient(180deg, #dc2626, #991b1b);" data-value="$${(data.spend/1000).toFixed(1)}k"></div>
                                     <div class="biz-monthly-label">${monthName}</div>
                                 </div>
                             `;
@@ -35987,22 +36033,32 @@ NOTE: Please print the attached PO document for full details.`;
             // Reset footer to single OK button
             footer.innerHTML = '<button class="popup-btn" onclick="closePopup()">OK</button>';
             
-            // Show the overlay (only use class since CSS has !important)
+            // Show the overlay - clear any inline style first, then add class
+            overlay.removeAttribute('style');
             overlay.classList.add('show');
         }
         
         function closePopup() {
             const overlay = document.getElementById('popupOverlay');
             if (overlay) {
+                // Remove the show class
                 overlay.classList.remove('show');
-                // Also clear inline style in case it was set
-                overlay.style.display = '';
+                // Force hide with inline style that overrides everything
+                overlay.setAttribute('style', 'display: none !important;');
             }
         }
         
         // Close on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
+                closePopup();
+            }
+        });
+        
+        // Also close popup on any click on the overlay background
+        document.addEventListener('click', function(e) {
+            const overlay = document.getElementById('popupOverlay');
+            if (e.target === overlay) {
                 closePopup();
             }
         });
