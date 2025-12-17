@@ -11805,7 +11805,6 @@
                             <label>Invoice Number <span style="font-size: 11px; color: #999;">(locked)</span></label>
                             <input type="text" id="editSOInvoiceNumber" value="${so.Invoice_Number || ''}" readonly style="background: #f0f0f0; cursor: not-allowed;">
                         </div>
-                        </div>
                         <div class="form-group">
                             <label>Sale Date</label>
                             <input type="date" id="editSODate" value="${so.Sale_Date ? new Date(so.Sale_Date).toISOString().split('T')[0] : ''}">
@@ -15536,32 +15535,42 @@
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open');
             
-            // Reset maximized state
-            if (reportModalMaximized) {
-                reportModalMaximized = false;
-                const modal = document.getElementById('reportSetupModalInner');
-                const icon = document.getElementById('reportMaximizeIcon');
-                if (modal) {
-                    modal.style.width = '';
-                    modal.style.maxWidth = '';
-                    modal.style.height = '';
-                    modal.style.maxHeight = '';
-                    modal.style.borderRadius = '';
-                    modal.style.position = '';
-                    modal.style.top = '';
-                    modal.style.left = '';
-                    modal.style.right = '';
-                    modal.style.bottom = '';
-                    modal.style.transform = '';
-                    modal.style.margin = '';
-                }
-                if (icon) icon.textContent = '⬜';
+            // Reset all modal states (maximized and dragged)
+            reportModalMaximized = false;
+            reportModalSavedPosition = null;
+            
+            const modalOuter = document.getElementById('reportSetupModal');
+            const modal = document.getElementById('reportSetupModalInner');
+            const icon = document.getElementById('reportMaximizeIcon');
+            
+            if (modalOuter) {
+                modalOuter.style.padding = '';
+                modalOuter.style.alignItems = '';
+                modalOuter.style.justifyContent = '';
             }
+            if (modal) {
+                // Reset all positioning and sizing
+                modal.style.position = '';
+                modal.style.left = '';
+                modal.style.top = '';
+                modal.style.width = '';
+                modal.style.maxWidth = '';
+                modal.style.height = '';
+                modal.style.maxHeight = '';
+                modal.style.borderRadius = '';
+                modal.style.margin = '';
+                modal.style.minWidth = '';
+                modal.style.minHeight = '';
+            }
+            if (icon) icon.textContent = '⬜';
         }
         
         // Toggle report modal between maximized and normal size
         let reportModalMaximized = false;
+        let reportModalSavedPosition = null; // Save position before maximizing
+        
         function toggleReportModalSize() {
+            const modalOuter = document.getElementById('reportSetupModal');
             const modal = document.getElementById('reportSetupModalInner');
             const icon = document.getElementById('reportMaximizeIcon');
             
@@ -15569,34 +15578,70 @@
             
             if (reportModalMaximized) {
                 // Restore to normal
+                if (modalOuter) {
+                    modalOuter.style.padding = '20px';
+                    modalOuter.style.alignItems = '';
+                    modalOuter.style.justifyContent = '';
+                }
+                
+                // Reset any drag positioning
+                modal.style.position = '';
+                modal.style.left = '';
+                modal.style.top = '';
                 modal.style.width = '100%';
                 modal.style.maxWidth = '900px';
                 modal.style.height = '';
                 modal.style.maxHeight = 'calc(100vh - 40px)';
                 modal.style.borderRadius = '12px';
-                modal.style.position = '';
-                modal.style.top = '';
-                modal.style.left = '';
-                modal.style.right = '';
-                modal.style.bottom = '';
-                modal.style.transform = '';
                 modal.style.margin = '0 auto';
+                modal.style.minWidth = '500px';
+                modal.style.minHeight = '400px';
+                
+                // Restore saved position if it was dragged before maximizing
+                if (reportModalSavedPosition) {
+                    modal.style.position = 'fixed';
+                    modal.style.left = reportModalSavedPosition.left;
+                    modal.style.top = reportModalSavedPosition.top;
+                    modal.style.width = reportModalSavedPosition.width;
+                    modal.style.height = reportModalSavedPosition.height;
+                    modal.style.margin = '0';
+                }
+                
                 icon.textContent = '⬜';
                 reportModalMaximized = false;
             } else {
+                // Save current position if dragged
+                if (modal.style.position === 'fixed' && modal.style.left) {
+                    reportModalSavedPosition = {
+                        left: modal.style.left,
+                        top: modal.style.top,
+                        width: modal.style.width,
+                        height: modal.style.height
+                    };
+                } else {
+                    reportModalSavedPosition = null;
+                }
+                
                 // Maximize - fill viewport
-                modal.style.position = 'fixed';
-                modal.style.top = '20px';
-                modal.style.left = '20px';
-                modal.style.right = '20px';
-                modal.style.bottom = '20px';
-                modal.style.width = 'calc(100vw - 40px)';
-                modal.style.maxWidth = 'calc(100vw - 40px)';
-                modal.style.height = 'calc(100vh - 40px)';
-                modal.style.maxHeight = 'calc(100vh - 40px)';
+                if (modalOuter) {
+                    modalOuter.style.padding = '10px';
+                    modalOuter.style.display = 'flex';
+                    modalOuter.style.alignItems = 'stretch';
+                    modalOuter.style.justifyContent = 'stretch';
+                }
+                
+                // Reset drag positioning for maximize
+                modal.style.position = '';
+                modal.style.left = '';
+                modal.style.top = '';
+                modal.style.width = '100%';
+                modal.style.maxWidth = '100%';
+                modal.style.height = '100%';
+                modal.style.maxHeight = '100%';
                 modal.style.borderRadius = '8px';
-                modal.style.transform = 'none';
                 modal.style.margin = '0';
+                modal.style.minWidth = '0';
+                modal.style.minHeight = '0';
                 icon.textContent = '❐';
                 reportModalMaximized = true;
             }
@@ -15741,6 +15786,13 @@
             const styles = getComputedStyle(document.documentElement);
             const primaryColor = styles.getPropertyValue('--primary').trim() || '#667eea';
             
+            // Extract any <style> tags from the cloned content
+            const styleElements = contentClone.querySelectorAll('style');
+            let extractedStyles = '';
+            styleElements.forEach(styleEl => {
+                extractedStyles += styleEl.innerHTML;
+            });
+            
             // Open print window with clean HTML
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -15748,6 +15800,7 @@
                 <html>
                 <head>
                     <title>${title.replace(/^[^\w]+/, '')}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
                         * { box-sizing: border-box; }
                         body { 
@@ -15755,6 +15808,7 @@
                             margin: 0; padding: 20px; color: #333;
                         }
                         h1 { color: ${primaryColor}; margin: 0 0 20px 0; font-size: 24px; }
+                        h2, h3 { color: #333; }
                         table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11px; }
                         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
                         th { background: #f5f5f5; font-weight: 600; }
@@ -15763,14 +15817,50 @@
                             padding: 15px; margin: 10px 0; border-radius: 8px; 
                         }
                         img { max-width: 100%; height: auto; }
+                        
+                        /* Include extracted styles from report */
+                        ${extractedStyles}
+                        
+                        /* Close button for mobile - floats at top right */
+                        .print-close-btn {
+                            position: fixed;
+                            top: 10px;
+                            right: 10px;
+                            width: 50px;
+                            height: 50px;
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            font-size: 28px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            z-index: 99999;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .print-close-btn:hover {
+                            background: #dc2626;
+                        }
+                        
                         @media print {
                             body { padding: 0; }
                             table { page-break-inside: auto; }
                             tr { page-break-inside: avoid; }
+                            .print-close-btn { display: none !important; }
+                            
+                            /* Ensure colors print */
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                            }
                         }
                     </style>
                 </head>
                 <body>
+                    <button class="print-close-btn" onclick="window.close()" title="Close">&times;</button>
                     <h1>${title.replace(/^[^\w]+/, '')}</h1>
                     ${contentClone.innerHTML}
                     <script>
@@ -24072,6 +24162,7 @@
                     
                     for (const order of customer.orders) {
                         for (const item of order.items) {
+                            // Calculate shortage for THIS specific order line
                             const shortQty = Math.max(0, item.qtyOrdered - Math.max(0, item.qtyOnHand));
                             html += `
                                 <tr>
@@ -29226,6 +29317,12 @@
         }
         
         async function receiveOutgoingPO(poId) {
+            // Close any existing modal first (prevents window-in-window issue)
+            const existingModal = document.getElementById('orderModal');
+            if (existingModal && existingModal.style.display !== 'none') {
+                existingModal.style.display = 'none';
+            }
+            
             // Load the OUTGOING PO
             const result = await apiCall('getPurchaseOrders');
             if (!result || result.status !== 'success') {
@@ -33468,6 +33565,17 @@ NOTE: Please print the attached PO document for full details.`;
                     { value: 'out', label: 'Out for Delivery Only', icon: '🚚', color: '#8b5cf6', bg: '#f5f3ff' },
                     { value: 'delivered', label: 'Delivered/Completed', icon: '✅', color: '#10b981', bg: '#ecfdf5' }
                 ]
+            },
+            // Stock Status (for inventory filter)
+            stock: {
+                title: '📦 Stock Status',
+                options: [
+                    { value: '', label: 'All Items', icon: '📋', color: '#6b7280', bg: '#f3f4f6' },
+                    { value: 'negative', label: 'Negative Stock', icon: '🚨', color: '#ef4444', bg: '#fef2f2' },
+                    { value: 'out', label: 'Out of Stock', icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
+                    { value: 'low', label: 'Low Stock', icon: '🟡', color: '#f59e0b', bg: '#fff7ed' },
+                    { value: 'ok', label: 'In Stock', icon: '🟢', color: '#10b981', bg: '#ecfdf5' }
+                ]
             }
         };
         
@@ -36105,56 +36213,26 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function attachStatusPickerToSelects() {
-            // Stock Status selects
+            // Stock Status selects - use the 'stock' type we added
             document.querySelectorAll('#filterItemStock, #filterInventoryStock, #pricesimStock').forEach(select => {
                 if (!select.dataset.statusPickerAttached) {
                     select.dataset.statusPickerAttached = 'true';
+                    const selectId = select.id;
                     select.addEventListener('mousedown', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        openStatusPicker(this, '📦 Stock Status', 'stock');
+                        openStatusPicker('stock', selectId, () => filterInventory());
                     });
                     select.addEventListener('touchstart', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        openStatusPicker(this, '📦 Stock Status', 'stock');
-                    });
+                        openStatusPicker('stock', selectId, () => filterInventory());
+                    }, { passive: false });
                 }
             });
             
-            // Order Status selects
-            document.querySelectorAll('#filterPurchaseStatus').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📤 Order Status', 'order');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '📤 Order Status', 'order');
-                    });
-                }
-            });
-            
-            // Payment Status selects
-            document.querySelectorAll('#filterPurchasePaymentStatus').forEach(select => {
-                if (!select.dataset.statusPickerAttached) {
-                    select.dataset.statusPickerAttached = 'true';
-                    select.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '💵 Payment Status', 'payment');
-                    });
-                    select.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openStatusPicker(this, '💵 Payment Status', 'payment');
-                    });
-                }
-            });
+            // Note: Other status selects (filterPurchaseStatus, filterPurchasePaymentStatus) 
+            // already use onclick handlers in their HTML, so we don't need to attach here
         }
         
         // Attach all pickers on page load
@@ -37840,14 +37918,13 @@ NOTE: Please print the attached PO document for full details.`;
                         let newLeft = xOffset + deltaX;
                         let newTop = yOffset + deltaY;
                         
-                        // Keep modal within viewport (with some padding)
+                        // Keep modal header within viewport (allow most of modal to go off-screen)
                         const rect = modal.container.getBoundingClientRect();
-                        const padding = 10;
-                        const maxX = window.innerWidth - rect.width - padding;
-                        const maxY = window.innerHeight - rect.height - padding;
+                        const minVisible = 100; // Keep at least 100px visible
                         
-                        newLeft = Math.max(padding, Math.min(newLeft, maxX));
-                        newTop = Math.max(padding, Math.min(newTop, maxY));
+                        // Allow dragging left (negative values ok, but keep some visible)
+                        newLeft = Math.max(-rect.width + minVisible, Math.min(newLeft, window.innerWidth - minVisible));
+                        newTop = Math.max(0, Math.min(newTop, window.innerHeight - 50)); // Keep header visible
                         
                         // Apply position
                         modal.container.style.left = newLeft + 'px';
