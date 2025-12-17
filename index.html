@@ -5,7 +5,7 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_49
+         VERSION: V16_53
          =====================================================
          CHANGES IN THIS VERSION:
          - Fixed Receive PO nested window appearance
@@ -16,6 +16,10 @@
          - Added customer address to Sales Order view modal
          - Improved mobile horizontal scroll touch sensitivity
          - Added table-scroll-wrapper to all main data tables
+         - Moved Quick Date picker OUTSIDE filter collapse
+         - Report filters now DEFAULT TO COLLAPSED
+         - Hidden maximize button on mobile (already fullscreen)
+         - FIXED: Maximize button now properly goes full-screen
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -15257,13 +15261,66 @@
                     user-select: none;
                 ">
                     <span style="display: flex; align-items: center; gap: 8px;">
-                        <span class="setup-toggle-icon">▼</span>
+                        <span class="setup-toggle-icon">▶</span>
                         <strong>⚙️ Report Setup & Filters</strong>
                     </span>
                     <span style="font-size: 11px; opacity: 0.8;">tap to hide/show</span>
                 </div>
-                <div id="reportSetupCollapsible" style="display: block;">
             `;
+            
+            // Quick Date Select - OUTSIDE collapsible so always visible on mobile
+            if (config.filters.includes('dateRange') || config.filters.includes('quickDateOnly')) {
+                filterHtml += `
+                    <div id="quickDateSelectBar" style="
+                        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                        border: 2px solid #4caf50;
+                        border-radius: 10px;
+                        padding: 12px 15px;
+                        margin-bottom: 15px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    ">
+                        <span style="color: #2e7d32; font-weight: 600; font-size: 14px;">📅 Quick Date:</span>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="btn" onclick="event.stopPropagation(); toggleDatePresetPicker()" 
+                                    style="padding: 10px 18px; font-size: 14px; display: flex; align-items: center; gap: 8px; background: #4caf50; color: white; border: none; font-weight: 600;">
+                                <span>📆</span>
+                                <span id="datePresetLabel">Choose Period</span>
+                                <span style="opacity: 0.8;">▼</span>
+                            </button>
+                            <div id="datePresetDropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10001; margin-top: 5px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-width: 180px; overflow: hidden;">
+                                <div onclick="event.stopPropagation(); selectDatePreset('today', '📆 Today')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📆</span> Today
+                                </div>
+                                <div onclick="event.stopPropagation(); selectDatePreset('week', '📅 This Week')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📅</span> This Week
+                                </div>
+                                <div onclick="event.stopPropagation(); selectDatePreset('month', '🗓️ This Month')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>🗓️</span> This Month
+                                </div>
+                                <div onclick="event.stopPropagation(); selectDatePreset('quarter', '📊 This Quarter')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📊</span> This Quarter
+                                </div>
+                                <div onclick="event.stopPropagation(); selectDatePreset('year', '📈 This Year')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>📈</span> This Year
+                                </div>
+                                <div onclick="event.stopPropagation(); selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
+                                    <span>🗃️</span> All Time
+                                </div>
+                                <div onclick="event.stopPropagation(); selectDatePreset('clear', '🔄 Clear Dates')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8f9fa;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
+                                    <span>🔄</span> <strong>Clear Dates</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Start collapsible section
+            filterHtml += `<div id="reportSetupCollapsible" style="display: none;">`;
             
             // Add report description/help section if available (collapsed by default on mobile)
             if (config.description) {
@@ -15576,45 +15633,6 @@
             
             filterHtml += '</div>';
             
-            // Add quick date presets if dateRange or quickDateOnly filter exists
-            if (config.filters.includes('dateRange') || config.filters.includes('quickDateOnly')) {
-                filterHtml += `
-                    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #666; font-size: 13px;">Quick Select:</span>
-                        <div style="position: relative; display: inline-block;">
-                            <button type="button" class="btn" onclick="event.stopPropagation(); toggleDatePresetPicker()" 
-                                    style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                                <span>📅</span>
-                                <span id="datePresetLabel">Choose Period</span>
-                                <span style="opacity: 0.7;">▼</span>
-                            </button>
-                            <div id="datePresetDropdown" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10001; margin-top: 5px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-width: 180px; overflow: hidden;">
-                                <div onclick="event.stopPropagation(); selectDatePreset('today', '📆 Today')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
-                                    <span>📆</span> Today
-                                </div>
-                                <div onclick="event.stopPropagation(); selectDatePreset('week', '📅 This Week')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
-                                    <span>📅</span> This Week
-                                </div>
-                                <div onclick="event.stopPropagation(); selectDatePreset('month', '🗓️ This Month')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
-                                    <span>🗓️</span> This Month
-                                </div>
-                                <div onclick="event.stopPropagation(); selectDatePreset('quarter', '📊 This Quarter')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
-                                    <span>📊</span> This Quarter
-                                </div>
-                                <div onclick="event.stopPropagation(); selectDatePreset('year', '📈 This Year')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
-                                    <span>📈</span> This Year
-                                </div>
-                                <div onclick="event.stopPropagation(); selectDatePreset('all', '🗃️ All Time')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #eee;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background=''">
-                                    <span>🗃️</span> All Time
-                                </div>
-                                <div onclick="event.stopPropagation(); selectDatePreset('clear', '🔄 Clear Dates')" style="padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #f8f9fa;" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
-                                    <span>🔄</span> <strong>Clear Dates</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            }
-            
             // Close the collapsible wrapper
             filterHtml += `</div>`;
             
@@ -15745,24 +15763,13 @@
             const modal = document.getElementById('reportSetupModalInner');
             const icon = document.getElementById('reportMaximizeIcon');
             
+            // Reset to default styles for next open
             if (modalOuter) {
-                modalOuter.style.padding = '';
-                modalOuter.style.alignItems = '';
-                modalOuter.style.justifyContent = '';
+                modalOuter.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto;';
             }
             if (modal) {
-                // Reset all positioning and sizing
-                modal.style.position = '';
-                modal.style.left = '';
-                modal.style.top = '';
-                modal.style.width = '';
-                modal.style.maxWidth = '';
-                modal.style.height = '';
-                modal.style.maxHeight = '';
-                modal.style.borderRadius = '';
-                modal.style.margin = '';
-                modal.style.minWidth = '';
-                modal.style.minHeight = '';
+                modal.classList.remove('modal-maximized');
+                modal.style.cssText = 'background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto;';
             }
             if (icon) icon.textContent = '⬜';
         }
@@ -15776,47 +15783,21 @@
             const modal = document.getElementById('reportSetupModalInner');
             const icon = document.getElementById('reportMaximizeIcon');
             
-            if (!modal || !icon) return;
+            if (!modal || !icon || !modalOuter) return;
             
             if (reportModalMaximized) {
                 // RESTORE to centered modal
-                modalOuter.style.padding = '20px';
-                modalOuter.style.boxSizing = 'border-box';
-                
-                modal.style.position = 'relative';
-                modal.style.left = 'auto';
-                modal.style.top = 'auto';
-                modal.style.right = 'auto';
-                modal.style.bottom = 'auto';
-                modal.style.width = '100%';
-                modal.style.maxWidth = '900px';
-                modal.style.height = 'auto';
-                modal.style.maxHeight = 'calc(100vh - 40px)';
-                modal.style.borderRadius = '12px';
-                modal.style.margin = '0 auto';
-                modal.style.minWidth = '500px';
-                modal.style.minHeight = '400px';
+                modal.classList.remove('modal-maximized');
+                modalOuter.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: block; padding: 20px; box-sizing: border-box; overflow-y: auto;';
+                modal.style.cssText = 'background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto; position: relative;';
                 
                 icon.textContent = '⬜';
                 reportModalMaximized = false;
             } else {
                 // MAXIMIZE to full screen
-                modalOuter.style.padding = '0';
-                modalOuter.style.boxSizing = 'border-box';
-                
-                modal.style.position = 'fixed';
-                modal.style.left = '0';
-                modal.style.top = '0';
-                modal.style.right = '0';
-                modal.style.bottom = '0';
-                modal.style.width = '100vw';
-                modal.style.maxWidth = '100vw';
-                modal.style.height = '100vh';
-                modal.style.maxHeight = '100vh';
-                modal.style.borderRadius = '0';
-                modal.style.margin = '0';
-                modal.style.minWidth = '0';
-                modal.style.minHeight = '0';
+                modal.classList.add('modal-maximized');
+                modalOuter.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: block; padding: 0; box-sizing: border-box; overflow: hidden;';
+                modal.style.cssText = 'background: white; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border-radius: 0; margin: 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; resize: none; box-shadow: none;';
                 
                 icon.textContent = '❐';
                 reportModalMaximized = true;
@@ -32851,6 +32832,11 @@ NOTE: Please print the attached PO document for full details.`;
                 min-height: 0 !important;
                 max-height: none !important; /* Override inline style */
             }
+            
+            /* Hide maximize button on mobile - modal is already full screen */
+            #reportMaximizeBtn {
+                display: none !important;
+            }
         }
         
         /* Landscape mode specific fixes */
@@ -32911,6 +32897,11 @@ NOTE: Please print the attached PO document for full details.`;
             
             /* HIDE filters in landscape to save space */
             #reportSetupFilters {
+                display: none !important;
+            }
+            
+            /* Hide maximize button in landscape - modal is already full screen */
+            #reportMaximizeBtn {
                 display: none !important;
             }
             
