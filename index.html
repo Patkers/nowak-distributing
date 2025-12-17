@@ -5,13 +5,14 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_46
+         VERSION: V16_47
          =====================================================
          CHANGES IN THIS VERSION:
          - Fixed Receive PO nested window appearance
          - Added true COGS tracking using historical costs
          - New getItemCOGS API call for efficient COGS loading
          - COGS summary box and note card in Inventory
+         - Fixed Edit SO/PO Save button being stuck on "Receive"
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11446,7 +11447,11 @@
             });
             
             document.getElementById('modalEditBtn').style.display = 'none';
-            document.getElementById('modalSaveBtn').style.display = 'inline-block';
+            // Reset save button to proper state (may have been changed by PO receive)
+            const saveBtn = document.getElementById('modalSaveBtn');
+            saveBtn.style.display = 'inline-block';
+            saveBtn.textContent = '💾 Save Changes';
+            saveBtn.onclick = function(event) { if(event && debounceButton(event.currentTarget)) saveOrderChanges(); };
         }
         
         function createEditableLineItem(type, line, index, item) {
@@ -11882,7 +11887,11 @@
             });
             
             document.getElementById('modalEditBtn').style.display = 'none';
-            document.getElementById('modalSaveBtn').style.display = 'inline-block';
+            // Reset save button to proper state (may have been changed by PO receive)
+            const saveBtn = document.getElementById('modalSaveBtn');
+            saveBtn.style.display = 'inline-block';
+            saveBtn.textContent = '💾 Save Changes';
+            saveBtn.onclick = function(event) { if(event && debounceButton(event.currentTarget)) saveOrderChanges(); };
         }
         
         async function saveSalesOrderChanges() {
