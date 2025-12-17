@@ -11923,7 +11923,7 @@
             }
         }
         
-        function recordPurchasePayment(poId, total, amountPaid) {
+        async function recordPurchasePayment(poId, total, amountPaid) {
             let remaining = total - amountPaid;
             if (Math.abs(remaining) < 0.01) remaining = 0;
             
@@ -13117,7 +13117,7 @@
             }, 100);
         }
         
-        function submitPaymentFromModal(soId, total, amountPaid) {
+        async function submitPaymentFromModal(soId, total, amountPaid) {
             const input = document.getElementById('paymentAmountInput');
             const paymentAmount = parseFloat(input.value);
             
@@ -23964,7 +23964,7 @@
         }
         
         // Create PO for backorder item - navigates to Create PO tab with pre-filled data
-        function createBackorderPO(itemId, supplierId) {
+        async function createBackorderPO(itemId, supplierId) {
             const qtyInput = document.getElementById(`backorderQty_${itemId}`);
             const unitsNeeded = parseInt(qtyInput?.value) || 0;
             
