@@ -2084,6 +2084,88 @@
             .form-grid {
                 gap: 8px;
             }
+            
+            /* CRITICAL: Picker modals in landscape mode */
+            .item-picker-overlay {
+                padding: 0 !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            /* Full-screen pickers (item, supplier, customer, invoice) */
+            .item-picker-container:not(.styled-modal-container) {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+            
+            /* Centered dialog modals (alert, confirm, status, reason, uom) */
+            .styled-modal-container {
+                width: 90% !important;
+                max-width: 500px !important;
+                height: auto !important;
+                max-height: 85vh !important;
+                margin: auto !important;
+                border-radius: 12px !important;
+            }
+            
+            .item-picker-header {
+                padding: 10px 15px !important;
+            }
+            
+            .item-picker-header h3 {
+                font-size: 16px !important;
+            }
+            
+            .item-picker-search {
+                padding: 8px 10px !important;
+            }
+            
+            .item-picker-search input {
+                padding: 10px 12px !important;
+                font-size: 14px !important;
+            }
+            
+            .item-picker-list {
+                padding: 5px !important;
+            }
+            
+            .item-picker-card {
+                padding: 10px !important;
+                margin-bottom: 6px !important;
+            }
+            
+            .item-picker-footer {
+                padding: 8px 12px !important;
+            }
+            
+            /* Theme picker special - needs more width */
+            #themePickerModal .item-picker-container {
+                max-width: 95% !important;
+                width: 95% !important;
+                height: 90vh !important;
+                max-height: 90vh !important;
+            }
+            
+            /* Report modal in landscape - full screen */
+            #reportModal > div,
+            #reportModalContent {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+            
+            /* Success modal compact in landscape */
+            #successModal > div {
+                max-width: 80% !important;
+                padding: 15px !important;
+            }
         }
         
         /* ==================== COMPLETE THEME SYSTEM ==================== */
@@ -6683,7 +6765,7 @@
         // Switch to a different environment
         function switchEnvironment(env) {
             if (!environments[env]) {
-                alert(`No URL configured for ${env} environment. Please enter a URL first.`);
+                showWarning(`No URL configured for ${env} environment. Please enter a URL first.`);
                 return;
             }
             
@@ -6743,7 +6825,7 @@
             API_URL = environments[currentEnvironment] || DEFAULT_PRODUCTION_URL;
             localStorage.setItem('apiUrl', API_URL);
             
-            alert('✅ Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
+            showSuccess('Default URLs restored!\n\nProduction, Training, and Development URLs have been repopulated.');
             console.log('Default URLs restored:', environments);
         }
         
@@ -7692,8 +7774,14 @@
                     // Show a notification
                     const currentTab = document.querySelector('.card.active');
                     if (currentTab && currentTab.id === 'purchases') {
-                        setTimeout(() => {
-                            if (confirm('Resume your purchase order entry?')) {
+                        setTimeout(async () => {
+                            const confirmed = await showConfirmModal(
+                                '📝 Resume Purchase Order',
+                                'You have an unfinished purchase order. Would you like to resume?',
+                                'Resume',
+                                'Discard'
+                            );
+                            if (confirmed) {
                                 showAddPurchaseForm();
                                 
                                 // Restore form fields
@@ -7879,7 +7967,7 @@
             const currentSupplier = document.getElementById('poSupplier')?.value;
             
             if (!currentSupplier) {
-                alert('Please select a supplier first before adding items');
+                showWarning('Please select a supplier first before adding items');
                 return;
             }
             
@@ -8447,11 +8535,11 @@
         
         function openBackup() {
             if (!API_URL) {
-                alert('Please configure your API URL first!');
+                showWarning('Please configure your API URL first!');
                 return;
             }
             // Extract the Google Sheets URL from API URL pattern
-            alert('To backup your data:\n\n1. Go to your Google Sheets database\n2. File → Make a copy\n3. Download as Excel or CSV\n\nYour Google Sheet contains all your data!');
+            showInfo('To backup your data:<br><br>1. Go to your Google Sheets database<br>2. File → Make a copy<br>3. Download as Excel or CSV<br><br>Your Google Sheet contains all your data!');
         }
         
         // Load theme on startup
@@ -8609,7 +8697,7 @@
         async function apiCall(action, data = {}) {
             if (!API_URL) {
                 console.error('API_URL not configured!');
-                alert('Please configure your API URL in Settings first!');
+                showWarning('Please configure your API URL in Settings first!');
                 switchTab('config');
                 return null;
             }
@@ -8828,9 +8916,14 @@
         }
         
         async function deleteSupplier(supplierId, supplierName) {
-            if (!confirm(`Are you sure you want to delete supplier "${supplierName}"?\n\nThis cannot be undone!`)) {
-                return;
-            }
+            const confirmed = await showConfirmModal(
+                'Delete Supplier?',
+                `Are you sure you want to delete supplier "<strong>${supplierName}</strong>"?<br><br>⚠️ This cannot be undone!`,
+                'Delete',
+                'Cancel',
+                'danger'
+            );
+            if (!confirmed) return;
             
             const result = await apiCall('deleteSupplier', { supplierId });
             
@@ -9248,10 +9341,17 @@
             const action = isCurrentlyArchived ? 'reactivate' : 'archive';
             const actionLabel = isCurrentlyArchived ? 'Reactivate' : 'Archive';
             const confirmMsg = isCurrentlyArchived 
-                ? `Reactivate item "${itemDesc}"?\n\nThis will make it available in dropdowns again.`
-                : `Archive item "${itemDesc}"?\n\nThis will hide it from new PO/SO dropdowns but preserve all history.\n\nYou can reactivate it later if needed.`;
+                ? `This will make "<strong>${itemDesc}</strong>" available in dropdowns again.`
+                : `This will hide "<strong>${itemDesc}</strong>" from new PO/SO dropdowns but preserve all history.<br><br>You can reactivate it later if needed.`;
             
-            if (!confirm(confirmMsg)) {
+            const confirmed = await showConfirmModal(
+                isCurrentlyArchived ? '♻️ Reactivate Item' : '📦 Archive Item',
+                confirmMsg,
+                actionLabel,
+                'Cancel',
+                isCurrentlyArchived ? 'success' : 'warning'
+            );
+            if (!confirmed) {
                 return;
             }
             
@@ -9495,9 +9595,14 @@
         }
         
         async function deleteCustomer(customerId, customerName) {
-            if (!confirm(`Are you sure you want to delete customer "${customerName}"?\n\nThis cannot be undone!`)) {
-                return;
-            }
+            const confirmed = await showConfirmModal(
+                'Delete Customer?',
+                `Are you sure you want to delete customer "<strong>${customerName}</strong>"?<br><br>⚠️ This cannot be undone!`,
+                'Delete',
+                'Cancel',
+                'danger'
+            );
+            if (!confirmed) return;
             
             const result = await apiCall('deleteCustomer', { customerId });
             
@@ -9563,7 +9668,7 @@
             const supplierId = document.getElementById('poSupplier').value;
             
             if (!supplierId) {
-                alert('Please select a supplier first');
+                showWarning('Please select a supplier first');
                 return;
             }
             
@@ -9676,7 +9781,7 @@
 
             // Validate at least one line item
             if (lineItems.length === 0) {
-                alert('⚠️ Please add at least one item to the purchase order.\n\nSelect an item and enter a quantity before saving.');
+                showWarning('Please add at least one item to the purchase order.\n\nSelect an item and enter a quantity before saving.');
                 return;
             }
 
@@ -9710,13 +9815,14 @@
                     return item ? item.Item_Description : itemId;
                 }).join(', ');
                 
-                const continueWithDupes = confirm(
-                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
-                    'The following items appear on multiple lines:\n' +
-                    duplicateNames + '\n\n' +
-                    'This may be intentional (different costs), but could also be a mistake.\n\n' +
-                    '✅ Click OK to continue saving\n' +
-                    '❌ Click Cancel to review the order'
+                const continueWithDupes = await showConfirmModal(
+                    '⚠️ Duplicate Items Detected',
+                    `<p>The following items appear on multiple lines:</p>
+                    <p style="background: #fff3cd; padding: 10px; border-radius: 6px; font-weight: 600;">${duplicateNames}</p>
+                    <p>This may be intentional (different costs), but could also be a mistake.</p>`,
+                    'Continue Anyway',
+                    'Review Order',
+                    'warning'
                 );
                 
                 if (!continueWithDupes) return;
@@ -9726,14 +9832,17 @@
             const amountPaid = parseFloat(document.getElementById('poAmountPaid').value) || 0;
             if (amountPaid > calculatedTotal + 0.01) { // Allow 1 cent rounding
                 const overpayment = amountPaid - calculatedTotal;
-                const continueWithOverpay = confirm(
-                    '⚠️ OVERPAYMENT WARNING\n\n' +
-                    `Order Total: ${formatMoney(calculatedTotal)}\n` +
-                    `Amount Paid: ${formatMoney(amountPaid)}\n` +
-                    `Overpayment: ${formatMoney(overpayment)}\n\n` +
-                    'You are entering MORE payment than the order total.\n\n' +
-                    '✅ Click OK to continue (will show overpaid)\n' +
-                    '❌ Click Cancel to correct the amount'
+                const continueWithOverpay = await showConfirmModal(
+                    '⚠️ Overpayment Warning',
+                    `<div style="text-align: left;">
+                        <p><strong>Order Total:</strong> ${formatMoney(calculatedTotal)}</p>
+                        <p><strong>Amount Paid:</strong> ${formatMoney(amountPaid)}</p>
+                        <p style="color: #dc2626;"><strong>Overpayment:</strong> ${formatMoney(overpayment)}</p>
+                        <p style="margin-top: 15px;">You are entering MORE payment than the order total.</p>
+                    </div>`,
+                    'Continue (Show Overpaid)',
+                    'Correct Amount',
+                    'warning'
                 );
                 
                 if (!continueWithOverpay) return;
@@ -10324,7 +10433,7 @@
             const paymentDate = paymentDateInput?.value || getTodayLocalDate();
             
             if (paymentAmount <= 0) {
-                alert('Please enter a payment amount greater than 0');
+                showWarning('Please enter a payment amount greater than 0');
                 return;
             }
             
@@ -10345,20 +10454,20 @@
                 loadPurchases();
                 showSuccessModal('Payment Recorded!', `Total Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
             } else {
-                alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                showError('Error: ' + (result?.message || 'Unknown error'));
             }
         }
         
         // PRINT PURCHASE ORDER FUNCTION
         async function printPurchaseOrder() {
             if (!currentEditingOrder || currentEditingType !== 'purchase') {
-                alert('Please select a purchase order first');
+                showWarning('Please select a purchase order first');
                 return;
             }
             
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                alert('Please allow popups for this site');
+                showWarning('Please allow popups for this site');
                 return;
             }
             printWindow.document.write('<html><body><h2>Loading PO...</h2></body></html>');
@@ -10632,14 +10741,14 @@
         // PRINT INVOICE FUNCTION
         async function printInvoice() {
             if (!currentEditingOrder || currentEditingType !== 'sales') {
-                alert('Please select a sales order first');
+                showWarning('Please select a sales order first');
                 return;
             }
             
             // CRITICAL: Open window BEFORE any async calls to avoid iPhone popup blocker
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                alert('Please allow popups for this site');
+                showWarning('Please allow popups for this site');
                 return;
             }
             printWindow.document.write('<html><body><h2>Loading invoice...</h2></body></html>');
@@ -11356,8 +11465,15 @@
             });
             
             // Remove button
-            removeBtn.addEventListener('click', function() {
-                if (confirm('Remove this line item?')) {
+            removeBtn.addEventListener('click', async function() {
+                const confirmed = await showConfirmModal(
+                    '🗑️ Remove Line Item',
+                    'Are you sure you want to remove this line item?',
+                    'Remove',
+                    'Cancel',
+                    'warning'
+                );
+                if (confirmed) {
                     row.remove();
                     // Update payment info if this is a sales order
                     if (type === 'SO') {
@@ -11384,8 +11500,15 @@
             attachEditLineItemListeners(newRow);
         }
         
-        function removeEditLineItem(btn) {
-            if (confirm('Remove this line item?')) {
+        async function removeEditLineItem(btn) {
+            const confirmed = await showConfirmModal(
+                '🗑️ Remove Line Item',
+                'Are you sure you want to remove this line item?',
+                'Remove',
+                'Cancel',
+                'warning'
+            );
+            if (confirmed) {
                 btn.closest('.edit-line-item').remove();
             }
         }
@@ -11427,7 +11550,7 @@
             
             if (newLines.length === 0) {
                 const rowCount = document.querySelectorAll('#editPOLineItems .edit-line-item').length;
-                alert(`No valid line items found!\n\nRows found: ${rowCount}\n\nPlease make sure each line has:\n- An item selected\n- A quantity > 0`);
+                showWarning(`No valid line items found!<br><br>Rows found: ${rowCount}<br><br>Please make sure each line has:<br>• An item selected<br>• A quantity > 0`);
                 return;
             }
             
@@ -11445,13 +11568,14 @@
                     return item ? item.Item_Description : itemId;
                 }).join(', ');
                 
-                const continueWithDupes = confirm(
-                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
-                    'The following items appear on multiple lines:\n' +
-                    duplicateNames + '\n\n' +
-                    'This may be intentional (different costs), but could also be a mistake.\n\n' +
-                    '✅ Click OK to continue saving\n' +
-                    '❌ Click Cancel to review the order'
+                const continueWithDupes = await showConfirmModal(
+                    '⚠️ Duplicate Items Detected',
+                    `<p>The following items appear on multiple lines:</p>
+                    <p style="background: #fff3cd; padding: 10px; border-radius: 6px; font-weight: 600;">${duplicateNames}</p>
+                    <p>This may be intentional (different costs), but could also be a mistake.</p>`,
+                    'Continue Anyway',
+                    'Review Order',
+                    'warning'
                 );
                 
                 if (!continueWithDupes) return;
@@ -11461,14 +11585,17 @@
             const amountPaid = parseFloat(document.getElementById('editPOAmountPaid').value) || 0;
             if (amountPaid > totalAmount + 0.01) { // Allow 1 cent rounding
                 const overpayment = amountPaid - totalAmount;
-                const continueWithOverpay = confirm(
-                    '⚠️ OVERPAYMENT WARNING\n\n' +
-                    `Order Total: ${formatMoney(totalAmount)}\n` +
-                    `Amount Paid: ${formatMoney(amountPaid)}\n` +
-                    `Overpayment: ${formatMoney(overpayment)}\n\n` +
-                    'You are entering MORE payment than the order total.\n\n' +
-                    '✅ Click OK to continue (will show overpaid)\n' +
-                    '❌ Click Cancel to correct the amount'
+                const continueWithOverpay = await showConfirmModal(
+                    '⚠️ Overpayment Warning',
+                    `<div style="text-align: left;">
+                        <p><strong>Order Total:</strong> ${formatMoney(totalAmount)}</p>
+                        <p><strong>Amount Paid:</strong> ${formatMoney(amountPaid)}</p>
+                        <p style="color: #dc2626;"><strong>Overpayment:</strong> ${formatMoney(overpayment)}</p>
+                        <p style="margin-top: 15px;">You are entering MORE payment than the order total.</p>
+                    </div>`,
+                    'Continue (Show Overpaid)',
+                    'Correct Amount',
+                    'warning'
                 );
                 
                 if (!continueWithOverpay) return;
@@ -11492,19 +11619,27 @@
             const newStatus = document.getElementById('editPOStatus').value;
             const oldStatus = po.Status;
             if (newStatus === 'Voided' && oldStatus !== 'Voided') {
-                let message = '⚠️ VOID PURCHASE ORDER?\n\n' +
-                    'This will:\n' +
-                    '• Mark the order as VOIDED\n';
+                let message = `<div style="text-align: left;">
+                    <p>This will:</p>
+                    <ul style="margin: 10px 0 10px 20px;">
+                        <li>Mark the order as <strong style="color: #dc2626;">VOIDED</strong></li>`;
                 
                 if (oldStatus === 'Received') {
-                    message += '• REMOVE inventory for all line items\n';
+                    message += '<li><strong style="color: #dc2626;">REMOVE inventory</strong> for all line items</li>';
                 }
-                message += '• Create adjustment log entries\n' +
-                    '• Exclude from tax reports\n\n' +
-                    'This action cannot be easily undone.\n\n' +
-                    'Continue with voiding ' + (po.Invoice_Number || po.PO_ID) + '?';
+                message += `<li>Create adjustment log entries</li>
+                        <li>Exclude from tax reports</li>
+                    </ul>
+                    <p style="color: #dc2626; font-weight: 600;">This action cannot be easily undone.</p>
+                </div>`;
                 
-                const confirmVoid = confirm(message);
+                const confirmVoid = await showConfirmModal(
+                    '⚠️ Void Purchase Order?',
+                    message,
+                    'Yes, Void ' + (po.Invoice_Number || po.PO_ID),
+                    'Cancel',
+                    'danger'
+                );
                 if (!confirmVoid) return;
             }
             
@@ -11518,14 +11653,6 @@
                 loadPurchases();
             } else {
                 showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
-            }
-        }
-        
-        function enableEditMode() {
-            if (currentEditingType === 'purchase') {
-                enablePurchaseOrderEdit();
-            } else if (currentEditingType === 'sales') {
-                enableSalesOrderEdit();
             }
         }
         
@@ -11679,7 +11806,7 @@
             });
             
             if (newLines.length === 0) {
-                alert('Please add at least one line item');
+                showWarning('Please add at least one line item');
                 return;
             }
             
@@ -11697,13 +11824,14 @@
                     return item ? item.Item_Description : itemId;
                 }).join(', ');
                 
-                const continueWithDupes = confirm(
-                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
-                    'The following items appear on multiple lines:\n' +
-                    duplicateNames + '\n\n' +
-                    'This may be intentional (different prices), but could also be a mistake.\n\n' +
-                    '✅ Click OK to continue saving\n' +
-                    '❌ Click Cancel to review the order'
+                const continueWithDupes = await showConfirmModal(
+                    '⚠️ Duplicate Items Detected',
+                    `<p>The following items appear on multiple lines:</p>
+                    <p style="background: #fff3cd; padding: 10px; border-radius: 6px; font-weight: 600;">${duplicateNames}</p>
+                    <p>This may be intentional (different prices), but could also be a mistake.</p>`,
+                    'Continue Anyway',
+                    'Review Order',
+                    'warning'
                 );
                 
                 if (!continueWithDupes) return;
@@ -11713,14 +11841,17 @@
             const amountPaid = parseFloat(document.getElementById('editSOAmountPaid').value) || 0;
             if (amountPaid > totalAmount + 0.01) { // Allow 1 cent rounding
                 const overpayment = amountPaid - totalAmount;
-                const continueWithOverpay = confirm(
-                    '⚠️ OVERPAYMENT WARNING\n\n' +
-                    `Order Total: ${formatMoney(totalAmount)}\n` +
-                    `Amount Paid: ${formatMoney(amountPaid)}\n` +
-                    `Overpayment: ${formatMoney(overpayment)}\n\n` +
-                    'You are entering MORE payment than the order total.\n\n' +
-                    '✅ Click OK to continue (will show overpaid)\n' +
-                    '❌ Click Cancel to correct the amount'
+                const continueWithOverpay = await showConfirmModal(
+                    '⚠️ Overpayment Warning',
+                    `<div style="text-align: left;">
+                        <p><strong>Order Total:</strong> ${formatMoney(totalAmount)}</p>
+                        <p><strong>Amount Paid:</strong> ${formatMoney(amountPaid)}</p>
+                        <p style="color: #dc2626;"><strong>Overpayment:</strong> ${formatMoney(overpayment)}</p>
+                        <p style="margin-top: 15px;">You are entering MORE payment than the order total.</p>
+                    </div>`,
+                    'Continue (Show Overpaid)',
+                    'Correct Amount',
+                    'warning'
                 );
                 
                 if (!continueWithOverpay) return;
@@ -11744,15 +11875,21 @@
             const newStatus = document.getElementById('editSOStatus').value;
             const oldStatus = so.Status;
             if (newStatus === 'Voided' && oldStatus !== 'Voided') {
-                const confirmVoid = confirm(
-                    '⚠️ VOID SALES ORDER?\n\n' +
-                    'This will:\n' +
-                    '• Mark the order as VOIDED\n' +
-                    '• ADD inventory back for all line items\n' +
-                    '• Create adjustment log entries\n' +
-                    '• Exclude from tax reports\n\n' +
-                    'This action cannot be easily undone.\n\n' +
-                    'Continue with voiding ' + (so.Invoice_Number || so.SO_ID) + '?'
+                const confirmVoid = await showConfirmModal(
+                    '⚠️ Void Sales Order?',
+                    `<div style="text-align: left;">
+                        <p>This will:</p>
+                        <ul style="margin: 10px 0 10px 20px;">
+                            <li>Mark the order as <strong style="color: #dc2626;">VOIDED</strong></li>
+                            <li><strong style="color: #10b981;">ADD inventory back</strong> for all line items</li>
+                            <li>Create adjustment log entries</li>
+                            <li>Exclude from tax reports</li>
+                        </ul>
+                        <p style="color: #dc2626; font-weight: 600;">This action cannot be easily undone.</p>
+                    </div>`,
+                    'Yes, Void ' + (so.Invoice_Number || so.SO_ID),
+                    'Cancel',
+                    'danger'
                 );
                 if (!confirmVoid) return;
             }
@@ -11810,12 +11947,19 @@
             
             const paymentAmount = parseFloat(payment);
             if (isNaN(paymentAmount) || paymentAmount <= 0) {
-                alert('Please enter a valid payment amount');
+                showWarning('Please enter a valid payment amount');
                 return;
             }
             
             if (paymentAmount > remaining + 0.01) { // Allow 1 cent rounding
-                if (!confirm(`Payment (${formatMoney(paymentAmount)}) is more than balance due (${formatMoney(remaining)}).\n\nContinue anyway?`)) {
+                const confirmed = await showConfirmModal(
+                    '⚠️ Overpayment',
+                    `<p>Payment <strong>${formatMoney(paymentAmount)}</strong> is more than balance due <strong>${formatMoney(remaining)}</strong>.</p><p>Continue anyway?</p>`,
+                    'Continue',
+                    'Cancel',
+                    'warning'
+                );
+                if (!confirmed) {
                     return;
                 }
             }
@@ -11968,7 +12112,7 @@
             
             // Get all items once
             if (cachedItems.length === 0) {
-                alert('Please wait for items to load');
+                showWarning('Please wait for items to load');
                 return;
             }
             
@@ -12184,7 +12328,7 @@
 
             // Validate at least one line item
             if (lineItems.length === 0) {
-                alert('⚠️ Please add at least one item to the sale.\n\nSelect an item and enter a quantity before saving.');
+                showWarning('Please add at least one item to the sale.\n\nSelect an item and enter a quantity before saving.');
                 return;
             }
 
@@ -12202,13 +12346,14 @@
                     return item ? item.Item_Description : itemId;
                 }).join(', ');
                 
-                const continueWithDupes = confirm(
-                    '⚠️ DUPLICATE ITEMS DETECTED\n\n' +
-                    'The following items appear on multiple lines:\n' +
-                    duplicateNames + '\n\n' +
-                    'This may be intentional (different prices), but could also be a mistake.\n\n' +
-                    '✅ Click OK to continue saving\n' +
-                    '❌ Click Cancel to review the order'
+                const continueWithDupes = await showConfirmModal(
+                    '⚠️ Duplicate Items Detected',
+                    `<p>The following items appear on multiple lines:</p>
+                    <p style="background: #fff3cd; padding: 10px; border-radius: 6px; font-weight: 600;">${duplicateNames}</p>
+                    <p>This may be intentional (different prices), but could also be a mistake.</p>`,
+                    'Continue Anyway',
+                    'Review Order',
+                    'warning'
                 );
                 
                 if (!continueWithDupes) return;
@@ -12218,14 +12363,17 @@
             const amountPaid = parseFloat(document.getElementById('soAmountPaid').value) || 0;
             if (amountPaid > calculatedTotal + 0.01) { // Allow 1 cent rounding
                 const overpayment = amountPaid - calculatedTotal;
-                const continueWithOverpay = confirm(
-                    '⚠️ OVERPAYMENT WARNING\n\n' +
-                    `Order Total: ${formatMoney(calculatedTotal)}\n` +
-                    `Amount Paid: ${formatMoney(amountPaid)}\n` +
-                    `Overpayment: ${formatMoney(overpayment)}\n\n` +
-                    'You are entering MORE payment than the order total.\n\n' +
-                    '✅ Click OK to continue (will show overpaid)\n' +
-                    '❌ Click Cancel to correct the amount'
+                const continueWithOverpay = await showConfirmModal(
+                    '⚠️ Overpayment Warning',
+                    `<div style="text-align: left;">
+                        <p><strong>Order Total:</strong> ${formatMoney(calculatedTotal)}</p>
+                        <p><strong>Amount Paid:</strong> ${formatMoney(amountPaid)}</p>
+                        <p style="color: #dc2626;"><strong>Overpayment:</strong> ${formatMoney(overpayment)}</p>
+                        <p style="margin-top: 15px;">You are entering MORE payment than the order total.</p>
+                    </div>`,
+                    'Continue (Show Overpaid)',
+                    'Correct Amount',
+                    'warning'
                 );
                 
                 if (!continueWithOverpay) return;
@@ -12982,7 +13130,14 @@
             const remaining = total - amountPaid;
             
             if (paymentAmount > remaining + 0.01) {
-                if (!confirm(`Payment (${formatMoney(paymentAmount)}) is more than balance due (${formatMoney(remaining)}).\n\nContinue anyway?`)) {
+                const confirmed = await showConfirmModal(
+                    '⚠️ Overpayment',
+                    `<p>Payment <strong>${formatMoney(paymentAmount)}</strong> is more than balance due <strong>${formatMoney(remaining)}</strong>.</p><p>Continue anyway?</p>`,
+                    'Continue',
+                    'Cancel',
+                    'warning'
+                );
+                if (!confirmed) {
                     return;
                 }
             }
@@ -13014,11 +13169,11 @@
                         
                         loadSales();
                     } else {
-                        alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                        showError('Error: ' + (result?.message || 'Unknown error'));
                     }
                 })
                 .catch(err => {
-                    alert('❌ Error recording payment: ' + err.message);
+                    showError('Error recording payment: ' + err.message);
                 });
         }
 
@@ -13320,15 +13475,15 @@
             
             // Validation with alerts
             if (!supplierId) {
-                alert('Please select a supplier');
+                showWarning('Please select a supplier');
                 return false;
             }
             if (!description) {
-                alert('Please enter a description');
+                showWarning('Please enter a description');
                 return false;
             }
             if (packageCost <= 0) {
-                alert('Please enter a package cost greater than 0');
+                showWarning('Please enter a package cost greater than 0');
                 return false;
             }
             
@@ -13380,11 +13535,18 @@
         
         async function saveNewItemsToDatabase() {
             if (simulatedNewItems.length === 0) {
-                alert('No new items to save!');
+                showWarning('No new items to save!');
                 return;
             }
             
-            if (!confirm(`Save ${simulatedNewItems.length} new item(s) to your database?`)) {
+            const confirmed = await showConfirmModal(
+                '💾 Save New Items',
+                `<p>Save <strong>${simulatedNewItems.length} new item(s)</strong> to your database?</p>`,
+                'Save Items',
+                'Cancel',
+                'info'
+            );
+            if (!confirmed) {
                 return;
             }
             
@@ -13745,11 +13907,19 @@
             const count = checkboxes.length;
             
             if (count === 0) {
-                alert('No items selected!');
+                showWarning('No items selected!');
                 return;
             }
             
-            if (!confirm(`Are you sure you want to update the sell price for ${count} items?\n\nThis will modify your database.`)) {
+            const confirmed = await showConfirmModal(
+                '💰 Update Sell Prices',
+                `<p>Update the sell price for <strong>${count} items</strong>?</p>
+                <p style="color: #666; font-size: 14px;">This will modify your database.</p>`,
+                'Update Prices',
+                'Cancel',
+                'warning'
+            );
+            if (!confirmed) {
                 return;
             }
             
@@ -13968,35 +14138,56 @@
             
             // Validation - Item is required
             if (!itemId) {
-                alert('⚠️ Please select an item to adjust.');
+                showWarning('Please select an item to adjust.');
                 return;
             }
             
             // Validation - Reason is required
             if (!reason || reason.trim() === '') {
-                alert('⚠️ Please select a reason for this adjustment.');
+                showWarning('Please select a reason for this adjustment.');
                 document.getElementById('adjustReasonDisplay').focus();
                 return;
             }
             
             // Validation - Adjustment amount is required
             if (isNaN(adjustment) || adjustment === 0) {
-                alert('⚠️ Please enter an adjustment amount (positive or negative).');
+                showWarning('Please enter an adjustment amount (positive or negative).');
                 document.getElementById('adjustQuantity').focus();
                 return;
             }
             
             if (newQty < 0) {
-                if (!confirm(`Warning: This will set inventory to ${newQty} (NEGATIVE).\n\nAre you sure?`)) {
+                const confirmed = await showConfirmModal(
+                    '⚠️ Negative Inventory Warning',
+                    `<p style="color: #dc2626;">This will set inventory to <strong>${newQty}</strong> (NEGATIVE).</p><p>Are you sure?</p>`,
+                    'Yes, Continue',
+                    'Cancel',
+                    'danger'
+                );
+                if (!confirmed) {
                     return;
                 }
             }
             
             // Confirm the adjustment
             const item = cachedItems.find(i => i.Item_ID === itemId);
-            const confirmMsg = `Adjust ${item.Item_Description}?\n\nCurrent: ${currentQty}\nAdjustment: ${adjustment > 0 ? '+' : ''}${adjustment}\nNew Total: ${newQty}\n\nReason: ${reason}`;
+            const confirmed = await showConfirmModal(
+                '📦 Confirm Adjustment',
+                `<div style="text-align: left;">
+                    <p><strong>${item.Item_Description}</strong></p>
+                    <hr style="margin: 10px 0;">
+                    <p>Current: <strong>${currentQty}</strong></p>
+                    <p>Adjustment: <strong style="color: ${adjustment > 0 ? '#10b981' : '#dc2626'};">${adjustment > 0 ? '+' : ''}${adjustment}</strong></p>
+                    <p>New Total: <strong>${newQty}</strong></p>
+                    <hr style="margin: 10px 0;">
+                    <p>Reason: ${reason}</p>
+                </div>`,
+                'Apply Adjustment',
+                'Cancel',
+                'warning'
+            );
             
-            if (!confirm(confirmMsg)) {
+            if (!confirmed) {
                 return;
             }
             
@@ -14322,7 +14513,7 @@
             try {
                 openReportSetup(reportType);
             } catch (e) {
-                alert('❌ Error opening report setup: ' + e.message);
+                showError('Error opening report setup: ' + e.message);
                 console.error('Error in showReport:', e);
             }
         }
@@ -15134,7 +15325,7 @@
             console.log('📱 Modal element:', modalElement ? 'Found' : 'NOT FOUND');
             
             if (!modalElement) {
-                alert('❌ ERROR: Report modal element not found in DOM!');
+                showError('ERROR: Report modal element not found in DOM!');
                 return;
             }
             
@@ -15375,7 +15566,7 @@
             const title = document.getElementById('reportSetupTitle').textContent;
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before printing.');
+                showWarning('Please run the report first before printing.');
                 return;
             }
             
@@ -15471,7 +15662,7 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before emailing.');
+                showWarning('Please run the report first before emailing.');
                 return;
             }
             
@@ -15494,7 +15685,7 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before texting.');
+                showWarning('Please run the report first before texting.');
                 return;
             }
             
@@ -15523,11 +15714,11 @@
             const content = document.getElementById('reportSetupContent');
             
             if (!content.innerHTML || content.innerHTML.includes('Configure filters')) {
-                alert('Please run the report first before saving.');
+                showWarning('Please run the report first before saving.');
                 return;
             }
             
-            alert('💡 Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
+            showInfo('Tip: Use the Print button and select "Save as PDF" as your printer to save this report.');
             printReport();
         }
         
@@ -19097,7 +19288,7 @@
             const labelData = window.pickListLabelData || [];
             
             if (labelData.length === 0) {
-                alert('No orders to print labels for!');
+                showWarning('No orders to print labels for!');
                 return;
             }
             
@@ -22775,7 +22966,7 @@
                             💰 PAST DUE PAYMENTS
                             <span class="action-count">${pastDuePayments.length}</span>
                         </div>
-                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="alert(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
+                        ${pastDuePayments.length > 0 ? '<button class="action-btn action-btn-primary" onclick="showInfo(\'Send Reminder feature coming soon!\')">📧 Send Reminders</button>' : ''}
                     </div>
                     <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
                         <strong>Customer invoices (sales orders)</strong> where the due date has passed and payment is not yet received. Sorted by most overdue first.
@@ -23169,7 +23360,7 @@
                             <td>${item.Qty}</td>
                             <td>${item.Days_Since_Sale} days ago</td>
                             <td>
-                                <button class="oval-action-btn oval-action-info" onclick="alert('Promotion feature coming soon!')">📢 Promote</button>
+                                <button class="oval-action-btn oval-action-info" onclick="showInfo('Promotion feature coming soon!')">📢 Promote</button>
                             </td>
                         </tr>
                     `;
@@ -23778,21 +23969,33 @@
             const unitsNeeded = parseInt(qtyInput?.value) || 0;
             
             if (unitsNeeded <= 0) {
-                alert('Please enter a quantity greater than 0');
+                showWarning('Please enter a quantity greater than 0');
                 return;
             }
             
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showError('Item not found. Please refresh and try again.');
                 return;
             }
             
             const supplier = (cachedSuppliers || []).find(s => s.Supplier_ID === supplierId);
             const supplierName = supplier?.Supplier_Name || 'Unknown';
             
-            if (!confirm(`Create PO for ${unitsNeeded} units of:\n\n${item.Item_Description}\n\nFrom: ${supplierName}\n\nThis is for backorder fulfillment only.`)) {
+            const confirmed = await showConfirmModal(
+                '📦 Create Backorder PO',
+                `<div style="text-align: left;">
+                    <p>Create PO for <strong>${unitsNeeded} units</strong> of:</p>
+                    <p style="background: #f0f9ff; padding: 10px; border-radius: 6px; font-weight: 600; margin: 10px 0;">${item.Item_Description}</p>
+                    <p>From: <strong>${supplierName}</strong></p>
+                    <p style="color: #666; font-size: 13px; margin-top: 10px;">This is for backorder fulfillment only.</p>
+                </div>`,
+                'Create PO',
+                'Cancel',
+                'info'
+            );
+            if (!confirmed) {
                 return;
             }
             
@@ -23918,7 +24121,7 @@
         function bulkReorder() {
             const checkboxes = document.querySelectorAll('.lowstock-checkbox:checked');
             if (checkboxes.length === 0) {
-                alert('Please select items to reorder first.\n\nUse the checkboxes next to each item, or "Select All" at the top.');
+                showWarning('Please select items to reorder first.\n\nUse the checkboxes next to each item, or "Select All" at the top.');
                 return;
             }
             
@@ -23928,7 +24131,7 @@
             const items = itemIds.map(id => (cachedItems || []).find(i => i.Item_ID === id)).filter(Boolean);
             
             if (items.length === 0) {
-                alert('Could not find selected items. Please refresh and try again.');
+                showError('Could not find selected items. Please refresh and try again.');
                 return;
             }
             
@@ -23941,9 +24144,9 @@
                     const sup = (cachedSuppliers || []).find(s => s.Supplier_ID === supId);
                     const itemCount = items.filter(i => i.Supplier_ID === supId).length;
                     return `• ${sup?.Supplier_Name || 'Unknown'}: ${itemCount} item${itemCount > 1 ? 's' : ''}`;
-                }).join('\n');
+                }).join('<br>');
                 
-                alert(`❌ Cannot create a single PO with items from multiple suppliers!\n\nYou selected items from ${suppliers.length} different suppliers:\n\n${supplierNames}\n\nPurchase orders can only contain items from ONE supplier.\n\nPlease select items from a single supplier, or create separate POs for each supplier.`);
+                showError(`Cannot create a single PO with items from multiple suppliers!<br><br>You selected items from ${suppliers.length} different suppliers:<br><br>${supplierNames}<br><br>Purchase orders can only contain items from ONE supplier.<br><br>Please select items from a single supplier, or create separate POs for each supplier.`);
                 return;
             }
             
@@ -24091,7 +24294,7 @@
             
             const rows = document.querySelectorAll('#bulkPOTable tbody tr');
             if (rows.length === 0) {
-                alert('No items in the order');
+                showWarning('No items in the order');
                 return;
             }
             
@@ -24106,7 +24309,7 @@
             });
             
             if (lineItems.length === 0) {
-                alert('Please enter quantities for at least one item');
+                showWarning('Please enter quantities for at least one item');
                 return;
             }
             
@@ -24139,11 +24342,11 @@
                     }
                     showSuccessModal('Purchase Order Created!', `PO #: ${result.poId}\n\n${lineItems.length} item${lineItems.length > 1 ? 's' : ''} ordered.`);
                 } else {
-                    alert('❌ Error creating PO: ' + (result?.message || 'Unknown error'));
+                    showError('Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
                 hideLoading();
-                alert('❌ Error: ' + error.message);
+                showError('Error: ' + error.message);
             }
         }
         
@@ -24151,7 +24354,7 @@
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showError('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -24256,7 +24459,7 @@
             
             const cases = parseInt(document.getElementById('quickPOCases').value) || 0;
             if (cases <= 0) {
-                alert('Please enter a valid quantity');
+                showWarning('Please enter a valid quantity');
                 return;
             }
             
@@ -24298,11 +24501,11 @@
                     }
                     showSuccessModal('Purchase Order Created!', `PO #: ${result.poId}\n\nItems marked as "On Order".`);
                 } else {
-                    alert('❌ Error creating PO: ' + (result?.message || 'Unknown error'));
+                    showError('Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
                 hideLoading();
-                alert('❌ Error: ' + error.message);
+                showError('Error: ' + error.message);
             }
         }
         
@@ -24310,7 +24513,7 @@
             // Get item details
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showError('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -24337,7 +24540,7 @@
             if (negItem) {
                 openQuickAdjustModal(negItem.Item_ID);
             } else {
-                alert('No negative inventory items found.');
+                showWarning('No negative inventory items found.');
             }
         }
         
@@ -24346,20 +24549,27 @@
             viewSalesOrder(saleId);
         }
         
-        function markForClearance(itemId) {
-            if (confirm('Mark this item for clearance sale?')) {
-                alert('Clearance feature coming soon!');
+        async function markForClearance(itemId) {
+            const confirmed = await showConfirmModal(
+                '🏷️ Mark for Clearance',
+                'Mark this item for clearance sale?',
+                'Yes, Mark for Clearance',
+                'Cancel',
+                'info'
+            );
+            if (confirmed) {
+                showInfo('Clearance feature coming soon!');
                 // TODO: Implement clearance modal
             }
         }
         
         function scheduleCustomerVisit(customerId) {
-            alert('Schedule Visit feature coming soon!');
+            showInfo('Schedule Visit feature coming soon!');
             // TODO: Implement visit scheduling
         }
         
         function exportDormantCustomers() {
-            alert('Export feature coming soon!');
+            showInfo('Export feature coming soon!');
             // TODO: Implement CSV export
         }
         
@@ -28433,7 +28643,7 @@
                 await showSalesOrderDetails(so);
                 document.getElementById('orderModal').style.display = 'block'; document.body.classList.add('modal-open');
             } else {
-                alert('Sales order not found: ' + soId);
+                showError('Sales order not found: ' + soId);
             }
         }
         
@@ -28460,7 +28670,7 @@
                 await showPurchaseOrderDetails(po);
                 document.getElementById('orderModal').style.display = 'block'; document.body.classList.add('modal-open');
             } else {
-                alert('Purchase order not found: ' + poId);
+                showError('Purchase order not found: ' + poId);
             }
         }
         
@@ -28486,7 +28696,7 @@
                 // Show edit form
                 showEditCustomerForm(customer);
             } else {
-                alert('Customer not found: ' + customerId);
+                showError('Customer not found: ' + customerId);
             }
         }
         
@@ -28512,7 +28722,7 @@
                 // Show edit form
                 showEditSupplierForm(supplier);
             } else {
-                alert('Supplier not found: ' + supplierId);
+                showError('Supplier not found: ' + supplierId);
             }
         }
         
@@ -28558,7 +28768,7 @@
                 if (!supplierId) {
                     e.preventDefault();
                     e.target.blur(); // Remove focus
-                    alert('⚠️ Please select a supplier first');
+                    showWarning('Please select a supplier first');
                     document.getElementById('createPOSupplier')?.focus();
                 }
             }
@@ -28571,7 +28781,7 @@
                 if (!supplierId) {
                     e.preventDefault();
                     e.stopPropagation();
-                    alert('⚠️ Please select a supplier first');
+                    showWarning('Please select a supplier first');
                     document.getElementById('createPOSupplier')?.focus();
                 }
             }
@@ -28584,7 +28794,7 @@
                     e.preventDefault();
                     e.stopPropagation();
                     setTimeout(() => {
-                        alert('⚠️ Please select a supplier first');
+                        showWarning('Please select a supplier first');
                         document.getElementById('createPOSupplier')?.focus();
                     }, 10);
                 }
@@ -28621,7 +28831,7 @@
             const supplierId = document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
-                alert('Please select a supplier first');
+                showWarning('Please select a supplier first');
                 return;
             }
             
@@ -28749,9 +28959,19 @@
         
         // Void a PO (when supplier prices changed)
         async function voidPurchaseOrder(poId) {
-            if (!confirm(`⛔ VOID Purchase Order ${poId}?\n\nThis will mark the PO as invalid. Use this when:\n• Supplier prices have changed\n• Order was entered incorrectly\n• Order is no longer needed\n\nThe PO will remain in your records but won't affect inventory.`)) {
-                return;
-            }
+            const confirmed = await showConfirmModal(
+                'Void Purchase Order?',
+                `<strong>⛔ VOID Purchase Order ${poId}?</strong><br><br>` +
+                `This will mark the PO as invalid. Use this when:<br>` +
+                `• Supplier prices have changed<br>` +
+                `• Order was entered incorrectly<br>` +
+                `• Order is no longer needed<br><br>` +
+                `The PO will remain in your records but won't affect inventory.`,
+                'Void PO',
+                'Cancel',
+                'danger'
+            );
+            if (!confirmed) return;
             
             const reason = prompt('Optional: Enter reason for voiding (e.g., "Prices increased 10%"):', 'Supplier prices changed');
             
@@ -28767,10 +28987,10 @@
                     closeModal();
                     loadPurchases();
                 } else {
-                    alert('Error voiding PO: ' + (result?.message || 'Unknown error'));
+                    showError('Error voiding PO: ' + (result?.message || 'Unknown error'));
                 }
             } catch (e) {
-                alert('Error: ' + e.message);
+                showError('Error: ' + e.message);
             }
         }
         
@@ -28780,13 +29000,13 @@
                 // Load the original PO
                 const result = await apiCall('getPurchaseOrders');
                 if (!result || result.status !== 'success') {
-                    alert('Error loading purchase order');
+                    showError('Error loading purchase order');
                     return;
                 }
                 
                 const originalPO = result.data.find(p => p.PO_ID === poId);
                 if (!originalPO) {
-                    alert('Purchase order not found');
+                    showError('Purchase order not found');
                     return;
                 }
                 
@@ -28795,13 +29015,25 @@
                 const originalLines = linesResult?.data || [];
                 
                 if (originalLines.length === 0) {
-                    alert('No line items found in original PO');
+                    showWarning('No line items found in original PO');
                     return;
                 }
                 
                 // Confirm with user
                 const itemCount = originalLines.length;
-                if (!confirm(`Create a NEW Purchase Order with ${itemCount} item(s) from ${poId}?\n\n⚠️ You'll need to update prices in the new PO if they've changed.`)) {
+                const confirmed = await showConfirmModal(
+                    '🔄 Reorder from PO',
+                    `<div style="text-align: left;">
+                        <p>Create a <strong>NEW</strong> Purchase Order with <strong>${itemCount} item(s)</strong> from ${poId}?</p>
+                        <p style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 13px;">
+                            ⚠️ You'll need to update prices in the new PO if they've changed.
+                        </p>
+                    </div>`,
+                    'Create New PO',
+                    'Cancel',
+                    'info'
+                );
+                if (!confirmed) {
                     return;
                 }
                 
@@ -28848,7 +29080,7 @@
                 }, 500);
                 
             } catch (e) {
-                alert('Error duplicating PO: ' + e.message);
+                showError('Error duplicating PO: ' + e.message);
             }
         }
         
@@ -28856,25 +29088,25 @@
             // Load the OUTGOING PO
             const result = await apiCall('getPurchaseOrders');
             if (!result || result.status !== 'success') {
-                alert('Error loading purchase order');
+                showError('Error loading purchase order');
                 return;
             }
             
             const po = result.data.find(p => p.PO_ID === poId);
             if (!po) {
-                alert('Purchase order not found');
+                showError('Purchase order not found');
                 return;
             }
             
             if (po.Status !== 'Ordered' && po.Status !== 'Partial' && po.Status !== 'In Transit') {
-                alert('This PO has already been fully received');
+                showWarning('This PO has already been fully received');
                 return;
             }
             
             // Load line items
             const linesResult = await apiCall('getPurchaseOrderLines', { poId: poId });
             if (!linesResult || linesResult.status !== 'success') {
-                alert('Error loading PO line items');
+                showError('Error loading PO line items');
                 return;
             }
             
@@ -29090,7 +29322,7 @@
         }
         
         // Handle short package - opens quick adjust modal
-        function adjustShortPackage(itemId, itemName, unitsPerPkg) {
+        async function adjustShortPackage(itemId, itemName, unitsPerPkg) {
             const shortUnits = prompt(
                 `⚠️ Short Package Adjustment\n\n` +
                 `Item: ${itemName}\n` +
@@ -29103,25 +29335,30 @@
             
             const missing = parseInt(shortUnits);
             if (isNaN(missing) || missing <= 0) {
-                alert('Please enter a valid number of missing units');
+                showWarning('Please enter a valid number of missing units');
                 return;
             }
             
             if (missing >= unitsPerPkg) {
-                alert(`That's the entire package! If you didn't receive the package at all, reduce the "Receive Now" quantity instead.`);
+                showWarning(`That's the entire package! If you didn't receive the package at all, reduce the "Receive Now" quantity instead.`);
                 return;
             }
             
             // Confirm and create adjustment
             const reason = `Short Package - received ${unitsPerPkg - missing} of ${unitsPerPkg} units`;
             
-            if (confirm(
-                `Create inventory adjustment?\n\n` +
-                `Item: ${itemName}\n` +
-                `Adjustment: -${missing} units\n` +
-                `Reason: ${reason}\n\n` +
-                `This will reduce the inventory by ${missing} units after receiving.`
-            )) {
+            const confirmed = await showConfirmModal(
+                'Create Inventory Adjustment?',
+                `<strong>Item:</strong> ${itemName}<br><br>` +
+                `<strong>Adjustment:</strong> -${missing} units<br>` +
+                `<strong>Reason:</strong> ${reason}<br><br>` +
+                `This will reduce the inventory by ${missing} units after receiving.`,
+                'Create Adjustment',
+                'Cancel',
+                'warning'
+            );
+            
+            if (confirmed) {
                 // Create the adjustment
                 apiCall('adjustInventory', {
                     itemId: itemId,
@@ -29131,12 +29368,12 @@
                     user: 'Receiving'
                 }).then(result => {
                     if (result && result.status === 'success') {
-                        alert(`✅ Adjustment recorded!\n\n-${missing} units for: ${reason}\n\nContinue receiving the PO normally.`);
+                        showSuccess(`Adjustment recorded!<br><br>-${missing} units for: ${reason}<br><br>Continue receiving the PO normally.`);
                     } else {
-                        alert('❌ Error creating adjustment: ' + (result?.message || 'Unknown error'));
+                        showError('Error creating adjustment: ' + (result?.message || 'Unknown error'));
                     }
                 }).catch(err => {
-                    alert('❌ Error: ' + err.message);
+                    showError('Error: ' + err.message);
                 });
             }
         }
@@ -29210,11 +29447,11 @@
             if (poCheck && poCheck.status === 'success') {
                 const currentPO = poCheck.data.find(p => p.PO_ID === poId);
                 if (!currentPO) {
-                    alert('❌ Error: Purchase order not found. It may have been deleted.');
+                    showError('Error: Purchase order not found. It may have been deleted.');
                     return;
                 }
                 if (currentPO.Status === 'Received') {
-                    alert('⚠️ This PO has already been fully received!\n\nInventory was already updated. No changes made.');
+                    showWarning('This PO has already been fully received!\n\nInventory was already updated. No changes made.');
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
                     loadPurchases();
@@ -29244,15 +29481,20 @@
             });
             
             if (linesToReceive.length === 0) {
-                alert('No items to receive. Enter quantities greater than 0.');
+                showWarning('No items to receive. Enter quantities greater than 0.');
                 return;
             }
             
             // Confirm
             const totalQty = linesToReceive.reduce((sum, l) => sum + l.qtyToReceive, 0);
-            if (!confirm(`Receive ${totalQty} items into inventory?\n\nThis will update your stock levels.`)) {
-                return;
-            }
+            const confirmed = await showConfirmModal(
+                'Receive Items?',
+                `Receive <strong>${totalQty} items</strong> into inventory?<br><br>This will update your stock levels.`,
+                'Receive Items',
+                'Cancel',
+                'success'
+            );
+            if (!confirmed) return;
             
             isCommittingReceivePartial = true;
             const commitBtn = document.getElementById('modalSaveBtn');
@@ -29302,7 +29544,7 @@
                         ? '✅ All items received! PO is now complete.' 
                         : `📦 Items received. PO status: ${result.newStatus} (${result.totalReceived}/${result.totalOrdered})`;
                     
-                    alert(statusMsg + '\n\nInventory has been updated.');
+                    showSuccess(statusMsg + '<br><br>Inventory has been updated.');
                     
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
@@ -29311,11 +29553,11 @@
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                    showError('Error: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error in commitReceivePartial:', error);
-                alert('❌ Error: ' + error.message);
+                showError('Error: ' + error.message);
             } finally {
                 isCommittingReceivePartial = false;
                 if (commitBtn) {
@@ -29441,7 +29683,14 @@
             const notes = document.getElementById('receiveNotes').value;
             
             if (!invoiceNumber) {
-                if (!confirm('No invoice number entered. Continue anyway?')) {
+                const confirmed = await showConfirmModal(
+                    '📄 No Invoice Number',
+                    'No invoice number entered. Continue anyway?',
+                    'Continue',
+                    'Cancel',
+                    'warning'
+                );
+                if (!confirmed) {
                     return;
                 }
             }
@@ -29480,7 +29729,7 @@
             console.log('Collected ' + receivedLines.length + ' lines to receive');
             
             if (receivedLines.length === 0) {
-                alert('Please select at least one item to receive');
+                showWarning('Please select at least one item to receive');
                 return;
             }
             
@@ -29511,7 +29760,7 @@
                 console.log('API result:', JSON.stringify(result));
                 
                 if (result && result.status === 'success') {
-                    alert('✅ Items received successfully! Inventory has been updated.');
+                    showSuccess('Items received successfully! Inventory has been updated.');
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
                     
@@ -29519,11 +29768,11 @@
                     await loadPurchases();
                     await loadItems();
                 } else {
-                    alert('❌ Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
+                    showError('Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error in commitReceive:', error);
-                alert('❌ Error: ' + error.message);
+                showError('Error: ' + error.message);
             } finally {
                 // UNLOCK
                 isCommittingReceive = false;
@@ -29551,12 +29800,12 @@
             const notes = document.getElementById('createPONotes')?.value;
             
             if (!supplierId || !poDate) {
-                alert('Please select supplier and date');
+                showWarning('Please select supplier and date');
                 return;
             }
             
             if (!expectedDeliveryDate) {
-                alert('Please select an Expected Delivery Date');
+                showWarning('Please select an Expected Delivery Date');
                 return;
             }
             
@@ -29583,7 +29832,7 @@
             });
             
             if (lineItems.length === 0) {
-                alert('Please add at least one line item');
+                showWarning('Please add at least one line item');
                 return;
             }
             
@@ -29667,7 +29916,7 @@
                 // Refresh items to update Qty_On_Order
                 await loadItems();
             } else {
-                alert('❌ Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
+                showError('Error creating OUTGOING PO: ' + (result?.message || 'Unknown error'));
             }
             } finally {
                 // UNLOCK - Always reset even if error
@@ -29687,7 +29936,7 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplierId || !poDate) {
-                alert('Please select supplier and date');
+                showWarning('Please select supplier and date');
                 return;
             }
             
@@ -29731,14 +29980,14 @@
             });
             
             if (lineItems.length === 0) {
-                alert('Please add at least one line item');
+                showWarning('Please add at least one line item');
                 return;
             }
             
             // Get supplier info
             const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
             if (!supplier) {
-                alert('Supplier not found');
+                showError('Supplier not found');
                 return;
             }
             
@@ -29864,7 +30113,7 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplier) {
-                alert('Supplier not found');
+                showError('Supplier not found');
                 return;
             }
             
@@ -29872,7 +30121,7 @@
             const fileName = `PO_${supplier.Supplier_Name.replace(/[^a-z0-9]/gi, '_')}_${poDate}.pdf`;
             
             // For now, trigger print dialog with instruction
-            alert('PDF Download:\n\n1. Click OK\n2. In the print dialog, select "Save as PDF"\n3. Click Save\n\nNote: Full automated PDF generation requires a backend service.');
+            showInfo('PDF Download:<br><br>1. Click OK<br>2. In the print dialog, select "Save as PDF"<br>3. Click Save<br><br>Note: Full automated PDF generation requires a backend service.');
             window.print();
         }
         
@@ -29883,14 +30132,14 @@
             const poDate = document.getElementById('createPODate').value;
             
             if (!supplier) {
-                alert('Supplier not found');
+                showError('Supplier not found');
                 return;
             }
             
             const supplierEmail = supplier.Email || '';
             
             if (!supplierEmail) {
-                alert('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
+                showWarning('No email address found for ' + supplier.Supplier_Name + '. Please add an email address to the supplier record first.');
                 return;
             }
             
@@ -29938,7 +30187,7 @@ NOTE: Please print the attached PO document for full details.`;
             const mailtoLink = `mailto:${supplierEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             
             // Inform user to attach the PO
-            alert('Email Instructions:\n\n1. Your email client will open with the supplier\'s email pre-filled\n2. IMPORTANT: Print or save this PO as PDF first (use Print button)\n3. Attach the PDF to the email before sending\n\nClick OK to open your email client.');
+            showInfo('Email Instructions:<br><br>1. Your email client will open with the supplier\'s email pre-filled<br>2. IMPORTANT: Print or save this PO as PDF first (use Print button)<br>3. Attach the PDF to the email before sending<br><br>Click OK to open your email client.');
             
             // Open email client
             window.location.href = mailtoLink;
@@ -30222,7 +30471,7 @@ NOTE: Please print the attached PO document for full details.`;
             const supplierId = document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
-                alert('Please select a supplier first');
+                showWarning('Please select a supplier first');
                 return;
             }
             
@@ -30292,7 +30541,7 @@ NOTE: Please print the attached PO document for full details.`;
             const customerId = document.getElementById('soCustomer').value;
             
             if (!customerId) {
-                alert('Please select a customer first');
+                showWarning('Please select a customer first');
                 return;
             }
             
@@ -30346,7 +30595,7 @@ NOTE: Please print the attached PO document for full details.`;
             const selectedItems = window.multiSelectedItems || new Set();
             
             if (selectedItems.size === 0) {
-                alert('Please select at least one item');
+                showWarning('Please select at least one item');
                 return;
             }
             
@@ -30421,7 +30670,7 @@ NOTE: Please print the attached PO document for full details.`;
                 if (firstEmptyQty) firstEmptyQty.focus();
             }, 100);
             
-            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+            showSuccess(`Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
         }
         
         // Add selected items to Sales Order
@@ -30429,7 +30678,7 @@ NOTE: Please print the attached PO document for full details.`;
             const selectedItems = window.multiSelectedItems || new Set();
             
             if (selectedItems.size === 0) {
-                alert('Please select at least one item');
+                showWarning('Please select at least one item');
                 return;
             }
             
@@ -30613,7 +30862,7 @@ NOTE: Please print the attached PO document for full details.`;
                 if (firstEmptyQty) firstEmptyQty.focus();
             }, 100);
             
-            alert(`✅ Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+            showSuccess(`Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
         }
         
         // ============================================================================
@@ -31469,34 +31718,34 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- REASON PICKER MODAL -->
-    <div id="reasonPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
+    <div id="reasonPickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+        <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📝 Select Reason</h3>
                 <button class="item-picker-close" onclick="closeReasonPicker()">&times;</button>
             </div>
-            <div id="reasonPickerList" class="item-picker-list" style="padding: 15px;">
+            <div id="reasonPickerList" class="item-picker-list" style="padding: 15px; max-height: 60vh; overflow-y: auto;">
                 <!-- Reason options will be populated by JavaScript -->
             </div>
         </div>
     </div>
 
     <!-- UOM PICKER MODAL -->
-    <div id="uomPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
+    <div id="uomPickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+        <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📦 Select Unit of Measure</h3>
                 <button class="item-picker-close" onclick="closeUOMPicker()">&times;</button>
             </div>
-            <div id="uomPickerList" class="item-picker-list" style="padding: 15px;">
+            <div id="uomPickerList" class="item-picker-list" style="padding: 15px; max-height: 60vh; overflow-y: auto;">
                 <!-- UOM options will be populated by JavaScript -->
             </div>
         </div>
     </div>
 
     <!-- THEME PICKER MODAL -->
-    <div id="themePickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 700px; height: 85vh; margin: 5vh auto; border-radius: 16px;">
+    <div id="themePickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+        <div class="item-picker-container" style="max-width: 700px; width: 95%; height: 90vh; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0; background: var(--primary, #667eea);">
                 <h3>🎨 Choose Your Theme</h3>
                 <button class="item-picker-close" onclick="closeThemePicker()">&times;</button>
@@ -31504,21 +31753,8 @@ NOTE: Please print the attached PO document for full details.`;
             <div class="item-picker-search" style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
                 <input type="text" id="themePickerSearch" placeholder="🔍 Search themes... (e.g. 'packers', 'blue', 'nfl')" oninput="filterThemePicker()" style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px;">
             </div>
-            <div id="themePickerList" class="item-picker-list" style="padding: 15px; height: calc(85vh - 140px); overflow-y: auto;">
+            <div id="themePickerList" class="item-picker-list" style="padding: 15px; flex: 1; overflow-y: auto;">
                 <!-- Theme options will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-
-    <!-- STATUS PICKER MODAL -->
-    <div id="statusPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 500px; height: auto; max-height: 80vh; margin: 10vh auto; border-radius: 16px;">
-            <div class="item-picker-header" id="statusPickerHeader" style="border-radius: 16px 16px 0 0;">
-                <h3 id="statusPickerTitle">📋 Select Status</h3>
-                <button class="item-picker-close" onclick="closeStatusPicker()">&times;</button>
-            </div>
-            <div id="statusPickerList" class="item-picker-list" style="padding: 15px;">
-                <!-- Status options will be populated by JavaScript -->
             </div>
         </div>
     </div>
@@ -31543,9 +31779,42 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- STYLED ALERT MODAL -->
+    <div id="styledAlertModal" class="item-picker-overlay" style="z-index: 999999; display: none; align-items: center; justify-content: center;">
+        <div class="item-picker-container styled-modal-container" style="max-width: 450px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
+            <div id="styledAlertHeader" class="item-picker-header" style="background: var(--primary, #667eea);">
+                <h3 id="styledAlertTitle">📢 Alert</h3>
+                <button class="item-picker-close" onclick="closeStyledAlert()">&times;</button>
+            </div>
+            <div id="styledAlertContent" style="padding: 25px; font-size: 15px; line-height: 1.6; max-height: 50vh; overflow-y: auto; background: white;">
+                <!-- Content will be inserted here -->
+            </div>
+            <div style="padding: 15px 25px 25px; display: flex; justify-content: flex-end; gap: 12px; background: #f8f9fa; border-top: 1px solid #e0e0e0;">
+                <button id="styledAlertOkBtn" onclick="closeStyledAlert()" style="background: var(--primary, #667eea); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STYLED CONFIRM MODAL -->
+    <div id="styledConfirmModal" class="item-picker-overlay" style="z-index: 999999; display: none; align-items: center; justify-content: center;">
+        <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
+            <div id="styledConfirmHeader" class="item-picker-header" style="background: var(--primary, #667eea);">
+                <h3 id="styledConfirmTitle">❓ Confirm</h3>
+                <button class="item-picker-close" onclick="resolveConfirm(false)">&times;</button>
+            </div>
+            <div id="styledConfirmContent" style="padding: 25px; font-size: 15px; line-height: 1.6; max-height: 50vh; overflow-y: auto; background: white;">
+                <!-- Content will be inserted here -->
+            </div>
+            <div style="padding: 15px 25px 25px; display: flex; justify-content: flex-end; gap: 12px; background: #f8f9fa; border-top: 1px solid #e0e0e0;">
+                <button id="styledConfirmCancelBtn" onclick="resolveConfirm(false)" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                <button id="styledConfirmOkBtn" onclick="resolveConfirm(true)" style="background: var(--primary, #667eea); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- UNIVERSAL STATUS PICKER MODAL -->
-    <div id="statusPickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 450px;">
+    <div id="statusPickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+        <div class="item-picker-container styled-modal-container" style="max-width: 450px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header">
                 <h3 id="statusPickerTitle">📋 Select Status</h3>
                 <button class="item-picker-close" onclick="closeStatusPicker()">&times;</button>
@@ -32857,6 +33126,107 @@ NOTE: Please print the attached PO document for full details.`;
             window.invoicePickerForReport = false;
         }
         
+        // ==================== STYLED ALERT & CONFIRM MODALS ====================
+        
+        // Styled Alert - replaces browser alert()
+        function showStyledAlert(title, message, type = 'info') {
+            const colors = {
+                info: '#667eea',
+                success: '#10b981',
+                warning: '#f59e0b',
+                error: '#ef4444'
+            };
+            const icons = {
+                info: 'ℹ️',
+                success: '✅',
+                warning: '⚠️',
+                error: '❌'
+            };
+            
+            document.getElementById('styledAlertHeader').style.background = colors[type] || colors.info;
+            document.getElementById('styledAlertTitle').textContent = `${icons[type] || icons.info} ${title}`;
+            document.getElementById('styledAlertContent').innerHTML = message.replace(/\n/g, '<br>');
+            document.getElementById('styledAlertModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeStyledAlert() {
+            document.getElementById('styledAlertModal').style.display = 'none';
+            document.body.style.overflow = '';
+            if (window.alertResolve) {
+                window.alertResolve();
+                window.alertResolve = null;
+            }
+        }
+        
+        // Async version for await
+        function showAlertModal(title, message, type = 'info') {
+            return new Promise(resolve => {
+                window.alertResolve = resolve;
+                showStyledAlert(title, message, type);
+            });
+        }
+        
+        // Styled Confirm - replaces browser confirm()
+        let confirmResolve = null;
+        
+        function showConfirmModal(title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'info') {
+            return new Promise(resolve => {
+                confirmResolve = resolve;
+                
+                const colors = {
+                    info: '#667eea',
+                    success: '#10b981',
+                    warning: '#f59e0b',
+                    error: '#ef4444',
+                    danger: '#ef4444'
+                };
+                const icons = {
+                    info: '❓',
+                    success: '✅',
+                    warning: '⚠️',
+                    error: '❌',
+                    danger: '⛔'
+                };
+                
+                const headerColor = colors[type] || colors.info;
+                document.getElementById('styledConfirmHeader').style.background = headerColor;
+                document.getElementById('styledConfirmTitle').textContent = `${icons[type] || icons.info} ${title}`;
+                document.getElementById('styledConfirmContent').innerHTML = typeof message === 'string' ? message.replace(/\n/g, '<br>') : message;
+                document.getElementById('styledConfirmOkBtn').textContent = confirmText;
+                document.getElementById('styledConfirmOkBtn').style.background = headerColor;
+                document.getElementById('styledConfirmCancelBtn').textContent = cancelText;
+                document.getElementById('styledConfirmModal').style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        }
+        
+        function resolveConfirm(result) {
+            document.getElementById('styledConfirmModal').style.display = 'none';
+            document.body.style.overflow = '';
+            if (confirmResolve) {
+                confirmResolve(result);
+                confirmResolve = null;
+            }
+        }
+        
+        // Quick helpers for common patterns
+        function showSuccess(message) {
+            showStyledAlert('Success', message, 'success');
+        }
+        
+        function showError(message) {
+            showStyledAlert('Error', message, 'error');
+        }
+        
+        function showWarning(message) {
+            showStyledAlert('Warning', message, 'warning');
+        }
+        
+        function showInfo(message) {
+            showStyledAlert('Info', message, 'info');
+        }
+        
         // ==================== UNIVERSAL STATUS PICKER ====================
         let statusPickerCallback = null;
         let statusPickerTargetId = null;
@@ -32993,7 +33363,7 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             document.getElementById('statusPickerList').innerHTML = html;
-            document.getElementById('statusPickerModal').style.display = 'block';
+            document.getElementById('statusPickerModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
         
@@ -33581,39 +33951,6 @@ NOTE: Please print the attached PO document for full details.`;
             closeSupplierPicker();
         }
         
-        // Toggle supplier selection for multi-select
-        function toggleSupplierSelection(supplierId) {
-            const index = selectedSuppliersForReport.indexOf(supplierId);
-            if (index > -1) {
-                selectedSuppliersForReport.splice(index, 1);
-            } else {
-                selectedSuppliersForReport.push(supplierId);
-            }
-            renderSupplierPickerList();
-            updateSupplierSelectionDisplay();
-        }
-        
-        // Select all suppliers
-        function selectAllSuppliers() {
-            const search = document.getElementById('supplierPickerSearch').value.toLowerCase().trim();
-            let suppliers = cachedSuppliers || [];
-            let filtered = suppliers.filter(s => {
-                return !search || 
-                    (s.Supplier_Name && s.Supplier_Name.toLowerCase().includes(search)) ||
-                    (s.Supplier_ID && s.Supplier_ID.toLowerCase().includes(search));
-            });
-            selectedSuppliersForReport = filtered.map(s => s.Supplier_ID);
-            renderSupplierPickerList();
-            updateSupplierSelectionDisplay();
-        }
-        
-        // Clear all supplier selections
-        function clearAllSuppliers() {
-            selectedSuppliersForReport = [];
-            renderSupplierPickerList();
-            updateSupplierSelectionDisplay();
-        }
-        
         function attachSupplierPickerToSelects() {
             // Attach to ALL supplier selects on ALL devices (forms + filters + reports)
             const supplierSelects = [
@@ -33739,7 +34076,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
             
-            document.getElementById('reasonPickerModal').style.display = 'block';
+            document.getElementById('reasonPickerModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
         
@@ -33796,7 +34133,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
             
-            document.getElementById('uomPickerModal').style.display = 'block';
+            document.getElementById('uomPickerModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
         
@@ -34303,7 +34640,7 @@ NOTE: Please print the attached PO document for full details.`;
         function openThemePicker() {
             document.activeElement?.blur();
             renderThemePickerList();
-            document.getElementById('themePickerModal').style.display = 'block';
+            document.getElementById('themePickerModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
             focusOnDesktop('themePickerSearch');
         }
@@ -34681,76 +35018,6 @@ NOTE: Please print the attached PO document for full details.`;
             });
         }
         
-        // ==================== STATUS PICKER ====================
-        
-        let statusPickerCallback = null;
-        let statusPickerOptions = [];
-        
-        function openStatusPicker(selectElement, title, color) {
-            statusPickerCallback = selectElement;
-            
-            // Get options from the select element
-            statusPickerOptions = [];
-            Array.from(selectElement.options).forEach(opt => {
-                statusPickerOptions.push({
-                    value: opt.value,
-                    text: opt.textContent,
-                    selected: opt.selected
-                });
-            });
-            
-            // Set title
-            document.getElementById('statusPickerTitle').textContent = title || '📋 Select Status';
-            
-            // Render options
-            renderStatusPickerList();
-            
-            // Show modal
-            document.getElementById('statusPickerModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeStatusPicker() {
-            document.getElementById('statusPickerModal').style.display = 'none';
-            document.body.style.overflow = '';
-            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
-            statusPickerCallback = null;
-        }
-        
-        function renderStatusPickerList() {
-            const listContainer = document.getElementById('statusPickerList');
-            
-            let html = '';
-            statusPickerOptions.forEach((opt, index) => {
-                const isAll = opt.value === '';
-                const icon = isAll ? '📋' : (opt.text.match(/^[^\w\s]/) ? opt.text.charAt(0) : '•');
-                const text = opt.text.replace(/^[^\w\s]\s*/, '');
-                
-                html += `
-                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectStatusFromPicker('${opt.value}')" onclick="selectStatusFromPicker('${opt.value}')" 
-                         style="border-left: 4px solid #c0c0c0; 
-                                ${isAll ? 'background: #f8f9fa;' : ''}
-                                ${opt.selected ? 'background: #e8e8e8; border-left-color: #888;' : ''}">
-                        <div class="item-picker-desc" style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 20px;">${icon}</span>
-                            <span style="font-weight: ${opt.selected ? 'bold' : 'normal'};">${text}</span>
-                            ${opt.selected ? '<span style="margin-left: auto; color: #555;">✓</span>' : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            listContainer.innerHTML = html;
-        }
-        
-        function selectStatusFromPicker(value) {
-            if (statusPickerCallback) {
-                statusPickerCallback.value = value;
-                statusPickerCallback.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            closeStatusPicker();
-        }
-        
         // ==================== PO PICKER ====================
         
         let poPickerCallback = null;
@@ -35060,128 +35327,6 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Trigger filter update
             filterSales();
-        }
-        
-        function closeInvoicePicker() {
-            document.getElementById('invoicePickerModal').style.display = 'none';
-            document.body.style.overflow = '';
-            document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
-            invoicePickerCallback = null;
-        }
-        
-        function filterInvoicePicker() {
-            renderInvoicePickerList();
-        }
-        
-        function renderInvoicePickerList() {
-            const search = document.getElementById('invoicePickerSearch').value.toLowerCase().trim();
-            const listContainer = document.getElementById('invoicePickerList');
-            
-            // Get Sales from cache - use salesData or window.cachedSales
-            let sales = salesData || window.cachedSales || [];
-            
-            let filtered = sales.filter(sale => {
-                return !search || 
-                    (sale.Invoice_Number && sale.Invoice_Number.toLowerCase().includes(search)) ||
-                    (sale.SO_Number && sale.SO_Number.toLowerCase().includes(search));
-            });
-            
-            // Check if this is a sales filter (multi-select enabled)
-            const isSalesFilter = invoicePickerCallback && invoicePickerCallback.tagName === 'SALES_FILTER';
-            
-            let html = '';
-            
-            // Add multi-select controls for sales filter
-            if (isSalesFilter && !search) {
-                html += `
-                    <div class="item-picker-card" style="border-left: 4px solid #6c757d; background: #e3f2fd;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div class="item-picker-desc" style="font-weight: bold; color: #1976d2;">
-                                    <span style="font-size: 18px; margin-right: 8px;">📋</span> All Invoices
-                                </div>
-                                <div style="font-size: 12px; color: #555;">Select specific invoices below, or leave all unchecked for all invoices</div>
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="selectAllInvoices()" class="oval-action-btn oval-action-primary" style="font-size: 11px; padding: 4px 10px;">✓ Select All</button>
-                                <button onclick="clearAllInvoices()" class="oval-action-btn oval-action-warning" style="font-size: 11px; padding: 4px 10px;">✗ Clear All</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (!isSalesFilter && !search) {
-                // Add "Clear Filter" option for single-select mode
-                html += `
-                    <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectInvoiceFromPicker('')" onclick="selectInvoiceFromPicker('')" style="border-left: 4px solid #6c757d; background: #f8f9fa;">
-                        <div class="item-picker-desc" style="font-weight: bold; color: #495057;">
-                            <span style="font-size: 18px; margin-right: 8px;">📋</span> Clear Filter
-                        </div>
-                        <div style="font-size: 12px; color: #6c757d;">Show all invoices</div>
-                    </div>
-                `;
-            }
-            
-            if (filtered.length === 0 && !isSalesFilter) {
-                listContainer.innerHTML = html + `
-                    <div class="item-picker-empty">
-                        <div class="item-picker-empty-icon">🧾</div>
-                        <div>No invoices found</div>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Sort by date descending
-            filtered.sort((a, b) => new Date(b.Sale_Date || 0) - new Date(a.Sale_Date || 0));
-            
-            // Limit to 50
-            filtered.slice(0, 50).forEach(sale => {
-                const customerName = getCustomerName(sale.Customer_ID);
-                const total = parseFloat(sale.Total_Amount) || 0;
-                const date = sale.Sale_Date ? new Date(sale.Sale_Date).toLocaleDateString() : '';
-                const invoiceNum = sale.Invoice_Number || sale.SO_Number || 'No Invoice#';
-                
-                const isSelected = selectedInvoicesForSales.includes(invoiceNum);
-                const touchHandlers = `ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)"`;
-                const clickHandler = isSalesFilter 
-                    ? `${touchHandlers} ontouchend="if(pickerTouchEnd()) toggleInvoiceSelection('${invoiceNum}')" onclick="toggleInvoiceSelection('${invoiceNum}')"` 
-                    : `${touchHandlers} ontouchend="if(pickerTouchEnd()) selectInvoiceFromPicker('${invoiceNum}')" onclick="selectInvoiceFromPicker('${invoiceNum}')"`;
-                const checkboxHtml = isSalesFilter 
-                    ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleInvoiceSelection('${invoiceNum}')" style="width: 20px; height: 20px; cursor: pointer;" onclick="event.stopPropagation()">` 
-                    : '';
-                
-                html += `
-                    <div class="item-picker-card" ${clickHandler} style="border-left: 4px solid ${isSelected ? '#10b981' : '#c0c0c0'}; ${isSelected ? 'background: #d1fae5;' : 'background: white;'} display: flex; align-items: start; gap: 12px; cursor: pointer;">
-                        ${checkboxHtml}
-                        <div style="flex: 1;">
-                            <div class="item-picker-card-header">
-                                <span class="item-picker-sku">${invoiceNum}</span>
-                            </div>
-                        <div class="item-picker-desc">${customerName}</div>
-                        <div class="item-picker-details">
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Date</span>
-                                <span class="item-picker-detail-value">${date}</span>
-                            </div>
-                            <div class="item-picker-detail">
-                                <span class="item-picker-detail-label">Total</span>
-                                <span class="item-picker-detail-value item-picker-price">${formatMoney(total)}</span>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            listContainer.innerHTML = html;
-        }
-        
-        function selectInvoiceFromPicker(invoiceNumber) {
-            if (invoicePickerCallback) {
-                invoicePickerCallback.value = invoiceNumber;
-                if (typeof filterSales === 'function') filterSales();
-            }
-            closeInvoicePicker();
         }
         
         // ==================== ITEM PICKER (for reports) ====================
@@ -36014,7 +36159,7 @@ NOTE: Please print the attached PO document for full details.`;
         function openQuickViewItemModal(itemId) {
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showError('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -36144,7 +36289,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             if (!item) {
-                alert('Item not found. Please refresh and try again.');
+                showError('Item not found. Please refresh and try again.');
                 return;
             }
             
@@ -36214,16 +36359,16 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Validation
             if (!itemId) {
-                alert('⚠️ Item not selected');
+                showWarning('Item not selected');
                 return;
             }
             if (isNaN(adjustment) || adjustment === 0) {
-                alert('⚠️ Please enter an adjustment amount');
+                showWarning('Please enter an adjustment amount');
                 document.getElementById('quickAdjustAmount').focus();
                 return;
             }
             if (!reason) {
-                alert('⚠️ Please select a reason');
+                showWarning('Please select a reason');
                 return;
             }
             
@@ -36231,9 +36376,18 @@ NOTE: Please print the attached PO document for full details.`;
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             
             // Confirm
-            if (!confirm(`Adjust ${item.Item_Description}?\n\nCurrent: ${quickAdjustCurrentQty}\nAdjustment: ${adjustment > 0 ? '+' : ''}${adjustment}\nNew Total: ${newQty}\n\nReason: ${reason}`)) {
-                return;
-            }
+            const confirmed = await showConfirmModal(
+                'Confirm Adjustment',
+                `Adjust <strong>${item.Item_Description}</strong>?<br><br>` +
+                `Current: ${quickAdjustCurrentQty}<br>` +
+                `Adjustment: ${adjustment > 0 ? '+' : ''}${adjustment}<br>` +
+                `New Total: <strong>${newQty}</strong><br><br>` +
+                `Reason: ${reason}`,
+                'Adjust',
+                'Cancel',
+                'warning'
+            );
+            if (!confirmed) return;
             
             const data = {
                 itemId: itemId,
@@ -36263,10 +36417,10 @@ NOTE: Please print the attached PO document for full details.`;
                         if (runBtn) runBtn.click();
                     }
                 } else {
-                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                    showError('Error: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
-                alert('❌ Error: ' + error.message);
+                showError('Error: ' + error.message);
             }
         }
         
@@ -36706,7 +36860,7 @@ NOTE: Please print the attached PO document for full details.`;
         function showTutorial(tutorialId) {
             const tutorial = tutorialContent[tutorialId];
             if (!tutorial) {
-                alert('Tutorial not found');
+                showError('Tutorial not found');
                 return;
             }
             
@@ -36833,9 +36987,16 @@ NOTE: Please print the attached PO document for full details.`;
 
         // Recalculate Qty_On_Order for all items based on pending POs
         async function recalculateOnOrder() {
-            if (!confirm('This will recalculate On Order quantities for ALL items based on pending Purchase Orders.\n\nThis fixes stale values that may not have been cleared when POs were received.\n\nContinue?')) {
-                return;
-            }
+            const confirmed = await showConfirmModal(
+                'Recalculate On Order Quantities?',
+                'This will recalculate On Order quantities for ALL items based on pending Purchase Orders.<br><br>' +
+                'This fixes stale values that may not have been cleared when POs were received.<br><br>' +
+                'Continue?',
+                'Recalculate',
+                'Cancel',
+                'warning'
+            );
+            if (!confirmed) return;
             
             showLoading('Recalculating On Order quantities...');
             
@@ -36844,22 +37005,22 @@ NOTE: Please print the attached PO document for full details.`;
                 
                 if (result && result.status === 'success') {
                     hideLoading();
-                    alert(`✅ ${result.message}`);
+                    showSuccess(result.message);
                     // Refresh items to show updated values
                     await loadItems();
                 } else {
                     hideLoading();
-                    alert('❌ Error: ' + (result?.message || 'Unknown error'));
+                    showError('Error: ' + (result?.message || 'Unknown error'));
                 }
             } catch (error) {
                 hideLoading();
-                alert('❌ Error recalculating: ' + error.message);
+                showError('Error recalculating: ' + error.message);
             }
         }
 
         async function downloadItemsReport() {
             if (!cachedItems || cachedItems.length === 0) {
-                alert('No items to download. Please load items first.');
+                showWarning('No items to download. Please load items first.');
                 return;
             }
 
@@ -37067,7 +37228,7 @@ NOTE: Please print the attached PO document for full details.`;
             const file = fileInput.files[0];
             
             if (!file) {
-                alert('Please select a file to upload');
+                showWarning('Please select a file to upload');
                 return;
             }
 
@@ -37080,7 +37241,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const uploadedItems = await parseUploadedFile(file);
                 
                 if (!uploadedItems || uploadedItems.length === 0) {
-                    alert('No valid items found in file');
+                    showWarning('No valid items found in file');
                     return;
                 }
 
@@ -37289,18 +37450,25 @@ NOTE: Please print the attached PO document for full details.`;
 
         async function commitItemsUpload() {
             if (!pendingItemsUpload) {
-                alert('No upload pending');
+                showWarning('No upload pending');
                 return;
             }
 
             // Final confirmation for Full Refresh
             if (pendingUploadMode === 'full-refresh') {
-                if (!confirm('⚠️ FINAL CONFIRMATION: This will DELETE ALL existing items and replace with the uploaded file.\n\nAre you ABSOLUTELY SURE?')) {
-                    return;
-                }
+                const confirmed = await showConfirmModal(
+                    '⚠️ FINAL CONFIRMATION',
+                    `<div style="color: #dc2626; font-weight: 600;">This will DELETE ALL existing items and replace with the uploaded file.</div><br>` +
+                    `Are you ABSOLUTELY SURE?`,
+                    'Yes, Replace All',
+                    'Cancel',
+                    'danger'
+                );
+                if (!confirmed) return;
+                
                 const finalConfirm = prompt('Type YES (in capital letters) to proceed with FULL REFRESH:');
                 if (finalConfirm !== 'YES') {
-                    alert('Upload cancelled');
+                    showInfo('Upload cancelled');
                     return;
                 }
             }
