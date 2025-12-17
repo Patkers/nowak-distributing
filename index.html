@@ -13404,10 +13404,42 @@
             let totalQty = 0;
             let totalCostValue = 0;
             let totalSellValue = 0;
+            let totalCOGS = 0;
             let negativeCount = 0;
             let outOfStockCount = 0;
             let lowStockCount = 0;
             let inStockCount = 0;
+            
+            // Build a map of item costs for COGS calculation
+            const itemCostMap = {};
+            items.forEach(item => {
+                const packageCost = parseFloat(item.Package_Cost) || 0;
+                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
+                const unitCost = packageCost / unitsPerPackage;
+                itemCostMap[item.Item_ID] = unitCost;
+            });
+            
+            // Calculate COGS from sales data (units sold * unit cost)
+            const itemCOGS = {};
+            if (window.salesData) {
+                window.salesData.filter(s => s.Status !== 'Voided').forEach(sale => {
+                    // Parse line items if they exist
+                    try {
+                        const lines = sale.Line_Items ? JSON.parse(sale.Line_Items) : [];
+                        lines.forEach(line => {
+                            const itemId = line.Item_ID;
+                            const qtySold = parseFloat(line.Quantity) || 0;
+                            const unitCost = itemCostMap[itemId] || 0;
+                            const lineCOGS = qtySold * unitCost;
+                            if (!itemCOGS[itemId]) itemCOGS[itemId] = 0;
+                            itemCOGS[itemId] += lineCOGS;
+                            totalCOGS += lineCOGS;
+                        });
+                    } catch(e) {
+                        // Skip if can't parse
+                    }
+                });
+            }
             
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
@@ -13419,6 +13451,9 @@
                 const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
                 const unitCost = packageCost / unitsPerPackage;
                 const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
+                
+                // Store item COGS for table display
+                item._cogs = itemCOGS[item.Item_ID] || 0;
                 
                 totalQty += qty;
                 // Use absolute value - negative inventory still has positive value
@@ -13461,6 +13496,10 @@
                             <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                             <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
                         </div>
+                        <div style="background: #fff3e0; border: 2px solid #ff9800; color: #e65100; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #e65100; word-wrap: break-word; overflow-wrap: break-word;">$${totalCOGS.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div style="font-size: 13px; color: #bf360c;">COGS (All Time)</div>
+                        </div>
                         <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
                             <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
                             <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
@@ -13474,7 +13513,7 @@
             
             // BUILD TABLE
             html += '<table class="data-table" id="inventoryDataTable"><thead><tr>';
-            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>COGS</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
@@ -13491,6 +13530,7 @@
                 const costValue = Math.abs(qty) * unitCost;
                 const sellValue = Math.abs(qty) * unitSellPrice;
                 const netProfit = sellValue - costValue;
+                const itemCogs = item._cogs || 0;
                 
                 // Determine status with color coding
                 let status = '';
@@ -13523,6 +13563,7 @@
                     <td>$${unitCost.toFixed(3)}</td>
                     <td>${formatMoney(unitSellPrice)}</td>
                     <td>${formatMoney(costValue)}</td>
+                    <td style="color: #e65100; font-weight: ${itemCogs > 0 ? 'bold' : 'normal'};">${itemCogs > 0 ? formatMoney(itemCogs) : '-'}</td>
                     <td style="color: #2e7d32; font-weight: bold;">${formatMoney(sellValue)}</td>
                     <td style="color: ${netProfit >= 0 ? '#1565c0' : '#c62828'}; font-weight: bold;">${formatMoney(netProfit)}</td>
                     <td style="font-size: 13px; color: #666;">${lastUpdated}</td>
@@ -22808,6 +22849,7 @@
                         box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
                         border-left: 6px solid #666;
                         transition: transform 0.2s, box-shadow 0.2s;
+                        overflow: hidden;
                     }
                     .action-section:hover {
                         transform: translateY(-2px);
@@ -22858,28 +22900,39 @@
                         background: linear-gradient(135deg, #3b82f6, #60a5fa);
                         box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
                     }
+                    .action-table-wrapper {
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
+                        margin: 0 -10px;
+                        padding: 0 10px;
+                        max-width: 100%;
+                    }
                     .action-table {
                         width: 100%;
+                        min-width: 800px;
                         border-collapse: separate;
                         border-spacing: 0;
                         margin-top: 15px;
                         border-radius: 8px;
                         overflow: hidden;
                         border: 1px solid #e5e7eb;
+                        font-size: 13px;
                     }
                     .action-table th {
                         background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-                        padding: 12px 14px;
+                        padding: 10px 8px;
                         text-align: left;
                         font-weight: 600;
-                        font-size: 13px;
+                        font-size: 11px;
                         color: #374151;
                         border-bottom: 2px solid #d1d5db;
+                        white-space: nowrap;
                     }
                     .action-table td {
-                        padding: 12px 14px;
+                        padding: 10px 8px;
                         border-bottom: 1px solid #e5e7eb;
-                        font-size: 14px;
+                        font-size: 12px;
+                        white-space: nowrap;
                     }
                     .action-table tr:last-child td {
                         border-bottom: none;
@@ -23423,6 +23476,7 @@
                 html += '<p style="color: #10b981; font-weight: 600;">✅ All items adequately stocked!</p>';
             } else {
                 html += `
+                    <div class="action-table-wrapper">
                     <table class="action-table">
                         <thead>
                             <tr>
@@ -23472,6 +23526,7 @@
                 html += `
                         </tbody>
                     </table>
+                    </div>
                 `;
             }
             html += '</div>';
@@ -23508,6 +23563,7 @@
                             <span class="summary-value">${formatMoney(totalDeadStockValue)}</span>
                         </div>
                     </div>
+                    <div class="action-table-wrapper">
                     <table class="action-table">
                         <thead>
                             <tr>
@@ -23546,6 +23602,7 @@
                 html += `
                         </tbody>
                     </table>
+                    </div>
                 `;
             }
             html += '</div>';
@@ -29317,10 +29374,11 @@
         }
         
         async function receiveOutgoingPO(poId) {
-            // Close any existing modal first (prevents window-in-window issue)
+            // Properly close any existing modal first (prevents window-in-window issue)
             const existingModal = document.getElementById('orderModal');
             if (existingModal && existingModal.style.display !== 'none') {
                 existingModal.style.display = 'none';
+                document.body.classList.remove('modal-open');
             }
             
             // Load the OUTGOING PO
