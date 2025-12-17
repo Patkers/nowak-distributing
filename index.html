@@ -13420,25 +13420,34 @@
             });
             
             // Calculate COGS from sales data (units sold * unit cost)
+            // Only if salesData is already loaded - don't block on this
             const itemCOGS = {};
-            if (window.salesData) {
-                window.salesData.filter(s => s.Status !== 'Voided').forEach(sale => {
-                    // Parse line items if they exist
-                    try {
-                        const lines = sale.Line_Items ? JSON.parse(sale.Line_Items) : [];
-                        lines.forEach(line => {
-                            const itemId = line.Item_ID;
-                            const qtySold = parseFloat(line.Quantity) || 0;
-                            const unitCost = itemCostMap[itemId] || 0;
-                            const lineCOGS = qtySold * unitCost;
-                            if (!itemCOGS[itemId]) itemCOGS[itemId] = 0;
-                            itemCOGS[itemId] += lineCOGS;
-                            totalCOGS += lineCOGS;
-                        });
-                    } catch(e) {
-                        // Skip if can't parse
-                    }
-                });
+            try {
+                const salesArray = window.salesData || [];
+                if (Array.isArray(salesArray) && salesArray.length > 0) {
+                    salesArray.filter(s => s && s.Status !== 'Voided').forEach(sale => {
+                        // Parse line items if they exist
+                        try {
+                            if (!sale.Line_Items) return;
+                            const lines = JSON.parse(sale.Line_Items);
+                            if (!Array.isArray(lines)) return;
+                            lines.forEach(line => {
+                                if (!line || !line.Item_ID) return;
+                                const itemId = line.Item_ID;
+                                const qtySold = parseFloat(line.Quantity) || 0;
+                                const unitCost = itemCostMap[itemId] || 0;
+                                const lineCOGS = qtySold * unitCost;
+                                if (!itemCOGS[itemId]) itemCOGS[itemId] = 0;
+                                itemCOGS[itemId] += lineCOGS;
+                                totalCOGS += lineCOGS;
+                            });
+                        } catch(e) {
+                            // Skip malformed line items
+                        }
+                    });
+                }
+            } catch(e) {
+                console.warn('COGS calculation skipped:', e.message);
             }
             
             items.forEach(item => {
@@ -13576,6 +13585,17 @@
             document.getElementById('inventoryTable').innerHTML = html;
             setTimeout(() => makeSortable('inventoryDataTable'), 0);
         }
+        
+        // Wrap displayInventory in error handler
+        const originalDisplayInventory = displayInventory;
+        displayInventory = function(items) {
+            try {
+                originalDisplayInventory(items);
+            } catch(e) {
+                console.error('Error displaying inventory:', e);
+                document.getElementById('inventoryTable').innerHTML = '<div class="loading" style="color: red;">Error displaying inventory: ' + e.message + '</div>';
+            }
+        };
         
         // ==================== PRICE SIMULATOR ====================
         
@@ -15618,71 +15638,45 @@
             if (!modal || !icon) return;
             
             if (reportModalMaximized) {
-                // Restore to normal
-                if (modalOuter) {
-                    modalOuter.style.padding = '20px';
-                    modalOuter.style.alignItems = '';
-                    modalOuter.style.justifyContent = '';
-                }
+                // RESTORE to centered modal
+                modalOuter.style.padding = '20px';
+                modalOuter.style.boxSizing = 'border-box';
                 
-                // Reset any drag positioning
-                modal.style.position = '';
-                modal.style.left = '';
-                modal.style.top = '';
+                modal.style.position = 'relative';
+                modal.style.left = 'auto';
+                modal.style.top = 'auto';
+                modal.style.right = 'auto';
+                modal.style.bottom = 'auto';
                 modal.style.width = '100%';
                 modal.style.maxWidth = '900px';
-                modal.style.height = '';
+                modal.style.height = 'auto';
                 modal.style.maxHeight = 'calc(100vh - 40px)';
                 modal.style.borderRadius = '12px';
                 modal.style.margin = '0 auto';
                 modal.style.minWidth = '500px';
                 modal.style.minHeight = '400px';
                 
-                // Restore saved position if it was dragged before maximizing
-                if (reportModalSavedPosition) {
-                    modal.style.position = 'fixed';
-                    modal.style.left = reportModalSavedPosition.left;
-                    modal.style.top = reportModalSavedPosition.top;
-                    modal.style.width = reportModalSavedPosition.width;
-                    modal.style.height = reportModalSavedPosition.height;
-                    modal.style.margin = '0';
-                }
-                
                 icon.textContent = '⬜';
                 reportModalMaximized = false;
             } else {
-                // Save current position if dragged
-                if (modal.style.position === 'fixed' && modal.style.left) {
-                    reportModalSavedPosition = {
-                        left: modal.style.left,
-                        top: modal.style.top,
-                        width: modal.style.width,
-                        height: modal.style.height
-                    };
-                } else {
-                    reportModalSavedPosition = null;
-                }
+                // MAXIMIZE to full screen
+                modalOuter.style.padding = '0';
+                modalOuter.style.boxSizing = 'border-box';
                 
-                // Maximize - fill viewport
-                if (modalOuter) {
-                    modalOuter.style.padding = '10px';
-                    modalOuter.style.display = 'flex';
-                    modalOuter.style.alignItems = 'stretch';
-                    modalOuter.style.justifyContent = 'stretch';
-                }
-                
-                // Reset drag positioning for maximize
-                modal.style.position = '';
-                modal.style.left = '';
-                modal.style.top = '';
-                modal.style.width = '100%';
-                modal.style.maxWidth = '100%';
-                modal.style.height = '100%';
-                modal.style.maxHeight = '100%';
-                modal.style.borderRadius = '8px';
+                modal.style.position = 'fixed';
+                modal.style.left = '0';
+                modal.style.top = '0';
+                modal.style.right = '0';
+                modal.style.bottom = '0';
+                modal.style.width = '100vw';
+                modal.style.maxWidth = '100vw';
+                modal.style.height = '100vh';
+                modal.style.maxHeight = '100vh';
+                modal.style.borderRadius = '0';
                 modal.style.margin = '0';
                 modal.style.minWidth = '0';
                 modal.style.minHeight = '0';
+                
                 icon.textContent = '❐';
                 reportModalMaximized = true;
             }
@@ -31911,11 +31905,11 @@ NOTE: Please print the attached PO document for full details.`;
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <!-- Window Controls - hide maximize on mobile -->
-                    <button id="reportMaximizeBtn" onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 14px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: none; align-items: center; justify-content: center;">
+                    <!-- Window Controls -->
+                    <button id="reportMaximizeBtn" onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: rgba(255,255,255,0.3); border: none; color: white; font-size: 16px; cursor: pointer; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.3)'">
                         <span id="reportMaximizeIcon">⬜</span>
                     </button>
-                    <button onclick="closeReportSetup()" title="Close" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                    <button onclick="closeReportSetup()" title="Close" style="background: rgba(255,255,255,0.3); border: none; color: white; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.3)'">&times;</button>
                 </div>
             </div>
             <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
