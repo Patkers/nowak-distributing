@@ -5,14 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_62
+         VERSION: V16_64
          =====================================================
          CHANGES IN THIS VERSION:
-         - Modal positions now REMEMBERED using localStorage
-           * Drag a modal to position, it saves automatically
-           * Next time you open that modal, it opens where you left it
-           * Works across page refreshes
-           * Size is also remembered if you resize the modal
+         - REMOVED resize constraints - make modals as wide/tall as you want!
+           * No max width or height limits
+           * Only min size: 300x200 so it doesn't disappear
+           * Only constraint: top edge stays on screen
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -38142,6 +38141,7 @@ NOTE: Please print the attached PO document for full details.`;
         
         // ==================== DESKTOP MODAL DRAG & RESIZE ====================
         // Make modals draggable and resizable on desktop only
+        // Supports resize from ALL edges and corners like a real desktop window
         
         function initDesktopModalFeatures() {
             // Only enable on desktop (screen width > 768px)
@@ -38159,14 +38159,37 @@ NOTE: Please print the attached PO document for full details.`;
             modals.forEach(modal => {
                 if (!modal.overlay || !modal.container) return;
                 
-                // Make container resizable
-                if (!modal.container.classList.contains('resizable-added')) {
-                    modal.container.style.resize = 'both';
+                // Add resize handles if not already added
+                if (!modal.container.classList.contains('resize-handles-added')) {
+                    modal.container.style.position = 'relative';
                     modal.container.style.minWidth = '400px';
                     modal.container.style.minHeight = '300px';
-                    modal.container.style.maxWidth = '95vw';
-                    modal.container.style.maxHeight = '95vh';
-                    modal.container.classList.add('resizable-added');
+                    modal.container.style.resize = 'none'; // Disable default resize, we use custom handles
+                    modal.container.classList.add('resize-handles-added');
+                    
+                    // Create resize handles for all edges and corners
+                    const handles = [
+                        { name: 'n', cursor: 'ns-resize', style: 'top: -5px; left: 10px; right: 10px; height: 10px;' },
+                        { name: 's', cursor: 'ns-resize', style: 'bottom: -5px; left: 10px; right: 10px; height: 10px;' },
+                        { name: 'e', cursor: 'ew-resize', style: 'right: -5px; top: 10px; bottom: 10px; width: 10px;' },
+                        { name: 'w', cursor: 'ew-resize', style: 'left: -5px; top: 10px; bottom: 10px; width: 10px;' },
+                        { name: 'ne', cursor: 'nesw-resize', style: 'top: -5px; right: -5px; width: 15px; height: 15px;' },
+                        { name: 'nw', cursor: 'nwse-resize', style: 'top: -5px; left: -5px; width: 15px; height: 15px;' },
+                        { name: 'se', cursor: 'nwse-resize', style: 'bottom: -5px; right: -5px; width: 15px; height: 15px;' },
+                        { name: 'sw', cursor: 'nesw-resize', style: 'bottom: -5px; left: -5px; width: 15px; height: 15px;' }
+                    ];
+                    
+                    handles.forEach(h => {
+                        const handle = document.createElement('div');
+                        handle.className = 'modal-resize-handle modal-resize-' + h.name;
+                        handle.style.cssText = 'position: absolute; z-index: 10001; ' + h.style;
+                        handle.style.cursor = h.cursor;
+                        handle.dataset.resize = h.name;
+                        modal.container.appendChild(handle);
+                    });
+                    
+                    // Setup resize functionality
+                    setupModalResize(modal.container, modal.overlay);
                 }
                 
                 // Find header for dragging
@@ -38178,8 +38201,6 @@ NOTE: Please print the attached PO document for full details.`;
                 header.classList.add('draggable-added');
                 
                 let isDragging = false;
-                let currentX;
-                let currentY;
                 let initialX;
                 let initialY;
                 let xOffset = 0;
@@ -38236,14 +38257,11 @@ NOTE: Please print the attached PO document for full details.`;
                         const modalHeight = rect.height;
                         
                         // STRICT constraints - keep modal mostly visible on screen
-                        // Horizontal: Don't let more than 20% go off either side
                         const maxOffscreenX = modalWidth * 0.2;
                         const minLeft = -maxOffscreenX;
                         const maxLeft = window.innerWidth - modalWidth + maxOffscreenX;
-                        
-                        // Vertical: Keep header visible at top, don't go below viewport
-                        const minTop = 0;  // Can't go above viewport
-                        const maxTop = window.innerHeight - 100; // Keep at least 100px visible at bottom
+                        const minTop = 0;
+                        const maxTop = window.innerHeight - 100;
                         
                         // Apply constraints
                         newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
@@ -38262,19 +38280,121 @@ NOTE: Please print the attached PO document for full details.`;
                         yOffset = parseInt(modal.container.style.top) || 0;
                         
                         // Save position to localStorage for this modal
-                        const modalId = modal.container.id || modal.overlay.id + '_inner';
-                        const savedPositions = JSON.parse(localStorage.getItem('modalPositions') || '{}');
-                        savedPositions[modalId] = {
-                            left: xOffset,
-                            top: yOffset,
-                            width: parseInt(modal.container.style.width) || null,
-                            height: parseInt(modal.container.style.height) || null
-                        };
-                        localStorage.setItem('modalPositions', JSON.stringify(savedPositions));
+                        saveModalPosition(modal.container, modal.overlay);
                     }
                     isDragging = false;
                 }
             });
+        }
+        
+        // Setup resize functionality for a modal
+        function setupModalResize(container, overlay) {
+            let isResizing = false;
+            let currentHandle = null;
+            let startX, startY, startWidth, startHeight, startLeft, startTop;
+            
+            const handles = container.querySelectorAll('.modal-resize-handle');
+            
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    isResizing = true;
+                    currentHandle = handle.dataset.resize;
+                    
+                    const rect = container.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = rect.width;
+                    startHeight = rect.height;
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    
+                    // Ensure modal is in fixed position mode
+                    container.classList.add('modal-dragged');
+                    container.style.setProperty('position', 'fixed', 'important');
+                    container.style.setProperty('margin', '0', 'important');
+                    container.style.setProperty('left', startLeft + 'px', 'important');
+                    container.style.setProperty('top', startTop + 'px', 'important');
+                    container.style.setProperty('width', startWidth + 'px', 'important');
+                    container.style.setProperty('height', startHeight + 'px', 'important');
+                    
+                    document.addEventListener('mousemove', handleResize);
+                    document.addEventListener('mouseup', stopResize);
+                });
+            });
+            
+            function handleResize(e) {
+                if (!isResizing) return;
+                
+                e.preventDefault();
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                let newWidth = startWidth;
+                let newHeight = startHeight;
+                let newLeft = startLeft;
+                let newTop = startTop;
+                
+                const minWidth = 300;
+                const minHeight = 200;
+                
+                // Handle each resize direction - NO restrictive max limits
+                if (currentHandle.includes('e')) {
+                    newWidth = Math.max(minWidth, startWidth + deltaX);
+                }
+                if (currentHandle.includes('w')) {
+                    const possibleWidth = startWidth - deltaX;
+                    if (possibleWidth >= minWidth) {
+                        newWidth = possibleWidth;
+                        newLeft = startLeft + deltaX;
+                    }
+                }
+                if (currentHandle.includes('s')) {
+                    newHeight = Math.max(minHeight, startHeight + deltaY);
+                }
+                if (currentHandle.includes('n')) {
+                    const possibleHeight = startHeight - deltaY;
+                    if (possibleHeight >= minHeight) {
+                        newHeight = possibleHeight;
+                        newTop = startTop + deltaY;
+                    }
+                }
+                
+                // Only constraint: keep top edge on screen (so you can still grab it)
+                newTop = Math.max(0, newTop);
+                
+                // Apply new size and position
+                container.style.setProperty('width', newWidth + 'px', 'important');
+                container.style.setProperty('height', newHeight + 'px', 'important');
+                container.style.setProperty('left', newLeft + 'px', 'important');
+                container.style.setProperty('top', newTop + 'px', 'important');
+            }
+            
+            function stopResize() {
+                if (isResizing) {
+                    saveModalPosition(container, overlay);
+                }
+                isResizing = false;
+                currentHandle = null;
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+        
+        // Save modal position and size to localStorage
+        function saveModalPosition(container, overlay) {
+            const modalId = container.id || overlay.id + '_inner';
+            const savedPositions = JSON.parse(localStorage.getItem('modalPositions') || '{}');
+            savedPositions[modalId] = {
+                left: parseInt(container.style.left) || 0,
+                top: parseInt(container.style.top) || 0,
+                width: parseInt(container.style.width) || null,
+                height: parseInt(container.style.height) || null
+            };
+            localStorage.setItem('modalPositions', JSON.stringify(savedPositions));
         }
         
         // Restore saved modal position when modal opens
