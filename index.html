@@ -4,15 +4,14 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Monday, December 16, 2025
-         VERSION: V16N-20251216-STICKYFOOTER
+         LAST UPDATED: Tuesday, December 17, 2025
+         VERSION: V16_46
          =====================================================
          CHANGES IN THIS VERSION:
-         - Cache control headers to force refresh
-         - Null-safe touch handlers
-         - Smoother scrolling CSS
-         - FIXED: Footer bars now sticky at bottom on mobile
-         - All modal/picker footers stay anchored to bottom
+         - Fixed Receive PO nested window appearance
+         - Added true COGS tracking using historical costs
+         - New getItemCOGS API call for efficient COGS loading
+         - COGS summary box and note card in Inventory
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12673,6 +12672,8 @@
                     displaySales(result.data);
                     loadSaleFilterCustomers(); // Populate filter dropdown
                 }
+                // Load COGS data from backend (efficient single call)
+                loadItemCOGS();
             } else {
                 console.error('getSalesOrders failed:', result);
                 const errorMsg = result?.message || 'Unknown error - check console';
@@ -13433,50 +13434,14 @@
             let totalCostValue = 0;
             let totalSellValue = 0;
             let totalCOGS = 0;
+            let totalUnitsSold = 0;
             let negativeCount = 0;
             let outOfStockCount = 0;
             let lowStockCount = 0;
             let inStockCount = 0;
             
-            // Build a map of item costs for COGS calculation
-            const itemCostMap = {};
-            items.forEach(item => {
-                const packageCost = parseFloat(item.Package_Cost) || 0;
-                const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
-                const unitCost = packageCost / unitsPerPackage;
-                itemCostMap[item.Item_ID] = unitCost;
-            });
-            
-            // Calculate COGS from sales data (units sold * unit cost)
-            // Only if salesData is already loaded - don't block on this
-            const itemCOGS = {};
-            try {
-                const salesArray = window.salesData || [];
-                if (Array.isArray(salesArray) && salesArray.length > 0) {
-                    salesArray.filter(s => s && s.Status !== 'Voided').forEach(sale => {
-                        // Parse line items if they exist
-                        try {
-                            if (!sale.Line_Items) return;
-                            const lines = JSON.parse(sale.Line_Items);
-                            if (!Array.isArray(lines)) return;
-                            lines.forEach(line => {
-                                if (!line || !line.Item_ID) return;
-                                const itemId = line.Item_ID;
-                                const qtySold = parseFloat(line.Quantity) || 0;
-                                const unitCost = itemCostMap[itemId] || 0;
-                                const lineCOGS = qtySold * unitCost;
-                                if (!itemCOGS[itemId]) itemCOGS[itemId] = 0;
-                                itemCOGS[itemId] += lineCOGS;
-                                totalCOGS += lineCOGS;
-                            });
-                        } catch(e) {
-                            // Skip malformed line items
-                        }
-                    });
-                }
-            } catch(e) {
-                console.warn('COGS calculation skipped:', e.message);
-            }
+            // Check if COGS data is available
+            const cogsAvailable = window.cogsCalculated === true;
             
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
@@ -13489,8 +13454,11 @@
                 const unitCost = packageCost / unitsPerPackage;
                 const unitSellPrice = parseFloat(item.Unit_Sell_Price) || 0;
                 
-                // Store item COGS for table display
-                item._cogs = itemCOGS[item.Item_ID] || 0;
+                // Get COGS for this item (if calculated)
+                const itemCogs = window.itemCOGS?.[item.Item_ID] || 0;
+                const itemUnitsSold = window.itemUnitsSold?.[item.Item_ID] || 0;
+                totalCOGS += itemCogs;
+                totalUnitsSold += itemUnitsSold;
                 
                 totalQty += qty;
                 // Use absolute value - negative inventory still has positive value
@@ -13531,26 +13499,55 @@
                         </div>
                         <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
                             <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #dc3545; word-wrap: break-word; overflow-wrap: break-word;">$${totalCostValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div style="font-size: 13px; color: #6c757d;">Cost Value</div>
-                        </div>
-                        <div style="background: #fff3e0; border: 2px solid #ff9800; color: #e65100; padding: 20px; border-radius: 12px; text-align: center;">
-                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #e65100; word-wrap: break-word; overflow-wrap: break-word;">$${totalCOGS.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div style="font-size: 13px; color: #bf360c;">COGS (All Time)</div>
+                            <div style="font-size: 13px; color: #6c757d;">Inventory Cost</div>
                         </div>
                         <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
                             <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #28a745; word-wrap: break-word; overflow-wrap: break-word;">$${totalSellValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div style="font-size: 13px; color: #6c757d;">Sell Value</div>
+                            <div style="font-size: 13px; color: #6c757d;">Inventory Value</div>
+                        </div>
+                        <div style="background: ${cogsAvailable ? '#fff3e0' : '#f5f5f5'}; border: 2px solid ${cogsAvailable ? '#ff9800' : '#e0e0e0'}; color: #495057; padding: 20px; border-radius: 12px; text-align: center;" title="Cost of Goods Sold - based on current item costs">
+                            <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: #e65100; word-wrap: break-word; overflow-wrap: break-word;">${cogsAvailable ? '$' + totalCOGS.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '...'}</div>
+                            <div style="font-size: 13px; color: #6c757d;">COGS (All Time)</div>
                         </div>
                         <div style="background: #f8f9fa; border: 2px solid #e0e0e0; color: #495057; padding: 20px; border-radius: 12px; text-align: center;">
                             <div class="inv-summary-number" style="font-size: 28px; font-weight: bold; color: ${(totalSellValue - totalCostValue) >= 0 ? '#1565c0' : '#c62828'}; word-wrap: break-word; overflow-wrap: break-word;">$${(totalSellValue - totalCostValue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div style="font-size: 13px; color: #6c757d;">Net Profit</div>
+                            <div style="font-size: 13px; color: #6c757d;">Potential Profit</div>
                         </div>
                     </div>
+                    
+                    <!-- COGS Methodology Note -->
+                    ${cogsAvailable ? `
+                    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #4caf50; border-left: 4px solid #2e7d32; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 18px;">📊</span>
+                            <div>
+                                <strong style="color: #1b5e20;">COGS - Cost of Goods Sold</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #33691e;">
+                                    Total COGS: <strong>$${totalCOGS.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong> 
+                                    (${totalUnitsSold.toLocaleString()} units sold across ${window.cogsTotalOrders || 0} orders).
+                                    Uses <strong>historical cost at time of sale</strong> when available, with current cost as fallback for older orders.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    ` : `
+                    <div style="background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 18px;">⏳</span>
+                            <div>
+                                <strong style="color: #666;">Loading COGS Data...</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #888;">
+                                    COGS data is loading from sales history. Visit the Sales tab to trigger data load.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    `}
             `;
             
             // BUILD TABLE
             html += '<table class="data-table" id="inventoryDataTable"><thead><tr>';
-            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>COGS</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
@@ -13567,7 +13564,6 @@
                 const costValue = Math.abs(qty) * unitCost;
                 const sellValue = Math.abs(qty) * unitSellPrice;
                 const netProfit = sellValue - costValue;
-                const itemCogs = item._cogs || 0;
                 
                 // Determine status with color coding
                 let status = '';
@@ -13600,7 +13596,6 @@
                     <td>$${unitCost.toFixed(3)}</td>
                     <td>${formatMoney(unitSellPrice)}</td>
                     <td>${formatMoney(costValue)}</td>
-                    <td style="color: #e65100; font-weight: ${itemCogs > 0 ? 'bold' : 'normal'};">${itemCogs > 0 ? formatMoney(itemCogs) : '-'}</td>
                     <td style="color: #2e7d32; font-weight: bold;">${formatMoney(sellValue)}</td>
                     <td style="color: ${netProfit >= 0 ? '#1565c0' : '#c62828'}; font-weight: bold;">${formatMoney(netProfit)}</td>
                     <td style="font-size: 13px; color: #666;">${lastUpdated}</td>
@@ -29506,8 +29501,6 @@
             
             let html = `
                 <div class="receive-modal-content">
-                    <h2 style="position: sticky; top: 0; background: white; padding: 10px 0; margin: 0 0 10px 0; z-index: 10;">📦 Receive PO Items</h2>
-                    
                     <!-- Order Info Box -->
                     <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #28a745;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -29678,7 +29671,7 @@
             `;
             
             document.getElementById('modalContent').innerHTML = html;
-            document.getElementById('modalTitle').textContent = `Receive PO: ${po.Invoice_Number || po.PO_ID}`;
+            document.getElementById('modalTitle').textContent = `📦 Receive PO: ${po.Invoice_Number || po.PO_ID}`;
             document.getElementById('modalEditBtn').style.display = 'none';
             document.getElementById('modalPrintBtn').style.display = 'none';
             document.getElementById('modalSaveBtn').style.display = 'inline-block';
