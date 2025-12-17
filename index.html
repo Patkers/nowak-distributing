@@ -5,7 +5,7 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_48
+         VERSION: V16_49
          =====================================================
          CHANGES IN THIS VERSION:
          - Fixed Receive PO nested window appearance
@@ -14,6 +14,8 @@
          - COGS summary box and note card in Inventory
          - Fixed Edit SO/PO Save button being stuck on "Receive"
          - Added customer address to Sales Order view modal
+         - Improved mobile horizontal scroll touch sensitivity
+         - Added table-scroll-wrapper to all main data tables
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -67,6 +69,16 @@
             -webkit-user-select: none;
         }
         
+        /* HORIZONTAL SCROLL CONTAINERS - Improved touch handling */
+        .table-scroll-wrapper,
+        .horizontal-scroll,
+        [style*="overflow-x: auto"],
+        [style*="overflow-x:auto"] {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain; /* Prevent horizontal scroll from triggering page navigation */
+            scroll-behavior: smooth;
+        }
+        
         /* Larger touch targets on mobile */
         @media (max-width: 768px) {
             select, 
@@ -80,6 +92,43 @@
             select {
                 -webkit-appearance: none;
                 appearance: none;
+            }
+            
+            /* MOBILE HORIZONTAL SCROLL FIX */
+            /* When inside a horizontal scroll container, prioritize horizontal scroll */
+            .table-scroll-wrapper,
+            .horizontal-scroll,
+            div[style*="overflow-x: auto"],
+            div[style*="overflow-x:auto"] {
+                touch-action: pan-x pan-y; /* Allow both but browser decides based on gesture */
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+            }
+            
+            /* Tables inside scroll wrappers */
+            .table-scroll-wrapper > table,
+            .horizontal-scroll > table {
+                touch-action: pan-x pan-y;
+            }
+            
+            /* Give horizontal scroll containers a visual hint */
+            .table-scroll-wrapper::after,
+            .horizontal-scroll::after {
+                content: '';
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                width: 20px;
+                background: linear-gradient(to right, transparent, rgba(0,0,0,0.05));
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+            
+            .table-scroll-wrapper:not(:hover)::after,
+            .horizontal-scroll:not(:hover)::after {
+                opacity: 1;
             }
         }
 
@@ -7210,6 +7259,50 @@
             }
         }
         
+        // ==================== MOBILE HORIZONTAL SCROLL HELPER ====================
+        // Improves horizontal scrolling on mobile by detecting swipe direction
+        (function() {
+            if (!('ontouchstart' in window)) return; // Desktop doesn't need this
+            
+            let startX, startY, scrollContainer, isHorizontalScroll = null;
+            
+            document.addEventListener('touchstart', function(e) {
+                const target = e.target;
+                // Find if we're inside a horizontal scroll container
+                scrollContainer = target.closest('.table-scroll-wrapper, .horizontal-scroll, [style*="overflow-x"]');
+                if (!scrollContainer) return;
+                
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isHorizontalScroll = null; // Reset - we'll determine on first move
+            }, { passive: true });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (!scrollContainer || !startX || !startY) return;
+                
+                const deltaX = Math.abs(e.touches[0].clientX - startX);
+                const deltaY = Math.abs(e.touches[0].clientY - startY);
+                
+                // Determine scroll direction on first significant movement
+                if (isHorizontalScroll === null && (deltaX > 10 || deltaY > 10)) {
+                    isHorizontalScroll = deltaX > deltaY;
+                }
+                
+                // If horizontal scroll detected and container can scroll horizontally
+                if (isHorizontalScroll && scrollContainer.scrollWidth > scrollContainer.clientWidth) {
+                    // Let the horizontal scroll happen naturally
+                    // The CSS overscroll-behavior: contain prevents it from affecting the page
+                }
+            }, { passive: true });
+            
+            document.addEventListener('touchend', function() {
+                scrollContainer = null;
+                startX = null;
+                startY = null;
+                isHorizontalScroll = null;
+            }, { passive: true });
+        })();
+        
         // Loading overlay functions
         function showLoading(message) {
             let overlay = document.getElementById('loadingOverlay');
@@ -8917,7 +9010,7 @@
                 return;
             }
 
-            let html = '<table class="data-table" id="suppliersDataTable"><thead><tr>';
+            let html = '<div class="table-scroll-wrapper"><table class="data-table" id="suppliersDataTable"><thead><tr>';
             html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Payment Terms</th>';
             html += '</tr></thead><tbody>';
 
@@ -8932,7 +9025,7 @@
                 </tr>`;
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             document.getElementById('suppliersTable').innerHTML = html;
             
             // Make table sortable
@@ -9579,7 +9672,7 @@
                 return;
             }
 
-            let html = '<table class="data-table" id="customersDataTable"><thead><tr>';
+            let html = '<div class="table-scroll-wrapper"><table class="data-table" id="customersDataTable"><thead><tr>';
             html += '<th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>City</th><th>Credit Limit</th>';
             html += '</tr></thead><tbody>';
 
@@ -9607,7 +9700,7 @@
                 </tr>`;
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             document.getElementById('customersTable').innerHTML = html;
             setTimeout(() => makeSortable('customersDataTable'), 0);
         }
@@ -13571,7 +13664,7 @@
             `;
             
             // BUILD TABLE
-            html += '<table class="data-table" id="inventoryDataTable"><thead><tr>';
+            html += '<div class="table-scroll-wrapper"><table class="data-table" id="inventoryDataTable"><thead><tr>';
             html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
@@ -13628,7 +13721,7 @@
                 </tr>`;
             });
 
-            html += '</tbody></table>';
+            html += '</tbody></table></div>'; // Close table and scroll wrapper
             html += '</div>'; // Close data-display-card
             document.getElementById('inventoryTable').innerHTML = html;
             setTimeout(() => makeSortable('inventoryDataTable'), 0);
