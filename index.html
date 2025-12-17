@@ -5,7 +5,7 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_47
+         VERSION: V16_48
          =====================================================
          CHANGES IN THIS VERSION:
          - Fixed Receive PO nested window appearance
@@ -13,6 +13,7 @@
          - New getItemCOGS API call for efficient COGS loading
          - COGS summary box and note card in Inventory
          - Fixed Edit SO/PO Save button being stuck on "Receive"
+         - Added customer address to Sales Order view modal
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13039,11 +13040,26 @@
                 }
             }
             
+            // Load customers if not cached (for address display)
+            if (cachedCustomers.length === 0) {
+                const custResult = await apiCall('getCustomers');
+                if (custResult && custResult.status === 'success') {
+                    cachedCustomers = custResult.data;
+                }
+            }
+            
             // Get line items
             const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
             const lines = linesResult?.data || [];
             
             const customerName = getCustomerName(so.Customer_ID);
+            // Get full customer object for address
+            const customer = cachedCustomers.find(c => c.Customer_ID === so.Customer_ID);
+            const customerAddress = customer ? [
+                customer.Address,
+                [customer.City, customer.State, customer.Zip].filter(Boolean).join(', ')
+            ].filter(Boolean).join('<br>') : '';
+            
             const dueDate = so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-';
             const invoiceDate = so.Invoice_Date ? new Date(so.Invoice_Date).toLocaleDateString() : '-';
             
@@ -13056,7 +13072,7 @@
                         <div>
                             <h3 style="margin-top: 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📋 Order Information</h3>
                             <table style="width: 100%; border-collapse: collapse;">
-                                <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Customer:</td><td>${customerName}</td></tr>
+                                <tr><td style="padding: 8px 0; font-weight: bold; width: 140px;">Customer:</td><td><strong>${customerName}</strong>${customerAddress ? `<br><span style="font-size: 12px; color: #666;">${customerAddress}</span>` : ''}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Invoice #:</td><td>${so.Invoice_Number || '-'}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Sale Date:</td><td>${new Date(so.Sale_Date).toLocaleDateString()}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Invoice Date:</td><td>${invoiceDate}</td></tr>
