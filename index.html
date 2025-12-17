@@ -5,16 +5,14 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_58
+         VERSION: V16_62
          =====================================================
          CHANGES IN THIS VERSION:
-         - FIXED: Refresh buttons now FORCE fresh data from server
-           * Items, Inventory, Purchases, Sales all have forceRefresh
-           * Clears cached data and adds timestamp to bust caching
-           * Shows "✅ [Tab] refreshed!" confirmation message
-         - Added Supplier Name to multiple reports
-         - Fixed Supplier Dashboard multi-select filter
-         - Added Customer/Supplier Address to reports
+         - Modal positions now REMEMBERED using localStorage
+           * Drag a modal to position, it saves automatically
+           * Next time you open that modal, it opens where you left it
+           * Works across page refreshes
+           * Size is also remembered if you resize the modal
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -2530,14 +2528,20 @@
                 line-height: 1;
             }
             
-            /* Center modals initially */
-            #orderModal > div,
-            #orderModalInner,
-            #reportSetupModal > div,
-            #reportSetupModalInner,
-            .item-picker-container {
+            /* Center modals initially (before dragging) */
+            #orderModal > div:not(.modal-dragged),
+            #orderModalInner:not(.modal-dragged),
+            #reportSetupModal > div:not(.modal-dragged),
+            #reportSetupModalInner:not(.modal-dragged),
+            .item-picker-container:not(.modal-dragged) {
                 position: relative;
                 margin: 50px auto !important;
+            }
+            
+            /* When modal is being dragged or has been dragged, use fixed positioning */
+            .modal-dragged {
+                position: fixed !important;
+                margin: 0 !important;
             }
         }
         
@@ -11413,7 +11417,12 @@
         });
         
         function closeOrderModal() {
-            document.getElementById('orderModal').style.display = 'none';
+            const modal = document.getElementById('orderModal');
+            modal.style.display = 'none';
+            
+            // Don't reset modal position - we want to remember it for next open
+            // Position is saved to localStorage when drag ends
+            
             currentEditingOrder = null;
             currentEditingType = null;
             
@@ -15795,21 +15804,16 @@
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open');
             
-            // Reset all modal states (maximized and dragged)
+            // Reset maximize state only (position is saved to localStorage)
             reportModalMaximized = false;
-            reportModalSavedPosition = null;
             
-            const modalOuter = document.getElementById('reportSetupModal');
             const modal = document.getElementById('reportSetupModalInner');
             const icon = document.getElementById('reportMaximizeIcon');
             
-            // Reset to default styles for next open
-            if (modalOuter) {
-                modalOuter.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto;';
-            }
+            // Only reset maximize state, not position
             if (modal) {
                 modal.classList.remove('modal-maximized');
-                modal.style.cssText = 'background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto;';
+                // Don't remove modal-dragged or reset position - we want to remember it
             }
             if (icon) icon.textContent = '⬜';
         }
@@ -15828,6 +15832,7 @@
             if (reportModalMaximized) {
                 // RESTORE to centered modal
                 modal.classList.remove('modal-maximized');
+                modal.classList.remove('modal-dragged');
                 modalOuter.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: block; padding: 20px; box-sizing: border-box; overflow-y: auto;';
                 modal.style.cssText = 'background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto; position: relative;';
                 
@@ -38194,26 +38199,20 @@ NOTE: Please print the attached PO document for full details.`;
                         // Get current position
                         const rect = modal.container.getBoundingClientRect();
                         
-                        // If not already fixed, convert to fixed positioning
-                        if (modal.container.style.position !== 'fixed') {
-                            modal.container.style.position = 'fixed';
-                            modal.container.style.margin = '0';
-                            
-                            // Preserve the current size
-                            modal.container.style.width = rect.width + 'px';
-                            modal.container.style.height = rect.height + 'px';
-                            
-                            modal.container.style.left = rect.left + 'px';
-                            modal.container.style.top = rect.top + 'px';
-                            
-                            // Reset transform-based offsets
-                            xOffset = parseInt(modal.container.style.left) || rect.left;
-                            yOffset = parseInt(modal.container.style.top) || rect.top;
-                        } else {
-                            // Already fixed, get current offsets from left/top
-                            xOffset = parseInt(modal.container.style.left) || rect.left;
-                            yOffset = parseInt(modal.container.style.top) || rect.top;
-                        }
+                        // Add class to override CSS centering and enable dragging
+                        modal.container.classList.add('modal-dragged');
+                        
+                        // Set fixed positioning with current visual position - use setProperty with !important
+                        modal.container.style.setProperty('position', 'fixed', 'important');
+                        modal.container.style.setProperty('margin', '0', 'important');
+                        modal.container.style.setProperty('left', rect.left + 'px', 'important');
+                        modal.container.style.setProperty('top', rect.top + 'px', 'important');
+                        modal.container.style.setProperty('width', rect.width + 'px', 'important');
+                        modal.container.style.setProperty('height', rect.height + 'px', 'important');
+                        
+                        // Set offsets from current position
+                        xOffset = rect.left;
+                        yOffset = rect.top;
                         
                         initialX = e.clientX;
                         initialY = e.clientY;
@@ -38231,17 +38230,28 @@ NOTE: Please print the attached PO document for full details.`;
                         let newLeft = xOffset + deltaX;
                         let newTop = yOffset + deltaY;
                         
-                        // Keep modal header within viewport (allow most of modal to go off-screen)
+                        // Get modal dimensions
                         const rect = modal.container.getBoundingClientRect();
-                        const minVisible = 100; // Keep at least 100px visible
+                        const modalWidth = rect.width;
+                        const modalHeight = rect.height;
                         
-                        // Allow dragging left (negative values ok, but keep some visible)
-                        newLeft = Math.max(-rect.width + minVisible, Math.min(newLeft, window.innerWidth - minVisible));
-                        newTop = Math.max(0, Math.min(newTop, window.innerHeight - 50)); // Keep header visible
+                        // STRICT constraints - keep modal mostly visible on screen
+                        // Horizontal: Don't let more than 20% go off either side
+                        const maxOffscreenX = modalWidth * 0.2;
+                        const minLeft = -maxOffscreenX;
+                        const maxLeft = window.innerWidth - modalWidth + maxOffscreenX;
                         
-                        // Apply position
-                        modal.container.style.left = newLeft + 'px';
-                        modal.container.style.top = newTop + 'px';
+                        // Vertical: Keep header visible at top, don't go below viewport
+                        const minTop = 0;  // Can't go above viewport
+                        const maxTop = window.innerHeight - 100; // Keep at least 100px visible at bottom
+                        
+                        // Apply constraints
+                        newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
+                        newTop = Math.max(minTop, Math.min(newTop, maxTop));
+                        
+                        // Apply position with !important to override CSS
+                        modal.container.style.setProperty('left', newLeft + 'px', 'important');
+                        modal.container.style.setProperty('top', newTop + 'px', 'important');
                     }
                 }
                 
@@ -38250,16 +38260,54 @@ NOTE: Please print the attached PO document for full details.`;
                         // Update offsets for next drag
                         xOffset = parseInt(modal.container.style.left) || 0;
                         yOffset = parseInt(modal.container.style.top) || 0;
+                        
+                        // Save position to localStorage for this modal
+                        const modalId = modal.container.id || modal.overlay.id + '_inner';
+                        const savedPositions = JSON.parse(localStorage.getItem('modalPositions') || '{}');
+                        savedPositions[modalId] = {
+                            left: xOffset,
+                            top: yOffset,
+                            width: parseInt(modal.container.style.width) || null,
+                            height: parseInt(modal.container.style.height) || null
+                        };
+                        localStorage.setItem('modalPositions', JSON.stringify(savedPositions));
                     }
                     isDragging = false;
                 }
             });
         }
         
+        // Restore saved modal position when modal opens
+        function restoreModalPosition(modalContainer) {
+            if (window.innerWidth <= 768) return; // Skip on mobile
+            
+            const modalId = modalContainer.id;
+            const savedPositions = JSON.parse(localStorage.getItem('modalPositions') || '{}');
+            const saved = savedPositions[modalId];
+            
+            if (saved && saved.left !== null && saved.top !== null) {
+                // Validate position is still on screen
+                const maxLeft = window.innerWidth - 100;
+                const maxTop = window.innerHeight - 100;
+                
+                if (saved.left >= -100 && saved.left <= maxLeft && saved.top >= 0 && saved.top <= maxTop) {
+                    modalContainer.classList.add('modal-dragged');
+                    modalContainer.style.setProperty('position', 'fixed', 'important');
+                    modalContainer.style.setProperty('margin', '0', 'important');
+                    modalContainer.style.setProperty('left', saved.left + 'px', 'important');
+                    modalContainer.style.setProperty('top', saved.top + 'px', 'important');
+                    if (saved.width) modalContainer.style.setProperty('width', saved.width + 'px', 'important');
+                    if (saved.height) modalContainer.style.setProperty('height', saved.height + 'px', 'important');
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         // Initialize on page load
         window.addEventListener('load', initDesktopModalFeatures);
         
-        // Re-initialize when modals are opened
+        // Re-initialize when modals are opened and restore positions
         const originalDisplaySetters = {};
         ['orderModal', 'reportSetupModal', 'howToGuideModal', 'uploadItemsModal', 'itemPickerModal'].forEach(modalId => {
             const modal = document.getElementById(modalId);
@@ -38267,7 +38315,16 @@ NOTE: Please print the attached PO document for full details.`;
                 // Watch for display changes
                 const observer = new MutationObserver(() => {
                     if (modal.style.display !== 'none') {
-                        setTimeout(initDesktopModalFeatures, 100);
+                        // Try to restore saved position
+                        const innerModal = modal.querySelector('[id*="Inner"], [id*="inner"], .item-picker-container') || modal.querySelector(':scope > div');
+                        if (innerModal) {
+                            setTimeout(() => {
+                                restoreModalPosition(innerModal);
+                                initDesktopModalFeatures();
+                            }, 50);
+                        } else {
+                            setTimeout(initDesktopModalFeatures, 100);
+                        }
                     }
                 });
                 observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
