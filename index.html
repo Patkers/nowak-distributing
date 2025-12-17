@@ -19833,20 +19833,38 @@
             const dormantThreshold = reportFilters.dormantDays || 30;
             const sortBy = reportFilters.dormantSort || 'days-desc';
             
-            // Fetch all necessary data
-            const [salesResult, customersResult, itemsResult] = await Promise.all([
-                apiCall('getSalesOrders'),
-                apiCall('getCustomers'),
-                apiCall('getItems')
-            ]);
+            // Try to use cached data first, fall back to API calls
+            let sales, customers, items;
             
-            if (!salesResult?.data || !customersResult?.data) {
-                throw new Error('Failed to load data');
+            // Always fetch fresh data for reports to ensure accuracy
+            let salesResult, customersResult, itemsResult;
+            try {
+                [salesResult, customersResult, itemsResult] = await Promise.all([
+                    apiCall('getSalesOrders'),
+                    apiCall('getCustomers'),
+                    apiCall('getItems')
+                ]);
+            } catch(e) {
+                console.error('Error fetching data for Dormant Customers:', e);
+                throw new Error('Failed to load data: ' + e.message);
             }
             
-            const sales = salesResult.data.filter(s => s.Status !== 'Voided');
-            const customers = customersResult.data;
-            const items = itemsResult?.data || [];
+            // Check results - be more lenient
+            if (!salesResult || !salesResult.data) {
+                // Try using cached data as fallback
+                if (cachedCustomers && cachedCustomers.length > 0) {
+                    console.warn('Using cached data for Dormant Customers report');
+                    sales = [];
+                    customers = cachedCustomers;
+                    items = cachedItems || [];
+                } else {
+                    throw new Error('Failed to load sales data and no cached data available');
+                }
+            } else {
+                sales = (salesResult.data || []).filter(s => s && s.Status !== 'Voided');
+                customers = customersResult?.data || cachedCustomers || [];
+                items = itemsResult?.data || cachedItems || [];
+            }
             
             // Build item lookup
             const itemMap = {};
@@ -21739,12 +21757,44 @@
                 }
             });
             
-            // Group by customer
+            // Group by customer - include address info
             const byCustomer = {};
+            
+            // First get customer details for addresses
+            let customerDetails = {};
+            try {
+                const custResult = await apiCall('getCustomers');
+                if (custResult?.data) {
+                    custResult.data.forEach(c => {
+                        customerDetails[c.Customer_ID] = c;
+                    });
+                }
+            } catch(e) {
+                // Use cached if available
+                if (cachedCustomers) {
+                    cachedCustomers.forEach(c => {
+                        customerDetails[c.Customer_ID] = c;
+                    });
+                }
+            }
+            
             salesInYear.forEach(s => {
                 const custId = s.Customer_ID;
                 if (!byCustomer[custId]) {
-                    byCustomer[custId] = { name: getCustomerName(custId), total: 0, orders: 0 };
+                    const custInfo = customerDetails[custId] || {};
+                    // Build address string
+                    let addressParts = [];
+                    if (custInfo.Address) addressParts.push(custInfo.Address);
+                    if (custInfo.City) addressParts.push(custInfo.City);
+                    if (custInfo.State) addressParts.push(custInfo.State);
+                    const address = addressParts.join(', ');
+                    
+                    byCustomer[custId] = { 
+                        name: getCustomerName(custId), 
+                        address: address || '',
+                        total: 0, 
+                        orders: 0 
+                    };
                 }
                 byCustomer[custId].total += parseFloat(s.Total_Amount) || 0;
                 byCustomer[custId].orders++;
@@ -21869,6 +21919,7 @@
                         <div style="overflow-x: auto;"><table class="data-table">
                             <thead><tr>
                                 <th>Customer</th>
+                                <th>Address</th>
                                 <th style="text-align: right;">Orders</th>
                                 <th style="text-align: right;">Total Sales</th>
                             </tr></thead><tbody>`;
@@ -21877,7 +21928,8 @@
                 .sort((a, b) => b[1].total - a[1].total)
                 .forEach(([id, data]) => {
                     html += `<tr>
-                        <td>${data.name}</td>
+                        <td><strong>${data.name}</strong></td>
+                        <td style="color: #666; font-size: 13px;">${data.address || '-'}</td>
                         <td style="text-align: right;">${data.orders}</td>
                         <td style="text-align: right;">${formatMoney(data.total)}</td>
                     </tr>`;
