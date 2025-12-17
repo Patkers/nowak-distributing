@@ -707,6 +707,118 @@
             color: #666;
         }
         
+        /* ==================== REPORT DASHBOARD STYLES ==================== */
+        /* These must be global because <style> tags in innerHTML don't always work */
+        
+        .biz-header {
+            padding: 35px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(5, 150, 105, 0.3), 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        .biz-header h2 { 
+            margin: 0 0 10px 0; 
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .biz-header p { 
+            margin: 0; 
+            opacity: 0.95; 
+            font-size: 16px; 
+        }
+        
+        .biz-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .biz-kpi {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        .biz-kpi .icon { font-size: 32px; margin-bottom: 10px; }
+        .biz-kpi .value { font-size: 28px; font-weight: bold; color: #1f2937; }
+        .biz-kpi .label { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-top: 5px; }
+        .biz-kpi .change { font-size: 13px; margin-top: 8px; font-weight: 600; }
+        .biz-kpi .change.up { color: #059669; }
+        .biz-kpi .change.down { color: #dc2626; }
+        
+        .biz-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        .biz-section h3 {
+            margin: 0 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .biz-rank-list { list-style: none; padding: 0; margin: 0; }
+        .biz-rank-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .biz-rank-item:last-child { border-bottom: none; }
+        .biz-rank-num {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .biz-rank-info { flex: 1; margin-left: 12px; min-width: 0; }
+        .biz-rank-name { font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .biz-rank-sub { font-size: 12px; color: #6b7280; }
+        .biz-rank-value { font-weight: bold; color: #059669; font-size: 16px; }
+        .biz-rank-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .biz-rank-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .biz-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .biz-stat-row:last-child { border-bottom: none; }
+        .biz-stat-label { color: #6b7280; }
+        .biz-stat-value { font-weight: 600; color: #1f2937; }
+        
         /* ==================== MOBILE RESPONSIVE STYLES ==================== */
         
         /* Tablets and smaller (768px and below) */
@@ -2086,12 +2198,6 @@
             }
             
             /* CRITICAL: Picker modals in landscape mode */
-            .item-picker-overlay {
-                padding: 0 !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-            
             /* Full-screen pickers (item, supplier, customer, invoice) */
             .item-picker-container:not(.styled-modal-container) {
                 width: 100% !important;
@@ -2108,7 +2214,7 @@
                 max-width: 500px !important;
                 height: auto !important;
                 max-height: 85vh !important;
-                margin: auto !important;
+                margin: 5vh auto !important;
                 border-radius: 12px !important;
             }
             
@@ -2148,6 +2254,7 @@
                 width: 95% !important;
                 height: 90vh !important;
                 max-height: 90vh !important;
+                margin: 2vh auto !important;
             }
             
             /* Report modal in landscape - full screen */
@@ -7116,7 +7223,7 @@
                 document.body.appendChild(overlay);
             } else {
                 document.getElementById('loadingMessage').textContent = message || 'Loading...';
-                overlay.style.display = 'flex';
+                overlay.style.display = 'block';
             }
         }
         
@@ -14919,7 +15026,7 @@
                 
                 // Show modal FIRST
                 const modalElement = document.getElementById('reportSetupModal');
-                modalElement.style.display = 'flex';
+                modalElement.style.display = 'block';
                 document.body.style.overflow = 'hidden';
                 document.body.classList.add('modal-open');
                 
@@ -15329,7 +15436,7 @@
                 return;
             }
             
-            modalElement.style.display = 'flex';
+            modalElement.style.display = 'block';
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             console.log('📱 Modal should now be visible');
@@ -15428,6 +15535,28 @@
             document.getElementById('reportSetupModal').style.display = 'none';
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open');
+            
+            // Reset maximized state
+            if (reportModalMaximized) {
+                reportModalMaximized = false;
+                const modal = document.getElementById('reportSetupModalInner');
+                const icon = document.getElementById('reportMaximizeIcon');
+                if (modal) {
+                    modal.style.width = '';
+                    modal.style.maxWidth = '';
+                    modal.style.height = '';
+                    modal.style.maxHeight = '';
+                    modal.style.borderRadius = '';
+                    modal.style.position = '';
+                    modal.style.top = '';
+                    modal.style.left = '';
+                    modal.style.right = '';
+                    modal.style.bottom = '';
+                    modal.style.transform = '';
+                    modal.style.margin = '';
+                }
+                if (icon) icon.textContent = '⬜';
+            }
         }
         
         // Toggle report modal between maximized and normal size
@@ -15436,26 +15565,38 @@
             const modal = document.getElementById('reportSetupModalInner');
             const icon = document.getElementById('reportMaximizeIcon');
             
+            if (!modal || !icon) return;
+            
             if (reportModalMaximized) {
-                // Restore to normal - centered with transform
+                // Restore to normal
                 modal.style.width = '100%';
                 modal.style.maxWidth = '900px';
+                modal.style.height = '';
                 modal.style.maxHeight = 'calc(100vh - 40px)';
                 modal.style.borderRadius = '12px';
-                modal.style.top = '50%';
-                modal.style.transform = 'translateY(-50%)';
+                modal.style.position = '';
+                modal.style.top = '';
+                modal.style.left = '';
+                modal.style.right = '';
+                modal.style.bottom = '';
+                modal.style.transform = '';
                 modal.style.margin = '0 auto';
                 icon.textContent = '⬜';
                 reportModalMaximized = false;
             } else {
                 // Maximize - fill viewport
+                modal.style.position = 'fixed';
+                modal.style.top = '20px';
+                modal.style.left = '20px';
+                modal.style.right = '20px';
+                modal.style.bottom = '20px';
                 modal.style.width = 'calc(100vw - 40px)';
                 modal.style.maxWidth = 'calc(100vw - 40px)';
+                modal.style.height = 'calc(100vh - 40px)';
                 modal.style.maxHeight = 'calc(100vh - 40px)';
                 modal.style.borderRadius = '8px';
-                modal.style.top = '0';
                 modal.style.transform = 'none';
-                modal.style.margin = '0 auto';
+                modal.style.margin = '0';
                 icon.textContent = '❐';
                 reportModalMaximized = true;
             }
@@ -31624,8 +31765,8 @@ NOTE: Please print the attached PO document for full details.`;
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <!-- Window Controls -->
-                    <button onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 14px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                    <!-- Window Controls - hide maximize on mobile -->
+                    <button id="reportMaximizeBtn" onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 14px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: none; align-items: center; justify-content: center;">
                         <span id="reportMaximizeIcon">⬜</span>
                     </button>
                     <button onclick="closeReportSetup()" title="Close" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">&times;</button>
@@ -31718,7 +31859,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- REASON PICKER MODAL -->
-    <div id="reasonPickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div id="reasonPickerModal" class="item-picker-overlay">
         <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📝 Select Reason</h3>
@@ -31731,7 +31872,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- UOM PICKER MODAL -->
-    <div id="uomPickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div id="uomPickerModal" class="item-picker-overlay">
         <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0;">
                 <h3>📦 Select Unit of Measure</h3>
@@ -31744,7 +31885,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- THEME PICKER MODAL -->
-    <div id="themePickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div id="themePickerModal" class="item-picker-overlay">
         <div class="item-picker-container" style="max-width: 700px; width: 95%; height: 90vh; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0; background: var(--primary, #667eea);">
                 <h3>🎨 Choose Your Theme</h3>
@@ -31780,7 +31921,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- STYLED ALERT MODAL -->
-    <div id="styledAlertModal" class="item-picker-overlay" style="z-index: 999999; display: none; align-items: center; justify-content: center;">
+    <div id="styledAlertModal" class="item-picker-overlay" style="z-index: 999999;">
         <div class="item-picker-container styled-modal-container" style="max-width: 450px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div id="styledAlertHeader" class="item-picker-header" style="background: var(--primary, #667eea);">
                 <h3 id="styledAlertTitle">📢 Alert</h3>
@@ -31796,7 +31937,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- STYLED CONFIRM MODAL -->
-    <div id="styledConfirmModal" class="item-picker-overlay" style="z-index: 999999; display: none; align-items: center; justify-content: center;">
+    <div id="styledConfirmModal" class="item-picker-overlay" style="z-index: 999999;">
         <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div id="styledConfirmHeader" class="item-picker-header" style="background: var(--primary, #667eea);">
                 <h3 id="styledConfirmTitle">❓ Confirm</h3>
@@ -31813,7 +31954,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- UNIVERSAL STATUS PICKER MODAL -->
-    <div id="statusPickerModal" class="item-picker-overlay" style="display: none; align-items: center; justify-content: center;">
+    <div id="statusPickerModal" class="item-picker-overlay">
         <div class="item-picker-container styled-modal-container" style="max-width: 450px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header">
                 <h3 id="statusPickerTitle">📋 Select Status</h3>
@@ -31908,6 +32049,11 @@ NOTE: Please print the attached PO document for full details.`;
                 height: calc(100% - 80px);
                 border-radius: 16px;
                 overflow: hidden;
+            }
+            
+            /* Show maximize button only on desktop */
+            #reportMaximizeBtn {
+                display: flex !important;
             }
         }
         
@@ -33146,7 +33292,7 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('styledAlertHeader').style.background = colors[type] || colors.info;
             document.getElementById('styledAlertTitle').textContent = `${icons[type] || icons.info} ${title}`;
             document.getElementById('styledAlertContent').innerHTML = message.replace(/\n/g, '<br>');
-            document.getElementById('styledAlertModal').style.display = 'flex';
+            document.getElementById('styledAlertModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
         
@@ -33196,7 +33342,7 @@ NOTE: Please print the attached PO document for full details.`;
                 document.getElementById('styledConfirmOkBtn').textContent = confirmText;
                 document.getElementById('styledConfirmOkBtn').style.background = headerColor;
                 document.getElementById('styledConfirmCancelBtn').textContent = cancelText;
-                document.getElementById('styledConfirmModal').style.display = 'flex';
+                document.getElementById('styledConfirmModal').style.display = 'block';
                 document.body.style.overflow = 'hidden';
             });
         }
@@ -33363,7 +33509,7 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             document.getElementById('statusPickerList').innerHTML = html;
-            document.getElementById('statusPickerModal').style.display = 'flex';
+            document.getElementById('statusPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
         
@@ -34076,7 +34222,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
             
-            document.getElementById('reasonPickerModal').style.display = 'flex';
+            document.getElementById('reasonPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
         
@@ -34133,7 +34279,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
             
-            document.getElementById('uomPickerModal').style.display = 'flex';
+            document.getElementById('uomPickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
         
@@ -34640,7 +34786,7 @@ NOTE: Please print the attached PO document for full details.`;
         function openThemePicker() {
             document.activeElement?.blur();
             renderThemePickerList();
-            document.getElementById('themePickerModal').style.display = 'flex';
+            document.getElementById('themePickerModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
             focusOnDesktop('themePickerSearch');
         }
