@@ -5,7 +5,7 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_53
+         VERSION: V16_55
          =====================================================
          CHANGES IN THIS VERSION:
          - Fixed Receive PO nested window appearance
@@ -20,6 +20,8 @@
          - Report filters now DEFAULT TO COLLAPSED
          - Hidden maximize button on mobile (already fullscreen)
          - FIXED: Maximize button now properly goes full-screen
+         - FIXED: Customer/Supplier Dashboard footers show date range
+         - Added 30-second timeout to API calls to prevent hangs
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8917,10 +8919,17 @@
                 const url = `${API_URL}?${params.toString()}`;
                 console.log(`API Call: ${action}`, { url: url.substring(0, 100) + '...' });
                 
+                // Add timeout to prevent indefinite hangs (30 seconds)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                
                 const response = await fetch(url, {
                     method: 'GET',
-                    mode: 'cors'
+                    mode: 'cors',
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 console.log(`API Response status: ${response.status} ${response.statusText}`);
                 
@@ -8940,6 +8949,10 @@
                     return { status: 'error', message: 'Invalid JSON response from server' };
                 }
             } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.error('API Timeout:', action);
+                    return { status: 'error', message: 'Request timed out - please try again' };
+                }
                 console.error('API Fetch Error:', error);
                 return { status: 'error', message: error.toString() };
             }
@@ -27254,8 +27267,8 @@
                 
                 <div class="partnership-box" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); margin-top: 30px; width: 100%; box-sizing: border-box; text-align: center; padding: 25px; border-radius: 12px; color: white;">
                     <h3 style="margin: 0 0 10px 0; font-size: 18px; color: white;">💰 Total Customer Value</h3>
-                    <div style="font-size: 42px; font-weight: bold; color: white;">$${periods['ALL TIME'].sales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    <div style="font-size: 14px; opacity: 0.9; margin-top: 8px; color: white;">${periods['ALL TIME'].orders} sales orders • All Time</div>
+                    <div style="font-size: 42px; font-weight: bold; color: white;">${formatMoney(totalSales)}</div>
+                    <div style="font-size: 14px; opacity: 0.9; margin-top: 8px; color: white;">${totalOrders} sales orders • ${dateLabel}</div>
                 </div>
             `;
             
@@ -27595,8 +27608,8 @@
                 
                 <div class="partnership-box">
                     <h3>🤝 Total Partnership Value</h3>
-                    <div class="partnership-value">$${periods['ALL TIME'].purchases.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                    <div class="partnership-label">${periods['ALL TIME'].orders} purchase orders • All Time</div>
+                    <div class="partnership-value">${formatMoney(totalPurchases)}</div>
+                    <div class="partnership-label">${totalOrders} purchase orders • ${dateLabel}</div>
                 </div>
             `;
             
