@@ -12598,6 +12598,7 @@
         }
 
         let salesData = []; // Cache for filtering
+        window.salesData = salesData; // Also expose globally for COGS calculation
         
         // Helper function for mobile-safe date formatting
         function formatDateSafe(dateValue) {
@@ -12667,6 +12668,7 @@
             
             if (result && result.status === 'success') {
                 salesData = result.data;
+                window.salesData = salesData; // Keep global reference updated
                 if (salesTable) {
                     displaySales(result.data);
                     loadSaleFilterCustomers(); // Populate filter dropdown
@@ -12945,6 +12947,11 @@
                 const invoiceNum = so.Invoice_Number || so.SO_ID;
                 const saleDateTime = so.Sale_Date || so.SO_Date;
                 
+                // Debug logging for status
+                if (orders.indexOf(so) < 3) {
+                    console.log(`SO ${invoiceNum} Status from API:`, so.Status, '| Full SO:', so);
+                }
+                
                 // Calculate payment status from actual amounts (don't rely on stored field)
                 let paymentStatus;
                 if (amountPaid >= total - 0.01 && total > 0) {
@@ -12965,10 +12972,12 @@
                 const orderStatus = so.Status || 'Pending';
                 let statusBadge = '';
                 if (orderStatus === 'Delivered') statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Delivered</span>';
+                else if (orderStatus === 'Completed') statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Completed</span>';
                 else if (orderStatus === 'Out for Delivery') statusBadge = '<span style="background: #17a2b8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">🚚 Out for Delivery</span>';
                 else if (orderStatus === 'Ready') statusBadge = '<span style="background: #6f42c1; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📦 Ready</span>';
                 else if (orderStatus === 'Voided') statusBadge = '<span style="background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⊘ Voided</span>';
-                else statusBadge = '<span style="background: #fd7e14; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⏳ Pending</span>';
+                else if (orderStatus === 'Pending') statusBadge = '<span style="background: #fd7e14; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⏳ Pending</span>';
+                else statusBadge = `<span style="background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${orderStatus}</span>`;
                 
                 html += `<tr style="cursor: pointer;" onclick="viewSalesOrder('${so.SO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${invoiceNum}</strong></td>
@@ -13336,10 +13345,29 @@
                 // Hide archived items in inventory view
                 if (item.Status === 'Archived') return false;
                 
-                // Search filter
-                const matchesSearch = !searchFilter || 
-                    (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
-                    (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
+                // Search filter - handles both Item_ID selections from picker and text search
+                let matchesSearch = true;
+                if (searchFilter) {
+                    // Check if it looks like Item_IDs (comma-separated or single ID)
+                    const searchValues = searchFilter.split(',').map(v => v.trim()).filter(v => v);
+                    
+                    // If any of the search values match an Item_ID exactly, treat as ID filter
+                    const isItemIdFilter = searchValues.some(v => 
+                        cachedItems && cachedItems.some(i => i.Item_ID && i.Item_ID.toLowerCase() === v)
+                    );
+                    
+                    if (isItemIdFilter) {
+                        // Match by Item_ID
+                        matchesSearch = searchValues.some(v => 
+                            item.Item_ID && item.Item_ID.toLowerCase() === v
+                        );
+                    } else {
+                        // Text search in SKU and Description
+                        matchesSearch = 
+                            (item.SKU && item.SKU.toString().toLowerCase().includes(searchFilter)) ||
+                            (item.Item_Description && item.Item_Description.toLowerCase().includes(searchFilter));
+                    }
+                }
                 
                 // Supplier filter - use matchesFilter for multi-select support
                 const matchesSupplier = matchesFilter(item.Supplier_ID, supplierFilter);
@@ -24734,7 +24762,10 @@
                                 <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; align-items: end;">
                                     <div>
                                         <label style="font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px;">Item</label>
-                                        <div style="padding: 10px; background: #e9ecef; border-radius: 6px; font-size: 13px;">${item.SKU || item.Item_ID}</div>
+                                        <div style="padding: 10px; background: #e9ecef; border-radius: 6px; font-size: 13px;">
+                                            <div style="font-weight: 600;">${item.SKU || item.Item_ID}</div>
+                                            <div style="font-size: 12px; color: #666; margin-top: 2px;">${item.Item_Description || ''}</div>
+                                        </div>
                                     </div>
                                     <div>
                                         <label style="font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px;">📦 Cases</label>
