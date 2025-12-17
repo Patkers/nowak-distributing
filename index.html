@@ -5,23 +5,16 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_55
+         VERSION: V16_58
          =====================================================
          CHANGES IN THIS VERSION:
-         - Fixed Receive PO nested window appearance
-         - Added true COGS tracking using historical costs
-         - New getItemCOGS API call for efficient COGS loading
-         - COGS summary box and note card in Inventory
-         - Fixed Edit SO/PO Save button being stuck on "Receive"
-         - Added customer address to Sales Order view modal
-         - Improved mobile horizontal scroll touch sensitivity
-         - Added table-scroll-wrapper to all main data tables
-         - Moved Quick Date picker OUTSIDE filter collapse
-         - Report filters now DEFAULT TO COLLAPSED
-         - Hidden maximize button on mobile (already fullscreen)
-         - FIXED: Maximize button now properly goes full-screen
-         - FIXED: Customer/Supplier Dashboard footers show date range
-         - Added 30-second timeout to API calls to prevent hangs
+         - FIXED: Refresh buttons now FORCE fresh data from server
+           * Items, Inventory, Purchases, Sales all have forceRefresh
+           * Clears cached data and adds timestamp to bust caching
+           * Shows "✅ [Tab] refreshed!" confirmation message
+         - Added Supplier Name to multiple reports
+         - Fixed Supplier Dashboard multi-select filter
+         - Added Customer/Supplier Address to reports
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -3500,7 +3493,7 @@
             
             <!-- Button Group Card -->
             <div class="filter-card">
-                <button class="btn" onclick="loadItems()">🔄 Refresh</button>
+                <button class="btn" onclick="loadItems(true)">🔄 Refresh</button>
                 <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
                 <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
                 <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
@@ -4018,7 +4011,7 @@
             
             <!-- Button Group Card -->
             <div class="filter-card">
-                <button class="btn" onclick="loadPurchases()">🔄 Refresh</button>
+                <button class="btn" onclick="loadPurchases(true)">🔄 Refresh</button>
                 <button class="btn" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
             </div>
             
@@ -4164,7 +4157,7 @@
             
             <!-- Button Group Card -->
             <div class="filter-card">
-                <button class="btn" onclick="loadSales()">🔄 Refresh</button>
+                <button class="btn" onclick="loadSales(true)">🔄 Refresh</button>
                 <button class="btn" onclick="showAddSaleForm()">➕ Record Sale</button>
             </div>
             
@@ -4328,7 +4321,7 @@
             
             <!-- Button Group Card -->
             <div class="filter-card">
-                <button class="btn" onclick="loadInventory()">🔄 Refresh</button>
+                <button class="btn" onclick="loadInventory(true)">🔄 Refresh</button>
                 <button class="btn" onclick="showAdjustInventoryForm()" style="background: #f39c12;">📝 Adjust Inventory</button>
                 <button class="btn" onclick="goToAddItem()" style="background: #9c27b0;">➕ Add New Item</button>
             </div>
@@ -9223,7 +9216,7 @@
             }
         }
 
-        async function loadItems() {
+        async function loadItems(forceRefresh = false) {
             const itemsTable = document.getElementById('itemsTable');
             if (itemsTable) {
                 itemsTable.innerHTML = '<div class="loading">Loading items...</div>';
@@ -9237,7 +9230,8 @@
                 }
             }
             
-            const result = await apiCall('getItems');
+            // Add timestamp to bust caching if forced
+            const result = await apiCall('getItems', forceRefresh ? { _t: Date.now() } : {});
             
             if (result && result.status === 'success') {
                 cachedItems = result.data;
@@ -9267,6 +9261,9 @@
                     
                     displayItems(itemsToDisplay);
                     loadItemFilterSuppliers();
+                    if (forceRefresh) {
+                        showStatus('itemsStatus', '✅ Items refreshed!', 'success');
+                    }
                 }
             } else {
                 if (itemsTable) {
@@ -10099,7 +10096,7 @@
 
         let purchasesData = []; // Cache for filtering
         
-        async function loadPurchases() {
+        async function loadPurchases(forceRefresh = false) {
             const purchasesTable = document.getElementById('purchasesTable');
             if (purchasesTable) {
                 purchasesTable.innerHTML = '<div class="loading">Loading purchases...</div>';
@@ -10115,9 +10112,9 @@
                 }
             }
             
-            // Now load and display purchases
+            // Now load and display purchases - add timestamp to bust caching if forced
             console.log('Calling getPurchaseOrders...');
-            const result = await apiCall('getPurchaseOrders');
+            const result = await apiCall('getPurchaseOrders', forceRefresh ? { _t: Date.now() } : {});
             console.log('getPurchaseOrders result:', result);
             
             if (result && result.status === 'success') {
@@ -10125,6 +10122,9 @@
                 if (purchasesTable) {
                     displayPurchases(result.data);
                     loadPurchaseFilterSuppliers(); // Populate filter dropdown
+                }
+                if (forceRefresh) {
+                    showStatus('purchasesStatus', '✅ Purchases refreshed!', 'success');
                 }
             } else {
                 console.error('getPurchaseOrders failed:', result);
@@ -11870,8 +11870,24 @@
             const result = await apiCall('updatePurchaseOrder', data);
             
             if (result && result.status === 'success') {
-                showStatus('purchasesStatus', '✅ Purchase order updated successfully!', 'success');
-                closeOrderModal();
+                showSuccessModal('Purchase Order Updated!', 'Changes saved successfully.\n\nYou can now print the PO or continue editing.');
+                // DON'T close the modal - let user print or close manually
+                // closeOrderModal();  // Removed - user will use Close button
+                
+                // Refresh the data in the modal to show updated values
+                const updatedResult = await apiCall('getPurchaseOrders');
+                if (updatedResult?.data) {
+                    const updatedPO = updatedResult.data.find(p => p.PO_ID === po.PO_ID);
+                    if (updatedPO) {
+                        currentEditingOrder = updatedPO;
+                        // Update displayed totals
+                        const totalDisplay = document.querySelector('#orderModal .order-total');
+                        if (totalDisplay) {
+                            totalDisplay.textContent = formatMoney(data.totalAmount);
+                        }
+                    }
+                }
+                
                 loadPurchases();
             } else {
                 showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
@@ -12764,7 +12780,7 @@
             }
         }
         
-        async function loadSales() {
+        async function loadSales(forceRefresh = false) {
             const salesTable = document.getElementById('salesTable');
             if (salesTable) {
                 salesTable.innerHTML = '<div class="loading">Loading sales...</div>';
@@ -12780,9 +12796,9 @@
                 }
             }
             
-            // Now load and display sales
+            // Now load and display sales - add timestamp to bust caching if forced
             console.log('Calling getSalesOrders...');
-            const result = await apiCall('getSalesOrders');
+            const result = await apiCall('getSalesOrders', forceRefresh ? { _t: Date.now() } : {});
             console.log('getSalesOrders result:', result);
             
             if (result && result.status === 'success') {
@@ -12794,6 +12810,9 @@
                 }
                 // Load COGS data from backend (efficient single call)
                 loadItemCOGS();
+                if (forceRefresh) {
+                    showStatus('salesStatus', '✅ Sales refreshed!', 'success');
+                }
             } else {
                 console.error('getSalesOrders failed:', result);
                 const errorMsg = result?.message || 'Unknown error - check console';
@@ -13432,8 +13451,14 @@
 
         let inventoryData = []; // Cache for filtering
         
-        async function loadInventory() {
+        async function loadInventory(forceRefresh = false) {
             document.getElementById('inventoryTable').innerHTML = '<div class="loading">Loading inventory...</div>';
+            
+            // If force refresh, clear cached items too
+            if (forceRefresh) {
+                cachedItems = [];
+                console.log('🔄 Force refresh: Cleared cachedItems');
+            }
             
             // Load suppliers FIRST if not cached
             if (cachedSuppliers.length === 0) {
@@ -13443,15 +13468,20 @@
                 }
             }
             
-            // Now load and display inventory
-            const result = await apiCall('getInventoryReport');
+            // Now load and display inventory - add timestamp to bust any caching
+            const result = await apiCall('getInventoryReport', forceRefresh ? { _t: Date.now() } : {});
             
             if (result && result.status === 'success') {
                 inventoryData = result.data;
+                // Also update cachedItems to keep in sync
+                cachedItems = result.data;
                 // Filter out archived items by default
                 const activeItems = result.data.filter(item => item.Status !== 'Archived');
                 displayInventory(activeItems);
                 loadInventoryFilterSuppliers(); // Populate filter dropdown
+                if (forceRefresh) {
+                    showStatus('inventoryStatus', '✅ Inventory refreshed!', 'success');
+                }
             } else {
                 document.getElementById('inventoryTable').innerHTML = '<div class="loading">Error loading inventory</div>';
             }
@@ -14531,15 +14561,12 @@
             console.log('📝 Adjustment result:', result);
             
             if (result && result.status === 'success') {
-                // Refresh cached items to get updated quantities
-                const itemsResult = await apiCall('getItems');
-                if (itemsResult && itemsResult.status === 'success') {
-                    cachedItems = itemsResult.data;
-                }
+                // Force refresh to get updated quantities - clear cache and reload
+                cachedItems = [];
                 
                 // Note: hideAdjustInventoryForm will handle returning to report if returnToReport is set
                 hideAdjustInventoryForm();
-                loadInventory();
+                loadInventory(true);  // Force refresh
                 showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${currentQty} → ${newQty}`);
             } else {
                 showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
@@ -25111,10 +25138,11 @@
             }
             
             // Fetch all data
-            const [salesResult, itemsResult, customersResult] = await Promise.all([
+            const [salesResult, itemsResult, customersResult, suppliersResult] = await Promise.all([
                 apiCall('getSalesOrders'),
                 apiCall('getItems'),
-                apiCall('getCustomers')
+                apiCall('getCustomers'),
+                apiCall('getSuppliers')
             ]);
             
             if (!salesResult?.data || !itemsResult?.data) {
@@ -25123,6 +25151,7 @@
             
             const items = itemsResult.data;
             const customers = customersResult?.data || [];
+            const suppliers = suppliersResult?.data || [];
             
             // Filter sales by date range
             let salesInPeriod = salesResult.data.filter(s => {
@@ -25179,12 +25208,15 @@
                         const unitPrice = parseFloat(line.Unit_Price) || 0;
                         const lineTotal = qty * unitPrice;
                         
-                        // Track product sales
+                        // Track product sales - include supplier
                         const itemId = line.Item_ID;
+                        const suppId = item?.Supplier_ID;
+                        const supp = suppliers.find(s => s.Supplier_ID === suppId);
                         if (!productSales[itemId]) {
                             productSales[itemId] = {
                                 name: item?.Item_Description || itemId,
                                 sku: item?.SKU || '-',
+                                supplierName: supp?.Supplier_Name || 'Unknown',
                                 qty: 0,
                                 sales: 0
                             };
@@ -25413,6 +25445,7 @@
                                     <div>
                                         <div style="font-weight: 500;">${p.name}</div>
                                         <div style="font-size: 12px; color: #888;">${p.qty} units • ${p.sku}</div>
+                                        <div style="font-size: 11px; color: #aaa;">${p.supplierName || 'Unknown'}</div>
                                     </div>
                                 </div>
                                 <div style="text-align: right;">
@@ -25616,11 +25649,14 @@
                         customerSales[so.Customer_ID].revenue += revenue;
                         customerSales[so.Customer_ID].orders++;
                         
-                        // Product breakdown
+                        // Product breakdown - include supplier name
+                        const suppId = item?.Supplier_ID || 'Unknown';
+                        const supp = suppliers.find(s => s.Supplier_ID === suppId);
                         if (!productSales[line.Item_ID]) {
                             productSales[line.Item_ID] = { 
                                 name: item?.Item_Description || line.Item_ID, 
                                 sku: item?.SKU || '-',
+                                supplierName: supp?.Supplier_Name || 'Unknown',
                                 revenue: 0, 
                                 qty: 0 
                             };
@@ -25629,9 +25665,7 @@
                         productSales[line.Item_ID].qty += qty;
                         
                         // Supplier breakdown
-                        const suppId = item?.Supplier_ID || 'Unknown';
                         if (!supplierSales[suppId]) {
-                            const supp = suppliers.find(s => s.Supplier_ID === suppId);
                             supplierSales[suppId] = { name: supp?.Supplier_Name || 'Unknown', revenue: 0, cost: 0 };
                         }
                         supplierSales[suppId].revenue += revenue;
@@ -26054,7 +26088,10 @@
                             const width = (p.revenue / maxProductRevenue) * 100;
                             return `
                                 <div class="biz-chart-bar">
-                                    <div class="biz-chart-label" title="${p.name}">${i + 1}. ${p.name}</div>
+                                    <div class="biz-chart-label" title="${p.name}">
+                                        <div>${i + 1}. ${p.name}</div>
+                                        <div style="font-size: 11px; color: #888; font-weight: normal;">${p.qty} units • ${p.supplierName || 'Unknown'}</div>
+                                    </div>
                                     <div class="biz-chart-bar-bg">
                                         <div class="biz-chart-bar-fill" style="width: ${Math.max(width, 8)}%; background: ${chartColors[i % chartColors.length]};">
                                             ${p.qty}
@@ -26311,6 +26348,7 @@
                                     <th>#</th>
                                     <th>SKU</th>
                                     <th>Product</th>
+                                    <th>Supplier</th>
                                     <th style="text-align: right;">Units Sold</th>
                                     <th style="text-align: right;">Revenue</th>
                                     <th style="text-align: right;">% of Total</th>
@@ -26324,6 +26362,7 @@
                                             <td><strong>${i + 1}</strong></td>
                                             <td>${p.sku}</td>
                                             <td>${p.name}</td>
+                                            <td style="color: #666; font-size: 13px;">${p.supplierName || '-'}</td>
                                             <td style="text-align: right;">${p.qty.toLocaleString()}</td>
                                             <td style="text-align: right;">${formatMoney(p.revenue)}</td>
                                             <td style="text-align: right;">
@@ -26958,10 +26997,11 @@
             if (toDate) toDate.setHours(23, 59, 59, 999);
             
             // Fetch all data
-            const [salesResult, itemsResult, customersResult] = await Promise.all([
+            const [salesResult, itemsResult, customersResult, suppliersResult] = await Promise.all([
                 apiCall('getSalesOrders'),
                 apiCall('getItems'),
-                apiCall('getCustomers')
+                apiCall('getCustomers'),
+                apiCall('getSuppliers')
             ]);
             
             if (!salesResult?.data || !itemsResult?.data || !customersResult?.data) {
@@ -26969,6 +27009,7 @@
             }
             
             const items = itemsResult.data;
+            const suppliers = suppliersResult?.data || [];
             
             // Handle single vs multi-customer selection
             let customerName = 'Customer';
@@ -27046,11 +27087,14 @@
                         const lineTotal = qty * unitPrice;
                         
                         const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const suppId = item?.Supplier_ID;
+                        const supp = suppliers.find(s => s.Supplier_ID === suppId);
                         const itemId = line.Item_ID;
                         if (!productSales[itemId]) {
                             productSales[itemId] = {
                                 name: item?.Item_Description || itemId,
                                 sku: item?.SKU || '-',
+                                supplierName: supp?.Supplier_Name || 'Unknown',
                                 qty: 0,
                                 sales: 0
                             };
@@ -27257,6 +27301,7 @@
                             <div>
                                 <div style="font-weight: 600;">${p.name}</div>
                                 <div style="font-size: 12px; color: #888;">${p.qty} units • SKU: ${p.sku}</div>
+                                <div style="font-size: 11px; color: #aaa;">${p.supplierName || 'Unknown'}</div>
                             </div>
                         </div>
                         <div style="text-align: right;">
@@ -27295,11 +27340,29 @@
             }
             
             const items = itemsResult.data;
-            const supplier = suppliersResult.data.find(s => s.Supplier_ID === supplierId);
-            const supplierName = supplier?.Supplier_Name || 'Supplier';
             
-            // Get all POs for this supplier (exclude OUTGOING)
-            let allSupplierPOs = poResult.data.filter(p => p.Supplier_ID === supplierId && p.PO_Type !== 'OUTGOING');
+            // Handle single vs multi-supplier selection
+            let supplierName = 'Supplier';
+            let supplierLocation = '';
+            if (supplierId && !supplierId.includes(',')) {
+                const supplier = suppliersResult.data.find(s => s.Supplier_ID === supplierId);
+                supplierName = supplier?.Supplier_Name || 'Supplier';
+                // Build supplier location string
+                const city = supplier?.City || '';
+                const state = supplier?.State || '';
+                supplierLocation = [city, state].filter(Boolean).join(', ');
+            } else if (supplierId && supplierId.includes(',')) {
+                const count = supplierId.split(',').length;
+                supplierName = `${count} Suppliers Selected`;
+            } else {
+                supplierName = 'All Suppliers';
+            }
+            
+            // Get all POs for selected supplier(s) (exclude OUTGOING) - use matchesFilter for multi-select
+            let allSupplierPOs = poResult.data.filter(p => {
+                if (!supplierId) return p.PO_Type !== 'OUTGOING';
+                return matchesFilter(p.Supplier_ID, supplierId) && p.PO_Type !== 'OUTGOING';
+            });
             
             // Apply date filter if provided
             let filteredPOs = allSupplierPOs;
@@ -27537,6 +27600,7 @@
                 
                 <div class="pres-header-supplier">
                     <h2>🏭 ${supplierName}</h2>
+                    ${supplierLocation ? `<p style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">📍 ${supplierLocation}</p>` : ''}
                     <p>Partnership Performance Report</p>
                 </div>
                 
@@ -27694,6 +27758,7 @@
                     customerSummary[detail.customerId] = {
                         customerId: detail.customerId,
                         customerName: detail.customerName,
+                        customerLocation: getCustomerLocation(detail.customerId),
                         totalCases: 0,
                         totalUnits: 0,
                         totalRevenue: 0,
@@ -27767,7 +27832,10 @@
                 summaryArray.forEach(summary => {
                     const marginColor = summary.marginPercent >= 30 ? '#2e7d32' : summary.marginPercent >= 20 ? '#f57c00' : '#c62828';
                     html += `<tr style="cursor: pointer;" onclick="openCustomer('${summary.customerId}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-                        <td><strong style="color: #667eea;">${summary.customerName}</strong></td>
+                        <td>
+                            <strong style="color: #667eea;">${summary.customerName}</strong>
+                            ${summary.customerLocation ? `<div style="font-size: 11px; color: #888;">${summary.customerLocation}</div>` : ''}
+                        </td>
                         <td>${summary.totalCases.toFixed(1)}</td>
                         <td>${Math.round(summary.totalUnits).toLocaleString()}</td>
                         <td><strong>${formatMoney(summary.totalRevenue)}</strong></td>
@@ -27826,6 +27894,7 @@
                             soDate: so.Sale_Date || so.SO_Date,
                             customerId: so.Customer_ID,
                             customerName: getCustomerName(so.Customer_ID),
+                            customerLocation: getCustomerLocation(so.Customer_ID),
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             sku: item?.SKU || '',
@@ -27925,7 +27994,10 @@
                     html += `<tr style="cursor: pointer;" onclick="openSalesOrder('${detail.soId}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                         <td><strong style="color: #667eea;">${detail.soId}</strong></td>
                         <td data-sort="${sortableDate}">${formatDateSafe(detail.soDate)}</td>
-                        <td style="color: #667eea;">${detail.customerName}</td>
+                        <td>
+                            <span style="color: #667eea;">${detail.customerName}</span>
+                            ${detail.customerLocation ? `<div style="font-size: 11px; color: #888;">${detail.customerLocation}</div>` : ''}
+                        </td>
                         <td style="color: #667eea;">${detail.itemDescription}</td>
                         <td>${detail.sku}</td>
                         <td>${detail.quantity}</td>
