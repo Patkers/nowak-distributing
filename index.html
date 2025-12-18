@@ -5,13 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Wednesday, December 18, 2025
-         VERSION: V16_75
+         VERSION: V16_76
          =====================================================
          CHANGES IN THIS VERSION:
-         - PO Invoice now matches Sales Invoice format
-         - Header: Company name, City/State/ZIP, Phone/Email only
-         - Payment Status calculated from actual Amount_Paid
-         - Added Payment Date to Payment Info (when paid)
+         - Added Payment Date to SO edit screen (Payment Information box)
+         - Added Payment Date to SO view modal
+         - Added Payment Date to PO edit screen
+         - Added Payment Date to PO view modal
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10512,6 +10512,7 @@
                                     const balance = parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0);
                                     return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
                                 })()}</td></tr>
+                                ${po.Payment_Date ? `<tr><td style="padding: 8px 0; font-weight: bold;">Payment Date:</td><td style="color: #27ae60;">${new Date(po.Payment_Date).toLocaleDateString()}</td></tr>` : ''}
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${po.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${po.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${po.Payment_Status === 'Paid' ? '#c3e6cb' : '#ffeaa7'};">${po.Payment_Status}</span></td></tr>
                             </table>
                             ${po.Payment_Status !== 'Paid' && po.Status !== 'Void' && po.Status !== 'Cancelled' && po.Status !== 'Voided' ? `
@@ -11632,12 +11633,15 @@
                             <div style="margin-bottom: 10px;">
                                 <strong>Previously Paid:</strong> ${formatMoney(parseFloat(po.Amount_Paid || 0))}
                             </div>
-                            <div>
+                            <div style="margin-bottom: 10px;">
                                 <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(() => {
                                     const balance = parseFloat(po.Total_Amount || 0) - parseFloat(po.Amount_Paid || 0);
                                     return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
                                 })()}</span>
                             </div>
+                            ${po.Payment_Date ? `<div style="color: #27ae60;">
+                                <strong>Payment Date:</strong> ${new Date(po.Payment_Date).toLocaleDateString()}
+                            </div>` : ''}
                         </div>
                         <div class="form-group">
                             <label>💵 Amount Paid</label>
@@ -12088,12 +12092,15 @@
                             <div id="editSOPreviouslyPaid" style="margin-bottom: 10px;">
                                 <strong>Previously Paid:</strong> ${formatMoney(parseFloat(so.Amount_Paid || 0))}
                             </div>
-                            <div id="editSOBalanceDue">
+                            <div id="editSOBalanceDue" style="margin-bottom: 10px;">
                                 <strong>Balance Due:</strong> <span style="color: #e74c3c;">$${(() => {
                                     const balance = parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0);
                                     return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
                                 })()}</span>
                             </div>
+                            ${so.Payment_Date ? `<div id="editSOPaymentDate" style="color: #27ae60;">
+                                <strong>Payment Date:</strong> ${new Date(so.Payment_Date).toLocaleDateString()}
+                            </div>` : ''}
                         </div>
                         <div class="form-group">
                             <label>💵 Amount Paid</label>
@@ -13343,6 +13350,7 @@
                                     const balance = parseFloat(so.Total_Amount || 0) - parseFloat(so.Amount_Paid || 0);
                                     return (Math.abs(balance) < 0.01 ? 0 : balance).toFixed(2);
                                 })()}</td></tr>
+                                ${so.Payment_Date ? `<tr><td style="padding: 8px 0; font-weight: bold;">Payment Date:</td><td style="color: #27ae60;">${new Date(so.Payment_Date).toLocaleDateString()}</td></tr>` : ''}
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Payment Status:</td><td><span style="background: ${so.Payment_Status === 'Paid' ? '#d4edda' : '#fff3cd'}; color: ${so.Payment_Status === 'Paid' ? '#155724' : '#856404'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${so.Payment_Status === 'Paid' ? '#c3e6cb' : '#ffeaa7'};">${so.Payment_Status}</span></td></tr>
                             </table>
                         </div>
