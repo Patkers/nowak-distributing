@@ -4,14 +4,14 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Tuesday, December 17, 2025
-         VERSION: V16_64
+         LAST UPDATED: Wednesday, December 18, 2025
+         VERSION: V16_65
          =====================================================
          CHANGES IN THIS VERSION:
-         - REMOVED resize constraints - make modals as wide/tall as you want!
-           * No max width or height limits
-           * Only min size: 300x200 so it doesn't disappear
-           * Only constraint: top edge stays on screen
+         - Added autocomplete="off" to all Add forms
+         - Prevents Chrome address autofill popup
+         - Uses autocomplete="new-password" for address fields
+           (Chrome trick to really disable autofill)
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -3370,41 +3370,41 @@
             
             <div id="addSupplierForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Add New Supplier</h3>
-                <form onsubmit="addSupplier(event)">
+                <form onsubmit="addSupplier(event)" autocomplete="off">
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Supplier Name *</label>
-                            <input type="text" id="newSupplierName" required>
+                            <input type="text" id="newSupplierName" required autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Contact Name</label>
-                            <input type="text" id="newContactName">
+                            <input type="text" id="newContactName" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Phone</label>
-                            <input type="tel" id="newPhone" placeholder="(999) 999-9999" oninput="formatPhone(this)">
+                            <input type="tel" id="newPhone" placeholder="(999) 999-9999" oninput="formatPhone(this)" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" id="newEmail">
+                            <input type="email" id="newEmail" autocomplete="off">
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Address</label>
-                            <input type="text" id="newAddress">
+                            <input type="text" id="newAddress" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>City</label>
-                            <input type="text" id="newCity">
+                            <input type="text" id="newCity" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>State</label>
-                            <input type="text" id="newState" maxlength="2">
+                            <input type="text" id="newState" maxlength="2" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>ZIP</label>
-                            <input type="text" id="newZip">
+                            <input type="text" id="newZip" autocomplete="new-password">
                         </div>
                     </div>
                     <div class="form-group">
@@ -3549,7 +3549,7 @@
             
             <div id="addItemForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Add New Item</h3>
-                <form onsubmit="addItem(event)">
+                <form onsubmit="addItem(event)" autocomplete="off">
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Supplier *</label>
@@ -3559,11 +3559,11 @@
                         </div>
                         <div class="form-group">
                             <label>Item Description *</label>
-                            <input type="text" id="newItemDescription" required>
+                            <input type="text" id="newItemDescription" required autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>SKU *</label>
-                            <input type="text" id="newItemSKU" required placeholder="e.g. BM-BBQ-001">
+                            <input type="text" id="newItemSKU" required placeholder="e.g. BM-BBQ-001" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Purchase UOM (What you buy)</label>
@@ -3576,11 +3576,11 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Units Per Package * <span style="font-size: 12px; color: #666;">(How many individual units in one box/case)</span></label>
-                            <input type="number" id="newUnitsPerPackage" step="1" min="1" required placeholder="e.g. 27">
+                            <input type="number" id="newUnitsPerPackage" step="1" min="1" required placeholder="e.g. 27" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Package Cost * <span style="font-size: 12px; color: #666;">(Cost per box/case)</span></label>
-                            <input type="number" id="newPackageCost" step="0.01" required placeholder="e.g. 20.00" oninput="calculateUnitCost()">
+                            <input type="number" id="newPackageCost" step="0.01" required placeholder="e.g. 20.00" oninput="calculateUnitCost()" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Unit Cost (Calculated)</label>
@@ -3588,17 +3588,17 @@
                         </div>
                         <div class="form-group">
                             <label>Unit Sell Price * <span style="font-size: 12px; color: #666;">(Price per individual unit)</span></label>
-                            <input type="number" id="newUnitSellPrice" step="0.01" required placeholder="e.g. 3.00">
+                            <input type="number" id="newUnitSellPrice" step="0.01" required placeholder="e.g. 3.00" autocomplete="off">
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Initial Quantity <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
-                            <input type="number" id="newQtyOnHand" value="0">
+                            <input type="number" id="newQtyOnHand" value="0" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Reorder Point <span style="font-size: 12px; color: #666;">(In individual units)</span></label>
-                            <input type="number" id="newReorderPoint" value="10">
+                            <input type="number" id="newReorderPoint" value="10" autocomplete="off">
                         </div>
                     </div>
                     <div class="form-group">
@@ -3736,51 +3736,51 @@
             
             <div id="addCustomerForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
                 <h3>Add New Customer</h3>
-                <form onsubmit="addCustomer(event)">
+                <form onsubmit="addCustomer(event)" autocomplete="off">
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Customer Name *</label>
-                            <input type="text" id="newCustomerName" required>
+                            <input type="text" id="newCustomerName" required autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Contact Name</label>
-                            <input type="text" id="newCustomerContact">
+                            <input type="text" id="newCustomerContact" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Phone</label>
-                            <input type="tel" id="newCustomerPhone">
+                            <input type="tel" id="newCustomerPhone" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Mobile</label>
-                            <input type="tel" id="newCustomerMobile">
+                            <input type="tel" id="newCustomerMobile" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" id="newCustomerEmail">
+                            <input type="email" id="newCustomerEmail" autocomplete="off">
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Address</label>
-                            <input type="text" id="newCustomerAddress">
+                            <input type="text" id="newCustomerAddress" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>City</label>
-                            <input type="text" id="newCustomerCity">
+                            <input type="text" id="newCustomerCity" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>State</label>
-                            <input type="text" id="newCustomerState" maxlength="2">
+                            <input type="text" id="newCustomerState" maxlength="2" autocomplete="new-password">
                         </div>
                         <div class="form-group">
                             <label>ZIP</label>
-                            <input type="text" id="newCustomerZip">
+                            <input type="text" id="newCustomerZip" autocomplete="new-password">
                         </div>
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Credit Limit</label>
-                            <input type="number" id="newCreditLimit" step="0.01" value="0">
+                            <input type="number" id="newCreditLimit" step="0.01" value="0" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Payment Terms</label>
