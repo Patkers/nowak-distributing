@@ -5,10 +5,10 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Wednesday, December 18, 2025
-         VERSION: V16_68
+         VERSION: V16_72
          =====================================================
          CHANGES IN THIS VERSION:
-         - Removed address from Sales Invoice header (kept phone/email)
+         - Changed PO and Sales Invoice fonts to Times New Roman
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10722,9 +10722,51 @@
     <title>Purchase Order ${po.Invoice_Number || po.PO_ID}</title>
     <style>
         @media print {
-            @page { margin: 0.5in; }
+            @page { margin: 0.3in; }
             body { margin: 0; }
             .no-print { display: none; }
+            /* Force header info to show on ALL print */
+            .po-header p {
+                display: block !important;
+                visibility: visible !important;
+            }
+        }
+        /* Mobile print styles - smaller fonts for phone printing */
+        @media print and (max-width: 800px) {
+            body {
+                font-size: 8pt !important;
+            }
+            .po-header h1 {
+                font-size: 14pt !important;
+            }
+            .po-header p {
+                font-size: 8pt !important;
+                margin: 2px 0 !important;
+                display: block !important;
+                visibility: visible !important;
+            }
+            .po-number {
+                font-size: 10pt !important;
+            }
+            .po-info {
+                flex-direction: column !important;
+            }
+            .info-box {
+                width: 100% !important;
+            }
+            .info-box h3 {
+                font-size: 9pt !important;
+            }
+            .info-box p {
+                font-size: 8pt !important;
+            }
+            table.items th, table.items td {
+                font-size: 8pt !important;
+                padding: 4px !important;
+            }
+            .totals td {
+                font-size: 8pt !important;
+            }
         }
         /* Mobile responsive styles for PO */
         @media screen and (max-width: 600px) {
@@ -10783,7 +10825,7 @@
             }
         }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 11pt;
             line-height: 1.4;
             max-width: 8in;
@@ -11005,9 +11047,51 @@
     <title>Invoice ${so.Invoice_Number || so.SO_ID}</title>
     <style>
         @media print {
-            @page { margin: 0.5in; }
+            @page { margin: 0.3in; }
             body { margin: 0; }
             .no-print { display: none; }
+            /* Force header info to show on ALL print */
+            .invoice-header p {
+                display: block !important;
+                visibility: visible !important;
+            }
+        }
+        /* Mobile print styles - smaller fonts for phone printing */
+        @media print and (max-width: 800px) {
+            body {
+                font-size: 8pt !important;
+            }
+            .invoice-header h1 {
+                font-size: 14pt !important;
+            }
+            .invoice-header p {
+                font-size: 8pt !important;
+                margin: 2px 0 !important;
+                display: block !important;
+                visibility: visible !important;
+            }
+            .invoice-number {
+                font-size: 10pt !important;
+            }
+            .invoice-info {
+                flex-direction: column !important;
+            }
+            .info-box {
+                width: 100% !important;
+            }
+            .info-box h3 {
+                font-size: 9pt !important;
+            }
+            .info-box p {
+                font-size: 8pt !important;
+            }
+            table.items th, table.items td {
+                font-size: 8pt !important;
+                padding: 4px !important;
+            }
+            .totals td {
+                font-size: 8pt !important;
+            }
         }
         /* Mobile responsive styles for invoice */
         @media screen and (max-width: 600px) {
@@ -11067,11 +11151,11 @@
             .totals {
                 width: 100% !important;
                 float: none !important;
-                margin-top: 20px !important;
+                margin-top: 10px !important;
             }
             .totals td {
                 font-size: 10pt !important;
-                padding: 6px 8px !important;
+                padding: 4px 8px !important;
             }
             .signature-line {
                 flex: 1 !important;
@@ -11079,7 +11163,10 @@
             }
             .footer {
                 font-size: 9pt !important;
-                margin-top: 30px !important;
+                margin-top: 15px !important;
+            }
+            .signature {
+                margin-top: 15px !important;
             }
             .no-print button {
                 padding: 10px 16px !important;
@@ -11100,33 +11187,37 @@
             }
         }
         body {
-            font-family: Arial, sans-serif;
-            font-size: 11pt;
-            line-height: 1.4;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10pt;
+            line-height: 1.3;
             max-width: 8in;
             margin: 0 auto;
-            padding: 0.5in;
+            padding: 0.3in;
         }
         .invoice-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             border-bottom: 3px solid ${themeColors.primary};
-            padding-bottom: 20px;
+            padding-bottom: 10px;
         }
         .invoice-header h1 {
             color: ${themeColors.text};
-            margin: 0 0 10px 0;
-            font-size: 28pt;
+            margin: 0 0 5px 0;
+            font-size: 22pt;
+        }
+        .invoice-header p {
+            margin: 3px 0;
+            font-size: 10pt;
         }
         .invoice-number {
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
             margin: 5px 0;
         }
         .invoice-info {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
         .info-box {
             width: 45%;
@@ -11134,34 +11225,39 @@
         .info-box h3 {
             color: ${themeColors.text};
             border-bottom: 2px solid ${themeColors.primary};
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+            margin-top: 0;
+            font-size: 11pt;
         }
         .info-box p {
-            margin: 5px 0;
+            margin: 3px 0;
+            font-size: 9pt;
         }
         table.items {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
         }
         table.items th {
             background: ${themeColors.primary};
             color: white;
-            padding: 12px;
+            padding: 6px 8px;
             text-align: left;
             font-weight: bold;
+            font-size: 9pt;
         }
         table.items td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 5px 8px;
+            font-size: 9pt;
         }
         table.items .qty { text-align: center; width: 10%; }
         table.items .desc { width: 50%; }
         table.items .price { text-align: right; width: 20%; }
         table.items .amount { text-align: right; width: 20%; }
         .totals {
-            margin-top: 30px;
+            margin-top: 15px;
             float: right;
             width: 40%;
         }
@@ -11169,8 +11265,9 @@
             width: 100%;
         }
         .totals td {
-            padding: 8px 10px;
+            padding: 4px 8px;
             border-bottom: 1px solid #eee;
+            font-size: 9pt;
         }
         .totals .label {
             text-align: right;
@@ -11183,31 +11280,33 @@
         .total-line {
             border-top: 2px solid ${themeColors.primary} !important;
             border-bottom: 3px double ${themeColors.primary} !important;
-            font-size: 14pt;
+            font-size: 11pt;
             font-weight: bold;
         }
         .footer {
             clear: both;
-            margin-top: 60px;
-            padding-top: 20px;
+            margin-top: 25px;
+            padding-top: 10px;
             border-top: 2px solid ${themeColors.primary};
             text-align: center;
             font-style: italic;
             color: #666;
+            font-size: 9pt;
         }
         .signature {
-            margin-top: 40px;
+            margin-top: 20px;
             display: flex;
             align-items: flex-end;
             gap: 10px;
         }
         .signature-label {
             white-space: nowrap;
+            font-size: 9pt;
         }
         .signature-line {
-            flex: 0 0 250px;
+            flex: 0 0 200px;
             border-bottom: 1px solid #000;
-            height: 20px;
+            height: 15px;
         }
     </style>
 </head>
@@ -11215,12 +11314,12 @@
 
     <div class="invoice-header">
         <h1>${settings.companyName || 'Nowak Distributing'}</h1>
-        ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
-        <p>${settings.phone ? `Phone: ${settings.phone}` : ''}${settings.phone && settings.email ? ' | ' : ''}${settings.email ? `Email: ${settings.email}` : ''}</p>
+        <p class="header-location">${settings.cityStateZip || 'Sherwood, WI 54169'}</p>
+        <p class="header-contact">Phone: ${settings.phone || '(920)634-4351'}${settings.email ? ` | Email: ${settings.email}` : ''}</p>
     </div>
 
     <div class="invoice-number">SALES INVOICE: ${so.Invoice_Number || so.SO_ID}</div>
-    <p><strong>Invoice Date:</strong> ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()} | <strong>Status:</strong> ${so.Payment_Status || 'Unpaid'}</p>
+    <p style="margin: 5px 0 15px 0;"><strong>Invoice Date:</strong> ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()} | <strong>Status:</strong> ${so.Payment_Status || 'Unpaid'}</p>
 
     <div class="invoice-info">
         <div class="info-box">
@@ -11307,7 +11406,7 @@
         <div class="signature-line"></div>
     </div>
 
-    <p style="clear: both; text-align: center; margin-top: 40px; font-size: 9pt; color: #999;">
+    <p style="clear: both; text-align: center; margin-top: 15px; font-size: 8pt; color: #999;">
         KEEP THIS SLIP FOR REFERENCE
     </p>
 
