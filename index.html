@@ -5,10 +5,10 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Wednesday, December 18, 2025
-         VERSION: V16_72
+         VERSION: V16_74
          =====================================================
          CHANGES IN THIS VERSION:
-         - Changed PO and Sales Invoice fonts to Times New Roman
+         - Added Payment Date to Sales Invoice (shows when paid)
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11034,6 +11034,14 @@
             const paid = parseFloat(so.Amount_Paid || 0);
             const balance = total - paid;
             
+            // Calculate actual payment status based on amounts
+            let actualPaymentStatus = 'Unpaid';
+            if (paid >= total && total > 0) {
+                actualPaymentStatus = 'Paid';
+            } else if (paid > 0) {
+                actualPaymentStatus = 'Partial';
+            }
+            
             // Get theme colors for print
             const themeColors = getThemeColors();
             
@@ -11319,7 +11327,7 @@
     </div>
 
     <div class="invoice-number">SALES INVOICE: ${so.Invoice_Number || so.SO_ID}</div>
-    <p style="margin: 5px 0 15px 0;"><strong>Invoice Date:</strong> ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()} | <strong>Status:</strong> ${so.Payment_Status || 'Unpaid'}</p>
+    <p style="margin: 5px 0 15px 0;"><strong>Invoice Date:</strong> ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()} | <strong>Status:</strong> ${actualPaymentStatus}</p>
 
     <div class="invoice-info">
         <div class="info-box">
@@ -11334,7 +11342,8 @@
             <h3>Payment Info:</h3>
             <p><strong>Terms:</strong> ${customer?.Payment_Terms || 'Net 30'}</p>
             <p><strong>Due Date:</strong> ${so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-'}</p>
-            <p><strong>Status:</strong> ${so.Payment_Status || 'Unpaid'}</p>
+            <p><strong>Status:</strong> ${actualPaymentStatus}</p>
+            ${paid > 0 && so.Payment_Date ? `<p><strong>Paid:</strong> ${new Date(so.Payment_Date).toLocaleDateString()}</p>` : ''}
         </div>
     </div>
 
