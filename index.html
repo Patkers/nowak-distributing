@@ -5,13 +5,12 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Thursday, December 18, 2025
-         VERSION: V16_79
+         VERSION: V16_81
          =====================================================
          CHANGES IN THIS VERSION:
-         - Fixed SO edit screen to refresh Payment Info after save
-           (Current Total, Previously Paid, Balance Due, Payment Date)
-         - Fixed PO edit screen to refresh Payment Info after save
-         - Amount Paid input also updates to reflect saved value
+         - Added "On Order" column to Product Dashboard table
+         - Added Qty On Order to Purchase Stats quick stats
+         - Added Qty On Order KPI to Business Overview Dashboard
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -25708,14 +25707,21 @@
             const purchases = poResult?.data || [];
             let sales = salesResult.data.filter(so => so.Status !== 'Voided');
             
-            // Calculate inventory stats including backorder
+            // Calculate inventory stats including backorder and on order
             let totalBackorder = 0;
             let backorderItems = 0;
+            let totalOnOrder = 0;
+            let onOrderItems = 0;
             items.forEach(item => {
                 const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
                 if (backorder > 0) {
                     totalBackorder += backorder;
                     backorderItems++;
+                }
+                if (onOrder > 0) {
+                    totalOnOrder += onOrder;
+                    onOrderItems++;
                 }
             });
             
@@ -26246,6 +26252,12 @@
                             <div class="label">POs Received</div>
                             <div class="change">${pendingPOCount} pending</div>
                         </div>
+                        <div class="biz-kpi" style="border-top: 4px solid #0891b2;">
+                            <div class="icon">📦</div>
+                            <div class="value">${totalOnOrder.toLocaleString()}</div>
+                            <div class="label">Qty On Order</div>
+                            <div class="change">${onOrderItems} items</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -26466,6 +26478,10 @@
                         <div class="biz-stat-row">
                             <span class="biz-stat-label">⏳ Pending Receipt</span>
                             <span class="biz-stat-value">${pendingPOCount}</span>
+                        </div>
+                        <div class="biz-stat-row">
+                            <span class="biz-stat-label">📦 Qty On Order</span>
+                            <span class="biz-stat-value" style="color: #0891b2;">${totalOnOrder.toLocaleString()}</span>
                         </div>
                         <div class="biz-stat-row">
                             <span class="biz-stat-label">🛒 Avg PO Value</span>
@@ -26689,6 +26705,7 @@
                                 unitPrice: parseFloat(item?.Unit_Sell_Price) || 0,
                                 qtyOnHand: parseInt(item?.Qty_On_Hand) || 0,
                                 qtyOnBackorder: parseInt(item?.Qty_On_Backorder) || 0,
+                                qtyOnOrder: parseInt(item?.Qty_On_Order) || 0,
                                 reorderPoint: parseInt(item?.Reorder_Point) || 0,
                                 qtySold: 0,
                                 revenue: 0,
@@ -26731,6 +26748,8 @@
                         sku: item.SKU || '-',
                         supplier: supplier?.Supplier_Name || 'Unknown',
                         qtyOnHand: parseInt(item.Qty_On_Hand) || 0,
+                        qtyOnOrder: parseInt(item.Qty_On_Order) || 0,
+                        qtyOnBackorder: parseInt(item.Qty_On_Backorder) || 0,
                         qtySold: stats?.qtySold || 0,
                         revenue: stats?.revenue || 0
                     };
@@ -27052,6 +27071,7 @@
                                     <th style="text-align: right;">Profit</th>
                                     <th style="text-align: right;">Margin</th>
                                     <th style="text-align: center;">Stock</th>
+                                    <th style="text-align: center;">On Order</th>
                                     <th style="text-align: center;">Backorder</th>
                                 </tr>
                             </thead>
@@ -27059,6 +27079,7 @@
                                 ${topSellers.map((p, i) => {
                                     let stockIcon = p.qtyOnHand <= 0 ? '🔴' : p.qtyOnHand <= p.reorderPoint ? '🟡' : '🟢';
                                     const backorder = p.qtyOnBackorder || 0;
+                                    const onOrder = p.qtyOnOrder || 0;
                                     return `
                                         <tr>
                                             <td><strong>${i + 1}</strong></td>
@@ -27070,6 +27091,7 @@
                                             <td style="text-align: right; color: ${p.profit >= 0 ? '#2e7d32' : '#c62828'};">${formatMoney(p.profit)}</td>
                                             <td style="text-align: right;">${p.margin.toFixed(1)}%</td>
                                             <td style="text-align: center;">${stockIcon} ${p.qtyOnHand}</td>
+                                            <td style="text-align: center; color: ${onOrder > 0 ? '#0891b2' : '#666'}; font-weight: ${onOrder > 0 ? '600' : 'normal'};">${onOrder > 0 ? onOrder : '-'}</td>
                                             <td style="text-align: center; color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
                                         </tr>
                                     `;
@@ -27090,6 +27112,8 @@
                                 const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
                                 const rankEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
                                 let stockIcon = p.qtyOnHand <= 0 ? '🔴' : p.qtyOnHand <= p.reorderPoint ? '🟡' : '🟢';
+                                const onOrder = p.qtyOnOrder || 0;
+                                const backorder = p.qtyOnBackorder || 0;
                                 return `
                                     <div class="top-seller-card">
                                         <div class="rank ${rankClass}">${rankEmoji}</div>
@@ -27112,6 +27136,14 @@
                                                 <div class="stat-value">${stockIcon} ${p.qtyOnHand}</div>
                                                 <div class="stat-label">Stock</div>
                                             </div>
+                                            <div class="stat-box">
+                                                <div class="stat-value" style="color: ${onOrder > 0 ? '#0891b2' : '#999'};">${onOrder > 0 ? onOrder : '-'}</div>
+                                                <div class="stat-label">On Order</div>
+                                            </div>
+                                            <div class="stat-box">
+                                                <div class="stat-value" style="color: ${backorder > 0 ? '#dc2626' : '#999'};">${backorder > 0 ? backorder : '-'}</div>
+                                                <div class="stat-label">Backorder</div>
+                                            </div>
                                         </div>
                                     </div>
                                 `;
@@ -27127,7 +27159,10 @@
                     ${productsWithInventory.length === 0 ? 
                         '<p style="text-align: center; color: #888; padding: 20px;">No products with inventory found</p>' :
                         `<div class="bottom-seller-grid">
-                            ${productsWithInventory.map(p => `
+                            ${productsWithInventory.map(p => {
+                                const onOrder = p.qtyOnOrder || 0;
+                                const backorder = p.qtyOnBackorder || 0;
+                                return `
                                 <div class="bottom-seller-card">
                                     <div class="name">${p.name}</div>
                                     <div class="sku">SKU: ${p.sku} • ${p.supplier}</div>
@@ -27144,9 +27179,17 @@
                                             <div class="stat-value" style="color: #2e7d32;">${formatMoney(p.revenue)}</div>
                                             <div class="stat-label">Revenue</div>
                                         </div>
+                                        <div class="stat-box">
+                                            <div class="stat-value" style="color: ${onOrder > 0 ? '#0891b2' : '#999'};">${onOrder > 0 ? onOrder : '-'}</div>
+                                            <div class="stat-label">On Order</div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-value" style="color: ${backorder > 0 ? '#dc2626' : '#999'};">${backorder > 0 ? backorder : '-'}</div>
+                                            <div class="stat-label">Backorder</div>
+                                        </div>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>`
                     }
                 </div>
