@@ -5,14 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Thursday, December 18, 2025
-         VERSION: V16_78
+         VERSION: V16_79
          =====================================================
          CHANGES IN THIS VERSION:
-         - Updated Sales Order Detail report to match Sales tab
-           (Invoice #, Date, Customer, Total, Paid, Due Date, Paid Date, Payment, Status)
-         - Updated Purchase Order Detail report to match Purchases tab
-           (Invoice #, Date, Supplier, Status, Total, Paid, Due Date, Paid Date, Payment)
-         - Reports now show order-level data instead of line-level
+         - Fixed SO edit screen to refresh Payment Info after save
+           (Current Total, Previously Paid, Balance Due, Payment Date)
+         - Fixed PO edit screen to refresh Payment Info after save
+         - Amount Paid input also updates to reflect saved value
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12032,10 +12031,39 @@
                     const updatedPO = updatedResult.data.find(p => p.PO_ID === po.PO_ID);
                     if (updatedPO) {
                         currentEditingOrder = updatedPO;
-                        // Update displayed totals
-                        const totalDisplay = document.querySelector('#orderModal .order-total');
-                        if (totalDisplay) {
-                            totalDisplay.textContent = formatMoney(data.totalAmount);
+                        
+                        // Update Payment Information display (find by looking for the Payment Information section)
+                        const paymentInfoSection = document.querySelector('#modalContent h3[style*="Payment Information"]')?.closest('div')?.querySelector('div[style*="background: #f8f9fa"]');
+                        
+                        if (paymentInfoSection) {
+                            const newTotal = parseFloat(updatedPO.Total_Amount || 0);
+                            const newPaid = parseFloat(updatedPO.Amount_Paid || 0);
+                            const newBalance = Math.abs(newTotal - newPaid) < 0.01 ? 0 : (newTotal - newPaid);
+                            
+                            // Rebuild the Payment Info section content
+                            let paymentInfoHTML = `
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Current Total:</strong> ${formatMoney(newTotal)}
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Previously Paid:</strong> ${formatMoney(newPaid)}
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Balance Due:</strong> <span style="color: ${newBalance > 0 ? '#e74c3c' : '#27ae60'};">$${newBalance.toFixed(2)}</span>
+                                </div>
+                            `;
+                            if (updatedPO.Payment_Date) {
+                                paymentInfoHTML += `<div style="color: #27ae60;">
+                                    <strong>Payment Date:</strong> ${new Date(updatedPO.Payment_Date).toLocaleDateString()}
+                                </div>`;
+                            }
+                            paymentInfoSection.innerHTML = paymentInfoHTML;
+                        }
+                        
+                        // Update the Amount Paid input
+                        const amountPaidInput = document.getElementById('editPOAmountPaid');
+                        if (amountPaidInput) {
+                            amountPaidInput.value = parseFloat(updatedPO.Amount_Paid || 0).toFixed(2);
                         }
                     }
                 }
@@ -12305,10 +12333,48 @@
                     const updatedSO = updatedResult.data.find(s => s.SO_ID === so.SO_ID);
                     if (updatedSO) {
                         currentEditingOrder = updatedSO;
-                        // Update displayed totals
-                        const totalDisplay = document.querySelector('#orderModal .order-total');
-                        if (totalDisplay) {
-                            totalDisplay.textContent = formatMoney(data.totalAmount);
+                        
+                        // Update Payment Information display
+                        const currentTotalDiv = document.getElementById('editSOCurrentTotal');
+                        const previouslyPaidDiv = document.getElementById('editSOPreviouslyPaid');
+                        const balanceDueDiv = document.getElementById('editSOBalanceDue');
+                        const paymentDateDiv = document.getElementById('editSOPaymentDate');
+                        
+                        const newTotal = parseFloat(updatedSO.Total_Amount || 0);
+                        const newPaid = parseFloat(updatedSO.Amount_Paid || 0);
+                        const newBalance = newTotal - newPaid;
+                        
+                        if (currentTotalDiv) {
+                            currentTotalDiv.innerHTML = `<strong>Current Total:</strong> ${formatMoney(newTotal)}`;
+                        }
+                        if (previouslyPaidDiv) {
+                            previouslyPaidDiv.innerHTML = `<strong>Previously Paid:</strong> ${formatMoney(newPaid)}`;
+                        }
+                        if (balanceDueDiv) {
+                            const balanceDisplay = Math.abs(newBalance) < 0.01 ? 0 : newBalance;
+                            balanceDueDiv.innerHTML = `<strong>Balance Due:</strong> <span style="color: ${balanceDisplay > 0 ? '#e74c3c' : '#27ae60'};">$${balanceDisplay.toFixed(2)}</span>`;
+                        }
+                        
+                        // Add or update Payment Date display
+                        if (updatedSO.Payment_Date) {
+                            if (paymentDateDiv) {
+                                paymentDateDiv.innerHTML = `<strong>Payment Date:</strong> ${new Date(updatedSO.Payment_Date).toLocaleDateString()}`;
+                            } else {
+                                // Insert Payment Date if it doesn't exist
+                                if (balanceDueDiv && balanceDueDiv.parentElement) {
+                                    const newPaymentDateDiv = document.createElement('div');
+                                    newPaymentDateDiv.id = 'editSOPaymentDate';
+                                    newPaymentDateDiv.style.color = '#27ae60';
+                                    newPaymentDateDiv.innerHTML = `<strong>Payment Date:</strong> ${new Date(updatedSO.Payment_Date).toLocaleDateString()}`;
+                                    balanceDueDiv.parentElement.appendChild(newPaymentDateDiv);
+                                }
+                            }
+                        }
+                        
+                        // Update the Amount Paid input
+                        const amountPaidInput = document.getElementById('editSOAmountPaid');
+                        if (amountPaidInput) {
+                            amountPaidInput.value = newPaid.toFixed(2);
                         }
                     }
                 }
