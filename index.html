@@ -5,13 +5,10 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Wednesday, December 18, 2025
-         VERSION: V16_65
+         VERSION: V16_68
          =====================================================
          CHANGES IN THIS VERSION:
-         - Added autocomplete="off" to all Add forms
-         - Prevents Chrome address autofill popup
-         - Uses autocomplete="new-password" for address fields
-           (Chrome trick to really disable autofill)
+         - Removed address from Sales Invoice header (kept phone/email)
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -3748,11 +3745,11 @@
                         </div>
                         <div class="form-group">
                             <label>Phone</label>
-                            <input type="tel" id="newCustomerPhone" autocomplete="off">
+                            <input type="tel" id="newCustomerPhone" autocomplete="off" placeholder="(999) 999-9999" oninput="formatPhone(this)">
                         </div>
                         <div class="form-group">
                             <label>Mobile</label>
-                            <input type="tel" id="newCustomerMobile" autocomplete="off">
+                            <input type="tel" id="newCustomerMobile" autocomplete="off" placeholder="(999) 999-9999" oninput="formatPhone(this)">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
@@ -3817,11 +3814,11 @@
                         </div>
                         <div class="form-group">
                             <label>Phone</label>
-                            <input type="tel" id="editCustomerPhone">
+                            <input type="tel" id="editCustomerPhone" placeholder="(999) 999-9999" oninput="formatPhone(this)">
                         </div>
                         <div class="form-group">
                             <label>Mobile</label>
-                            <input type="tel" id="editCustomerMobile">
+                            <input type="tel" id="editCustomerMobile" placeholder="(999) 999-9999" oninput="formatPhone(this)">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
@@ -11132,14 +11129,16 @@
             margin-bottom: 30px;
         }
         .info-box {
-            flex: 1;
+            width: 45%;
         }
         .info-box h3 {
-            margin: 0 0 10px 0;
             color: ${themeColors.text};
+            border-bottom: 2px solid ${themeColors.primary};
+            padding-bottom: 5px;
+            margin-bottom: 10px;
         }
         .info-box p {
-            margin: 2px 0;
+            margin: 5px 0;
         }
         table.items {
             width: 100%;
@@ -11215,29 +11214,28 @@
 <body>
 
     <div class="invoice-header">
-        <h1>SALES INVOICE</h1>
-        <p style="font-size: 16pt; margin: 5px 0;">${settings.companyName}</p>
-        <div class="invoice-number">#${so.Invoice_Number || so.SO_ID}</div>
-        <p>Date: ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()}</p>
+        <h1>${settings.companyName || 'Nowak Distributing'}</h1>
+        ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
+        <p>${settings.phone ? `Phone: ${settings.phone}` : ''}${settings.phone && settings.email ? ' | ' : ''}${settings.email ? `Email: ${settings.email}` : ''}</p>
     </div>
 
+    <div class="invoice-number">SALES INVOICE: ${so.Invoice_Number || so.SO_ID}</div>
+    <p><strong>Invoice Date:</strong> ${so.Sale_Date ? new Date(so.Sale_Date).toLocaleDateString() : new Date(so.SO_Date).toLocaleDateString()} | <strong>Status:</strong> ${so.Payment_Status || 'Unpaid'}</p>
+
     <div class="invoice-info">
-        <div class="info-box" style="padding-right: 20px;">
-            <h3>From:</h3>
-            <p><strong>${settings.companyName || 'Nowak Distributing'}</strong></p>
-            ${settings.address1 ? `<p>${settings.address1}</p>` : ''}
-            ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
-            ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
-            ${settings.phone ? `<p>Phone: ${settings.phone}</p>` : ''}
-            ${settings.email ? `<p>Email: ${settings.email}</p>` : ''}
-        </div>
-        <div class="info-box" style="text-align: left; padding-left: 20px; border-left: 2px solid #eee;">
+        <div class="info-box">
             <h3>Bill To:</h3>
             <p><strong>${customer?.Customer_Name || 'Unknown Customer'}</strong></p>
             ${customer?.Contact_Name ? `<p>Attn: ${customer.Contact_Name}</p>` : ''}
             ${customer?.Address ? `<p>${customer.Address}</p>` : ''}
             ${customer?.City || customer?.State || customer?.ZIP ? `<p>${customer.City || ''}${customer.City && customer.State ? ', ' : ''}${customer.State || ''} ${customer.ZIP || ''}</p>` : ''}
             ${customer?.Phone ? `<p>Phone: ${customer.Phone}</p>` : ''}
+        </div>
+        <div class="info-box">
+            <h3>Payment Info:</h3>
+            <p><strong>Terms:</strong> ${customer?.Payment_Terms || 'Net 30'}</p>
+            <p><strong>Due Date:</strong> ${so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : '-'}</p>
+            <p><strong>Status:</strong> ${so.Payment_Status || 'Unpaid'}</p>
         </div>
     </div>
 
