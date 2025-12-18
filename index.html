@@ -5,12 +5,12 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Thursday, December 18, 2025
-         VERSION: V16_81
+         VERSION: V16_83
          =====================================================
          CHANGES IN THIS VERSION:
-         - Added "On Order" column to Product Dashboard table
-         - Added Qty On Order to Purchase Stats quick stats
-         - Added Qty On Order KPI to Business Overview Dashboard
+         - Renamed "Date" column to "Sale Date" on SO screens
+         - Renamed "Date" column to "PO Date" on PO screens
+         - Updated status labels: Delivered = "Awaiting payment"
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10388,7 +10388,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="purchasesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Supplier</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Actions</th>';
+            html += '<th>Invoice #</th><th>Supplier</th><th>PO Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
@@ -13297,7 +13297,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Status</th>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Sale Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -13331,8 +13331,8 @@
                 // Order status badge
                 const orderStatus = so.Status || 'Pending';
                 let statusBadge = '';
-                if (orderStatus === 'Delivered') statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Delivered</span>';
-                else if (orderStatus === 'Completed') statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Completed</span>';
+                if (orderStatus === 'Delivered') statusBadge = '<span style="background: #0d9488; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Delivered</span>';
+                else if (orderStatus === 'Completed') statusBadge = '<span style="background: #16a34a; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✓ Completed</span>';
                 else if (orderStatus === 'Out for Delivery') statusBadge = '<span style="background: #17a2b8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">🚚 Out for Delivery</span>';
                 else if (orderStatus === 'Ready') statusBadge = '<span style="background: #6f42c1; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📦 Ready</span>';
                 else if (orderStatus === 'Voided') statusBadge = '<span style="background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⊘ Voided</span>';
@@ -17117,7 +17117,7 @@
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
                     <th>Invoice #</th>
-                    <th>Date</th>
+                    <th>Sale Date</th>
                     <th>Customer</th>
                     <th style="text-align: right;">Total</th>
                     <th>Payment</th>
@@ -17812,7 +17812,7 @@
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
                     <th>PO #</th>
-                    <th>Date</th>
+                    <th>PO Date</th>
                     <th>Supplier</th>
                     <th>Type</th>
                     <th style="text-align: right;">Total</th>
@@ -21364,7 +21364,7 @@
                             <thead><tr>
                                 <th>Invoice</th>
                                 <th>Customer</th>
-                                <th>Date</th>
+                                <th>Sale Date</th>
                                 <th style="text-align: right;">Total</th>
                                 <th style="text-align: right;">Paid</th>
                                 <th style="text-align: right;">Balance Due</th>
@@ -21584,7 +21584,7 @@
                             <thead><tr>
                                 <th>PO #</th>
                                 <th>Supplier</th>
-                                <th>Date</th>
+                                <th>PO Date</th>
                                 <th style="text-align: right;">Total</th>
                                 <th style="text-align: right;">Paid</th>
                                 <th style="text-align: right;">Balance Due</th>
@@ -28243,7 +28243,7 @@
                     <thead>
                         <tr>
                             <th>Invoice #</th>
-                            <th>Date</th>
+                            <th>Sale Date</th>
                             <th>Customer</th>
                             <th>Total</th>
                             <th>Paid</th>
@@ -28283,7 +28283,7 @@
                         <td data-sort="${sortableDueDate}">${detail.dueDate ? formatDateSafe(detail.dueDate) : '-'}</td>
                         <td data-sort="${sortablePaidDate}">${detail.paymentDate ? formatDateSafe(detail.paymentDate) : '-'}</td>
                         <td><span style="background: ${detail.paymentStatus === 'Paid' ? '#28a745' : detail.paymentStatus === 'Partial' ? '#ffc107' : '#dc3545'}; color: ${detail.paymentStatus === 'Partial' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.paymentStatus}</span></td>
-                        <td><span style="background: ${detail.status === 'Completed' || detail.status === 'Delivered' ? '#28a745' : '#6c757d'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.status === 'Completed' ? '✓ Completed' : detail.status === 'Delivered' ? '✓ Delivered' : detail.status}</span></td>
+                        <td><span style="background: ${detail.status === 'Completed' ? '#16a34a' : detail.status === 'Delivered' ? '#0d9488' : '#6c757d'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.status === 'Completed' ? '✓ Completed' : detail.status === 'Delivered' ? '✓ Delivered' : detail.status}</span></td>
                     </tr>`;
                 });
             
@@ -28572,7 +28572,7 @@
                     <thead>
                         <tr>
                             <th>Invoice #</th>
-                            <th>Date</th>
+                            <th>PO Date</th>
                             <th>Supplier</th>
                             <th>Status</th>
                             <th>Total</th>
@@ -34109,8 +34109,8 @@ NOTE: Please print the attached PO document for full details.`;
                     { value: 'Pending', label: 'Pending - Awaiting fulfillment', icon: '📋', color: '#f59e0b', bg: '#fff7ed' },
                     { value: 'Ready for Pickup', label: 'Ready for Pickup', icon: '📦', color: '#3b82f6', bg: '#eff6ff' },
                     { value: 'Out for Delivery', label: 'Out for Delivery', icon: '🚚', color: '#8b5cf6', bg: '#f5f3ff' },
-                    { value: 'Delivered', label: 'Delivered - Order complete', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
-                    { value: 'Completed', label: 'Completed - Paid & delivered', icon: '💰', color: '#059669', bg: '#d1fae5' },
+                    { value: 'Delivered', label: 'Delivered - Awaiting payment', icon: '✅', color: '#0d9488', bg: '#f0fdfa' },
+                    { value: 'Completed', label: 'Completed - Paid & delivered', icon: '💰', color: '#16a34a', bg: '#dcfce7' },
                     { value: 'Voided', label: 'Voided - Cancelled', icon: '❌', color: '#ef4444', bg: '#fef2f2' }
                 ]
             },
@@ -34153,8 +34153,8 @@ NOTE: Please print the attached PO document for full details.`;
                     { value: 'Pending', label: 'Pending', icon: '📋', color: '#f59e0b', bg: '#fff7ed' },
                     { value: 'Ready for Pickup', label: 'Ready for Pickup', icon: '📦', color: '#3b82f6', bg: '#eff6ff' },
                     { value: 'Out for Delivery', label: 'Out for Delivery', icon: '🚚', color: '#8b5cf6', bg: '#f5f3ff' },
-                    { value: 'Delivered', label: 'Delivered', icon: '✅', color: '#10b981', bg: '#ecfdf5' },
-                    { value: 'Completed', label: 'Completed', icon: '💰', color: '#059669', bg: '#d1fae5' },
+                    { value: 'Delivered', label: 'Delivered - Awaiting payment', icon: '✅', color: '#0d9488', bg: '#f0fdfa' },
+                    { value: 'Completed', label: 'Completed - Paid & delivered', icon: '💰', color: '#16a34a', bg: '#dcfce7' },
                     { value: 'Voided', label: 'Voided', icon: '❌', color: '#ef4444', bg: '#fef2f2' },
                     { value: 'exclude-voided', label: 'Exclude Voided', icon: '🚫', color: '#6b7280', bg: '#f3f4f6' }
                 ]
