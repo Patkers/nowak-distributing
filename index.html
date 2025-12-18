@@ -4,14 +4,15 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Wednesday, December 18, 2025
-         VERSION: V16_76
+         LAST UPDATED: Thursday, December 18, 2025
+         VERSION: V16_78
          =====================================================
          CHANGES IN THIS VERSION:
-         - Added Payment Date to SO edit screen (Payment Information box)
-         - Added Payment Date to SO view modal
-         - Added Payment Date to PO edit screen
-         - Added Payment Date to PO view modal
+         - Updated Sales Order Detail report to match Sales tab
+           (Invoice #, Date, Customer, Total, Paid, Due Date, Paid Date, Payment, Status)
+         - Updated Purchase Order Detail report to match Purchases tab
+           (Invoice #, Date, Supplier, Status, Total, Paid, Due Date, Paid Date, Payment)
+         - Reports now show order-level data instead of line-level
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -3280,51 +3281,58 @@
                         </p>
                     </div>
                     
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-                    
-                    <!-- Environment URL Configuration -->
-                    <p style="margin: 0 0 15px 0; color: #888; font-size: 13px;">
-                        ⚙️ Configure your Google Apps Script URLs for each environment:
-                    </p>
-                    
-                    <!-- Production URL -->
-                    <div style="margin-bottom: 15px; padding: 15px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #059669;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #065f46;">🏭 Production URL</label>
-                        <input type="text" id="envUrl-production" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #a7f3d0; border-radius: 6px;" 
-                               placeholder="https://script.google.com/macros/s/.../exec"
-                               onchange="saveEnvironmentUrl('production')">
-                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #059669;">Your live business data</p>
-                    </div>
-                    
-                    <!-- Training URL -->
-                    <div style="margin-bottom: 15px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #0369a1;">📚 Training URL</label>
-                        <input type="text" id="envUrl-training" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #bae6fd; border-radius: 6px;" 
-                               placeholder="https://script.google.com/macros/s/.../exec"
-                               onchange="saveEnvironmentUrl('training')">
-                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #0284c7;">Sample data for learning the system</p>
-                    </div>
-                    
-                    <!-- Development URL -->
-                    <div style="margin-bottom: 15px; padding: 15px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #991b1b;">🛠️ Development URL</label>
-                        <input type="text" id="envUrl-test" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #fecaca; border-radius: 6px;" 
-                               placeholder="https://script.google.com/macros/s/.../exec"
-                               onchange="saveEnvironmentUrl('test')">
-                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #dc2626;">For testing new features and changes</p>
-                    </div>
-                    
-                    <!-- Legacy single URL input (hidden but functional for backward compatibility) -->
-                    <input type="hidden" id="apiUrl">
-                    
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                         <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveConfig()" style="background: #059669;">💾 Save All Settings</button>
                         <button class="btn btn-secondary" onclick="refreshAfterEnvSwitch()">🔄 Refresh Data</button>
                         <button class="btn" onclick="restoreDefaultUrls()" style="background: #7c3aed;">🔧 Restore Default URLs</button>
                     </div>
                     
-                    <p style="margin: 15px 0 0 0; padding: 10px; background: #fef3c7; border-radius: 6px; color: #92400e; font-size: 12px;">
-                        💡 <strong>Tip:</strong> If URLs are blank after clearing site data, click "Restore Default URLs" to repopulate them!</p>
+                    <!-- URL Configuration Card - Collapsible, hidden by default -->
+                    <div style="margin-top: 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; cursor: pointer;" onclick="toggleUrlConfig()">
+                            <span style="font-weight: 600; color: #666; font-size: 13px;">⚙️ Configure URLs</span>
+                            <span id="urlConfigToggle" style="color: #666; font-size: 12px;">▶ Show URLs</span>
+                        </div>
+                        <div id="urlConfigSection" style="display: none; padding: 0 15px 15px 15px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 15px 0; color: #888; font-size: 12px;">
+                                Configure your Google Apps Script URLs for each environment:
+                            </p>
+                            
+                            <!-- Production URL -->
+                            <div style="margin-bottom: 15px; padding: 15px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #059669;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #065f46;">🏭 Production URL</label>
+                                <input type="text" id="envUrl-production" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #a7f3d0; border-radius: 6px;" 
+                                       placeholder="https://script.google.com/macros/s/.../exec"
+                                       onchange="saveEnvironmentUrl('production')">
+                                <p style="margin: 5px 0 0 0; font-size: 11px; color: #059669;">Your live business data</p>
+                            </div>
+                            
+                            <!-- Training URL -->
+                            <div style="margin-bottom: 15px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #0369a1;">📚 Training URL</label>
+                                <input type="text" id="envUrl-training" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #bae6fd; border-radius: 6px;" 
+                                       placeholder="https://script.google.com/macros/s/.../exec"
+                                       onchange="saveEnvironmentUrl('training')">
+                                <p style="margin: 5px 0 0 0; font-size: 11px; color: #0284c7;">Sample data for learning the system</p>
+                            </div>
+                            
+                            <!-- Development URL -->
+                            <div style="margin-bottom: 15px; padding: 15px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #991b1b;">🛠️ Development URL</label>
+                                <input type="text" id="envUrl-test" class="form-group" style="width: 100%; padding: 10px; border: 2px solid #fecaca; border-radius: 6px;" 
+                                       placeholder="https://script.google.com/macros/s/.../exec"
+                                       onchange="saveEnvironmentUrl('test')">
+                                <p style="margin: 5px 0 0 0; font-size: 11px; color: #dc2626;">For testing new features and changes</p>
+                            </div>
+                            
+                            <p style="margin: 10px 0 0 0; padding: 10px; background: #fef3c7; border-radius: 6px; color: #92400e; font-size: 12px;">
+                                💡 <strong>Tip:</strong> If URLs are blank after clearing site data, click "Restore Default URLs" to repopulate them!
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Legacy single URL input (hidden but functional for backward compatibility) -->
+                    <input type="hidden" id="apiUrl">
                 </div>
             </div>
         </div>
@@ -8092,6 +8100,20 @@
             }
         }
         
+        // Toggle URL Configuration section
+        function toggleUrlConfig() {
+            const section = document.getElementById('urlConfigSection');
+            const toggle = document.getElementById('urlConfigToggle');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggle.textContent = '▼ Hide URLs';
+            } else {
+                section.style.display = 'none';
+                toggle.textContent = '▶ Show URLs';
+            }
+        }
+        
         // Restore settings section visibility on page load
         function restoreSettingsSections() {
             const sections = ['themeSection', 'backupSection', 'invoiceSection', 'statusSection', 'apiSection'];
@@ -10368,7 +10390,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="purchasesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Supplier</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Actions</th>';
+            html += '<th>Invoice #</th><th>Supplier</th><th>Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
@@ -10398,6 +10420,7 @@
                     <td>${formatMoney(total)}</td>
                     <td>${formatMoney(amountPaid)}</td>
                     <td data-sort="${sortableDueDate}">${dueDate}</td>
+                    <td data-sort="${po.Payment_Date ? new Date(po.Payment_Date).toISOString().split('T')[0] : ''}">${po.Payment_Date ? formatDateSafe(po.Payment_Date) : '-'}</td>
                     <td>${paymentBadge}</td>
                     <td onclick="event.stopPropagation();">
                         ${po.Status === 'Ordered' || po.Status === 'Partial' || po.Status === 'In Transit' ? `<button class="btn-small" onclick="receiveOutgoingPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
@@ -10482,6 +10505,7 @@
                                 <tr><td style="padding: 8px 0; font-weight: bold;">PO Date:</td><td>${new Date(po.PO_Date).toLocaleDateString()}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Receive Date:</td><td>${receiveDate}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
+                                ${po.Payment_Date ? `<tr><td style="padding: 8px 0; font-weight: bold;">Payment Date:</td><td style="color: #27ae60;">${new Date(po.Payment_Date).toLocaleDateString()}</td></tr>` : ''}
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: ${statusColor}; color: ${statusTextColor}; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid ${statusColor === '#28a745' ? '#c3e6cb' : '#dee2e6'};">${statusText}</span></td></tr>
                             </table>
                             ${po.Status === 'Ordered' || po.Status === 'In Transit' ? `
@@ -13208,7 +13232,7 @@
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="salesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Payment</th><th>Status</th>';
+            html += '<th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(so => {
@@ -13257,6 +13281,7 @@
                     <td>${formatMoney(total)}</td>
                     <td>${formatMoney(amountPaid)}</td>
                     <td data-sort="${getSortableDate(so.Due_Date)}">${dueDate}</td>
+                    <td data-sort="${getSortableDate(so.Payment_Date)}">${so.Payment_Date ? formatDateSafe(so.Payment_Date) : '-'}</td>
                     <td>${paymentBadge}</td>
                     <td>${statusBadge}</td>
                 </tr>`;
@@ -13337,6 +13362,7 @@
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Sale Date:</td><td>${new Date(so.Sale_Date).toLocaleDateString()}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Invoice Date:</td><td>${invoiceDate}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Due Date:</td><td>${dueDate}</td></tr>
+                                ${so.Payment_Date ? `<tr><td style="padding: 8px 0; font-weight: bold;">Payment Date:</td><td style="color: #27ae60;">${new Date(so.Payment_Date).toLocaleDateString()}</td></tr>` : ''}
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Payment Method:</td><td>${so.Payment_Method}</td></tr>
                                 <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td><span style="background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 12px; font-size: 12px; border: 2px solid #c3e6cb;">${so.Status}</span></td></tr>
                             </table>
@@ -28019,6 +28045,7 @@
                         const lineTotal = quantity * unitPrice;
                         allDetails.push({
                             soId: so.SO_ID,
+                            invoiceNumber: so.Invoice_Number || so.SO_ID,
                             soDate: so.Sale_Date || so.SO_Date,
                             customerId: so.Customer_ID,
                             customerName: getCustomerName(so.Customer_ID),
@@ -28029,7 +28056,11 @@
                             quantity: quantity,
                             unitPrice: unitPrice,
                             lineTotal: lineTotal,
-                            paymentStatus: so.Payment_Status || 'Unknown',
+                            orderTotal: parseFloat(so.Total_Amount || 0),
+                            amountPaid: parseFloat(so.Amount_Paid || 0),
+                            dueDate: so.Due_Date,
+                            paymentDate: so.Payment_Date,
+                            paymentStatus: so.Payment_Status || 'Unpaid',
                             status: so.Status || 'Completed'
                         });
                     });
@@ -28102,37 +28133,48 @@
                 html += `<table class="data-table" id="salesOrderDetailTable">
                     <thead>
                         <tr>
-                            <th>SO #</th>
+                            <th>Invoice #</th>
                             <th>Date</th>
                             <th>Customer</th>
-                            <th>Item</th>
-                            <th>SKU</th>
-                            <th>Qty</th>
-                            <th>Price</th>
                             <th>Total</th>
-                            <th>Status</th>
+                            <th>Paid</th>
+                            <th>Due Date</th>
+                            <th>Paid Date</th>
                             <th>Payment</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>`;
             
+                // Group by SO to show order-level details (not line-level)
+                const orderMap = new Map();
                 filtered.forEach(detail => {
+                    if (!orderMap.has(detail.soId)) {
+                        orderMap.set(detail.soId, detail);
+                    }
+                });
+                
+                orderMap.forEach((detail, soId) => {
                     const dateObj = parseDate(detail.soDate);
-                    const sortableDate = dateObj ? dateObj.toISOString().split('T')[0] : ''; // YYYY-MM-DD for sorting
+                    const sortableDate = dateObj ? dateObj.toISOString().split('T')[0] : '';
+                    const dueDateObj = parseDate(detail.dueDate);
+                    const sortableDueDate = dueDateObj ? dueDateObj.toISOString().split('T')[0] : '';
+                    const paidDateObj = parseDate(detail.paymentDate);
+                    const sortablePaidDate = paidDateObj ? paidDateObj.toISOString().split('T')[0] : '';
+                    
                     html += `<tr style="cursor: pointer;" onclick="openSalesOrder('${detail.soId}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-                        <td><strong style="color: #667eea;">${detail.soId}</strong></td>
+                        <td><strong style="color: #667eea;">${detail.invoiceNumber || detail.soId}</strong></td>
                         <td data-sort="${sortableDate}">${formatDateSafe(detail.soDate)}</td>
                         <td>
                             <span style="color: #667eea;">${detail.customerName}</span>
                             ${detail.customerLocation ? `<div style="font-size: 11px; color: #888;">${detail.customerLocation}</div>` : ''}
                         </td>
-                        <td style="color: #667eea;">${detail.itemDescription}</td>
-                        <td>${detail.sku}</td>
-                        <td>${detail.quantity}</td>
-                        <td>${formatMoney(detail.unitPrice)}</td>
-                        <td>${formatMoney(detail.lineTotal)}</td>
-                        <td>${detail.status}</td>
-                        <td><span style="color: ${detail.paymentStatus === 'Paid' ? 'green' : detail.paymentStatus === 'Partial' ? 'orange' : 'red'};">${detail.paymentStatus}</span></td>
+                        <td>${formatMoney(detail.orderTotal)}</td>
+                        <td>${formatMoney(detail.amountPaid)}</td>
+                        <td data-sort="${sortableDueDate}">${detail.dueDate ? formatDateSafe(detail.dueDate) : '-'}</td>
+                        <td data-sort="${sortablePaidDate}">${detail.paymentDate ? formatDateSafe(detail.paymentDate) : '-'}</td>
+                        <td><span style="background: ${detail.paymentStatus === 'Paid' ? '#28a745' : detail.paymentStatus === 'Partial' ? '#ffc107' : '#dc3545'}; color: ${detail.paymentStatus === 'Partial' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.paymentStatus}</span></td>
+                        <td><span style="background: ${detail.status === 'Completed' || detail.status === 'Delivered' ? '#28a745' : '#6c757d'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.status === 'Completed' ? '✓ Completed' : detail.status === 'Delivered' ? '✓ Delivered' : detail.status}</span></td>
                     </tr>`;
                 });
             
@@ -28332,6 +28374,7 @@
                         const lineTotal = quantity * unitCost;
                         allDetails.push({
                             poId: po.PO_ID,
+                            invoiceNumber: po.Invoice_Number || po.PO_ID,
                             poDate: po.PO_Date,
                             supplierId: po.Supplier_ID,
                             supplierName: getSupplierName(po.Supplier_ID),
@@ -28341,7 +28384,11 @@
                             quantity: quantity,
                             unitCost: unitCost,
                             lineTotal: lineTotal,
-                            paymentStatus: po.Payment_Status || 'Unknown',
+                            orderTotal: parseFloat(po.Total_Amount || 0),
+                            amountPaid: parseFloat(po.Amount_Paid || 0),
+                            dueDate: po.Due_Date,
+                            paymentDate: po.Payment_Date,
+                            paymentStatus: po.Payment_Status || 'Unpaid',
                             status: po.Status || 'Received'
                         });
                     });
@@ -28415,34 +28462,53 @@
                 html += `<table class="data-table" id="purchaseOrderDetailTable">
                     <thead>
                         <tr>
-                            <th>PO #</th>
+                            <th>Invoice #</th>
                             <th>Date</th>
                             <th>Supplier</th>
-                            <th>Item</th>
-                            <th>SKU</th>
-                            <th>Qty</th>
-                            <th>Cost</th>
-                            <th>Total</th>
                             <th>Status</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Due Date</th>
+                            <th>Paid Date</th>
                             <th>Payment</th>
                         </tr>
                     </thead>
                     <tbody>`;
             
+                // Group by PO to show order-level details (not line-level)
+                const orderMap = new Map();
                 filtered.forEach(detail => {
-                    const dateObj = new Date(detail.poDate);
-                    const sortableDate = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD for sorting
+                    if (!orderMap.has(detail.poId)) {
+                        orderMap.set(detail.poId, detail);
+                    }
+                });
+                
+                orderMap.forEach((detail, poId) => {
+                    const dateObj = parseDate(detail.poDate);
+                    const sortableDate = dateObj ? dateObj.toISOString().split('T')[0] : '';
+                    const dueDateObj = parseDate(detail.dueDate);
+                    const sortableDueDate = dueDateObj ? dueDateObj.toISOString().split('T')[0] : '';
+                    const paidDateObj = parseDate(detail.paymentDate);
+                    const sortablePaidDate = paidDateObj ? paidDateObj.toISOString().split('T')[0] : '';
+                    
+                    // Status badge
+                    let statusBadge = '';
+                    if (detail.status === 'Ordered') statusBadge = '<span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📝 Ordered</span>';
+                    else if (detail.status === 'In Transit') statusBadge = '<span style="background: #17a2b8; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">🚚 In Transit</span>';
+                    else if (detail.status === 'Received') statusBadge = '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">✅ Received</span>';
+                    else if (detail.status === 'Void' || detail.status === 'Voided') statusBadge = '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">⛔ VOID</span>';
+                    else statusBadge = `<span style="background: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.status}</span>`;
+                    
                     html += `<tr style="cursor: pointer;" onclick="openPurchaseOrder('${detail.poId}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-                        <td><strong style="color: #667eea;">${detail.poId}</strong></td>
-                        <td data-sort="${sortableDate}">${dateObj.toLocaleDateString()}</td>
+                        <td><strong style="color: #667eea;">${detail.invoiceNumber || detail.poId}</strong></td>
+                        <td data-sort="${sortableDate}">${formatDateSafe(detail.poDate)}</td>
                         <td style="color: #667eea;">${detail.supplierName}</td>
-                        <td style="color: #667eea;">${detail.itemDescription}</td>
-                        <td>${detail.sku}</td>
-                        <td>${detail.quantity}</td>
-                        <td>${formatMoney(detail.unitCost)}</td>
-                        <td>${formatMoney(detail.lineTotal)}</td>
-                        <td>${detail.status}</td>
-                        <td><span style="color: ${detail.paymentStatus === 'Paid' ? 'green' : detail.paymentStatus === 'Partial' ? 'orange' : 'red'};">${detail.paymentStatus}</span></td>
+                        <td>${statusBadge}</td>
+                        <td>${formatMoney(detail.orderTotal)}</td>
+                        <td>${formatMoney(detail.amountPaid)}</td>
+                        <td data-sort="${sortableDueDate}">${detail.dueDate ? formatDateSafe(detail.dueDate) : '-'}</td>
+                        <td data-sort="${sortablePaidDate}">${detail.paymentDate ? formatDateSafe(detail.paymentDate) : '-'}</td>
+                        <td><span style="background: ${detail.paymentStatus === 'Paid' ? '#28a745' : detail.paymentStatus === 'Partial' ? '#ffc107' : '#dc3545'}; color: ${detail.paymentStatus === 'Partial' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${detail.paymentStatus}</span></td>
                     </tr>`;
                 });
             
