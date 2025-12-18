@@ -5,10 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Wednesday, December 18, 2025
-         VERSION: V16_74
+         VERSION: V16_75
          =====================================================
          CHANGES IN THIS VERSION:
-         - Added Payment Date to Sales Invoice (shows when paid)
+         - PO Invoice now matches Sales Invoice format
+         - Header: Company name, City/State/ZIP, Phone/Email only
+         - Payment Status calculated from actual Amount_Paid
+         - Added Payment Date to Payment Info (when paid)
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10710,6 +10713,14 @@
             const paid = parseFloat(po.Amount_Paid || 0);
             const balance = total - paid;
             
+            // Calculate actual payment status based on amounts
+            let actualPaymentStatus = 'Unpaid';
+            if (paid >= total && total > 0) {
+                actualPaymentStatus = 'Paid';
+            } else if (paid > 0) {
+                actualPaymentStatus = 'Partial';
+            }
+            
             // Get theme colors for print
             const themeColors = getThemeColors();
             
@@ -10904,14 +10915,12 @@
 <body>
     <div class="po-header">
         <h1>${settings.companyName || 'Nowak Distributing'}</h1>
-        ${settings.address1 ? `<p>${settings.address1}</p>` : ''}
-        ${settings.address2 ? `<p>${settings.address2}</p>` : ''}
-        ${settings.cityStateZip ? `<p>${settings.cityStateZip}</p>` : ''}
-        <p>${settings.phone ? `Phone: ${settings.phone}` : ''}${settings.phone && settings.email ? ' | ' : ''}${settings.email ? `Email: ${settings.email}` : ''}</p>
+        <p class="header-location">${settings.cityStateZip || 'Sherwood, WI 54169'}</p>
+        <p class="header-contact">Phone: ${settings.phone || '(920)634-4351'}${settings.email ? ` | Email: ${settings.email}` : ''}</p>
     </div>
 
     <div class="po-number">PURCHASE ORDER: ${po.Invoice_Number || po.PO_ID}</div>
-    <p><strong>PO Date:</strong> ${new Date(po.PO_Date).toLocaleDateString()} | <strong>Status:</strong> ${po.Status || 'Received'}</p>
+    <p style="margin: 5px 0 15px 0;"><strong>PO Date:</strong> ${new Date(po.PO_Date).toLocaleDateString()} | <strong>Status:</strong> ${actualPaymentStatus}</p>
 
     <div class="po-info">
         <div class="info-box">
@@ -10919,14 +10928,15 @@
             <p><strong>${supplier?.Supplier_Name || 'Unknown Supplier'}</strong></p>
             ${supplier?.Contact_Name ? `<p>Attn: ${supplier.Contact_Name}</p>` : ''}
             ${supplier?.Address ? `<p>${supplier.Address}</p>` : ''}
-            ${supplier?.City || supplier?.State ? `<p>${supplier.City || ''}, ${supplier.State || ''} ${supplier.ZIP || ''}</p>` : ''}
+            ${supplier?.City || supplier?.State || supplier?.ZIP ? `<p>${supplier.City || ''}${supplier.City && supplier.State ? ', ' : ''}${supplier.State || ''} ${supplier.ZIP || ''}</p>` : ''}
             ${supplier?.Phone ? `<p>Phone: ${supplier.Phone}</p>` : ''}
         </div>
         <div class="info-box">
             <h3>Payment Info:</h3>
             <p><strong>Terms:</strong> ${supplier?.Payment_Terms || 'Net 30'}</p>
             <p><strong>Due Date:</strong> ${po.Due_Date ? new Date(po.Due_Date).toLocaleDateString() : '-'}</p>
-            <p><strong>Status:</strong> ${po.Payment_Status || 'Unpaid'}</p>
+            <p><strong>Status:</strong> ${actualPaymentStatus}</p>
+            ${paid > 0 && po.Payment_Date ? `<p><strong>Paid:</strong> ${new Date(po.Payment_Date).toLocaleDateString()}</p>` : ''}
         </div>
     </div>
 
