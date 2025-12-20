@@ -5,13 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Friday, December 20, 2025
-         VERSION: V16_87
+         VERSION: V16_93
          =====================================================
          CHANGES IN THIS VERSION:
-         - Payment Terms now uses smart picker
-         - Auto-sets Payment Terms based on Purchase Type:
-           * Placing an Order = Net 30
-           * Already Received = COD (paid at pickup)
+         - Added confirmation preview for Suppliers, Customers, Items
+         - New records: Shows summary before creating
+         - Updates: Shows what changed (old → new) before saving
+         - Cancel option on all confirmation previews
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -2256,12 +2256,19 @@
             
             /* Centered dialog modals (alert, confirm, status, reason, uom) */
             .styled-modal-container {
-                width: 90% !important;
-                max-width: 500px !important;
+                width: 85% !important;
+                max-width: 400px !important;
                 height: auto !important;
-                max-height: 85vh !important;
-                margin: 5vh auto !important;
+                max-height: 70vh !important;
+                margin: auto !important;
                 border-radius: 12px !important;
+            }
+            
+            /* Ensure overlay uses flex for centering styled modals */
+            .item-picker-overlay:has(.styled-modal-container) {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             
             .item-picker-header {
@@ -4157,8 +4164,10 @@
                         <textarea id="poNotes" rows="2"></textarea>
                     </div>
                     
-                    <button type="submit" class="btn">💾 Save Purchase Order</button>
-                    <button type="button" class="btn btn-secondary" onclick="hideAddPurchaseForm()">Cancel</button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn" onclick="showPOPreview()" id="savePOBtn">💾 Create Purchase Order</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideAddPurchaseForm()">Cancel</button>
+                    </div>
                 </form>
             </div>
             
@@ -4323,8 +4332,10 @@
                         <textarea id="soNotes" rows="2"></textarea>
                     </div>
                     
-                    <button type="submit" class="btn">💾 Save Sale</button>
-                    <button type="button" class="btn btn-secondary" onclick="hideAddSaleForm()">Cancel</button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn" onclick="showOrderPreview()">💾 Create Sale</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideAddSaleForm()">Cancel</button>
+                    </div>
                 </form>
             </div>
             
@@ -8201,48 +8212,95 @@
                 return;
             }
             
-            // Save PO form state to localStorage for later restoration
-            const poFormState = {
-                supplier: currentSupplier,
-                purchaseDate: document.getElementById('poPurchaseDate')?.value,
-                dueDate: document.getElementById('poDueDate')?.value,
-                paymentTerms: document.getElementById('poPaymentTerms')?.value,
-                status: document.getElementById('poStatus')?.value,
-                amountPaid: document.getElementById('poAmountPaid')?.value,
-                notes: document.getElementById('poNotes')?.value,
-                returnToPO: true
-            };
-            localStorage.setItem('poFormState', JSON.stringify(poFormState));
+            // Set the supplier in the quick add form
+            document.getElementById('quickItemSupplier').value = currentSupplier;
             
-            // Switch to Items tab
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(tab => {
-                if (tab.textContent.includes('Items')) {
-                    tab.classList.add('active');
-                }
-            });
+            // Clear the form
+            document.getElementById('quickAddItemForm').reset();
+            document.getElementById('quickItemSupplier').value = currentSupplier;
+            document.getElementById('quickItemUnits').value = '24';
+            document.getElementById('quickItemUOM').value = 'Case';
+            document.getElementById('quickItemReorder').value = '50';
+            document.getElementById('quickItemQty').value = '0';
             
-            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-            document.getElementById('items').classList.add('active');
+            // Show the modal
+            document.getElementById('quickAddItemModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
             
-            // Open Add Item form
-            showAddItemForm();
-            
-            // Pre-select supplier if one was selected in PO
+            // Focus on SKU field
             setTimeout(() => {
-                const supplierSelect = document.getElementById('itemSupplier');
-                if (supplierSelect) {
-                    supplierSelect.value = currentSupplier;
-                }
+                document.getElementById('quickItemSKU').focus();
             }, 100);
+        }
+        
+        function closeQuickAddItem() {
+            document.getElementById('quickAddItemModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        async function saveQuickAddItem(e) {
+            e.preventDefault();
             
-            // Scroll to top
-            window.scrollTo(0, 0);
+            const supplierId = document.getElementById('quickItemSupplier').value;
+            const sku = document.getElementById('quickItemSKU').value.trim();
+            const description = document.getElementById('quickItemDescription').value.trim();
+            const packageCost = parseFloat(document.getElementById('quickItemCost').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('quickItemPrice').value) || 0;
+            const unitsPerPackage = parseInt(document.getElementById('quickItemUnits').value) || 24;
+            const purchaseUOM = document.getElementById('quickItemUOM').value.trim() || 'Case';
+            const reorderPoint = parseInt(document.getElementById('quickItemReorder').value) || 50;
+            const startingQty = parseInt(document.getElementById('quickItemQty').value) || 0;
             
-            // Show helper message
-            setTimeout(() => {
-                showStatus('itemStatus', '💡 After saving the item, click "⬅️ Back" to return to your purchase order', 'info');
-            }, 200);
+            // Validate
+            if (!sku || !description) {
+                showWarning('Please enter SKU and Description');
+                return;
+            }
+            
+            if (packageCost <= 0 || sellPrice <= 0) {
+                showWarning('Please enter valid Cost and Price');
+                return;
+            }
+            
+            // Calculate unit cost
+            const unitCost = packageCost / unitsPerPackage;
+            
+            // Create item data
+            const itemData = {
+                sku: sku,
+                description: description,
+                supplierId: supplierId,
+                packageCost: packageCost,
+                unitCost: unitCost.toFixed(4),
+                sellPrice: sellPrice,
+                unitsPerPackage: unitsPerPackage,
+                purchaseUOM: purchaseUOM,
+                reorderPoint: reorderPoint,
+                qtyOnHand: startingQty,
+                status: 'Active'
+            };
+            
+            // Save to backend
+            const result = await apiCall('createItem', itemData);
+            
+            if (result && result.status === 'success') {
+                // Refresh items cache
+                const itemsResult = await apiCall('getItems');
+                if (itemsResult && itemsResult.status === 'success') {
+                    cachedItems = itemsResult.data;
+                }
+                
+                // Reload supplier items in the PO form
+                await loadSupplierItems();
+                
+                // Close modal
+                closeQuickAddItem();
+                
+                // Show success
+                showSuccessModal('Item Added!', `${description} has been added to the catalog and is now available in your item list.`);
+            } else {
+                showWarning('Error adding item: ' + (result?.message || 'Unknown error'));
+            }
         }
 
         function updateConfigStatus() {
@@ -9006,6 +9064,16 @@
                 paymentTerms: document.getElementById('newPaymentTerms').value,
                 notes: document.getElementById('newNotes').value
             };
+            
+            // Validate required fields
+            if (!data.supplierName) {
+                showWarning('Please enter a Supplier Name');
+                return;
+            }
+
+            // Show preview confirmation
+            const confirmed = await showRecordPreview('supplier', data, null);
+            if (!confirmed) return;
 
             const result = await apiCall('addSupplier', data);
             
@@ -9095,7 +9163,10 @@
         }
         
         // Edit supplier
+        let currentEditingSupplier = null; // Store original for comparison
+        
         function editSupplier(supplier) {
+            currentEditingSupplier = supplier; // Store original
             document.getElementById('editSupplierId').value = supplier.Supplier_ID;
             document.getElementById('editSupplierName').value = supplier.Supplier_Name || '';
             document.getElementById('editContactName').value = supplier.Contact_Name || '';
@@ -9143,6 +9214,24 @@
                 paymentTerms: document.getElementById('editPaymentTerms').value,
                 notes: document.getElementById('editNotes').value
             };
+            
+            // Map original data for comparison
+            const originalData = currentEditingSupplier ? {
+                name: currentEditingSupplier.Supplier_Name || '',
+                address: currentEditingSupplier.Address || '',
+                city: currentEditingSupplier.City || '',
+                state: currentEditingSupplier.State || '',
+                zip: currentEditingSupplier.ZIP || '',
+                contactName: currentEditingSupplier.Contact_Name || '',
+                phone: currentEditingSupplier.Phone || '',
+                email: currentEditingSupplier.Email || '',
+                paymentTerms: currentEditingSupplier.Payment_Terms || '',
+                notes: currentEditingSupplier.Notes || ''
+            } : null;
+            
+            // Show preview of changes
+            const confirmed = await showRecordPreview('supplier', data, originalData);
+            if (!confirmed) return;
             
             const result = await apiCall('updateSupplier', data);
             
@@ -9233,6 +9322,24 @@
                 sku: document.getElementById('newItemSKU').value,
                 notes: document.getElementById('newItemNotes').value
             };
+            
+            // Validate required fields
+            if (!data.description) {
+                showWarning('Please enter an Item Description');
+                return;
+            }
+            
+            // Get supplier name for display
+            const supplierSelect = document.getElementById('newItemSupplier');
+            const supplierName = supplierSelect.options[supplierSelect.selectedIndex]?.text || '';
+            
+            // Build display data with supplier name
+            const displayData = { ...data, supplier: supplierName };
+            delete displayData.supplierId;
+
+            // Show preview confirmation
+            const confirmed = await showRecordPreview('item', displayData, null);
+            if (!confirmed) return;
 
             const result = await apiCall('addItem', data);
             
@@ -9457,7 +9564,11 @@
         }
         
         // Edit item
+        let currentEditingItem = null; // Store original for comparison
+        
         async function editItem(item) {
+            currentEditingItem = item; // Store original
+            
             // Hide add form first
             document.getElementById('addItemForm').style.display = 'none';
             
@@ -9570,6 +9681,23 @@
                 notes: document.getElementById('editItemNotes').value
             };
             
+            // Map original data for comparison
+            const originalData = currentEditingItem ? {
+                description: currentEditingItem.Item_Description || '',
+                purchaseUOM: currentEditingItem.Purchase_UOM || '',
+                unitsPerPackage: currentEditingItem.Units_Per_Package || '',
+                packageCost: currentEditingItem.Package_Cost || '',
+                unitSellPrice: currentEditingItem.Unit_Sell_Price || '',
+                reorderPoint: currentEditingItem.Reorder_Point || '',
+                sku: currentEditingItem.SKU || '',
+                status: currentEditingItem.Status || '',
+                notes: currentEditingItem.Notes || ''
+            } : null;
+            
+            // Show preview of changes
+            const confirmed = await showRecordPreview('item', data, originalData);
+            if (!confirmed) return;
+            
             const result = await apiCall('updateItem', data);
             
             if (result && result.status === 'success') {
@@ -9641,6 +9769,16 @@
                 paymentTerms: document.getElementById('newCustomerPaymentTerms').value,
                 notes: document.getElementById('newCustomerNotes').value
             };
+            
+            // Validate required fields
+            if (!data.name) {
+                showWarning('Please enter a Customer Name');
+                return;
+            }
+
+            // Show preview confirmation
+            const confirmed = await showRecordPreview('customer', data, null);
+            if (!confirmed) return;
 
             const result = await apiCall('addCustomer', data);
             
@@ -9775,7 +9913,10 @@
         }
         
         // Edit customer
+        let currentEditingCustomer = null; // Store original for comparison
+        
         function editCustomer(customer) {
+            currentEditingCustomer = customer; // Store original
             document.getElementById('editCustomerId').value = customer.Customer_ID;
             document.getElementById('editCustomerName').value = customer.Customer_Name || '';
             document.getElementById('editCustomerContact').value = customer.Contact_Name || '';
@@ -9827,6 +9968,26 @@
                 notes: document.getElementById('editCustomerNotes').value
             };
             
+            // Map original data for comparison
+            const originalData = currentEditingCustomer ? {
+                name: currentEditingCustomer.Customer_Name || '',
+                address: currentEditingCustomer.Address || '',
+                city: currentEditingCustomer.City || '',
+                state: currentEditingCustomer.State || '',
+                zip: currentEditingCustomer.ZIP || '',
+                contactName: currentEditingCustomer.Contact_Name || '',
+                phone: currentEditingCustomer.Phone || '',
+                mobile: currentEditingCustomer.Mobile || '',
+                email: currentEditingCustomer.Email || '',
+                creditLimit: currentEditingCustomer.Credit_Limit || '',
+                paymentTerms: currentEditingCustomer.Payment_Terms || '',
+                notes: currentEditingCustomer.Notes || ''
+            } : null;
+            
+            // Show preview of changes
+            const confirmed = await showRecordPreview('customer', data, originalData);
+            if (!confirmed) return;
+            
             const result = await apiCall('updateCustomer', data);
             
             if (result && result.status === 'success') {
@@ -9861,10 +10022,62 @@
         // ==================== PURCHASES ====================
 
         function showAddPurchaseForm() {
+            // Reset form first
+            document.querySelector('#addPurchaseForm form').reset();
+            
             loadPurchaseDropdowns();
             document.getElementById('addPurchaseForm').style.display = 'block';
+            
+            // Auto-populate today's date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('poDate').value = today;
+            
             // Reset to default "Ordering" type
             setPurchaseType('ordering');
+            // Attach event listeners to initial line items
+            attachPOLineItemListeners();
+            // Reset invoice total
+            document.getElementById('poTotal').value = '0.00';
+        }
+        
+        function attachPOLineItemListeners() {
+            // Attach listeners to all existing PO line items
+            document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                const itemSelect = row.querySelector('.po-item');
+                const qtyInput = row.querySelector('.po-qty');
+                const costInput = row.querySelector('.po-cost');
+                const removeBtn = row.querySelector('.remove-btn');
+                
+                // Remove old listeners by cloning (prevents duplicates)
+                if (itemSelect && !itemSelect.dataset.listenersAttached) {
+                    itemSelect.addEventListener('change', function() {
+                        updatePOItemInfo(this);
+                    });
+                    itemSelect.dataset.listenersAttached = 'true';
+                }
+                
+                if (qtyInput && !qtyInput.dataset.listenersAttached) {
+                    qtyInput.addEventListener('input', function() {
+                        calculatePOTotal();
+                    });
+                    qtyInput.dataset.listenersAttached = 'true';
+                }
+                
+                if (costInput && !costInput.dataset.listenersAttached) {
+                    costInput.addEventListener('input', function() {
+                        calculatePOTotal();
+                    });
+                    costInput.dataset.listenersAttached = 'true';
+                }
+                
+                if (removeBtn && !removeBtn.dataset.listenersAttached) {
+                    removeBtn.addEventListener('click', function() {
+                        removeLineItem(this);
+                        calculatePOTotal();
+                    });
+                    removeBtn.dataset.listenersAttached = 'true';
+                }
+            });
         }
 
         function hideAddPurchaseForm() {
@@ -10024,6 +10237,132 @@
             calculatePOTotal();
         }
         
+        function showPOPreview() {
+            // ===== VALIDATION =====
+            const missingFields = [];
+            
+            // Check supplier
+            const supplierSelect = document.getElementById('poSupplier');
+            const supplierId = supplierSelect?.value;
+            const supplierName = supplierSelect?.options[supplierSelect.selectedIndex]?.text || 'Supplier';
+            
+            if (!supplierId) {
+                missingFields.push('• Supplier');
+            }
+            
+            // Check purchase date
+            const poDate = document.getElementById('poDate')?.value;
+            if (!poDate) {
+                missingFields.push('• Order/Purchase Date');
+            }
+            
+            // Get purchase type
+            const purchaseType = document.querySelector('input[name="purchaseType"]:checked')?.value || 'ordering';
+            const typeLabel = purchaseType === 'ordering' ? '🛒 Placing Order' : '✅ Already Received';
+            
+            // Check due date (only for ordering type)
+            const poDueDate = document.getElementById('poDueDate')?.value;
+            if (purchaseType === 'ordering' && !poDueDate) {
+                missingFields.push('• Expected Delivery Date');
+            }
+            
+            // Get line items
+            const lineItems = [];
+            let totalQty = 0;
+            let totalAmount = 0;
+            
+            document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                const itemSelect = row.querySelector('.po-item');
+                const itemId = itemSelect?.value;
+                const itemName = itemSelect?.options[itemSelect.selectedIndex]?.text || '';
+                const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
+                const cost = parseFloat(row.querySelector('.po-cost')?.value) || 0;
+                const lineTotal = qty * cost;
+                
+                if (itemId && qty > 0) {
+                    // Get item details from cache
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    lineItems.push({
+                        name: item?.Item_Description || itemName,
+                        sku: item?.SKU || '',
+                        qty: qty,
+                        cost: cost,
+                        total: lineTotal
+                    });
+                    totalQty += qty;
+                    totalAmount += lineTotal;
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                missingFields.push('• At least one line item with quantity');
+            }
+            
+            // Show validation errors if any
+            if (missingFields.length > 0) {
+                showWarning(`Please complete the following required fields:\n\n${missingFields.join('\n')}`);
+                return;
+            }
+            
+            // Get payment terms
+            const paymentTerms = document.getElementById('poPaymentTerms')?.value || 'Net 30';
+            
+            // Build preview HTML
+            let html = `
+                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div>
+                            <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Supplier</div>
+                            <div style="font-size: 18px; font-weight: 600; color: #7c3aed;">${supplierName}</div>
+                        </div>
+                        <div style="background: ${purchaseType === 'ordering' ? '#dbeafe' : '#dcfce7'}; color: ${purchaseType === 'ordering' ? '#1d4ed8' : '#15803d'}; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            ${typeLabel}
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: #666;">Payment Terms: <strong>${paymentTerms}</strong></div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 10px; font-weight: 600;">ORDER ITEMS</div>
+            `;
+            
+            lineItems.forEach((item, index) => {
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${index % 2 === 0 ? '#f8fafc' : 'white'}; border-radius: 8px; margin-bottom: 8px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #333;">${item.name}</div>
+                            <div style="font-size: 12px; color: #666;">${item.sku} • ${item.qty} × ${formatMoney(item.cost)}</div>
+                        </div>
+                        <div style="font-weight: 700; color: #7c3aed; font-size: 16px;">${formatMoney(item.total)}</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 14px; opacity: 0.9;">Items</span>
+                        <span style="font-size: 18px; font-weight: 600;">${totalQty}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <span style="font-size: 16px; font-weight: 600;">TOTAL</span>
+                        <span style="font-size: 28px; font-weight: 700;">${formatMoney(totalAmount)}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('poPreviewContent').innerHTML = html;
+            document.getElementById('poPreviewModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closePOPreview() {
+            document.getElementById('poPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
         function calculatePOTotal() {
             let total = 0;
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
@@ -10054,19 +10393,50 @@
             btn.parentElement.remove();
         }
 
+        let isSavingPO = false; // Prevent double-click
+        
         async function addPurchase(e) {
             e.preventDefault();
             
+            // Prevent double-click
+            if (isSavingPO) {
+                console.log('Already saving PO, ignoring duplicate click');
+                return;
+            }
+            
+            // ===== COMPREHENSIVE VALIDATION =====
+            const missingFields = [];
+            
+            // Check supplier
+            const supplierId = document.getElementById('poSupplier').value;
+            if (!supplierId) {
+                missingFields.push('• Supplier');
+            }
+            
+            // Check purchase date
+            const poDate = document.getElementById('poDate').value;
+            if (!poDate) {
+                missingFields.push('• Purchase/Order Date');
+            }
+            
+            // Check purchase type and due date
+            const purchaseType = document.querySelector('input[name="purchaseType"]:checked')?.value || 'ordering';
+            const poDueDate = document.getElementById('poDueDate').value;
+            if (purchaseType === 'ordering' && !poDueDate) {
+                missingFields.push('• Expected Delivery Date');
+            }
+            
+            // Check line items
             const lineItems = [];
             let calculatedTotal = 0;
+            let hasIncompleteLines = false;
             
-            document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+            document.querySelectorAll('#poLineItems .line-item-row').forEach((row, index) => {
                 const itemId = row.querySelector('.po-item').value;
                 const qty = parseInt(row.querySelector('.po-qty').value) || 0;
                 const cost = parseFloat(row.querySelector('.po-cost').value) || 0;
                 const lineTotal = qty * cost;
                 
-                // Only add valid line items (has item selected, qty > 0)
                 if (itemId && qty > 0) {
                     lineItems.push({
                         itemId: itemId,
@@ -10074,30 +10444,31 @@
                         unitCost: cost
                     });
                     calculatedTotal += lineTotal;
+                } else if (itemId || qty > 0 || cost > 0) {
+                    // Partially filled line
+                    hasIncompleteLines = true;
                 }
             });
-
-            // Validate at least one line item
+            
             if (lineItems.length === 0) {
-                showWarning('Please add at least one item to the purchase order.\n\nSelect an item and enter a quantity before saving.');
-                return;
+                missingFields.push('• At least one complete line item (Item + Quantity)');
             }
-
-            // ===== VALIDATION #0: Check Required Fields =====
-            const poStatus = document.getElementById('poStatus').value;
-            const poDueDate = document.getElementById('poDueDate').value;
-            const purchaseType = document.querySelector('input[name="purchaseType"]:checked')?.value || 'ordering';
             
-            if (!poStatus) {
-                showStatus('purchasesStatus', '❌ Please select a Status', 'error');
+            // Show validation errors if any
+            if (missingFields.length > 0) {
+                showWarning(`Please complete the following required fields:\n\n${missingFields.join('\n')}`);
                 return;
             }
             
-            // Only require due date for "ordering" type (not "received")
-            if (purchaseType === 'ordering' && !poDueDate) {
-                showStatus('purchasesStatus', '❌ Please select an Expected Delivery Date', 'error');
-                document.getElementById('poDueDate').focus();
-                return;
+            if (hasIncompleteLines) {
+                const continueAnyway = await showConfirmModal(
+                    '⚠️ Incomplete Line Items',
+                    '<p>Some line items are incomplete and will be ignored.</p><p>Do you want to continue with only the complete items?</p>',
+                    'Continue',
+                    'Go Back',
+                    'warning'
+                );
+                if (!continueAnyway) return;
             }
 
             // ===== VALIDATION #1: Check for Duplicate Items =====
@@ -10166,14 +10537,31 @@
                 poType: 'INCOMING'
             };
 
-            const result = await apiCall('createPurchaseOrder', data);
-            
-            if (result && result.status === 'success') {
-                hideAddPurchaseForm();
-                loadPurchases();
-                showSuccessModal('Purchase Order Created!', 'Inventory has been updated.');
-            } else {
-                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            // Set saving flag and disable button
+            isSavingPO = true;
+            const submitBtn = document.getElementById('savePOBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Saving...';
+            }
+
+            try {
+                const result = await apiCall('createPurchaseOrder', data);
+                
+                if (result && result.status === 'success') {
+                    hideAddPurchaseForm();
+                    loadPurchases();
+                    showSuccessModal('Purchase Order Created!', 'Inventory has been updated.');
+                } else {
+                    showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                // Always reset the flag and button
+                isSavingPO = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '💾 Save Purchase Order';
+                }
             }
         }
 
@@ -11953,7 +12341,15 @@
             }
         }
         
+        let isSavingPOEdit = false; // Prevent double-click on PO edit
+        
         async function savePurchaseOrderChanges() {
+            // Prevent double-click
+            if (isSavingPOEdit) {
+                console.log('Already saving PO edit, ignoring duplicate click');
+                return;
+            }
+            
             const po = currentEditingOrder;
             
             // Collect line items
@@ -12077,10 +12473,14 @@
             
             showStatus('purchasesStatus', '⏳ Saving changes...', 'info');
             
-            const result = await apiCall('updatePurchaseOrder', data);
+            // Set saving flag
+            isSavingPOEdit = true;
             
-            if (result && result.status === 'success') {
-                showSuccessModal('Purchase Order Updated!', 'Changes saved successfully.\n\nYou can now print the PO or continue editing.');
+            try {
+                const result = await apiCall('updatePurchaseOrder', data);
+                
+                if (result && result.status === 'success') {
+                    showSuccessModal('Purchase Order Updated!', 'Changes saved successfully.\n\nYou can now print the PO or continue editing.');
                 // DON'T close the modal - let user print or close manually
                 // closeOrderModal();  // Removed - user will use Close button
                 
@@ -12128,8 +12528,12 @@
                 }
                 
                 loadPurchases();
-            } else {
-                showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                } else {
+                    showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                // Always reset the flag
+                isSavingPOEdit = false;
             }
         }
         
@@ -12263,7 +12667,15 @@
             saveBtn.onclick = function(event) { if(event && debounceButton(event.currentTarget)) saveOrderChanges(); };
         }
         
+        let isSavingSOEdit = false; // Prevent double-click on SO edit
+        
         async function saveSalesOrderChanges() {
+            // Prevent double-click
+            if (isSavingSOEdit) {
+                console.log('Already saving SO edit, ignoring duplicate click');
+                return;
+            }
+            
             const so = currentEditingOrder;
             
             // Collect line items
@@ -12379,9 +12791,13 @@
             
             showStatus('salesStatus', '⏳ Saving changes...', 'info');
             
-            const result = await apiCall('updateSalesOrder', data);
+            // Set saving flag
+            isSavingSOEdit = true;
             
-            if (result && result.status === 'success') {
+            try {
+                const result = await apiCall('updateSalesOrder', data);
+                
+                if (result && result.status === 'success') {
                 showSuccessModal('Sales Order Updated!', 'Changes saved successfully.\n\nYou can now print the invoice or continue editing.');
                 // DON'T close the modal - let user print or close manually
                 // closeOrderModal();  // Removed - user will use Close button
@@ -12439,8 +12855,12 @@
                 }
                 
                 loadSales();
-            } else {
-                showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                } else {
+                    showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                // Always reset the flag
+                isSavingSOEdit = false;
             }
         }
         
@@ -12509,6 +12929,9 @@
             // MOBILE FIX: Always reset the save lock when opening form
             isSavingSale = false;
             
+            // Reset form first
+            document.querySelector('#addSaleForm form').reset();
+            
             loadSaleDropdowns();
             
             // FIX #1: Clear any previous line items and errors before showing
@@ -12518,6 +12941,13 @@
             }
             
             document.getElementById('addSaleForm').style.display = 'block';
+            
+            // Auto-populate today's date for Sale Date
+            const today = new Date().toISOString().split('T')[0];
+            const soDateField = document.getElementById('soDate');
+            if (soDateField) {
+                soDateField.value = today;
+            }
             
             // Add fresh line item
             addSOLineItem();
@@ -12818,6 +13248,123 @@
 
         let isSavingSale = false; // Prevent double-click
         
+        function showOrderPreview() {
+            // ===== VALIDATION =====
+            const missingFields = [];
+            
+            // Check customer
+            const customerSelect = document.getElementById('newSaleCustomer');
+            const customerId = customerSelect?.value;
+            const customerName = customerSelect?.options[customerSelect.selectedIndex]?.text || 'Customer';
+            
+            if (!customerId) {
+                missingFields.push('• Customer');
+            }
+            
+            // Check sale date
+            const soDate = document.getElementById('soDate')?.value;
+            if (!soDate) {
+                missingFields.push('• Sale Date');
+            }
+            
+            // Check due date
+            const soDueDate = document.getElementById('soDueDate')?.value;
+            if (!soDueDate) {
+                missingFields.push('• Due Date');
+            }
+            
+            // Check status
+            const soStatus = document.getElementById('soStatus')?.value;
+            if (!soStatus) {
+                missingFields.push('• Status');
+            }
+            
+            // Get line items
+            const lineItems = [];
+            let totalQty = 0;
+            let totalAmount = 0;
+            
+            document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
+                const itemSelect = row.querySelector('.so-item');
+                const itemId = itemSelect?.value;
+                const itemName = itemSelect?.options[itemSelect.selectedIndex]?.text || '';
+                const qty = parseInt(row.querySelector('.so-qty')?.value) || 0;
+                const price = parseFloat(row.querySelector('.so-price')?.value) || 0;
+                const lineTotal = qty * price;
+                
+                if (itemId && qty > 0) {
+                    // Get item details from cache
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    lineItems.push({
+                        name: item?.Item_Description || itemName,
+                        sku: item?.SKU || '',
+                        qty: qty,
+                        price: price,
+                        total: lineTotal
+                    });
+                    totalQty += qty;
+                    totalAmount += lineTotal;
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                missingFields.push('• At least one line item with quantity');
+            }
+            
+            // Show validation errors if any
+            if (missingFields.length > 0) {
+                showWarning(`Please complete the following required fields:\n\n${missingFields.join('\n')}`);
+                return;
+            }
+            
+            // Build preview HTML
+            let html = `
+                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 4px;">Customer</div>
+                    <div style="font-size: 18px; font-weight: 600; color: #1e3a5f;">${customerName}</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 10px; font-weight: 600;">ORDER ITEMS</div>
+            `;
+            
+            lineItems.forEach((item, index) => {
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${index % 2 === 0 ? '#f8fafc' : 'white'}; border-radius: 8px; margin-bottom: 8px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #333;">${item.name}</div>
+                            <div style="font-size: 12px; color: #666;">${item.sku} • ${item.qty} × ${formatMoney(item.price)}</div>
+                        </div>
+                        <div style="font-weight: 700; color: #1e3a5f; font-size: 16px;">${formatMoney(item.total)}</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 14px; opacity: 0.9;">Items</span>
+                        <span style="font-size: 18px; font-weight: 600;">${totalQty}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <span style="font-size: 16px; font-weight: 600;">TOTAL</span>
+                        <span style="font-size: 28px; font-weight: 700;">${formatMoney(totalAmount)}</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('orderPreviewContent').innerHTML = html;
+            document.getElementById('orderPreviewModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeOrderPreview() {
+            document.getElementById('orderPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
         async function addSale(e) {
             e.preventDefault();
             
@@ -32719,6 +33266,109 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- QUICK ADD ITEM MODAL (for adding items while creating PO) -->
+    <div id="quickAddItemModal" class="item-picker-overlay">
+        <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 95%; height: auto; max-height: 95vh; margin: auto; border-radius: 16px; overflow: hidden;">
+            <div class="item-picker-header" style="background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);">
+                <h3 style="margin: 0; color: white;">📦 Quick Add Item to Catalog</h3>
+                <button class="item-picker-close" onclick="closeQuickAddItem()" style="color: white;">&times;</button>
+            </div>
+            <div style="padding: 20px; overflow-y: auto; max-height: calc(95vh - 140px);">
+                <form id="quickAddItemForm" onsubmit="saveQuickAddItem(event)">
+                    <div style="display: grid; gap: 15px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-weight: 600; color: #333;">SKU *</label>
+                            <input type="text" id="quickItemSKU" required placeholder="e.g., DAD-CHIP-BBQ" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-weight: 600; color: #333;">Item Description *</label>
+                            <input type="text" id="quickItemDescription" required placeholder="e.g., BBQ Potato Chips 1oz" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600; color: #333;">Package Cost *</label>
+                                <input type="number" id="quickItemCost" required step="0.01" min="0" placeholder="0.00" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600; color: #333;">Sell Price *</label>
+                                <input type="number" id="quickItemPrice" required step="0.01" min="0" placeholder="0.00" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600; color: #333;">Units per Package *</label>
+                                <input type="number" id="quickItemUnits" required min="1" value="24" placeholder="24" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600; color: #333;">Purchase UOM</label>
+                                <input type="text" id="quickItemUOM" value="Case" placeholder="Case" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600; color: #333;">Reorder Point</label>
+                                <input type="number" id="quickItemReorder" min="0" value="50" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600; color: #333;">Starting Qty</label>
+                                <input type="number" id="quickItemQty" min="0" value="0" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                            </div>
+                        </div>
+                        <input type="hidden" id="quickItemSupplier">
+                    </div>
+                    <div style="margin-top: 20px; display: flex; gap: 12px;">
+                        <button type="button" onclick="closeQuickAddItem()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                        <button type="submit" style="flex: 1; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Save & Add to PO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ORDER PREVIEW MODAL (Customer-facing view for Sales Orders) -->
+    <div id="orderPreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+        <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; padding: 20px; text-align: center;">
+                <h2 style="margin: 0; font-size: 24px;">📋 Order Summary</h2>
+                <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Please verify your order</p>
+            </div>
+            
+            <!-- Content -->
+            <div id="orderPreviewContent" style="padding: 20px;">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                <button onclick="closeOrderPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button onclick="closeOrderPreview(); document.querySelector('#addSaleForm form').requestSubmit();" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PO PREVIEW MODAL (For Purchase Orders) -->
+    <div id="poPreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+        <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 20px; text-align: center;">
+                <h2 style="margin: 0; font-size: 24px;">📦 Purchase Order Preview</h2>
+                <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Review before submitting</p>
+            </div>
+            
+            <!-- Content -->
+            <div id="poPreviewContent" style="padding: 20px;">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                <button onclick="closePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button onclick="closePOPreview(); document.querySelector('#addPurchaseForm form').requestSubmit();" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- UNIVERSAL STATUS PICKER MODAL -->
     <div id="statusPickerModal" class="item-picker-overlay">
         <div class="item-picker-container styled-modal-container" style="max-width: 450px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
@@ -32795,6 +33445,14 @@ NOTE: Please print the attached PO document for full details.`;
             background: rgba(0,0,0,0.85);
             z-index: 99999 !important;  /* Way above sticky elements (999) */
             padding: 0;
+            /* Center styled modals */
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* When overlay contains a styled-modal-container, use flex centering */
+        .item-picker-overlay:has(.styled-modal-container) {
+            display: flex;
         }
         
         .item-picker-container {
@@ -34147,6 +34805,109 @@ NOTE: Please print the attached PO document for full details.`;
         
         function showInfo(message) {
             showStyledAlert('Info', message, 'info');
+        }
+        
+        // ==================== RECORD PREVIEW/CONFIRM ====================
+        // Shows a confirmation modal before creating or updating a record
+        function showRecordPreview(type, data, originalData, onConfirm) {
+            return new Promise((resolve) => {
+                const isUpdate = !!originalData;
+                const typeLabels = {
+                    supplier: { icon: '🏭', name: 'Supplier', color: '#7c3aed' },
+                    customer: { icon: '👤', name: 'Customer', color: '#0891b2' },
+                    item: { icon: '📦', name: 'Item', color: '#059669' }
+                };
+                const typeInfo = typeLabels[type] || { icon: '📝', name: 'Record', color: '#6b7280' };
+                
+                let contentHtml = '';
+                
+                if (isUpdate) {
+                    // Show what changed
+                    const changes = [];
+                    for (const key in data) {
+                        const oldVal = originalData[key] || '';
+                        const newVal = data[key] || '';
+                        if (String(oldVal).trim() !== String(newVal).trim()) {
+                            const fieldName = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+                            changes.push({ field: fieldName, old: oldVal || '(empty)', new: newVal || '(empty)' });
+                        }
+                    }
+                    
+                    if (changes.length === 0) {
+                        showInfo('No changes detected.');
+                        resolve(false);
+                        return;
+                    }
+                    
+                    contentHtml = `
+                        <div style="margin-bottom: 15px; font-size: 14px; color: #666;">
+                            The following changes will be saved:
+                        </div>
+                    `;
+                    changes.forEach(c => {
+                        contentHtml += `
+                            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">${c.field}</div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="color: #dc2626; text-decoration: line-through; font-size: 13px;">${c.old}</span>
+                                    <span style="color: #666;">→</span>
+                                    <span style="color: #059669; font-weight: 600; font-size: 13px;">${c.new}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    // Show new record summary
+                    contentHtml = `
+                        <div style="margin-bottom: 15px; font-size: 14px; color: #666;">
+                            Creating new ${typeInfo.name.toLowerCase()}:
+                        </div>
+                    `;
+                    for (const key in data) {
+                        if (data[key] && String(data[key]).trim()) {
+                            const fieldName = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+                            contentHtml += `
+                                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <span style="color: #666; font-size: 13px;">${fieldName}</span>
+                                    <span style="font-weight: 600; font-size: 13px;">${data[key]}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+                
+                // Create modal
+                const modal = document.createElement('div');
+                modal.id = 'recordPreviewModal';
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;';
+                
+                modal.innerHTML = `
+                    <div style="max-width: 450px; width: 100%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, ${typeInfo.color} 0%, ${typeInfo.color}dd 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 22px;">${typeInfo.icon} ${isUpdate ? 'Confirm Changes' : 'Confirm New ' + typeInfo.name}</h2>
+                            <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">${isUpdate ? 'Review changes before saving' : 'Review before creating'}</p>
+                        </div>
+                        <div style="padding: 20px; max-height: 50vh; overflow-y: auto;">
+                            ${contentHtml}
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button id="recordPreviewCancel" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Cancel</button>
+                            <button id="recordPreviewConfirm" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, ${typeInfo.color} 0%, ${typeInfo.color}dd 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ ${isUpdate ? 'Save Changes' : 'Create'}</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                document.body.style.overflow = 'hidden';
+                
+                const cleanup = () => {
+                    modal.remove();
+                    document.body.style.overflow = '';
+                };
+                
+                modal.querySelector('#recordPreviewCancel').onclick = () => { cleanup(); resolve(false); };
+                modal.querySelector('#recordPreviewConfirm').onclick = () => { cleanup(); resolve(true); };
+            });
         }
         
         // ==================== UNIVERSAL STATUS PICKER ====================
