@@ -5,13 +5,11 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Saturday, December 21, 2025
-         VERSION: V16_102
+         VERSION: V16_104
          =====================================================
          CHANGES IN THIS VERSION:
-         - Fixed change preview to only show actual changes
-         - Now compares only fields in originalData (not new data)
-         - Skips ID fields (supplierId, customerId, itemId)
-         - No more false "empty → value" changes for IDs
+         - Restored notes and status fields to updateItem
+         - User will add Notes column to PROD Items sheet
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9747,21 +9745,21 @@
                 unitSellPrice: document.getElementById('editUnitSellPrice').value,
                 reorderPoint: document.getElementById('editReorderPoint').value,
                 sku: document.getElementById('editItemSKU').value,
-                status: document.getElementById('editItemStatus').value,
-                notes: document.getElementById('editItemNotes').value
+                notes: document.getElementById('editItemNotes').value,
+                status: document.getElementById('editItemStatus').value
             };
             
             // Map original data for comparison
             const originalData = currentEditingItem ? {
                 description: currentEditingItem.Item_Description || '',
                 purchaseUOM: currentEditingItem.Purchase_UOM || '',
-                unitsPerPackage: currentEditingItem.Units_Per_Package || '',
-                packageCost: currentEditingItem.Package_Cost || '',
-                unitSellPrice: currentEditingItem.Unit_Sell_Price || '',
-                reorderPoint: currentEditingItem.Reorder_Point || '',
+                unitsPerPackage: String(currentEditingItem.Units_Per_Package || ''),
+                packageCost: String(currentEditingItem.Package_Cost || ''),
+                unitSellPrice: String(currentEditingItem.Unit_Sell_Price || ''),
+                reorderPoint: String(currentEditingItem.Reorder_Point || ''),
                 sku: currentEditingItem.SKU || '',
-                status: currentEditingItem.Status || '',
-                notes: currentEditingItem.Notes || ''
+                notes: currentEditingItem.Notes || '',
+                status: currentEditingItem.Status || ''
             } : null;
             
             // Show preview of changes
