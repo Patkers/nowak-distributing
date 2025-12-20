@@ -5,13 +5,12 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Friday, December 20, 2025
-         VERSION: V16_93
+         VERSION: V16_94
          =====================================================
          CHANGES IN THIS VERSION:
-         - Added confirmation preview for Suppliers, Customers, Items
-         - New records: Shows summary before creating
-         - Updates: Shows what changed (old → new) before saving
-         - Cancel option on all confirmation previews
+         - Fixed modal showing on load bug (Select Status)
+         - Removed :has() CSS selector that caused modal visibility
+         - Updated modal display to use flex when shown
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -33450,9 +33449,10 @@ NOTE: Please print the attached PO document for full details.`;
             justify-content: center;
         }
         
-        /* When overlay contains a styled-modal-container, use flex centering */
-        .item-picker-overlay:has(.styled-modal-container) {
-            display: flex;
+        /* When overlay contains a styled-modal-container AND is shown, use flex centering */
+        /* Note: The JavaScript will set display:flex when showing these modals */
+        .item-picker-overlay.styled-modal-visible {
+            display: flex !important;
         }
         
         .item-picker-container {
@@ -34726,7 +34726,7 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('styledAlertHeader').style.background = colors[type] || colors.info;
             document.getElementById('styledAlertTitle').textContent = `${icons[type] || icons.info} ${title}`;
             document.getElementById('styledAlertContent').innerHTML = message.replace(/\n/g, '<br>');
-            document.getElementById('styledAlertModal').style.display = 'block';
+            document.getElementById('styledAlertModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
         
@@ -34776,7 +34776,7 @@ NOTE: Please print the attached PO document for full details.`;
                 document.getElementById('styledConfirmOkBtn').textContent = confirmText;
                 document.getElementById('styledConfirmOkBtn').style.background = headerColor;
                 document.getElementById('styledConfirmCancelBtn').textContent = cancelText;
-                document.getElementById('styledConfirmModal').style.display = 'block';
+                document.getElementById('styledConfirmModal').style.display = 'flex';
                 document.body.style.overflow = 'hidden';
             });
         }
@@ -35067,7 +35067,7 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             document.getElementById('statusPickerList').innerHTML = html;
-            document.getElementById('statusPickerModal').style.display = 'block';
+            document.getElementById('statusPickerModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
         
