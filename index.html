@@ -5,13 +5,13 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Saturday, December 21, 2025
-         VERSION: V16_97
+         VERSION: V16_102
          =====================================================
          CHANGES IN THIS VERSION:
-         - Added change preview confirmation for Edit PO/SO
-         - Shows header field changes (Status, Dates, Amount Paid, etc.)
-         - Shows line item changes (Added, Removed, Changed)
-         - Must confirm changes before saving
+         - Fixed change preview to only show actual changes
+         - Now compares only fields in originalData (not new data)
+         - Skips ID fields (supplierId, customerId, itemId)
+         - No more false "empty → value" changes for IDs
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8326,42 +8326,48 @@
                 return;
             }
             
-            // Calculate unit cost
-            const unitCost = packageCost / unitsPerPackage;
-            
-            // Create item data
+            // Create item data - match the field names expected by addItem API
             const itemData = {
                 sku: sku,
                 description: description,
                 supplierId: supplierId,
                 packageCost: packageCost,
-                unitCost: unitCost.toFixed(4),
-                sellPrice: sellPrice,
+                unitSellPrice: sellPrice,
                 unitsPerPackage: unitsPerPackage,
                 purchaseUOM: purchaseUOM,
                 reorderPoint: reorderPoint,
                 qtyOnHand: startingQty,
-                status: 'Active'
+                notes: ''
             };
             
             // Save to backend
-            const result = await apiCall('createItem', itemData);
+            const result = await apiCall('addItem', itemData);
             
             if (result && result.status === 'success') {
-                // Refresh items cache
+                // Force refresh items cache
                 const itemsResult = await apiCall('getItems');
                 if (itemsResult && itemsResult.status === 'success') {
                     cachedItems = itemsResult.data;
                 }
                 
-                // Reload supplier items in the PO form
-                await loadSupplierItems();
+                // Reload the PO form item dropdowns with fresh data
+                const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId && item.Status !== 'Archived');
+                document.querySelectorAll('#poLineItems .po-item').forEach(select => {
+                    const currentValue = select.value; // Preserve current selection
+                    select.innerHTML = '<option value="">Select item...</option>';
+                    supplierItems.forEach(item => {
+                        const cost = parseFloat(item.Package_Cost) || 0;
+                        const units = parseInt(item.Units_Per_Package) || 1;
+                        select.innerHTML += `<option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}">${item.Item_Description}</option>`;
+                    });
+                    if (currentValue) select.value = currentValue; // Restore selection
+                });
                 
                 // Close modal
                 closeQuickAddItem();
                 
                 // Show success
-                showSuccessModal('Item Added!', `${description} has been added to the catalog and is now available in your item list.`);
+                showSuccessModal('Item Added!', `"${description}" has been added to the catalog and is now available in your item list.`);
             } else {
                 showWarning('Error adding item: ' + (result?.message || 'Unknown error'));
             }
@@ -13218,6 +13224,20 @@
                 soDateField.value = today;
             }
             
+            // Auto-populate Due Date (default to 30 days from now)
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            const soDueDateField = document.getElementById('soDueDate');
+            if (soDueDateField) {
+                soDueDateField.value = dueDate.toISOString().split('T')[0];
+            }
+            
+            // Auto-populate Status (default to Pending)
+            const soStatusField = document.getElementById('soStatus');
+            if (soStatusField) {
+                soStatusField.value = 'Pending';
+            }
+            
             // Add fresh line item
             addSOLineItem();
             
@@ -13526,7 +13546,7 @@
             const missingFields = [];
             
             // Check customer
-            const customerSelect = document.getElementById('newSaleCustomer');
+            const customerSelect = document.getElementById('soCustomer');
             const customerId = customerSelect?.value;
             const customerName = customerSelect?.options[customerSelect.selectedIndex]?.text || 'Customer';
             
@@ -13913,8 +13933,7 @@
                     displaySales(result.data);
                     loadSaleFilterCustomers(); // Populate filter dropdown
                 }
-                // Load COGS data from backend (efficient single call)
-                loadItemCOGS();
+                // COGS is calculated from existing sales data - no separate load needed
                 if (forceRefresh) {
                     showStatus('salesStatus', '✅ Sales refreshed!', 'success');
                 }
@@ -32209,7 +32228,11 @@ NOTE: Please print the attached PO document for full details.`;
         
         // Open multi-select picker for Purchase Orders
         function openMultiItemPickerForPO() {
-            const supplierId = document.getElementById('createPOSupplier').value;
+            // Check if coming from main PO form or Create PO (Inventory Flow)
+            const isMainPO = window.multiItemPickerTarget === 'mainPO';
+            const supplierId = isMainPO 
+                ? document.getElementById('poSupplier').value 
+                : document.getElementById('createPOSupplier').value;
             
             if (!supplierId) {
                 showWarning('Please select a supplier first');
@@ -32340,6 +32363,110 @@ NOTE: Please print the attached PO document for full details.`;
                 return;
             }
             
+            // Check if targeting main PO form or Create PO form
+            const isMainPO = window.multiItemPickerTarget === 'mainPO';
+            
+            if (isMainPO) {
+                addSelectedItemsToMainPO(selectedItems);
+            } else {
+                addSelectedItemsToCreatePO(selectedItems);
+            }
+        }
+        
+        // Add items to main PO form (Purchase Orders tab)
+        function addSelectedItemsToMainPO(selectedItems) {
+            const container = document.getElementById('poLineItems');
+            
+            // Get existing rows to check for duplicates
+            const existingItems = new Set();
+            container.querySelectorAll('.po-item').forEach(sel => {
+                if (sel.value) existingItems.add(sel.value);
+            });
+            
+            // Clear empty rows first
+            const rows = container.querySelectorAll('.line-item-row');
+            rows.forEach(row => {
+                const itemSelect = row.querySelector('.po-item');
+                if (itemSelect && !itemSelect.value) {
+                    row.remove();
+                }
+            });
+            
+            // Add new rows for each selected item
+            selectedItems.forEach(itemId => {
+                if (existingItems.has(itemId)) return; // Skip duplicates
+                
+                const item = (cachedItems || []).find(i => i.Item_ID === itemId);
+                if (!item) return;
+                
+                // Create new row matching main PO form design
+                const newRow = document.createElement('div');
+                newRow.className = 'line-item-row';
+                newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
+                
+                const cost = parseFloat(item.Package_Cost) || 0;
+                const units = parseInt(item.Units_Per_Package) || 1;
+                
+                // Store data on row for calculations
+                newRow.dataset.unitCost = cost;
+                newRow.dataset.unitsPerPackage = units;
+                
+                newRow.innerHTML = `
+                    <div>
+                        <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid var(--primary, #667eea); border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" required>
+                            <option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}" selected>${item.Item_Description}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required>
+                    </div>
+                    <div>
+                        <div class="po-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">${units}</div>
+                    </div>
+                    <div>
+                        <div class="po-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                    </div>
+                    <div>
+                        <div class="po-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">${formatMoney(cost)}</div>
+                    </div>
+                    <div>
+                        <div class="po-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                    </div>
+                    <button type="button" class="remove-btn btn-danger" style="width: 100%; padding: 10px; font-size: 14px;">🗑️</button>
+                `;
+                
+                container.appendChild(newRow);
+                
+                // Attach event listeners
+                const qtyInput = newRow.querySelector('.po-qty');
+                const removeBtn = newRow.querySelector('.remove-btn');
+                
+                qtyInput.addEventListener('input', function() {
+                    updatePOLineDisplay(this);
+                    calculatePOTotal();
+                });
+                
+                removeBtn.addEventListener('click', function() {
+                    removeLineItem(this);
+                    calculatePOTotal();
+                });
+            });
+            
+            // Close picker and reset target
+            closeItemPicker();
+            window.multiItemPickerTarget = null;
+            
+            // Focus first empty quantity field
+            setTimeout(() => {
+                const emptyQty = container.querySelector('.po-qty[value=""], .po-qty:not([value])');
+                if (emptyQty) emptyQty.focus();
+            }, 100);
+            
+            showSuccess(`Added ${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} to the order. Now enter quantities!`);
+        }
+        
+        // Add items to Create PO form (Inventory Flow)
+        function addSelectedItemsToCreatePO(selectedItems) {
             const supplierId = document.getElementById('createPOSupplier').value;
             const container = document.getElementById('createPOLineItems');
             
@@ -35098,12 +35225,18 @@ NOTE: Please print the attached PO document for full details.`;
                 };
                 const typeInfo = typeLabels[type] || { icon: '📝', name: 'Record', color: '#6b7280' };
                 
+                // Fields to skip in comparison (IDs and internal fields that don't change)
+                const skipFields = ['supplierId', 'customerId', 'itemId', 'fax', 'status'];
+                
                 let contentHtml = '';
                 
                 if (isUpdate) {
-                    // Show what changed
+                    // Show what changed - only compare fields that exist in BOTH objects
                     const changes = [];
-                    for (const key in data) {
+                    for (const key in originalData) {
+                        // Skip ID fields and internal fields
+                        if (skipFields.includes(key)) continue;
+                        
                         const oldVal = originalData[key] || '';
                         const newVal = data[key] || '';
                         if (String(oldVal).trim() !== String(newVal).trim()) {
@@ -35127,7 +35260,7 @@ NOTE: Please print the attached PO document for full details.`;
                         contentHtml += `
                             <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
                                 <div style="font-size: 12px; color: #666; margin-bottom: 4px;">${c.field}</div>
-                                <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                     <span style="color: #dc2626; text-decoration: line-through; font-size: 13px;">${c.old}</span>
                                     <span style="color: #666;">→</span>
                                     <span style="color: #059669; font-weight: 600; font-size: 13px;">${c.new}</span>
@@ -35136,13 +35269,16 @@ NOTE: Please print the attached PO document for full details.`;
                         `;
                     });
                 } else {
-                    // Show new record summary
+                    // Show new record summary - skip ID fields
                     contentHtml = `
                         <div style="margin-bottom: 15px; font-size: 14px; color: #666;">
                             Creating new ${typeInfo.name.toLowerCase()}:
                         </div>
                     `;
                     for (const key in data) {
+                        // Skip ID fields
+                        if (skipFields.includes(key)) continue;
+                        
                         if (data[key] && String(data[key]).trim()) {
                             const fieldName = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
                             contentHtml += `
