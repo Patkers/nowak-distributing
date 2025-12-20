@@ -4,13 +4,14 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Friday, December 20, 2025
-         VERSION: V16_94
+         LAST UPDATED: Saturday, December 21, 2025
+         VERSION: V16_97
          =====================================================
          CHANGES IN THIS VERSION:
-         - Fixed modal showing on load bug (Select Status)
-         - Removed :has() CSS selector that caused modal visibility
-         - Updated modal display to use flex when shown
+         - Added change preview confirmation for Edit PO/SO
+         - Shows header field changes (Status, Dates, Amount Paid, etc.)
+         - Shows line item changes (Added, Removed, Changed)
+         - Must confirm changes before saving
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -4128,8 +4129,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Invoice Total *</label>
-                                <input type="number" id="poTotal" step="0.01" min="0" required readonly style="background: #f0f0f0;">
-                                <small style="color: #666;">Auto-calculated from line items</small>
+                                <input type="number" id="poTotal" step="0.01" min="0" required readonly style="background: #f0f0f0; display: none;">
                             </div>
                             <div class="form-group">
                                 <label>Amount Paid</label>
@@ -4139,22 +4139,81 @@
                         </div>
                     </div>
                     
-                    <!-- Card 2: Line Items -->
+                    <!-- Card 2: Line Items (Matching Create PO Design) -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <h4 style="margin-top: 0; margin-bottom: 15px;">Line Items</h4>
-                        <div class="line-items-container" id="poLineItems">
-                            <div class="line-item-row">
-                                <select class="po-item" required>
-                                    <option value="">Select Item</option>
-                                </select>
-                                <input type="number" class="po-qty" placeholder="Quantity" min="1" required>
-                                <input type="number" class="po-cost" placeholder="Unit Cost" step="0.01" min="0" required>
-                                <button type="button" class="remove-btn">🗑️</button>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                            <h4 style="margin: 0; color: var(--primary, #667eea);">📦 Line Items</h4>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" class="btn-small" onclick="openMultiItemPickerForMainPO()" style="background: #28a745; color: white;">📋 Select Multiple Items</button>
+                                <button type="button" class="btn-small" onclick="addPOLineItem()" style="background: var(--primary, #667eea); color: white;">➕ Add Single Item</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Wrapper for horizontal scroll on mobile -->
+                        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; position: relative;">
+                            <div style="min-width: 700px; width: 100%; max-width: 100%;">
+                                <!-- Header Row -->
+                                <div style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 14px;">
+                                    <div>Item</div>
+                                    <div style="text-align: center;">Cases</div>
+                                    <div style="text-align: center;">Units/Case</div>
+                                    <div style="text-align: center;">Total Units</div>
+                                    <div style="text-align: center;">Catalog Cost</div>
+                                    <div style="text-align: right;">Line Total</div>
+                                    <div style="text-align: center;">Del</div>
+                                </div>
+                                
+                                <!-- Line Items Container -->
+                                <div class="line-items-container" id="poLineItems" style="border: 2px solid var(--primary, #667eea); border-top: none; border-radius: 0 0 8px 8px; padding: 10px; background: #fafafa;">
+                                    <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
+                                            <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid var(--primary, #667eea); border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" required>
+                                                <option value="">Select item...</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
+                                            <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required>
+                                        </div>
+                                        <div style="margin-top: 26px;">
+                                            <div class="po-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
+                                        </div>
+                                        <div style="margin-top: 26px;">
+                                            <div class="po-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                                        </div>
+                                        <div style="margin-top: 26px;">
+                                            <div class="po-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">-</div>
+                                        </div>
+                                        <div style="margin-top: 26px;">
+                                            <div class="po-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                                        </div>
+                                        <button type="button" class="remove-btn btn-danger" onclick="removeLineItem(this); calculatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px;">🗑️</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                            <button type="button" class="btn btn-secondary" onclick="addPOLineItem()">+ Add Line Item</button>
                             <button type="button" class="btn" onclick="addNewItemFromPO()" style="background: #9c27b0;">➕ Add New Item to Catalog</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 3: Order Summary -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; color: var(--primary, #667eea);">💰 Order Summary</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--primary, #667eea);">
+                                <div style="font-size: 14px; color: #1565c0; margin-bottom: 8px; font-weight: 600;">Total Cases</div>
+                                <div style="font-size: 32px; font-weight: bold; color: var(--primary, #667eea);" id="poTotalCases">0</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 12px; border: 2px solid #f9a825;">
+                                <div style="font-size: 14px; color: #ef6c00; margin-bottom: 8px; font-weight: 600;">Total Units</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #f9a825;" id="poTotalUnits">0</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12px; border: 2px solid #28a745;">
+                                <div style="font-size: 14px; color: #2e7d32; margin-bottom: 8px; font-weight: 600;">Total Cost</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #28a745;" id="poTotalCost">$0.00</div>
+                            </div>
                         </div>
                     </div>
                     
@@ -4163,9 +4222,11 @@
                         <textarea id="poNotes" rows="2"></textarea>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn" onclick="showPOPreview()" id="savePOBtn">💾 Create Purchase Order</button>
-                        <button type="button" class="btn btn-secondary" onclick="hideAddPurchaseForm()">Cancel</button>
+                    <!-- Action Buttons -->
+                    <div class="filter-card" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn" onclick="showPOPreview()" id="savePOBtn" style="flex: 1; min-width: 150px;">💾 Create Purchase Order</button>
+                        <button type="button" class="btn" onclick="printPOWithoutSave()" style="flex: 1; min-width: 150px; background: #0891b2;">🖨️ Print PO (No Save)</button>
+                        <button type="button" class="btn btn-secondary" onclick="clearPOForm()" style="flex: 1; min-width: 150px;">🔄 Clear Form</button>
                     </div>
                 </form>
             </div>
@@ -4313,15 +4374,19 @@
                     
                     <!-- Card 3: Order Summary -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 15px 0; color: #667eea; text-align: center;">📊 Order Summary</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
-                            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
-                                <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">📦 Total Items</h3>
-                                <p style="font-size: 32px; font-weight: bold; color: #667eea; margin: 0;" id="soTotalQty">0</p>
+                        <h4 style="margin: 0 0 15px 0; color: var(--primary, #667eea);">💰 Order Summary</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12px; border: 2px solid var(--primary, #667eea);">
+                                <div style="font-size: 14px; color: #1565c0; margin-bottom: 8px; font-weight: 600;">Total Items</div>
+                                <div style="font-size: 32px; font-weight: bold; color: var(--primary, #667eea);" id="soTotalQty">0</div>
                             </div>
-                            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e0e0e0;">
-                                <h3 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">💰 Total Amount</h3>
-                                <p style="font-size: 32px; font-weight: bold; color: #2e7d32; margin: 0;" id="soTotalAmount">$0.00</p>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 12px; border: 2px solid #f9a825;">
+                                <div style="font-size: 14px; color: #ef6c00; margin-bottom: 8px; font-weight: 600;">Total Units</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #f9a825;" id="soTotalUnits">0</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12px; border: 2px solid #28a745;">
+                                <div style="font-size: 14px; color: #2e7d32; margin-bottom: 8px; font-weight: 600;">Total Amount</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #28a745;" id="soTotalAmount">$0.00</div>
                             </div>
                         </div>
                     </div>
@@ -10044,10 +10109,8 @@
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
                 const itemSelect = row.querySelector('.po-item');
                 const qtyInput = row.querySelector('.po-qty');
-                const costInput = row.querySelector('.po-cost');
                 const removeBtn = row.querySelector('.remove-btn');
                 
-                // Remove old listeners by cloning (prevents duplicates)
                 if (itemSelect && !itemSelect.dataset.listenersAttached) {
                     itemSelect.addEventListener('change', function() {
                         updatePOItemInfo(this);
@@ -10057,16 +10120,10 @@
                 
                 if (qtyInput && !qtyInput.dataset.listenersAttached) {
                     qtyInput.addEventListener('input', function() {
+                        updatePOLineDisplay(this);
                         calculatePOTotal();
                     });
                     qtyInput.dataset.listenersAttached = 'true';
-                }
-                
-                if (costInput && !costInput.dataset.listenersAttached) {
-                    costInput.addEventListener('input', function() {
-                        calculatePOTotal();
-                    });
-                    costInput.dataset.listenersAttached = 'true';
                 }
                 
                 if (removeBtn && !removeBtn.dataset.listenersAttached) {
@@ -10183,25 +10240,40 @@
             }
             
             // Get supplier items once
-            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
+            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId && item.Status !== 'Archived');
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
             newRow.innerHTML = `
-                <select class="po-item" required>
-                    <option value="">Select Item</option>
-                    ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package}" data-cost="${item.Package_Cost}" data-uom="${item.Purchase_UOM}">${item.Item_Description}</option>`).join('')}
-                </select>
-                <input type="number" class="po-qty" placeholder="# of Packages" min="1" required>
-                <input type="number" class="po-cost" placeholder="Cost per Package" step="0.01" min="0" required>
-                <button type="button" class="remove-btn">🗑️</button>
+                <div>
+                    <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid var(--primary, #667eea); border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" required>
+                        <option value="">Select item...</option>
+                        ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package || 1}" data-cost="${item.Package_Cost || 0}" data-uom="${item.Purchase_UOM || 'Case'}">${item.Item_Description}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required>
+                </div>
+                <div>
+                    <div class="po-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
+                </div>
+                <div>
+                    <div class="po-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                </div>
+                <div>
+                    <div class="po-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">-</div>
+                </div>
+                <div>
+                    <div class="po-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                </div>
+                <button type="button" class="remove-btn btn-danger" style="width: 100%; padding: 10px; font-size: 14px;">🗑️</button>
             `;
             container.appendChild(newRow);
             
             // Attach event listeners programmatically (CSP-safe)
             const itemSelect = newRow.querySelector('.po-item');
             const qtyInput = newRow.querySelector('.po-qty');
-            const costInput = newRow.querySelector('.po-cost');
             const removeBtn = newRow.querySelector('.remove-btn');
             
             itemSelect.addEventListener('change', function() {
@@ -10209,10 +10281,7 @@
             });
             
             qtyInput.addEventListener('input', function() {
-                calculatePOTotal();
-            });
-            
-            costInput.addEventListener('input', function() {
+                updatePOLineDisplay(this);
                 calculatePOTotal();
             });
             
@@ -10224,16 +10293,43 @@
         
         function updatePOItemInfo(selectElement) {
             const option = selectElement.options[selectElement.selectedIndex];
-            const cost = option.getAttribute('data-cost');
+            const cost = parseFloat(option.getAttribute('data-cost')) || 0;
+            const units = parseInt(option.getAttribute('data-units')) || 1;
             
-            const row = selectElement.parentElement;
-            const costInput = row.querySelector('.po-cost');
+            const row = selectElement.closest('.line-item-row');
+            const unitsDiv = row.querySelector('.po-units');
+            const costDiv = row.querySelector('.po-cost');
             
-            if (cost) {
-                costInput.value = cost;
+            if (unitsDiv) unitsDiv.textContent = units;
+            if (costDiv) costDiv.textContent = cost > 0 ? formatMoney(cost) : '-';
+            
+            // Store data on row for calculations
+            row.dataset.unitCost = cost;
+            row.dataset.unitsPerPackage = units;
+            
+            // Update line display
+            const qtyInput = row.querySelector('.po-qty');
+            if (qtyInput && qtyInput.value) {
+                updatePOLineDisplay(qtyInput);
             }
             
             calculatePOTotal();
+        }
+        
+        function updatePOLineDisplay(qtyInput) {
+            const row = qtyInput.closest('.line-item-row');
+            const qty = parseInt(qtyInput.value) || 0;
+            const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || parseInt(row.querySelector('.po-units')?.textContent) || 1;
+            const unitCost = parseFloat(row.dataset.unitCost) || 0;
+            
+            const totalUnits = qty * unitsPerPackage;
+            const lineTotal = qty * unitCost;
+            
+            const totalUnitsDiv = row.querySelector('.po-totalunits');
+            const lineTotalDiv = row.querySelector('.po-linetotal');
+            
+            if (totalUnitsDiv) totalUnitsDiv.textContent = qty > 0 ? totalUnits : '-';
+            if (lineTotalDiv) lineTotalDiv.textContent = qty > 0 ? formatMoney(lineTotal) : '$0.00';
         }
         
         function showPOPreview() {
@@ -10275,7 +10371,7 @@
                 const itemId = itemSelect?.value;
                 const itemName = itemSelect?.options[itemSelect.selectedIndex]?.text || '';
                 const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
-                const cost = parseFloat(row.querySelector('.po-cost')?.value) || 0;
+                const cost = parseFloat(row.dataset.unitCost) || 0;
                 const lineTotal = qty * cost;
                 
                 if (itemId && qty > 0) {
@@ -10340,14 +10436,19 @@
             html += `
                 </div>
                 
-                <div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="font-size: 14px; opacity: 0.9;">Items</span>
-                        <span style="font-size: 18px; font-weight: 600;">${totalQty}</span>
+                <!-- Colorful Summary Boxes -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px;">
+                    <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 10px; border: 2px solid #7c3aed;">
+                        <div style="font-size: 12px; color: #5b21b6; margin-bottom: 4px; font-weight: 600;">Cases</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">${totalQty}</div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <span style="font-size: 16px; font-weight: 600;">TOTAL</span>
-                        <span style="font-size: 28px; font-weight: 700;">${formatMoney(totalAmount)}</span>
+                    <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 10px; border: 2px solid #f9a825;">
+                        <div style="font-size: 12px; color: #ef6c00; margin-bottom: 4px; font-weight: 600;">Units</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #f9a825;">${lineItems.reduce((sum, item) => sum + (item.qty * (cachedItems.find(i => i.Item_Description === item.name)?.Units_Per_Package || 1)), 0)}</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 10px; border: 2px solid #28a745;">
+                        <div style="font-size: 12px; color: #2e7d32; margin-bottom: 4px; font-weight: 600;">Total</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #28a745;">${formatMoney(totalAmount)}</div>
                     </div>
                 </div>
             `;
@@ -10363,35 +10464,196 @@
         }
         
         function calculatePOTotal() {
-            let total = 0;
+            let totalCases = 0;
+            let totalUnits = 0;
+            let totalCost = 0;
+            
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
                 const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
-                const cost = parseFloat(row.querySelector('.po-cost')?.value) || 0;
-                total += qty * cost;
+                const unitCost = parseFloat(row.dataset.unitCost) || 0;
+                const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || parseInt(row.querySelector('.po-units')?.textContent) || 1;
+                
+                if (qty > 0) {
+                    totalCases += qty;
+                    totalUnits += qty * unitsPerPackage;
+                    totalCost += qty * unitCost;
+                }
             });
+            
+            // Update hidden field for form submission
             const totalField = document.getElementById('poTotal');
             if (totalField) {
-                totalField.value = total.toFixed(2);
+                totalField.value = totalCost.toFixed(2);
             }
+            
+            // Update summary boxes
+            const casesBox = document.getElementById('poTotalCases');
+            const unitsBox = document.getElementById('poTotalUnits');
+            const costBox = document.getElementById('poTotalCost');
+            
+            if (casesBox) casesBox.textContent = totalCases;
+            if (unitsBox) unitsBox.textContent = totalUnits;
+            if (costBox) costBox.textContent = formatMoney(totalCost);
         }
         
         function calculatePOLine(qtyInput) {
-            const row = qtyInput.parentElement;
-            const selectElement = row.querySelector('.po-item');
-            const option = selectElement.options[selectElement.selectedIndex];
-            const units = parseFloat(option.getAttribute('data-units')) || 1;
-            const qty = parseFloat(qtyInput.value) || 0;
-            const infoSpan = row.querySelector('.po-info');
-            const totalUnits = qty * units;
-            const uom = option.getAttribute('data-uom');
-            
-            infoSpan.textContent = `(${units} units/${uom} = ${totalUnits} total units)`;
+            const row = qtyInput.closest('.line-item-row');
+            if (!row) return;
+            updatePOLineDisplay(qtyInput);
         }
 
         function removeLineItem(btn) {
-            btn.parentElement.remove();
+            const row = btn.closest('.line-item-row');
+            if (row) row.remove();
         }
-
+        
+        // Helper functions for PO form
+        function clearPOForm() {
+            document.querySelector('#addPurchaseForm form').reset();
+            
+            // Reset line items to single empty row
+            const container = document.getElementById('poLineItems');
+            const rows = container.querySelectorAll('.line-item-row');
+            rows.forEach((row, i) => {
+                if (i > 0) row.remove();
+            });
+            
+            // Reset first row
+            const firstRow = container.querySelector('.line-item-row');
+            if (firstRow) {
+                const select = firstRow.querySelector('.po-item');
+                if (select) select.selectedIndex = 0;
+                const qty = firstRow.querySelector('.po-qty');
+                if (qty) qty.value = '';
+                const units = firstRow.querySelector('.po-units');
+                if (units) units.textContent = '-';
+                const totalUnits = firstRow.querySelector('.po-totalunits');
+                if (totalUnits) totalUnits.textContent = '-';
+                const cost = firstRow.querySelector('.po-cost');
+                if (cost) cost.textContent = '-';
+                const lineTotal = firstRow.querySelector('.po-linetotal');
+                if (lineTotal) lineTotal.textContent = '$0.00';
+                delete firstRow.dataset.unitCost;
+                delete firstRow.dataset.unitsPerPackage;
+            }
+            
+            // Reset summary boxes
+            document.getElementById('poTotalCases').textContent = '0';
+            document.getElementById('poTotalUnits').textContent = '0';
+            document.getElementById('poTotalCost').textContent = '$0.00';
+            
+            // Reset to ordering type
+            setPurchaseType('ordering');
+            
+            // Auto-populate today's date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('poDate').value = today;
+        }
+        
+        function printPOWithoutSave() {
+            // Validate at least one item
+            const lineItems = [];
+            document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
+                const itemSelect = row.querySelector('.po-item');
+                const itemId = itemSelect?.value;
+                const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
+                if (itemId && qty > 0) {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    lineItems.push({
+                        itemId: itemId,
+                        description: item?.Item_Description || '',
+                        sku: item?.SKU || '',
+                        quantity: qty,
+                        unitCost: parseFloat(row.dataset.unitCost) || 0,
+                        unitsPerPackage: parseInt(row.dataset.unitsPerPackage) || 1
+                    });
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                showWarning('Please add at least one item with quantity before printing.');
+                return;
+            }
+            
+            // Get form data
+            const supplierSelect = document.getElementById('poSupplier');
+            const supplierName = supplierSelect.options[supplierSelect.selectedIndex]?.text || 'Unknown';
+            const poDate = document.getElementById('poDate')?.value || new Date().toISOString().split('T')[0];
+            
+            // Generate printable PO (reuse existing function if available, or create inline)
+            generatePrintablePOFromForm(supplierName, poDate, lineItems);
+        }
+        
+        function generatePrintablePOFromForm(supplierName, poDate, lineItems) {
+            let totalCost = 0;
+            let itemsHtml = lineItems.map(item => {
+                const lineTotal = item.quantity * item.unitCost;
+                totalCost += lineTotal;
+                return `
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.sku}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.description}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${formatMoney(item.unitCost)}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${formatMoney(lineTotal)}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Purchase Order - ${supplierName}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th { background: #667eea; color: white; padding: 10px; text-align: left; }
+                        .total { font-size: 20px; font-weight: bold; margin-top: 20px; text-align: right; }
+                    </style>
+                </head>
+                <body>
+                    <h1>PURCHASE ORDER (DRAFT)</h1>
+                    <p><strong>Supplier:</strong> ${supplierName}</p>
+                    <p><strong>Date:</strong> ${new Date(poDate).toLocaleDateString()}</p>
+                    <p><strong>From:</strong> Nowak Distributing</p>
+                    <hr>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Description</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Unit Cost</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
+                    <div class="total">Total: ${formatMoney(totalCost)}</div>
+                    <p style="margin-top: 40px; color: #666; font-style: italic;">* This is a draft PO - not yet saved to system</p>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+        
+        // Multi-item picker for main PO form
+        function openMultiItemPickerForMainPO() {
+            const supplierId = document.getElementById('poSupplier').value;
+            if (!supplierId) {
+                showWarning('Please select a supplier first');
+                return;
+            }
+            
+            // Reuse the existing multi-item picker but target main PO form
+            window.multiItemPickerTarget = 'mainPO';
+            openMultiItemPickerForPO();
+        }
+        
         let isSavingPO = false; // Prevent double-click
         
         async function addPurchase(e) {
@@ -10433,7 +10695,7 @@
             document.querySelectorAll('#poLineItems .line-item-row').forEach((row, index) => {
                 const itemId = row.querySelector('.po-item').value;
                 const qty = parseInt(row.querySelector('.po-qty').value) || 0;
-                const cost = parseFloat(row.querySelector('.po-cost').value) || 0;
+                const cost = parseFloat(row.dataset.unitCost) || 0;
                 const lineTotal = qty * cost;
                 
                 if (itemId && qty > 0) {
@@ -10443,7 +10705,7 @@
                         unitCost: cost
                     });
                     calculatedTotal += lineTotal;
-                } else if (itemId || qty > 0 || cost > 0) {
+                } else if (itemId || qty > 0) {
                     // Partially filled line
                     hasIncompleteLines = true;
                 }
@@ -12442,6 +12704,10 @@
                 oldLines: currentEditingOrder._originalLines || []
             };
             
+            // Show changes preview before saving
+            const confirmChanges = await showOrderChangesPreview('po', data, po);
+            if (!confirmChanges) return;
+            
             // Check if voiding - show confirmation
             const newStatus = document.getElementById('editPOStatus').value;
             const oldStatus = po.Status;
@@ -12755,7 +13021,7 @@
                 soId: so.SO_ID,
                 customerId: document.getElementById('editSOCustomerHidden')?.value || document.getElementById('editSOCustomer').value,
                 invoiceNumber: document.getElementById('editSOInvoiceNumber').value,
-                saleDate: document.getElementById('editSODate').value,
+                soDate: document.getElementById('editSODate').value,
                 dueDate: document.getElementById('editSODueDate').value,
                 paymentMethod: document.getElementById('editSOPaymentMethod').value,
                 status: document.getElementById('editSOStatus').value,
@@ -12764,6 +13030,10 @@
                 amountPaid: parseFloat(document.getElementById('editSOAmountPaid').value) || 0,
                 lineItems: newLines  // FIXED: was 'lines', backend expects 'lineItems'
             };
+            
+            // Show changes preview before saving
+            const confirmChanges = await showOrderChangesPreview('so', data, so);
+            if (!confirmChanges) return;
             
             // Check if voiding - show confirmation
             const newStatus = document.getElementById('editSOStatus').value;
@@ -13221,14 +13491,16 @@
         
         function calculateSOTotal() {
             let total = 0;
-            let totalQty = 0;
+            let totalItems = 0;
+            let totalUnits = 0;
             
             document.querySelectorAll('#soLineItems .line-item-row').forEach(row => {
                 const qty = parseInt(row.querySelector('.so-qty')?.value) || 0;
                 const price = parseFloat(row.querySelector('.so-price')?.value) || 0;
                 const lineTotal = qty * price;
                 total += lineTotal;
-                totalQty += qty;
+                totalItems += qty > 0 ? 1 : 0; // Count number of different items
+                totalUnits += qty; // Total units being sold
             });
             
             // Update hidden total field (if exists)
@@ -13239,10 +13511,12 @@
             
             // Update summary boxes
             const qtyBox = document.getElementById('soTotalQty');
+            const unitsBox = document.getElementById('soTotalUnits');
             const amountBox = document.getElementById('soTotalAmount');
             
-            if (qtyBox) qtyBox.textContent = totalQty;
-            if (amountBox) amountBox.textContent = '$' + total.toFixed(2);
+            if (qtyBox) qtyBox.textContent = totalItems;
+            if (unitsBox) unitsBox.textContent = totalUnits;
+            if (amountBox) amountBox.textContent = formatMoney(total);
         }
 
         let isSavingSale = false; // Prevent double-click
@@ -13342,14 +13616,19 @@
             html += `
                 </div>
                 
-                <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; padding: 20px; border-radius: 12px; margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="font-size: 14px; opacity: 0.9;">Items</span>
-                        <span style="font-size: 18px; font-weight: 600;">${totalQty}</span>
+                <!-- Colorful Summary Boxes -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px;">
+                    <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 10px; border: 2px solid #1e88e5;">
+                        <div style="font-size: 12px; color: #1565c0; margin-bottom: 4px; font-weight: 600;">Items</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #1e88e5;">${lineItems.length}</div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <span style="font-size: 16px; font-weight: 600;">TOTAL</span>
-                        <span style="font-size: 28px; font-weight: 700;">${formatMoney(totalAmount)}</span>
+                    <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 10px; border: 2px solid #f9a825;">
+                        <div style="font-size: 12px; color: #ef6c00; margin-bottom: 4px; font-weight: 600;">Units</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #f9a825;">${totalQty}</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 10px; border: 2px solid #28a745;">
+                        <div style="font-size: 12px; color: #2e7d32; margin-bottom: 4px; font-weight: 600;">Total</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #28a745;">${formatMoney(totalAmount)}</div>
                     </div>
                 </div>
             `;
@@ -34907,6 +35186,164 @@ NOTE: Please print the attached PO document for full details.`;
                 
                 modal.querySelector('#recordPreviewCancel').onclick = () => { cleanup(); resolve(false); };
                 modal.querySelector('#recordPreviewConfirm').onclick = () => { cleanup(); resolve(true); };
+            });
+        }
+        
+        // Show changes preview for PO/SO edits
+        function showOrderChangesPreview(type, newData, originalOrder) {
+            return new Promise((resolve) => {
+                const isPO = type === 'po';
+                const typeInfo = isPO 
+                    ? { icon: '📦', name: 'Purchase Order', color: '#7c3aed' }
+                    : { icon: '🛒', name: 'Sales Order', color: '#0891b2' };
+                
+                const changes = [];
+                
+                // Compare header fields
+                const fieldMappings = isPO ? {
+                    'Status': { new: newData.status, old: originalOrder.Status },
+                    'Invoice #': { new: newData.invoiceNumber, old: originalOrder.Invoice_Number },
+                    'Order Date': { new: newData.poDate, old: originalOrder.PO_Date?.split('T')[0] },
+                    'Due Date': { new: newData.dueDate, old: originalOrder.Due_Date?.split('T')[0] },
+                    'Amount Paid': { new: formatMoney(newData.amountPaid || 0), old: formatMoney(originalOrder.Amount_Paid || 0) },
+                    'Notes': { new: newData.notes || '', old: originalOrder.Notes || '' }
+                } : {
+                    'Status': { new: newData.status, old: originalOrder.Status },
+                    'Order Date': { new: newData.soDate, old: originalOrder.SO_Date?.split('T')[0] },
+                    'Due Date': { new: newData.dueDate, old: originalOrder.Due_Date?.split('T')[0] },
+                    'Amount Paid': { new: formatMoney(newData.amountPaid || 0), old: formatMoney(originalOrder.Amount_Paid || 0) },
+                    'Notes': { new: newData.notes || '', old: originalOrder.Notes || '' }
+                };
+                
+                for (const [fieldName, values] of Object.entries(fieldMappings)) {
+                    const oldVal = String(values.old || '').trim();
+                    const newVal = String(values.new || '').trim();
+                    if (oldVal !== newVal) {
+                        changes.push({ field: fieldName, old: oldVal || '(empty)', new: newVal || '(empty)' });
+                    }
+                }
+                
+                // Compare totals
+                const oldTotal = parseFloat(originalOrder.Total_Amount) || 0;
+                const newTotal = parseFloat(newData.totalAmount) || 0;
+                if (Math.abs(oldTotal - newTotal) > 0.01) {
+                    changes.push({ field: 'Total Amount', old: formatMoney(oldTotal), new: formatMoney(newTotal) });
+                }
+                
+                // Compare line items
+                const originalLines = originalOrder._originalLines || [];
+                const newLines = newData.lineItems || [];
+                
+                // Check for added/removed/changed items
+                const lineChanges = [];
+                
+                // Find changed or removed items
+                originalLines.forEach(origLine => {
+                    const newLine = newLines.find(n => n.lineId === origLine.Line_ID || n.itemId === origLine.Item_ID);
+                    if (!newLine) {
+                        const item = cachedItems.find(i => i.Item_ID === origLine.Item_ID);
+                        lineChanges.push({ type: 'removed', item: item?.Item_Description || origLine.Item_ID, oldQty: origLine.Quantity });
+                    } else if (newLine.quantity !== parseInt(origLine.Quantity) || Math.abs(newLine.unitCost - parseFloat(origLine.Unit_Cost || origLine.Unit_Price || 0)) > 0.01) {
+                        const item = cachedItems.find(i => i.Item_ID === origLine.Item_ID);
+                        lineChanges.push({ 
+                            type: 'changed', 
+                            item: item?.Item_Description || origLine.Item_ID,
+                            oldQty: origLine.Quantity,
+                            newQty: newLine.quantity,
+                            oldCost: origLine.Unit_Cost || origLine.Unit_Price,
+                            newCost: newLine.unitCost
+                        });
+                    }
+                });
+                
+                // Find added items
+                newLines.forEach(newLine => {
+                    const wasOriginal = originalLines.some(o => o.Line_ID === newLine.lineId || o.Item_ID === newLine.itemId);
+                    if (!wasOriginal && !newLine.lineId) {
+                        const item = cachedItems.find(i => i.Item_ID === newLine.itemId);
+                        lineChanges.push({ type: 'added', item: item?.Item_Description || newLine.itemId, newQty: newLine.quantity });
+                    }
+                });
+                
+                // Build content HTML
+                let contentHtml = '';
+                
+                if (changes.length === 0 && lineChanges.length === 0) {
+                    showInfo('No changes detected.');
+                    resolve(false);
+                    return;
+                }
+                
+                if (changes.length > 0) {
+                    contentHtml += `<div style="margin-bottom: 15px; font-size: 14px; color: #666; font-weight: 600;">Header Changes:</div>`;
+                    changes.forEach(c => {
+                        contentHtml += `
+                            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">${c.field}</div>
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <span style="color: #dc2626; text-decoration: line-through; font-size: 13px;">${c.old}</span>
+                                    <span style="color: #666;">→</span>
+                                    <span style="color: #059669; font-weight: 600; font-size: 13px;">${c.new}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                if (lineChanges.length > 0) {
+                    contentHtml += `<div style="margin: 15px 0; font-size: 14px; color: #666; font-weight: 600;">Line Item Changes:</div>`;
+                    lineChanges.forEach(lc => {
+                        if (lc.type === 'added') {
+                            contentHtml += `
+                                <div style="background: #ecfdf5; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 4px solid #10b981;">
+                                    <span style="color: #059669; font-weight: 600;">➕ Added:</span> ${lc.item} (Qty: ${lc.newQty})
+                                </div>`;
+                        } else if (lc.type === 'removed') {
+                            contentHtml += `
+                                <div style="background: #fef2f2; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 4px solid #ef4444;">
+                                    <span style="color: #dc2626; font-weight: 600;">➖ Removed:</span> ${lc.item} (was Qty: ${lc.oldQty})
+                                </div>`;
+                        } else {
+                            contentHtml += `
+                                <div style="background: #fffbeb; padding: 10px; border-radius: 8px; margin-bottom: 6px; border-left: 4px solid #f59e0b;">
+                                    <span style="color: #d97706; font-weight: 600;">✏️ Changed:</span> ${lc.item}<br>
+                                    <span style="font-size: 12px; color: #666;">Qty: ${lc.oldQty} → ${lc.newQty}</span>
+                                </div>`;
+                        }
+                    });
+                }
+                
+                // Create modal
+                const modal = document.createElement('div');
+                modal.id = 'orderChangesPreviewModal';
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;';
+                
+                modal.innerHTML = `
+                    <div style="max-width: 500px; width: 100%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, ${typeInfo.color} 0%, ${typeInfo.color}dd 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 22px;">${typeInfo.icon} Confirm Changes</h2>
+                            <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Review changes before saving</p>
+                        </div>
+                        <div style="padding: 20px; max-height: 50vh; overflow-y: auto;">
+                            ${contentHtml}
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button id="orderChangesCancel" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Cancel</button>
+                            <button id="orderChangesConfirm" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, ${typeInfo.color} 0%, ${typeInfo.color}dd 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Save Changes</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                document.body.style.overflow = 'hidden';
+                
+                const cleanup = () => {
+                    modal.remove();
+                    document.body.style.overflow = '';
+                };
+                
+                modal.querySelector('#orderChangesCancel').onclick = () => { cleanup(); resolve(false); };
+                modal.querySelector('#orderChangesConfirm').onclick = () => { cleanup(); resolve(true); };
             });
         }
         
