@@ -4,13 +4,14 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Thursday, December 18, 2025
-         VERSION: V16_83
+         LAST UPDATED: Friday, December 20, 2025
+         VERSION: V16_87
          =====================================================
          CHANGES IN THIS VERSION:
-         - Renamed "Date" column to "Sale Date" on SO screens
-         - Renamed "Date" column to "PO Date" on PO screens
-         - Updated status labels: Delivered = "Awaiting payment"
+         - Payment Terms now uses smart picker
+         - Auto-sets Payment Terms based on Purchase Type:
+           * Placing an Order = Net 30
+           * Already Received = COD (paid at pickup)
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -4021,7 +4022,7 @@
             <!-- Button Group Card -->
             <div class="filter-card">
                 <button class="btn" onclick="loadPurchases(true)">🔄 Refresh</button>
-                <button class="btn" onclick="showAddPurchaseForm()">➕ Record Purchase</button>
+                <button class="btn" onclick="showAddPurchaseForm()">➕ New Purchase Order</button>
             </div>
             
             <!-- Filter Controls -->
@@ -4068,8 +4069,29 @@
             </div>
             
             <div id="addPurchaseForm" style="display: none; margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #c0c0c0;">
-                <h3>Record New Purchase</h3>
+                <h3>New Purchase Order</h3>
                 <form onsubmit="addPurchase(event)">
+                    <!-- Purchase Type Selection -->
+                    <div class="content-card" style="margin-bottom: 20px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">
+                        <h4 style="margin-top: 0; margin-bottom: 15px; color: #0369a1;">📦 Purchase Type</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <label id="poTypeOrdering" style="display: flex; align-items: flex-start; gap: 12px; padding: 15px; background: white; border-radius: 10px; cursor: pointer; border: 3px solid #3b82f6; transition: all 0.2s;" onclick="setPurchaseType('ordering')">
+                                <input type="radio" name="purchaseType" value="ordering" checked style="margin-top: 3px; width: 18px; height: 18px;">
+                                <div>
+                                    <div style="font-weight: 600; color: #1e40af; font-size: 15px;">🛒 Placing an Order</div>
+                                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Items coming later - adds to <strong>Qty On Order</strong></div>
+                                </div>
+                            </label>
+                            <label id="poTypeReceived" style="display: flex; align-items: flex-start; gap: 12px; padding: 15px; background: white; border-radius: 10px; cursor: pointer; border: 3px solid #e5e7eb; transition: all 0.2s;" onclick="setPurchaseType('received')">
+                                <input type="radio" name="purchaseType" value="received" style="margin-top: 3px; width: 18px; height: 18px;">
+                                <div>
+                                    <div style="font-weight: 600; color: #15803d; font-size: 15px;">✅ Already Received</div>
+                                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Have items now - adds to <strong>Qty On Hand</strong></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
                     <!-- Card 1: Basic Information -->
                     <div class="content-card" style="margin-bottom: 20px;">
                         <div class="form-grid">
@@ -4080,37 +4102,23 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Invoice Number *</label>
-                                <input type="text" id="poInvoiceNumber" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Purchase Date *</label>
+                                <label id="poDateLabel">Order Date *</label>
                                 <input type="date" id="poDate" required>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="poDueDateGroup">
                                 <label>Expected Delivery Date *</label>
                                 <input type="date" id="poDueDate" required>
                                 <small style="color: #666;">When do you expect to receive this order?</small>
                             </div>
                             <div class="form-group">
                                 <label>Payment Terms</label>
-                                <select id="poPaymentTerms">
-                                    <option value="Net 30">Net 30</option>
-                                    <option value="Net 60">Net 60</option>
-                                    <option value="COD">COD (Cash on Delivery)</option>
-                                    <option value="Prepaid">Prepaid</option>
-                                </select>
+                                <input type="text" id="poPaymentTerms_display" value="📅 Net 30" onclick="openStatusPicker('paymentTerms', 'poPaymentTerms')" readonly style="cursor: pointer; background: #fff; font-weight: 600;">
+                                <input type="hidden" id="poPaymentTerms" value="Net 30">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="poStatusGroup" style="display: none;">
                                 <label>Status *</label>
-                                <select id="poStatus" required>
-                                    <option value="" disabled selected>-- Select Status --</option>
-                                    <option value="Ordered">📝 Ordered - Sent to supplier</option>
-                                    <option value="In Transit">🚚 In Transit - Shipped, on the way</option>
-                                    <option value="Partial">📦 Partial - Some items received</option>
-                                    <option value="Received">✅ Received - All items received</option>
-                                    <option value="Voided">❌ Voided - Cancelled</option>
-                                </select>
+                                <input type="text" id="poStatus_display" value="📤 Ordered - Sent to supplier" onclick="openStatusPicker('poStatus', 'poStatus')" readonly style="cursor: pointer; background: #fff; font-weight: 600;">
+                                <input type="hidden" id="poStatus" value="Ordered" required>
                             </div>
                             <div class="form-group">
                                 <label>Invoice Total *</label>
@@ -4776,7 +4784,7 @@
             <div class="content-card" style="margin-bottom: 20px; border-left: 4px solid #f57c00;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #f57c00;">⚠️ Items On Backorder <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 14px; margin-left: 8px;" id="invflowBackorderCount">0</span></h3>
-                    <button class="btn-small" onclick="switchTab('createpo')" style="background: #f57c00; color: white;">+ Create PO</button>
+                    <button class="btn-small" onclick="switchTab('createpo')" style="background: #f57c00; color: white;">📦 Restock Items</button>
                 </div>
                 <div id="invflowBackorderItems">
                     <!-- Backorder items populated by JavaScript -->
@@ -6778,7 +6786,7 @@
             <div style="padding: 15px 25px 25px; display: flex; gap: 10px;">
                 <button onclick="closeQuickViewItemModal()" style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 14px; cursor: pointer;">Close</button>
                 <button onclick="quickViewToAdjust()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: #f39c12; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">📝 Adjust Qty</button>
-                <button onclick="quickViewToCreatePO()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: #22c55e; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">📦 Create PO</button>
+                <button onclick="quickViewToCreatePO()" style="flex: 1; padding: 12px; border: none; border-radius: 8px; background: #22c55e; color: white; font-size: 14px; font-weight: 600; cursor: pointer;">📦 Restock</button>
             </div>
         </div>
     </div>
@@ -7996,7 +8004,6 @@
                                 // Restore form fields
                                 setTimeout(() => {
                                     if (state.supplier) document.getElementById('poSupplier').value = state.supplier;
-                                    if (state.invoiceNumber) document.getElementById('poInvoiceNumber').value = state.invoiceNumber;
                                     if (state.purchaseDate) document.getElementById('poPurchaseDate').value = state.purchaseDate;
                                     if (state.dueDate) document.getElementById('poDueDate').value = state.dueDate;
                                     if (state.paymentTerms) document.getElementById('poPaymentTerms').value = state.paymentTerms;
@@ -8197,7 +8204,6 @@
             // Save PO form state to localStorage for later restoration
             const poFormState = {
                 supplier: currentSupplier,
-                invoiceNumber: document.getElementById('poInvoiceNumber')?.value,
                 purchaseDate: document.getElementById('poPurchaseDate')?.value,
                 dueDate: document.getElementById('poDueDate')?.value,
                 paymentTerms: document.getElementById('poPaymentTerms')?.value,
@@ -9857,11 +9863,65 @@
         function showAddPurchaseForm() {
             loadPurchaseDropdowns();
             document.getElementById('addPurchaseForm').style.display = 'block';
+            // Reset to default "Ordering" type
+            setPurchaseType('ordering');
         }
 
         function hideAddPurchaseForm() {
             document.getElementById('addPurchaseForm').style.display = 'none';
             document.querySelector('#addPurchaseForm form').reset();
+        }
+        
+        function setPurchaseType(type) {
+            const orderingLabel = document.getElementById('poTypeOrdering');
+            const receivedLabel = document.getElementById('poTypeReceived');
+            const dueDateGroup = document.getElementById('poDueDateGroup');
+            const dateLabel = document.getElementById('poDateLabel');
+            const statusHidden = document.getElementById('poStatus');
+            const statusDisplay = document.getElementById('poStatus_display');
+            const paymentTermsHidden = document.getElementById('poPaymentTerms');
+            const paymentTermsDisplay = document.getElementById('poPaymentTerms_display');
+            
+            if (type === 'ordering') {
+                // Placing an order - items coming later
+                orderingLabel.style.border = '3px solid #3b82f6';
+                orderingLabel.style.background = '#eff6ff';
+                receivedLabel.style.border = '3px solid #e5e7eb';
+                receivedLabel.style.background = 'white';
+                orderingLabel.querySelector('input').checked = true;
+                
+                // Show expected delivery date
+                dueDateGroup.style.display = 'block';
+                dateLabel.textContent = 'Order Date *';
+                
+                // Set status to Ordered
+                statusHidden.value = 'Ordered';
+                if (statusDisplay) statusDisplay.value = '📤 Ordered - Sent to supplier';
+                
+                // Set payment terms to Net 30 (default for orders)
+                if (paymentTermsHidden) paymentTermsHidden.value = 'Net 30';
+                if (paymentTermsDisplay) paymentTermsDisplay.value = '📅 Net 30 - Due in 30 days';
+                
+            } else {
+                // Already received - have items now
+                receivedLabel.style.border = '3px solid #22c55e';
+                receivedLabel.style.background = '#f0fdf4';
+                orderingLabel.style.border = '3px solid #e5e7eb';
+                orderingLabel.style.background = 'white';
+                receivedLabel.querySelector('input').checked = true;
+                
+                // Hide expected delivery date (not needed)
+                dueDateGroup.style.display = 'none';
+                dateLabel.textContent = 'Purchase Date *';
+                
+                // Set status to Received
+                statusHidden.value = 'Received';
+                if (statusDisplay) statusDisplay.value = '✅ Received - All items received';
+                
+                // Set payment terms to COD (paid at pickup)
+                if (paymentTermsHidden) paymentTermsHidden.value = 'COD';
+                if (paymentTermsDisplay) paymentTermsDisplay.value = '💵 COD - Paid at pickup';
+            }
         }
 
         async function loadPurchaseDropdowns() {
@@ -10026,14 +10086,15 @@
             // ===== VALIDATION #0: Check Required Fields =====
             const poStatus = document.getElementById('poStatus').value;
             const poDueDate = document.getElementById('poDueDate').value;
+            const purchaseType = document.querySelector('input[name="purchaseType"]:checked')?.value || 'ordering';
             
             if (!poStatus) {
                 showStatus('purchasesStatus', '❌ Please select a Status', 'error');
-                document.getElementById('poStatus').focus();
                 return;
             }
             
-            if (!poDueDate) {
+            // Only require due date for "ordering" type (not "received")
+            if (purchaseType === 'ordering' && !poDueDate) {
                 showStatus('purchasesStatus', '❌ Please select an Expected Delivery Date', 'error');
                 document.getElementById('poDueDate').focus();
                 return;
@@ -10094,7 +10155,6 @@
 
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
-                invoiceNumber: document.getElementById('poInvoiceNumber').value,
                 poDate: poDateTime,  // Full datetime format
                 dueDate: document.getElementById('poDueDate').value || null,
                 paymentTerms: document.getElementById('poPaymentTerms').value,
@@ -24588,7 +24648,7 @@
                                     <label style="font-size: 13px; color: #333;">Order Qty:</label>
                                     <input type="number" class="qty-input" id="backorderQty_${item.itemId}" value="${netNeeded}" min="1" max="${netNeeded + 100}">
                                     <button class="create-po-btn" onclick="createBackorderPO('${item.itemId}', '${item.supplierId}')">
-                                        🛒 Create PO
+                                        🛒 Restock
                                     </button>
                                     <span style="font-size: 11px; color: #666;">(Just enough to fulfill backorders)</span>
                                 ` : `
@@ -31261,6 +31321,9 @@ NOTE: Please print the attached PO document for full details.`;
                 html += `
                     <div class="item-picker-card" style="position: relative; ${cardStyle}"
                          data-click-action="${clickHandler}"
+                         ontouchstart="pickerTouchStart(event)"
+                         ontouchmove="pickerTouchMove(event)"
+                         ontouchend="if(pickerTouchEnd()) ${clickHandler}"
                          onclick="${clickHandler}">
                         ${checkboxHtml}
                         <div class="item-picker-header-row" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px;">
@@ -33442,8 +33505,8 @@ NOTE: Please print the attached PO document for full details.`;
                 if (createPOSupplier && createPOSupplier.value) {
                     supplierContext = createPOSupplier.value;
                 }
-                // Try to detect from Purchase form 
-                const purchaseSupplier = document.getElementById('newPurchaseSupplier');
+                // Try to detect from Purchase form (Record Purchase)
+                const purchaseSupplier = document.getElementById('poSupplier');
                 if (purchaseSupplier && purchaseSupplier.value) {
                     supplierContext = purchaseSupplier.value;
                 }
@@ -34124,6 +34187,16 @@ NOTE: Please print the attached PO document for full details.`;
                     { value: 'Invoice', label: 'Invoice (Net Terms)', icon: '📄', color: '#f59e0b', bg: '#fff7ed' }
                 ]
             },
+            // Payment Terms (for PO)
+            paymentTerms: {
+                title: '📅 Select Payment Terms',
+                options: [
+                    { value: 'Net 30', label: 'Net 30 - Due in 30 days', icon: '📅', color: '#3b82f6', bg: '#eff6ff' },
+                    { value: 'Net 60', label: 'Net 60 - Due in 60 days', icon: '📅', color: '#6366f1', bg: '#eef2ff' },
+                    { value: 'COD', label: 'COD - Paid at pickup', icon: '💵', color: '#10b981', bg: '#ecfdf5' },
+                    { value: 'Prepaid', label: 'Prepaid - Paid in advance', icon: '✅', color: '#059669', bg: '#d1fae5' }
+                ]
+            },
             // Payment Status Filter
             paymentStatus: {
                 title: '💰 Select Payment Status',
@@ -34278,6 +34351,8 @@ NOTE: Please print the attached PO document for full details.`;
                     'filterPurchasePaymentStatus': 'paymentStatus',
                     'filterSaleStatus': 'filterSaleStatus',
                     'editPOStatus': 'poStatus',
+                    'poStatus': 'poStatus',
+                    'poPaymentTerms': 'paymentTerms',
                     'editSOStatus': 'soStatus',
                     'editSOPaymentMethod': 'paymentMethod',
                     'rptFilter_paymentStatus': 'paymentStatus',
