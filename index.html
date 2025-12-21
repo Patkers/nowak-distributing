@@ -4110,13 +4110,13 @@
                                     <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
                                         <div>
                                             <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                            <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" onchange="updateCreatePOItemCost(this)">
-                                                <option value="">Select item...</option>
+                                            <select class="createpo-item" style="width: 100%; padding: 14px 12px; border: 2px solid #ccc; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: #f5f5f5;" onchange="updateCreatePOItemCost(this)" disabled>
+                                                <option value="">⚠️ Select Supplier First</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
-                                            <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;">
+                                            <input type="number" class="createpo-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" disabled>
                                         </div>
                                         <div style="margin-top: 26px;">
                                             <div class="createpo-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
@@ -4326,13 +4326,13 @@
                                     <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
                                         <div>
                                             <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                                            <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid var(--primary, #667eea); border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" required>
-                                                <option value="">Select item...</option>
+                                            <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid #ccc; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: #f5f5f5;" required disabled>
+                                                <option value="">⚠️ Select Supplier First</option>
                                             </select>
                                         </div>
                                         <div>
                                             <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
-                                            <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required>
+                                            <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required disabled>
                                         </div>
                                         <div style="margin-top: 26px;">
                                             <div class="po-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
@@ -4555,7 +4555,7 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn" onclick="showOrderPreview()">💾 Create Sale</button>
+                        <button type="button" id="createSaleBtn" class="btn" onclick="showOrderPreview()">💾 Create Sale</button>
                         <button type="button" class="btn btn-secondary" onclick="hideAddSaleForm()">Cancel</button>
                     </div>
                 </form>
@@ -7579,6 +7579,65 @@
         let cachedItems = [];
         let cachedCustomers = [];
         
+        // Report data caching - reduces API calls significantly
+        let cachedSalesOrders = [];
+        let cachedSalesLines = [];  // ALL sales order line items
+        let cachedPurchaseOrders = [];
+        let cachedPurchaseLines = []; // ALL purchase order line items
+        let reportDataCacheTime = 0;
+        const REPORT_CACHE_DURATION = 60000; // 1 minute cache
+        
+        // Function to load all report data at once
+        async function loadReportData(forceRefresh = false) {
+            const now = Date.now();
+            if (!forceRefresh && reportDataCacheTime && (now - reportDataCacheTime) < REPORT_CACHE_DURATION) {
+                console.log('📊 Using cached report data');
+                return true;
+            }
+            
+            console.log('📊 Loading fresh report data...');
+            const startTime = performance.now();
+            
+            try {
+                // Load ALL data in parallel - much faster than sequential
+                const [salesResult, customersResult, itemsResult, suppliersResult, purchasesResult, salesLinesResult, purchaseLinesResult] = await Promise.all([
+                    apiCall('getSalesOrders'),
+                    apiCall('getCustomers'),
+                    apiCall('getItems'),
+                    apiCall('getSuppliers'),
+                    apiCall('getPurchaseOrders'),
+                    apiCall('getAllSalesOrderLineItems'),
+                    apiCall('getAllPurchaseOrderLineItems')
+                ]);
+                
+                if (salesResult?.data) cachedSalesOrders = salesResult.data;
+                if (customersResult?.data) cachedCustomers = customersResult.data;
+                if (itemsResult?.data) cachedItems = itemsResult.data;
+                if (suppliersResult?.data) cachedSuppliers = suppliersResult.data;
+                if (purchasesResult?.data) cachedPurchaseOrders = purchasesResult.data;
+                if (salesLinesResult?.data) cachedSalesLines = salesLinesResult.data;
+                if (purchaseLinesResult?.data) cachedPurchaseLines = purchaseLinesResult.data;
+                
+                reportDataCacheTime = now;
+                const elapsed = (performance.now() - startTime).toFixed(0);
+                console.log(`✅ Report data loaded in ${elapsed}ms (${cachedSalesOrders.length} sales, ${cachedPurchaseOrders.length} POs)`);
+                return true;
+            } catch (error) {
+                console.error('❌ Error loading report data:', error);
+                return false;
+            }
+        }
+        
+        // Helper to get sales lines for a specific order from cache
+        function getSalesLinesFromCache(soId) {
+            return cachedSalesLines.filter(line => line.SO_ID === soId);
+        }
+        
+        // Helper to get purchase lines for a specific order from cache
+        function getPurchaseLinesFromCache(poId) {
+            return cachedPurchaseLines.filter(line => line.PO_ID === poId);
+        }
+        
         // Multi-select support for report filters
         let selectedCustomersForReport = [];
         let selectedSuppliersForReport = [];
@@ -9545,7 +9604,14 @@
 
         function showAddItemForm() {
             loadSuppliersList();
-            document.getElementById('addItemForm').style.display = 'block';
+            const form = document.getElementById('addItemForm');
+            form.style.display = 'block';
+            
+            // Re-enable selects that were disabled at startup (when form was hidden)
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
         }
 
         function hideAddItemForm() {
@@ -9737,7 +9803,7 @@
                     <td><span style="background: ${qtyOnOrder > 0 ? '#ffc107' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder > 0 ? qtyOnOrder : '-'}</span></td>
                     <td>${item.Reorder_Point || 0}</td>
                     <td onclick="event.stopPropagation();">
-                        <button class="btn-delete-icon" onclick="toggleArchiveItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}', ${isArchived})" title="${isArchived ? 'Reactivate Item' : 'Archive Item'}">${isArchived ? '♻️' : '📦'}</button>
+                        <button class="btn-delete-icon" onclick="toggleArchiveItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}', ${isArchived})" title="${isArchived ? 'Reactivate Item' : 'Archive Item'}" style="font-size: 18px;">${isArchived ? '♻️' : '📦'}</button>
                     </td>
                 </tr>`;
             });
@@ -9972,6 +10038,10 @@
                 status: document.getElementById('editItemStatus').value
             };
             
+            console.log('=== UPDATE ITEM DEBUG ===');
+            console.log('Status field value:', document.getElementById('editItemStatus').value);
+            console.log('Full data being sent:', JSON.stringify(data));
+            
             // Map original data for comparison
             const originalData = currentEditingItem ? {
                 description: currentEditingItem.Item_Description || '',
@@ -9982,19 +10052,42 @@
                 reorderPoint: String(currentEditingItem.Reorder_Point || ''),
                 sku: currentEditingItem.SKU || '',
                 notes: currentEditingItem.Notes || '',
-                status: currentEditingItem.Status || ''
+                status: currentEditingItem.Status || 'Active'
             } : null;
+            
+            console.log('Original status:', currentEditingItem?.Status);
+            console.log('Original data for comparison:', JSON.stringify(originalData));
             
             // Show preview of changes
             const confirmed = await showRecordPreview('item', data, originalData);
             if (!confirmed) return;
             
+            console.log('Confirmed! Sending to API:', JSON.stringify(data));
+            
             const result = await apiCall('updateItem', data);
+            
+            console.log('API result:', JSON.stringify(result));
             
             if (result && result.status === 'success') {
                 hideEditItemForm();
-                loadItems();
-                showSuccessModal('Item Updated!', 'Changes saved successfully.');
+                
+                // Force refresh items with cache bust
+                await loadItems(true);
+                
+                // If status changed to Archived, show special message and switch filter
+                if (data.status === 'Archived' && originalData && originalData.status !== 'Archived') {
+                    // Switch filter to show archived items so user can see the change
+                    const filterSelect = document.getElementById('filterItemActive');
+                    if (filterSelect) {
+                        filterSelect.value = 'all';
+                        filterItems(); // Re-apply filter
+                    }
+                    showSuccessModal('Item Archived!', `"${data.description || data.sku}" has been archived.\n\nArchived items won't appear in PO/SO dropdowns.\nFilter changed to "All" to show archived items.`);
+                } else if (data.status === 'Active' && originalData && originalData.status === 'Archived') {
+                    showSuccessModal('Item Reactivated!', `"${data.description || data.sku}" is now active again.`);
+                } else {
+                    showSuccessModal('Item Updated!', 'Changes saved successfully.');
+                }
             } else {
                 showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
             }
@@ -10035,7 +10128,13 @@
         // ==================== CUSTOMERS ====================
 
         function showAddCustomerForm() {
-            document.getElementById('addCustomerForm').style.display = 'block';
+            const form = document.getElementById('addCustomerForm');
+            form.style.display = 'block';
+            // Re-enable selects that were disabled at startup
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
         }
 
         function hideAddCustomerForm() {
@@ -10374,6 +10473,20 @@
         function hideAddPurchaseForm() {
             document.getElementById('addPurchaseForm').style.display = 'none';
             document.querySelector('#addPurchaseForm form').reset();
+            
+            // Reset save button
+            const saveBtn = document.getElementById('savePOBtn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '💾 Create Purchase Order';
+            }
+            
+            // Reset PO preview confirm button
+            const confirmBtn = document.getElementById('poConfirmSaveBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '✓ Confirm & Save';
+            }
         }
         
         function setPurchaseType(type) {
@@ -10446,6 +10559,20 @@
         async function loadSupplierItems() {
             const supplierId = document.getElementById('poSupplier').value;
             
+            if (!supplierId) {
+                // No supplier selected - disable all line item controls
+                document.querySelectorAll('#poLineItems .po-item').forEach(select => {
+                    select.disabled = true;
+                    select.style.border = '2px solid #ccc';
+                    select.style.background = '#f5f5f5';
+                    select.innerHTML = '<option value="">⚠️ Select Supplier First</option>';
+                });
+                document.querySelectorAll('#poLineItems .po-qty').forEach(input => {
+                    input.disabled = true;
+                });
+                return;
+            }
+            
             if (cachedItems.length === 0) {
                 const result = await apiCall('getItems');
                 if (result && result.status === 'success') {
@@ -10453,15 +10580,25 @@
                 }
             }
 
-            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
+            // Filter to supplier's active items only
+            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId && item.Status !== 'Archived');
             
-            document.querySelectorAll('.po-item').forEach(select => {
+            // Enable and populate all PO item dropdowns
+            document.querySelectorAll('#poLineItems .po-item').forEach(select => {
+                select.disabled = false;
+                select.style.border = '2px solid var(--primary, #667eea)';
+                select.style.background = 'white';
                 select.innerHTML = '<option value="">Select Item</option>';
                 supplierItems.forEach(item => {
                     const packageCost = parseFloat(item.Package_Cost) || 0;
                     const unitsPerPackage = parseFloat(item.Units_Per_Package) || 1;
                     select.innerHTML += `<option value="${item.Item_ID}" data-cost="${packageCost.toFixed(2)}" data-units="${unitsPerPackage}">${item.Item_Description}</option>`;
                 });
+            });
+            
+            // Enable quantity inputs
+            document.querySelectorAll('#poLineItems .po-qty').forEach(input => {
+                input.disabled = false;
             });
         }
 
@@ -10693,11 +10830,6 @@
             document.body.style.overflow = 'hidden';
         }
         
-        function closePOPreview() {
-            document.getElementById('poPreviewModal').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-        
         function calculatePOTotal() {
             let totalCases = 0;
             let totalUnits = 0;
@@ -10820,6 +10952,8 @@
         }
         
         function generatePrintablePOFromForm(supplierName, poDate, lineItems) {
+            const settings = getInvoiceSettings();
+            const dateFormatted = new Date(poDate).toLocaleDateString().replace(/\//g, '-');
             let totalCost = 0;
             let itemsHtml = lineItems.map(item => {
                 const lineTotal = item.quantity * item.unitCost;
@@ -10839,7 +10973,7 @@
             printWindow.document.write(`
                 <html>
                 <head>
-                    <title>Purchase Order - ${supplierName}</title>
+                    <title>${settings.companyName} - Purchase Order Draft - ${dateFormatted}</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; padding-top: 60px; }
                         table { width: 100%; border-collapse: collapse; }
@@ -11714,9 +11848,20 @@
             if (result && result.status === 'success') {
                 const total = parseFloat(currentEditingOrder?.Total_Amount) || 0;
                 const payStatus = newTotalPaid >= total - 0.01 ? 'Paid' : (newTotalPaid > 0 ? 'Partial' : 'Unpaid');
-                document.getElementById('orderModal').style.display = 'none'; document.body.classList.remove('modal-open');
+                
+                // Update the current editing order with new payment info
+                currentEditingOrder.Amount_Paid = newTotalPaid;
+                currentEditingOrder.Payment_Status = payStatus;
+                currentEditingOrder.Paid_Date = paymentDate;
+                
+                // Refresh the modal display with updated payment info
+                viewPurchaseOrder(poId);
+                
+                // Refresh the purchases list in the background
                 loadPurchases();
-                showSuccessModal('Payment Recorded!', `Total Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}`);
+                
+                // Show success message (modal stays open)
+                showSuccessModal('Payment Recorded!', `Payment: ${formatMoney(paymentAmount)}\nTotal Paid: ${formatMoney(newTotalPaid)}\nStatus: ${payStatus}\n\nYou can now print the invoice or close when done.`);
             } else {
                 showError('Error: ' + (result?.message || 'Unknown error'));
             }
@@ -11773,7 +11918,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order ${po.Invoice_Number || po.PO_ID}</title>
+    <title>${settings.companyName} - PO ${po.Invoice_Number || po.PO_ID} - ${new Date(po.PO_Date).toLocaleDateString().replace(/\//g, '-')}</title>
     <style>
         @media print {
             @page { margin: 0.3in; }
@@ -12098,6 +12243,42 @@
             // Get theme colors for print
             const themeColors = getThemeColors();
             
+            // Build email content for customer
+            const customerEmail = customer?.Email || '';
+            const customerName = customer?.Customer_Name || 'Customer';
+            const invoiceNum = so.Invoice_Number || so.SO_ID;
+            
+            // Build item list for email body
+            let itemsList = lines.map(line => {
+                const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                const desc = item?.Item_Description || line.Item_ID;
+                return `• ${desc} - ${line.Quantity} @ $${parseFloat(line.Unit_Price || 0).toFixed(2)}`;
+            }).join('\\n');
+            
+            const emailSubject = encodeURIComponent(`Invoice ${invoiceNum} from ${settings.companyName}`);
+            const emailBody = encodeURIComponent(`Dear ${customerName},
+
+Please find your invoice details below:
+
+Invoice #: ${invoiceNum}
+Date: ${new Date(so.Sale_Date).toLocaleDateString()}
+
+${itemsList}
+---
+Total: $${total.toFixed(2)}
+Amount Paid: $${paid.toFixed(2)}
+Balance Due: $${balance.toFixed(2)}
+
+${balance > 0 ? 'Payment is due by ' + (so.Due_Date ? new Date(so.Due_Date).toLocaleDateString() : 'upon receipt') + '.' : 'Thank you for your payment!'}
+
+Best regards,
+${settings.companyName}
+${settings.phone}
+${settings.email}
+
+---
+NOTE: Please see the attached invoice PDF for full details.`);
+            
             // Build invoice HTML with PO-style layout
             let invoiceHTML = `
 <!DOCTYPE html>
@@ -12105,7 +12286,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice ${so.Invoice_Number || so.SO_ID}</title>
+    <title>${settings.companyName} - Invoice ${so.Invoice_Number || so.SO_ID} - ${new Date(so.Sale_Date).toLocaleDateString().replace(/\//g, '-')}</title>
     <style>
         @media print {
             @page { margin: 0.3in; }
@@ -12474,7 +12655,8 @@
 
     <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
         <button onclick="window.print()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: ${themeColors.primary}; color: white; border: none; border-radius: 5px; margin-right: 10px;">🖨️ Print</button>
-        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: var(--primary, #667eea); color: white; border: none; border-left: 4px solid rgba(255,255,255,0.4); border-radius: 5px;">✕ Close</button>
+        ${customerEmail ? `<a href="mailto:${customerEmail}?subject=${emailSubject}&body=${emailBody}" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 5px; margin-right: 10px; text-decoration: none; display: inline-block;">📧 Email Customer</a>` : ''}
+        <button onclick="window.close()" style="padding: 12px 24px; font-size: 14pt; cursor: pointer; background: #6c757d; color: white; border: none; border-radius: 5px;">✕ Close</button>
     </div>
 
 </body>
@@ -13550,8 +13732,8 @@
                 soStatusField.value = 'Pending';
             }
             
-            // Add fresh line item
-            addSOLineItem();
+            // Add fresh line item (skip customer check since form just opened)
+            addSOLineItem(true);
             
             // Setup event listeners for the initial line item
             setTimeout(() => {
@@ -13610,6 +13792,13 @@
                 submitBtn.textContent = '💾 Save Sale';
             }
             
+            // Reset Create Sale button
+            const createBtn = document.getElementById('createSaleBtn');
+            if (createBtn) {
+                createBtn.disabled = false;
+                createBtn.innerHTML = '💾 Create Sale';
+            }
+            
             // Reset summary boxes
             const qtyBox = document.getElementById('soTotalQty');
             const amountBox = document.getElementById('soTotalAmount');
@@ -13621,8 +13810,8 @@
             if (lineItemsContainer) {
                 // Remove all line items completely
                 lineItemsContainer.innerHTML = '';
-                // Add back one fresh line item
-                addSOLineItem();
+                // Add back one fresh line item (skip customer check since form is being reset)
+                addSOLineItem(true);
             }
         }
 
@@ -13639,6 +13828,11 @@
             cachedCustomers.forEach(c => {
                 select.innerHTML += `<option value="${c.Customer_ID}">${c.Customer_Name}</option>`;
             });
+            
+            // Add change handler to enable line items when customer is selected
+            select.onchange = function() {
+                enableSOLineItems();
+            };
 
             // ALWAYS refresh items to get current stock quantities
             const result = await apiCall('getItems');
@@ -13658,15 +13852,59 @@
             
             console.log('loadSaleDropdowns: Dropdown populated!'); // DEBUG
         }
+        
+        // Enable SO line items when customer is selected
+        function enableSOLineItems() {
+            const customerId = document.getElementById('soCustomer').value;
+            if (!customerId) return;
+            
+            // Filter to only show active items
+            const activeItems = cachedItems.filter(item => item.Status !== 'Archived');
+            
+            // Enable and populate all SO item dropdowns
+            document.querySelectorAll('#soLineItems .so-item').forEach(select => {
+                select.disabled = false;
+                select.style.border = '2px solid #667eea';
+                select.style.background = 'white';
+                select.innerHTML = '<option value="">Select Item</option>';
+                activeItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
+                });
+            });
+            
+            // Enable quantity and price inputs
+            document.querySelectorAll('#soLineItems .so-qty, #soLineItems .so-price').forEach(input => {
+                input.disabled = false;
+            });
+        }
 
-        function addSOLineItem() {
+        function addSOLineItem(skipCustomerCheck = false) {
             const container = document.getElementById('soLineItems');
+            const customerId = document.getElementById('soCustomer').value;
+            
+            // Check if customer is selected first (unless skipped for initial form setup)
+            if (!skipCustomerCheck && !customerId) {
+                showWarning('Please select a customer first');
+                return;
+            }
             
             // Get all items once
-            if (cachedItems.length === 0) {
+            if (cachedItems.length === 0 && customerId) {
                 showWarning('Please wait for items to load');
                 return;
             }
+            
+            // Filter to only show active items
+            const activeItems = cachedItems.filter(item => item.Status !== 'Archived');
+            
+            // If no customer selected, show placeholder dropdown
+            const itemOptions = customerId 
+                ? `<option value="">Select Item</option>${activeItems.map(item => {
+                    return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
+                  }).join('')}`
+                : `<option value="">⚠️ Select Customer First</option>`;
+            
+            const isDisabled = !customerId;
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
@@ -13674,21 +13912,17 @@
             newRow.innerHTML = `
                 <div>
                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
-                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white; width: 100%;">
-                        <option value="">Select Item</option>
-                        ${cachedItems.map(item => {
-                            console.log('Item:', item.Item_Description, 'Unit_Sell_Price:', item.Unit_Sell_Price); // DEBUG
-                            return `<option value="${item.Item_ID}" data-price="${item.Unit_Sell_Price}" data-stock="${item.Qty_On_Hand || 0}">${item.Item_Description}</option>`;
-                        }).join('')}
+                    <select class="so-item" required style="padding: 14px 12px; border: 2px solid ${isDisabled ? '#ccc' : '#667eea'}; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: ${isDisabled ? '#f5f5f5' : 'white'}; width: 100%;" ${isDisabled ? 'disabled' : ''}>
+                        ${itemOptions}
                     </select>
                 </div>
                 <div>
                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📊 Quantity</label>
-                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;">
+                    <input type="number" class="so-qty" placeholder="0" min="1" required style="padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px; width: 100%;" ${isDisabled ? 'disabled' : ''}>
                 </div>
                 <div>
                     <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">💰 Price</label>
-                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;">
+                    <input type="number" class="so-price" placeholder="0.00" step="0.01" min="0" required style="padding: 14px 10px; border: 2px solid #667eea; border-radius: 8px; text-align: center; font-size: 16px; min-height: 52px; background: white; width: 100%;" ${isDisabled ? 'disabled' : ''}>
                 </div>
                 <button type="button" class="remove-btn" style="min-height: 52px; font-size: 18px; margin-top: 26px;">🗑️</button>
                 <div class="so-stock-info" style="grid-column: 1 / -1; font-size: 13px; padding: 5px 10px; margin-top: -5px; display: none;"></div>
@@ -13973,6 +14207,75 @@
         function closeOrderPreview() {
             document.getElementById('orderPreviewModal').style.display = 'none';
             document.body.style.overflow = '';
+            // Reset button state when closing
+            const btn = document.getElementById('soConfirmSaveBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '✓ Confirm & Save';
+            }
+        }
+        
+        async function submitSaleWithLoading(btn) {
+            // Show loading state on preview button
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Saving...';
+            
+            // Also disable back button
+            const backBtn = btn.previousElementSibling;
+            if (backBtn) backBtn.disabled = true;
+            
+            // Update main Create Sale button too
+            const mainBtn = document.getElementById('createSaleBtn');
+            if (mainBtn) {
+                mainBtn.disabled = true;
+                mainBtn.innerHTML = '⏳ Saving Sale...';
+            }
+            
+            // Close preview and submit form
+            document.getElementById('orderPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+            document.querySelector('#addSaleForm form').requestSubmit();
+        }
+        
+        function submitPOWithLoading(btn) {
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Saving PO...';
+            
+            // Also disable back button
+            const backBtn = btn.previousElementSibling;
+            if (backBtn) backBtn.disabled = true;
+            
+            // Update main Create PO button too
+            const mainBtn = document.getElementById('savePOBtn');
+            if (mainBtn) {
+                mainBtn.disabled = true;
+                mainBtn.innerHTML = '⏳ Saving PO...';
+            }
+            
+            // Close preview and submit form
+            document.getElementById('poPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+            
+            // Submit the form
+            const form = document.querySelector('#addPurchaseForm form');
+            if (form) {
+                form.requestSubmit();
+            } else {
+                console.error('Could not find #addPurchaseForm form');
+                showWarning('Error: Could not submit form');
+            }
+        }
+        
+        function closePOPreview() {
+            document.getElementById('poPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+            // Reset button state when closing
+            const btn = document.getElementById('poConfirmSaveBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '✓ Confirm & Save';
+            }
         }
 
         async function addSale(e) {
@@ -15784,7 +16087,15 @@
                 document.getElementById('adjustNewQty').value = '';
                 document.getElementById('adjustQuantity').value = '';
                 
-                document.getElementById('adjustInventoryForm').style.display = 'block';
+                const form = document.getElementById('adjustInventoryForm');
+                form.style.display = 'block';
+                
+                // Re-enable selects that were disabled at startup
+                form.querySelectorAll('select').forEach(sel => {
+                    sel.disabled = false;
+                    sel.style.pointerEvents = '';
+                });
+                
                 showStatus('inventoryStatus', '', '');
             } else {
                 showStatus('inventoryStatus', '❌ Error loading inventory', 'error');
@@ -16197,6 +16508,12 @@
             if (panel.style.display === 'none') {
                 panel.style.display = 'grid';
                 toggle.textContent = '▼ Hide';
+                
+                // Re-enable selects that were disabled at startup
+                panel.querySelectorAll('select').forEach(sel => {
+                    sel.disabled = false;
+                    sel.style.pointerEvents = '';
+                });
             } else {
                 panel.style.display = 'none';
                 toggle.textContent = '▶ Show';
@@ -17431,7 +17748,7 @@
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>${title.replace(/^[^\w]+/, '')}</title>
+                    <title>Nowak Distributing - ${title.replace(/^[^\w]+/, '')} - ${new Date().toLocaleDateString().replace(/\//g, '-')}</title>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
                         * { box-sizing: border-box; }
@@ -17785,17 +18102,16 @@
         
         // Modal versions of report generators that return HTML instead of writing to reportContainer
         async function generateSalesByCustomerModal() {
-            const salesResult = await apiCall('getSalesOrders');
-            const customersResult = await apiCall('getCustomers');
-            const itemsResult = await apiCall('getItems');
+            // Load all report data in parallel (uses cache if available)
+            await loadReportData();
             
-            if (!salesResult?.data || !customersResult?.data || !itemsResult?.data) {
+            const customers = cachedCustomers;
+            const items = cachedItems;
+            let sales = [...cachedSalesOrders]; // Clone to avoid modifying cache
+            
+            if (!sales.length || !customers.length || !items.length) {
                 throw new Error('Failed to load data');
             }
-            
-            const customers = customersResult.data;
-            const items = itemsResult.data;
-            let sales = salesResult.data;
             
             // Apply transaction status filter to sales orders first
             const statusFilter = reportFilters.transactionStatus || 'exclude-voided';
@@ -17805,12 +18121,11 @@
                 sales = sales.filter(s => s.Status === statusFilter);
             }
             
-            // Fetch ALL sales order lines
+            // Use cached sales lines instead of individual API calls
             const allDetails = [];
             for (const so of sales) {
-                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
-                if (linesResult?.data) {
-                    linesResult.data.forEach(line => {
+                const lines = getSalesLinesFromCache(so.SO_ID);
+                lines.forEach(line => {
                         const item = items.find(i => i.Item_ID === line.Item_ID);
                         const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
                         const packageCost = parseFloat(item?.Package_Cost) || 0;
@@ -17833,8 +18148,7 @@
                             lineCost: lineCost,
                             profit: lineTotal - lineCost
                         });
-                    });
-                }
+                });
             }
             
             // Helper function to parse dates in various formats
@@ -17929,10 +18243,13 @@
             const barChartId = 'salesCustBarChart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const pieChartId = 'salesCustPieChart_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
-            // Build HTML with KPI cards
-            let html = `<h3 style="margin-top: 0;">Sales by Customer Report</h3>`;
+            // Build HTML with oval gradient header
+            let html = `
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">👥 Sales by Customer Report</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${Object.keys(byCustomer).length} customers | ${totalOrders} orders | ${totalMargin.toFixed(1)}% avg margin</p>
+                </div>`;
             html += filterSummary;
-            html += `<p style="color: #666; margin-bottom: 20px;">${Object.keys(byCustomer).length} customers | ${totalOrders} orders | ${totalMargin.toFixed(1)}% avg margin</p>`;
             
             // KPI Summary Cards
             html += `
@@ -18629,8 +18946,10 @@
             const pieChartId = 'salesItemPieChart_' + Date.now();
             
             let html = `
-                <h3 style="margin-top: 0;">Sales by Item</h3>
-                <p style="color: #666; margin-bottom: 20px;">${sorted.length} items sold | ${totalUnits.toLocaleString()} units | ${avgMargin.toFixed(1)}% avg margin</p>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📦 Sales by Item</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${sorted.length} items sold | ${totalUnits.toLocaleString()} units | ${avgMargin.toFixed(1)}% avg margin</p>
+                </div>
                 
                 <!-- KPI Cards -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
@@ -19588,10 +19907,10 @@
             const pieChartId = 'turnoverPieChart_' + Date.now();
             
             let html = `
-                <h3 style="margin-top: 0;">🔄 Inventory Turnover Analysis</h3>
-                <p style="color: #666; margin-bottom: 20px;">
-                    Analyzing ${daysPeriod} days of sales data (${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()})
-                </p>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">🔄 Inventory Turnover Analysis</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">Analyzing ${daysPeriod} days of sales data (${fromDate.toLocaleDateString()} - ${toDate.toLocaleDateString()})</p>
+                </div>
                 
                 <!-- KPI Cards -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
@@ -21219,7 +21538,7 @@
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Shipping Labels - Nowak Distributing</title>
+                    <title>Nowak Distributing - Shipping Labels - ${new Date().toLocaleDateString().replace(/\//g, '-')}</title>
                     <style>
                         @page {
                             size: letter;
@@ -22060,7 +22379,11 @@
                 const typeCounts = typeLabels.map(t => byType[t].count);
                 const typeColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
                 
-                let html = `<h3 style="margin-top: 0;">📝 Inventory Adjustment History</h3>`;
+                let html = `
+                    <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                        <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📝 Inventory Adjustment History</h2>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.95;">${adjustments.length} adjustments | Net change: ${(totalPositive - totalNegative).toLocaleString()} units</p>
+                    </div>`;
                 html += filterSummary;
                 
                 // Summary cards
@@ -22300,8 +22623,12 @@
             const top10Margins = marginData.slice(0, 10);
             const bottom5Margins = marginData.slice(-5).reverse();
             
-            let html = `<h3 style="margin-top: 0;">${type === 'turnover' ? 'Inventory Turnover' : type === 'margin' ? 'Gross Margin' : 'Inventory List'}</h3>`;
-            html += `<p style="color: #666; margin-bottom: 20px;">${items.length} items</p>`;
+            const reportTitle = type === 'turnover' ? '🔄 Inventory Turnover' : type === 'margin' ? '📊 Gross Margin Analysis' : '📋 Inventory List';
+            let html = `
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">${reportTitle}</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${items.length} items | ${totalQty.toLocaleString()} total units</p>
+                </div>`;
             
             // KPI Summary Cards
             html += `
@@ -23676,13 +24003,9 @@
             const avgPerOrder = totalOrders > 0 ? totalPurchases / totalOrders : 0;
             
             let html = `
-                <h3 style="margin-top: 0;">📉 Annual Purchase Summary - ${year}</h3>
-                
-                <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-                    <span style="font-weight: 600; color: #666; font-size: 12px;">REPORT PARAMETERS:</span>
-                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📅 Calendar Year ${year}</span>
-                    <span style="background: white; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ddd;">📋 ${posInYear.length} POs</span>
-                    <span style="background: #fff3e0; padding: 4px 10px; border-radius: 15px; font-size: 12px; border: 1px solid #ffe0b2;">🚫 Voided Excluded</span>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📉 Annual Purchase Summary - ${year}</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${posInYear.length} purchase orders | ${formatMoney(totalPurchases)} total</p>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
@@ -23892,8 +24215,10 @@
             const othersValue = Object.entries(bySupplier).slice(5).reduce((sum, [id, d]) => sum + d.value, 0);
             
             let html = `
-                <h3 style="margin-top: 0;">💰 Inventory Valuation Report</h3>
-                <p style="color: #666; margin-bottom: 20px;">As of ${today} | ${items.length} items</p>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">💰 Inventory Valuation Report</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">As of ${today} | ${items.length} items</p>
+                </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
@@ -26641,24 +26966,19 @@
                 toDate.setHours(23, 59, 59, 999);
             }
             
-            // Fetch all data
-            const [salesResult, itemsResult, customersResult, suppliersResult] = await Promise.all([
-                apiCall('getSalesOrders'),
-                apiCall('getItems'),
-                apiCall('getCustomers'),
-                apiCall('getSuppliers')
-            ]);
+            // Load all report data (uses cache if available)
+            await loadReportData();
             
-            if (!salesResult?.data || !itemsResult?.data) {
+            const items = cachedItems;
+            const customers = cachedCustomers;
+            const suppliers = cachedSuppliers;
+            
+            if (!cachedSalesOrders.length || !items.length) {
                 throw new Error('Failed to load data');
             }
             
-            const items = itemsResult.data;
-            const customers = customersResult?.data || [];
-            const suppliers = suppliersResult?.data || [];
-            
             // Filter sales by date range
-            let salesInPeriod = salesResult.data.filter(s => {
+            let salesInPeriod = cachedSalesOrders.filter(s => {
                 const saleDate = parseDate(s.Sale_Date || s.SO_Date);
                 return saleDate && saleDate >= fromDate && saleDate <= toDate;
             });
@@ -26674,7 +26994,7 @@
             let totalCost = 0;
             let orderCount = salesInPeriod.length;
             
-            // Get line items for each sale
+            // Get line items for each sale - USE CACHED DATA
             const productSales = {};
             const customerSales = {};
             
@@ -26695,10 +27015,9 @@
                 customerSales[custId].sales += soTotal;
                 customerSales[custId].orders++;
                 
-                // Get line items
-                const linesResult = await apiCall('getSalesOrderLines', { soId: so.SO_ID });
-                if (linesResult?.data) {
-                    linesResult.data.forEach(line => {
+                // Get line items from CACHE instead of API call
+                const lines = getSalesLinesFromCache(so.SO_ID);
+                lines.forEach(line => {
                         const qty = parseInt(line.Quantity) || 0;
                         totalQtySold += qty;
                         
@@ -26727,8 +27046,7 @@
                         }
                         productSales[itemId].qty += qty;
                         productSales[itemId].sales += lineTotal;
-                    });
-                }
+                });
             }
             
             const profit = totalSales - totalCost;
@@ -29516,9 +29834,9 @@
             });
             
             html += `
-                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📋 Sales Order Detail Report</h3>
-                    <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Sales: ${formatMoney(totalSales)}</p>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📋 Sales Order Detail Report</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Sales: ${formatMoney(totalSales)}</p>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -29695,10 +30013,9 @@
             const totalPotentialProfit = sorted.reduce((sum, p) => sum + p.totalProfit, 0);
             
             html += `
-                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📦 Sales by Item - Pricing & Margin Analysis</h3>
-                    <p style="color: #666;">Total Items: ${sorted.length} | Average Margin: ${avgMarginPercent.toFixed(1)}% | Total Profit (from sales): ${formatMoney(totalPotentialProfit)}</p>
-                    
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📦 Sales by Item - Pricing & Margin Analysis</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">Total Items: ${sorted.length} | Average Margin: ${avgMarginPercent.toFixed(1)}% | Total Profit: ${formatMoney(totalPotentialProfit)}</p>
                 </div>`;
             
             if (sorted.length === 0) {
@@ -29844,10 +30161,9 @@
             });
             
             html += `
-                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📋 Purchase Order Detail Report</h3>
-                    <p style="color: #666;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Purchases: ${formatMoney(totalPurchases)}</p>
-                    
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📋 Purchase Order Detail Report</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">Total Orders: ${totalOrders} | Total Lines: ${filtered.length} | Total Purchases: ${formatMoney(totalPurchases)}</p>
                 </div>`;
             
             if (filtered.length === 0) {
@@ -29988,10 +30304,9 @@
             });
             
             html += `
-                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>🏭 Purchase by Supplier Report</h3>
-                    <p style="color: #666;">Suppliers: ${sorted.length} | Total Spent: ${formatMoney(sorted.reduce((sum, s) => sum + s.totalSpent, 0))}</p>
-                    
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">🏭 Purchase by Supplier Report</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">Suppliers: ${sorted.length} | Total Spent: ${formatMoney(sorted.reduce((sum, s) => sum + s.totalSpent, 0))}</p>
                 </div>`;
             
             if (sorted.length === 0) {
@@ -30937,23 +31252,48 @@
         function filterItemsBySupplier() {
             const supplierId = document.getElementById('createPOSupplier').value;
             const itemSelects = document.querySelectorAll('.createpo-item');
+            const qtyInputs = document.querySelectorAll('#createPOLineItems .createpo-qty');
+            
+            if (!supplierId) {
+                // No supplier selected - disable all line item controls
+                itemSelects.forEach(select => {
+                    select.disabled = true;
+                    select.style.border = '2px solid #ccc';
+                    select.style.background = '#f5f5f5';
+                    select.innerHTML = '<option value="">⚠️ Select Supplier First</option>';
+                });
+                qtyInputs.forEach(input => {
+                    input.disabled = true;
+                });
+                calculateCreatePOTotal();
+                return;
+            }
+            
+            // Filter items by supplier (exclude archived)
+            const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId && item.Status !== 'Archived');
             
             itemSelects.forEach(select => {
+                // Enable and style
+                select.disabled = false;
+                select.style.border = '2px solid #667eea';
+                select.style.background = 'white';
+                
                 // Clear existing options
                 select.innerHTML = '<option value="">Select item...</option>';
                 
-                if (supplierId) {
-                    // Filter items by supplier
-                    const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId);
-                    supplierItems.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.Item_ID;
-                        option.textContent = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
-                        option.dataset.cost = item.Package_Cost || 0;
-                        option.dataset.units = item.Units_Per_Package || 1;
-                        select.appendChild(option);
-                    });
-                }
+                supplierItems.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.Item_ID;
+                    option.textContent = `${item.SKU || item.Item_ID} - ${item.Item_Description}`;
+                    option.dataset.cost = item.Package_Cost || 0;
+                    option.dataset.units = item.Units_Per_Package || 1;
+                    select.appendChild(option);
+                });
+            });
+            
+            // Enable quantity inputs
+            qtyInputs.forEach(input => {
+                input.disabled = false;
             });
             
             calculateCreatePOTotal();
@@ -32190,7 +32530,7 @@
                 amountPaid: 0,
                 notes: notes || '',
                 lineItems: lineItems,
-                poType: 'INCOMING' // For supplier POs
+                poType: 'OUTGOING' // Placing order with supplier
             };
             
             const result = await apiCall('createPurchaseOrder', data);
@@ -32213,11 +32553,20 @@
                 // UNLOCK - Always reset even if error
                 isSavingOutgoingPO = false;
                 
-                // Re-enable button
-                const saveBtn = document.querySelector('button[onclick="saveOutgoingPO()"]');
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = '💾 Save PO';
+                // Re-enable Save PO button
+                const saveBtns = document.querySelectorAll('#createPOForm button');
+                saveBtns.forEach(btn => {
+                    if (btn.innerHTML.includes('Save PO') || btn.innerHTML.includes('Saving')) {
+                        btn.disabled = false;
+                        btn.innerHTML = '💾 Save PO';
+                    }
+                });
+                
+                // Reset preview confirm button
+                const confirmBtn = document.getElementById('createPOConfirmBtn');
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '✓ Confirm & Place Order';
                 }
             }
         }
@@ -32339,6 +32688,36 @@
         function closeCreatePOPreview() {
             document.getElementById('createPOPreviewModal').style.display = 'none';
             document.body.style.overflow = '';
+            // Reset confirm button state
+            const btn = document.getElementById('createPOConfirmBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '✓ Confirm & Place Order';
+            }
+        }
+        
+        function submitCreatePOWithLoading(btn) {
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Saving...';
+            
+            // Disable back button
+            const backBtn = btn.previousElementSibling;
+            if (backBtn) backBtn.disabled = true;
+            
+            // Update main Save PO button
+            const mainBtns = document.querySelectorAll('#createPOForm button');
+            mainBtns.forEach(b => {
+                if (b.textContent.includes('Save PO')) {
+                    b.disabled = true;
+                    b.innerHTML = '⏳ Saving PO...';
+                }
+            });
+            
+            // Close preview and save
+            document.getElementById('createPOPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+            saveOutgoingPO();
         }
         
         // Show printable PO preview (for Print PO No Save button)
@@ -32409,6 +32788,36 @@
                 return;
             }
             
+            const supplierEmail = supplier.Email || '';
+            
+            // Build item list for email body
+            let itemsList = lineItems.map(item => `• ${item.description} - ${item.qty} cases`).join('\\n');
+            const totalCases = lineItems.reduce((sum, item) => sum + item.qty, 0);
+            
+            // Generate a draft PO number for the email
+            const dateStr = poDate.replace(/-/g, '').slice(2); // YYMMDD
+            const draftPONum = 'PO-' + dateStr;
+            
+            const emailSubject = encodeURIComponent(`Purchase Order ${draftPONum} from ${settings.companyName}`);
+            const emailBody = encodeURIComponent(`Dear ${supplier.Supplier_Name},
+
+Please find our purchase order below:
+
+${itemsList}
+---
+Total Cases: ${totalCases}
+Total: $${total.toFixed(2)}
+
+Please confirm receipt and expected delivery date.
+
+Best regards,
+${settings.companyName}
+${settings.phone}
+${settings.email}
+
+---
+NOTE: Please print or save the PO as PDF from the print preview and attach it to this email.`);
+            
             let linesHtml = lineItems.map(item => `
                 <tr>
                     <td style="border: 1px solid #e5e7eb; padding: 10px; font-size: 11pt;">${item.sku}</td>
@@ -32426,7 +32835,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Purchase Order - ${supplier.Supplier_Name}</title>
+    <title>${settings.companyName} - Purchase Order ${draftPONum} - ${new Date(poDate).toLocaleDateString().replace(/\//g, '-')}</title>
     <style>
         @media print {
             @page { margin: 0.3in; }
@@ -32445,6 +32854,7 @@
 <body>
     <div class="no-print" style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
         <button onclick="window.print()" style="padding: 12px 24px; background: ${themeColors.primary}; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-right: 10px;">🖨️ Print</button>
+        ${supplierEmail ? `<a href="mailto:${supplierEmail}?subject=${emailSubject}&body=${emailBody}" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-right: 10px; text-decoration: none; display: inline-block;">📧 Email Supplier</a>` : ''}
         <button onclick="window.close()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">✖ Close</button>
     </div>
 
@@ -34566,7 +34976,7 @@ NOTE: Please print the attached PO document for full details.`;
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
                 <button onclick="closeOrderPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
-                <button onclick="closeOrderPreview(); document.querySelector('#addSaleForm form').requestSubmit();" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
+                <button id="soConfirmSaveBtn" onclick="submitSaleWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
             </div>
         </div>
     </div>
@@ -34588,7 +34998,7 @@ NOTE: Please print the attached PO document for full details.`;
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
                 <button onclick="closePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
-                <button onclick="closePOPreview(); document.querySelector('#addPurchaseForm form').requestSubmit();" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
+                <button id="poConfirmSaveBtn" onclick="submitPOWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
             </div>
         </div>
     </div>
@@ -34610,7 +35020,7 @@ NOTE: Please print the attached PO document for full details.`;
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
                 <button onclick="closeCreatePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
-                <button onclick="closeCreatePOPreview(); saveOutgoingPO();" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Place Order</button>
+                <button id="createPOConfirmBtn" onclick="submitCreatePOWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Place Order</button>
             </div>
         </div>
     </div>
@@ -35972,11 +36382,23 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function selectInvoiceForReport(invoiceNum) {
-            const hiddenInput = document.getElementById('rptFilter_salesInvoice');
-            const displayInput = document.getElementById('rptFilter_salesInvoice_display');
-            if (hiddenInput) hiddenInput.value = invoiceNum;
-            if (displayInput) displayInput.value = invoiceNum ? '🧾 ' + invoiceNum : '📋 All Invoices';
-            closeInvoicePicker();
+            // Check if this is for sales filter or report filter
+            if (invoicePickerCallback && invoicePickerCallback.tagName === 'SALES_FILTER') {
+                // Sales filter - set the filter value and apply
+                const hiddenInput = document.getElementById('filterInvoiceNumber');
+                const displayInput = document.getElementById('filterInvoiceNumber_display');
+                if (hiddenInput) hiddenInput.value = invoiceNum;
+                if (displayInput) displayInput.value = invoiceNum ? '🧾 ' + invoiceNum : '';
+                closeInvoicePicker();
+                filterSales(); // Apply the filter
+            } else {
+                // Report filter
+                const hiddenInput = document.getElementById('rptFilter_salesInvoice');
+                const displayInput = document.getElementById('rptFilter_salesInvoice_display');
+                if (hiddenInput) hiddenInput.value = invoiceNum;
+                if (displayInput) displayInput.value = invoiceNum ? '🧾 ' + invoiceNum : '📋 All Invoices';
+                closeInvoicePicker();
+            }
         }
         
         function selectInvoice(invoiceNum) {
@@ -35988,10 +36410,14 @@ NOTE: Please print the attached PO document for full details.`;
         
         function closeInvoicePicker() {
             const modal = document.getElementById('invoicePickerModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) {
+                modal.classList.remove('modal-open');
+                modal.style.display = 'none';
+            }
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open');
             window.invoicePickerForReport = false;
+            invoicePickerCallback = null;
         }
         
         // ==================== STYLED ALERT & CONFIRM MODALS ====================
@@ -36108,7 +36534,7 @@ NOTE: Please print the attached PO document for full details.`;
                 const typeInfo = typeLabels[type] || { icon: '📝', name: 'Record', color: '#6b7280' };
                 
                 // Fields to skip in comparison (IDs and internal fields that don't change)
-                const skipFields = ['supplierId', 'customerId', 'itemId', 'fax', 'status'];
+                const skipFields = ['supplierId', 'customerId', 'itemId', 'fax'];
                 
                 let contentHtml = '';
                 
@@ -38008,8 +38434,8 @@ NOTE: Please print the attached PO document for full details.`;
                                 ${c.Email ? `<div class="item-picker-detail"><span class="item-picker-detail-label">📧 Email</span><span class="item-picker-detail-value" style="font-size: 13px;">${c.Email}</span></div>` : ''}
                             </div>
                             ${c.Address || c.City || c.State || c.Zip ? `
-                                <div style="margin-top: 10px; padding: 10px; background: ${isSelected ? '#ffffff' : '#f8f9fa'}; border-radius: 8px; border: 1px solid #e0e0e0;">
-                                    <div style="font-weight: 600; color: #666; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
+                                <div style="margin-top: 10px; padding: 10px; background: ${isSelected ? '#bbf7d0' : '#f8f9fa'}; border-radius: 8px; border: 1px solid ${isSelected ? '#86efac' : '#e0e0e0'};">
+                                    <div style="font-weight: 600; color: ${isSelected ? '#166534' : '#666'}; margin-bottom: 4px; font-size: 12px;">📍 ADDRESS</div>
                                     ${c.Address ? `<div style="font-size: 13px; color: #222 !important;">${c.Address}</div>` : ''}
                                     ${c.City || c.State || c.Zip ? `
                                         <div style="font-size: 13px; color: #444 !important;">
@@ -38429,6 +38855,16 @@ NOTE: Please print the attached PO document for full details.`;
             } else {
                 selectedInvoicesForSales = [];
             }
+            
+            // Populate invoicePickerData from salesData for the picker to use
+            const sales = salesData || window.salesData || window.cachedSales || [];
+            window.invoicePickerData = sales.map(s => ({
+                invoiceNum: s.Invoice_Number || s.SO_ID || 'No Invoice#',
+                customerName: getCustomerName(s.Customer_ID) || s.Customer_ID || 'Unknown',
+                amount: s.Total_Amount || 0,
+                status: s.Status || 'Pending',
+                date: s.Sale_Date
+            }));
             
             document.getElementById('invoicePickerSearch').value = '';
             renderInvoicePickerList();
@@ -40196,7 +40632,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Items Report - Nowak Distributing</title>
+                    <title>Nowak Distributing - Items Report - ${new Date().toLocaleDateString().replace(/\//g, '-')}</title>
                     <style>
                         body { font-family: Arial, sans-serif; padding: 20px; }
                         h1 { text-align: center; color: #333; }
