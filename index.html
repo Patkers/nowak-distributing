@@ -5,11 +5,11 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Saturday, December 21, 2025
-         VERSION: V16_104
+         VERSION: V16_106
          =====================================================
          CHANGES IN THIS VERSION:
-         - Restored notes and status fields to updateItem
-         - User will add Notes column to PROD Items sheet
+         - Removed mobile bottom navigation bar (kept breaking)
+         - Fixed iOS select picker appearing on orientation change
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -584,19 +584,9 @@
                 display: none !important;
             }
             
-            /* Mobile nav bar styling */
+            /* Mobile nav bar - REMOVED - kept breaking and floating */
             #mobileNavBar {
-                display: none;
-            }
-            
-            #mobileNavBar.has-buttons,
-            #mobileNavBar:has(button[style*="display: block"]) {
-                display: block !important;
-            }
-            
-            /* Add bottom padding to body when nav bar is visible */
-            body:has(#mobileNavBar.has-buttons) {
-                padding-bottom: 70px !important;
+                display: none !important;
             }
         }
         
@@ -38294,6 +38284,14 @@ NOTE: Please print the attached PO document for full details.`;
             
             // Handle orientation change
             window.addEventListener('orientationchange', function() {
+                // Blur any focused select elements to prevent iOS picker popup
+                if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+                    document.activeElement.blur();
+                }
+                // Also blur any focused input to be safe
+                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                    document.activeElement.blur();
+                }
                 setTimeout(lockViewport, 100);
                 setTimeout(lockViewport, 300); // Double-check after animation
             });
@@ -38301,6 +38299,10 @@ NOTE: Please print the attached PO document for full details.`;
             // Handle resize (also triggered by orientation on some devices)
             let resizeTimeout;
             window.addEventListener('resize', function() {
+                // Blur any focused select elements to prevent iOS picker popup
+                if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+                    document.activeElement.blur();
+                }
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(lockViewport, 150);
             });
