@@ -5,10 +5,14 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Saturday, December 21, 2025
-         VERSION: V16_112_DEBUG
+         VERSION: V16_118
          =====================================================
-         DEBUG VERSION - Added console.trace to openStatusPicker
-         to find out what's triggering it
+         CHANGES IN THIS VERSION:
+         - IMPROVED: PO Receive now shows detailed preview modal
+           - Shows PO number, supplier, receive date
+           - Lists all items with SKU, qty, units, and value
+           - Shows totals: cases, total units, total value
+           - Confirmation before adding to inventory
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1130,6 +1134,7 @@
             #createPOLineItems .line-item-row {
                 display: flex !important;
                 flex-direction: column !important;
+                grid-template-columns: none !important;
                 gap: 12px !important;
                 padding: 15px !important;
                 background: white !important;
@@ -1143,6 +1148,7 @@
             #createPOLineItems .line-item-row > div {
                 width: 100% !important;
                 margin-top: 0 !important;
+                box-sizing: border-box !important;
             }
             
             /* Show labels on mobile (they're already there) */
@@ -1161,6 +1167,18 @@
                 min-height: 52px !important;
                 font-size: 16px !important;
                 padding: 14px 12px !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                color: #333 !important;
+                border: 2px solid var(--primary, #667eea) !important;
+                border-radius: 8px !important;
+            }
+            
+            /* Ensure select options are visible */
+            #createPOLineItems .line-item-row select option {
+                color: #333 !important;
+                background: white !important;
+                padding: 10px !important;
             }
             
             /* Delete button full width at bottom */
@@ -1233,6 +1251,123 @@
                 gap: 15px !important;
             }
             
+            /* ========== MAIN PO LINE ITEMS (#poLineItems) MOBILE RESPONSIVE ========== */
+            
+            /* Hide the horizontal scroll wrapper's min-width on mobile */
+            #poLineItemsInner {
+                min-width: 100% !important;
+                width: 100% !important;
+            }
+            
+            /* Hide the header row on mobile */
+            #poLineItemsHeader {
+                display: none !important;
+            }
+            
+            /* Remove border styling from container */
+            #poLineItems {
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
+            }
+            
+            /* Make each PO line item a vertical card */
+            #poLineItems .line-item-row {
+                display: flex !important;
+                flex-direction: column !important;
+                grid-template-columns: unset !important;
+                gap: 12px !important;
+                padding: 15px !important;
+                background: white !important;
+                border: 2px solid var(--primary, #667eea) !important;
+                border-radius: 12px !important;
+                margin-bottom: 15px !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            }
+            
+            /* Each field container gets full width */
+            #poLineItems .line-item-row > div {
+                width: 100% !important;
+                margin-top: 0 !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* Show labels on mobile */
+            #poLineItems .line-item-row label {
+                display: block !important;
+                font-weight: 600 !important;
+                margin-bottom: 5px !important;
+                font-size: 14px !important;
+                color: #555 !important;
+            }
+            
+            /* Make selects and inputs full width */
+            #poLineItems .line-item-row select,
+            #poLineItems .line-item-row input[type="number"] {
+                width: 100% !important;
+                min-height: 52px !important;
+                font-size: 16px !important;
+                padding: 14px 12px !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                color: #333 !important;
+                border: 2px solid var(--primary, #667eea) !important;
+                border-radius: 8px !important;
+            }
+            
+            /* Ensure select options are visible */
+            #poLineItems .line-item-row select option {
+                color: #333 !important;
+                background: white !important;
+            }
+            
+            /* Computed value divs - make them stand out with labels */
+            #poLineItems .po-units,
+            #poLineItems .po-totalunits,
+            #poLineItems .po-cost,
+            #poLineItems .po-linetotal {
+                padding: 12px !important;
+                font-size: 16px !important;
+                text-align: left !important;
+                border-radius: 8px !important;
+                background: #f8f9fa !important;
+            }
+            
+            /* Add labels before computed values */
+            #poLineItems .po-units::before {
+                content: "Units/Case: ";
+                font-weight: 600;
+                color: #555;
+            }
+            
+            #poLineItems .po-totalunits::before {
+                content: "Total Units: ";
+                font-weight: 600;
+                color: #555;
+            }
+            
+            #poLineItems .po-cost::before {
+                content: "Catalog Cost: ";
+                font-weight: 600;
+                color: #555;
+            }
+            
+            #poLineItems .po-linetotal::before {
+                content: "Line Total: ";
+                font-weight: 600;
+                color: #555;
+            }
+            
+            /* Delete button full width */
+            #poLineItems .line-item-row > button,
+            #poLineItems .line-item-row .remove-btn {
+                width: 100% !important;
+                margin-top: 0 !important;
+                padding: 14px !important;
+                font-size: 16px !important;
+            }
+            
             /* ========== SALES ORDER LINE ITEMS MOBILE RESPONSIVE ========== */
             
             /* Make SO line items container not use grid border */
@@ -1246,6 +1381,7 @@
             #soLineItems .line-item-row {
                 display: flex !important;
                 flex-direction: column !important;
+                grid-template-columns: unset !important;
                 gap: 12px !important;
                 padding: 15px !important;
                 background: white !important;
@@ -1258,6 +1394,7 @@
             /* Each field container gets full width */
             #soLineItems .line-item-row > div {
                 width: 100% !important;
+                box-sizing: border-box !important;
             }
             
             /* Show labels on mobile */
@@ -1277,14 +1414,28 @@
                 min-height: 52px !important;
                 font-size: 16px !important;
                 padding: 14px 12px !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                color: #333 !important;
+                border: 2px solid var(--primary, #667eea) !important;
+                border-radius: 8px !important;
+            }
+            
+            /* Ensure select options are visible */
+            #soLineItems .line-item-row select option {
+                color: #333 !important;
+                background: white !important;
+                padding: 10px !important;
             }
             
             /* Stock info full width */
             #soLineItems .so-stock-info {
-                grid-column: 1 !important;
+                grid-column: unset !important;
+                width: 100% !important;
             }
             
             /* Remove button full width */
+            #soLineItems .line-item-row > button,
             #soLineItems .line-item-row .remove-btn {
                 width: 100% !important;
                 margin-top: 0 !important;
@@ -3932,7 +4083,7 @@
                     
                     <!-- Card 2: Line Items -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 12px;">
                             <h4 style="margin: 0; color: var(--primary, #667eea);">📦 Line Items</h4>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button class="btn-small" onclick="openMultiItemPickerForPO()" style="background: #28a745; color: white;">📋 Select Multiple Items</button>
@@ -4007,8 +4158,8 @@
                     
                     <!-- Action Buttons -->
                     <div class="filter-card">
-                        <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveOutgoingPO()" style="flex: 1; min-width: 200px;">💾 Save PO</button>
-                        <button class="btn" onclick="generatePrintablePO()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
+                        <button class="btn" onclick="if(event && debounceButton(event.currentTarget)) showCreatePOPreview()" style="flex: 1; min-width: 200px;">💾 Save PO</button>
+                        <button class="btn" onclick="showPrintablePOPreview()" style="flex: 1; min-width: 200px;">🖨️ Print PO (No Save)</button>
                         <button class="btn btn-secondary" onclick="clearCreatePOForm()" style="flex: 1; min-width: 200px;">🔄 Clear Form</button>
                     </div>
                 </div>
@@ -4148,7 +4299,7 @@
                     
                     <!-- Card 2: Line Items (Matching Create PO Design) -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 12px;">
                             <h4 style="margin: 0; color: var(--primary, #667eea);">📦 Line Items</h4>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button type="button" class="btn-small" onclick="openMultiItemPickerForMainPO()" style="background: #28a745; color: white;">📋 Select Multiple Items</button>
@@ -4157,10 +4308,10 @@
                         </div>
                         
                         <!-- Wrapper for horizontal scroll on mobile -->
-                        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; position: relative;">
-                            <div style="min-width: 700px; width: 100%; max-width: 100%;">
+                        <div id="poLineItemsWrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; position: relative;">
+                            <div id="poLineItemsInner" style="min-width: 700px; width: 100%; max-width: 100%;">
                                 <!-- Header Row -->
-                                <div style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 14px;">
+                                <div id="poLineItemsHeader" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 14px;">
                                     <div>Item</div>
                                     <div style="text-align: center;">Cases</div>
                                     <div style="text-align: center;">Units/Case</div>
@@ -4350,7 +4501,7 @@
                     
                     <!-- Card 2: Items Sold -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 12px;">
                             <h4 style="margin: 0;">Items Sold</h4>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button type="button" class="btn-small" onclick="openMultiItemPickerForSO()" style="background: #28a745; color: white;">📋 Select Multiple Items</button>
@@ -8301,8 +8452,9 @@
                 sel.style.pointerEvents = 'none';
             });
             
-            // Show the modal
-            document.getElementById('quickAddItemModal').style.display = 'block';
+            // Show the modal using class (not inline style)
+            const modal = document.getElementById('quickAddItemModal');
+            modal.classList.add('quick-add-open');
             document.body.style.overflow = 'hidden';
             
             // Focus on SKU field
@@ -8312,7 +8464,8 @@
         }
         
         function closeQuickAddItem() {
-            document.getElementById('quickAddItemModal').style.display = 'none';
+            const modal = document.getElementById('quickAddItemModal');
+            modal.classList.remove('quick-add-open');
             document.body.style.overflow = '';
             
             // Re-enable selects that weren't originally disabled
@@ -9152,7 +9305,13 @@
         // ==================== SUPPLIERS ====================
 
         function showAddSupplierForm() {
-            document.getElementById('addSupplierForm').style.display = 'block';
+            const form = document.getElementById('addSupplierForm');
+            form.style.display = 'block';
+            // Re-enable selects that were disabled at startup
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
         }
 
         function hideAddSupplierForm() {
@@ -9290,8 +9449,15 @@
             document.getElementById('editPaymentTerms').value = supplier.Payment_Terms || 'Net 30';
             document.getElementById('editNotes').value = supplier.Notes || '';
             
-            document.getElementById('editSupplierForm').style.display = 'block';
+            const form = document.getElementById('editSupplierForm');
+            form.style.display = 'block';
             document.getElementById('addSupplierForm').style.display = 'none';
+            
+            // Re-enable selects that were disabled at startup
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
         }
         
         function hideEditSupplierForm() {
@@ -10150,8 +10316,16 @@
             // Reset form first
             document.querySelector('#addPurchaseForm form').reset();
             
+            const form = document.getElementById('addPurchaseForm');
+            
             loadPurchaseDropdowns();
-            document.getElementById('addPurchaseForm').style.display = 'block';
+            form.style.display = 'block';
+            
+            // Re-enable selects that were disabled at startup
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
             
             // Auto-populate today's date
             const today = new Date().toISOString().split('T')[0];
@@ -10667,13 +10841,62 @@
                 <head>
                     <title>Purchase Order - ${supplierName}</title>
                     <style>
-                        body { font-family: Arial, sans-serif; padding: 40px; }
+                        body { font-family: Arial, sans-serif; padding: 20px; padding-top: 60px; }
                         table { width: 100%; border-collapse: collapse; }
                         th { background: #667eea; color: white; padding: 10px; text-align: left; }
                         .total { font-size: 20px; font-weight: bold; margin-top: 20px; text-align: right; }
+                        .close-btn {
+                            position: fixed;
+                            top: 10px;
+                            right: 10px;
+                            background: #dc3545;
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 44px;
+                            height: 44px;
+                            font-size: 24px;
+                            cursor: pointer;
+                            z-index: 9999;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .close-btn:hover { background: #c82333; }
+                        .action-bar {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            background: #f8f9fa;
+                            padding: 10px 15px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            z-index: 9998;
+                        }
+                        .print-btn {
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            padding: 10px 20px;
+                            font-size: 16px;
+                            cursor: pointer;
+                        }
+                        @media print {
+                            .action-bar, .close-btn { display: none !important; }
+                            body { padding-top: 20px; }
+                        }
                     </style>
                 </head>
                 <body>
+                    <div class="action-bar">
+                        <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+                        <button class="close-btn" onclick="window.close()">✕</button>
+                    </div>
                     <h1>PURCHASE ORDER (DRAFT)</h1>
                     <p><strong>Supplier:</strong> ${supplierName}</p>
                     <p><strong>Date:</strong> ${new Date(poDate).toLocaleDateString()}</p>
@@ -10699,7 +10922,6 @@
                 </html>
             `);
             printWindow.document.close();
-            printWindow.print();
         }
         
         // Multi-item picker for main PO form
@@ -10846,10 +11068,38 @@
             const timeStrPO = nowPO.toTimeString().split(' ')[0]; // HH:MM:SS
             const poDateTime = `${selectedPODate}T${timeStrPO}`; // YYYY-MM-DDTHH:MM:SS
 
+            // Generate invoice number: PO-MMDDYY-###
+            const poDateObj = new Date(selectedPODate + 'T12:00:00');
+            const poMonth = String(poDateObj.getMonth() + 1).padStart(2, '0');
+            const poDay = String(poDateObj.getDate()).padStart(2, '0');
+            const poYear = String(poDateObj.getFullYear()).slice(-2);
+            const poDateStr = `${poMonth}${poDay}${poYear}`;
+            
+            // Get all existing POs to find the next number for this date
+            const existingPOsForNum = await apiCall('getPurchaseOrders');
+            let nextPONumber = 1;
+            
+            if (existingPOsForNum && existingPOsForNum.data && existingPOsForNum.data.length > 0) {
+                const poPrefix = `PO-${poDateStr}-`;
+                const todayPONumbers = existingPOsForNum.data
+                    .filter(po => po.Invoice_Number && po.Invoice_Number.startsWith(poPrefix))
+                    .map(po => {
+                        const parts = po.Invoice_Number.split('-');
+                        return parseInt(parts[2]) || 0;
+                    });
+                
+                if (todayPONumbers.length > 0) {
+                    nextPONumber = Math.max(...todayPONumbers) + 1;
+                }
+            }
+            
+            const generatedPONumber = `PO-${poDateStr}-${String(nextPONumber).padStart(3, '0')}`;
+
             const data = {
                 supplierId: document.getElementById('poSupplier').value,
                 poDate: poDateTime,  // Full datetime format
                 dueDate: document.getElementById('poDueDate').value || null,
+                invoiceNumber: generatedPONumber,  // Auto-generated PO-MMDDYY-###
                 paymentTerms: document.getElementById('poPaymentTerms').value,
                 totalAmount: calculatedTotal,
                 amountPaid: parseFloat(document.getElementById('poAmountPaid').value) || 0,
@@ -10873,7 +11123,7 @@
                 if (result && result.status === 'success') {
                     hideAddPurchaseForm();
                     loadPurchases();
-                    showSuccessModal('Purchase Order Created!', 'Inventory has been updated.');
+                    showSuccessModal('Purchase Order Created!', `PO #: ${generatedPONumber}\n\nInventory has been updated.`);
                 } else {
                     showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
@@ -13272,6 +13522,13 @@
             
             document.getElementById('addSaleForm').style.display = 'block';
             
+            // Re-enable selects that were disabled at startup (when form was hidden)
+            const form = document.getElementById('addSaleForm');
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
+            
             // Auto-populate today's date for Sale Date
             const today = new Date().toISOString().split('T')[0];
             const soDateField = document.getElementById('soDate');
@@ -15570,7 +15827,7 @@
             renderItemPickerList();
             
             // Show modal
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
             // Focus search - only on desktop to prevent mobile keyboard popup
@@ -24888,7 +25145,7 @@
                     const onOrder = parseInt(item.Qty_On_Order) || 0;
                     html += `
                         <tr data-supplier-id="${item.Supplier_ID}">
-                            <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}"></td>
+                            <td><input type="checkbox" class="lowstock-checkbox" data-item-id="${item.Item_ID}" data-units-needed="${Math.ceil(item.Units_Needed)}"></td>
                             <td>${item.SKU || 'N/A'}</td>
                             <td>${item.Item_Description}</td>
                             <td>${item.Supplier_Name}</td>
@@ -25800,10 +26057,20 @@
                 return;
             }
             
-            const itemIds = Array.from(checkboxes).map(cb => cb.dataset.itemId);
+            // Get item IDs and their pre-calculated units needed from the checkboxes
+            const selectedItems = Array.from(checkboxes).map(cb => ({
+                itemId: cb.dataset.itemId,
+                unitsNeeded: parseInt(cb.dataset.unitsNeeded) || 0
+            }));
             
             // Get item details and check suppliers
-            const items = itemIds.map(id => (cachedItems || []).find(i => i.Item_ID === id)).filter(Boolean);
+            const items = selectedItems.map(sel => {
+                const item = (cachedItems || []).find(i => i.Item_ID === sel.itemId);
+                if (item) {
+                    return { ...item, _unitsNeeded: sel.unitsNeeded };
+                }
+                return null;
+            }).filter(Boolean);
             
             if (items.length === 0) {
                 showError('Could not find selected items. Please refresh and try again.');
@@ -25837,7 +26104,8 @@
             items.forEach((item, index) => {
                 const cost = parseFloat(item.Package_Cost) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
-                const qtyNeeded = Math.max(0, (parseInt(item.Reorder_Point) || 0) - (parseInt(item.Qty_On_Hand) || 0));
+                // Use the pre-calculated units needed from the Needs Reorder report (considers committed & on-order)
+                const qtyNeeded = item._unitsNeeded || 0;
                 const casesNeeded = Math.ceil(qtyNeeded / units);
                 const lineTotal = casesNeeded * cost;
                 grandTotal += lineTotal;
@@ -25877,12 +26145,12 @@
                         <form id="bulkPOForm" onsubmit="submitBulkPO(event, '${supplierId}')">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                                 <div>
-                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Order Date</label>
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Order Date <span style="color: #dc3545;">*</span></label>
                                     <input type="date" id="bulkPODate" value="${getTodayLocalDate()}" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                                 </div>
                                 <div>
-                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Expected Arrival</label>
-                                    <input type="date" id="bulkPOExpected" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Expected Arrival <span style="color: #dc3545;">*</span></label>
+                                    <input type="date" id="bulkPOExpected" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                                 </div>
                             </div>
                             
@@ -25988,24 +26256,53 @@
                 return;
             }
             
-            // Create proper datetime: combine selected date with current time
-            const selectedDate = document.getElementById('bulkPODate').value;
-            const now = new Date();
-            const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
-            const poDateTime = `${selectedDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
-            
-            const poData = {
-                supplierId: supplierId,
-                poDate: poDateTime,  // Full datetime format
-                expectedDate: document.getElementById('bulkPOExpected').value || '',
-                notes: document.getElementById('bulkPONotes').value || '',
-                status: 'Ordered',
-                lineItems: lineItems
-            };
-            
             showLoading('Creating Purchase Order...');
             
             try {
+                // Get selected date and format as MMDDYY for invoice number
+                const selectedDate = document.getElementById('bulkPODate').value;
+                const dateObj = new Date(selectedDate + 'T12:00:00');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const year = String(dateObj.getFullYear()).slice(-2);
+                const dateStr = `${month}${day}${year}`;
+                
+                // Get all existing POs to find the next number for this date
+                const existingPOs = await apiCall('getPurchaseOrders');
+                let nextNumber = 1;
+                
+                if (existingPOs && existingPOs.data && existingPOs.data.length > 0) {
+                    const prefix = `PO-${dateStr}-`;
+                    const todayPOs = existingPOs.data
+                        .filter(po => po.Invoice_Number && po.Invoice_Number.startsWith(prefix))
+                        .map(po => {
+                            const parts = po.Invoice_Number.split('-');
+                            return parseInt(parts[2]) || 0;
+                        });
+                    
+                    if (todayPOs.length > 0) {
+                        nextNumber = Math.max(...todayPOs) + 1;
+                    }
+                }
+                
+                // Generate PO number: PO-122125-001
+                const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
+                
+                // Create proper datetime: combine selected date with current time
+                const now = new Date();
+                const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+                const poDateTime = `${selectedDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
+                
+                const poData = {
+                    supplierId: supplierId,
+                    poDate: poDateTime,  // Full datetime format
+                    dueDate: document.getElementById('bulkPOExpected').value || '',  // Expected Arrival → Due_Date
+                    invoiceNumber: poNumber,  // Auto-generated PO-MMDDYY-###
+                    notes: document.getElementById('bulkPONotes').value || '',
+                    status: 'Ordered',
+                    lineItems: lineItems
+                };
+                
                 const result = await apiCall('createPurchaseOrder', poData);
                 hideLoading();
                 
@@ -26015,7 +26312,7 @@
                     if (typeof renderCriticalActionItems === 'function') {
                         renderCriticalActionItems();
                     }
-                    showSuccessModal('Purchase Order Created!', `PO #: ${result.poId}\n\n${lineItems.length} item${lineItems.length > 1 ? 's' : ''} ordered.`);
+                    showSuccessModal('Purchase Order Created!', `PO #: ${poNumber}\n\n${lineItems.length} item${lineItems.length > 1 ? 's' : ''} ordered.`);
                 } else {
                     showError('Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
@@ -26061,12 +26358,12 @@
                         <form id="quickPOForm" onsubmit="submitQuickPO(event, '${itemId}', '${supplierId}')">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                                 <div>
-                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Order Date</label>
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Order Date <span style="color: #dc3545;">*</span></label>
                                     <input type="date" id="quickPODate" value="${getTodayLocalDate()}" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                                 </div>
                                 <div>
-                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Expected Arrival</label>
-                                    <input type="date" id="quickPOExpected" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                    <label style="font-weight: 600; display: block; margin-bottom: 5px;">📅 Expected Arrival <span style="color: #dc3545;">*</span></label>
+                                    <input type="date" id="quickPOExpected" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
                                 </div>
                             </div>
                             
@@ -26144,28 +26441,57 @@
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             const cost = parseFloat(item?.Package_Cost) || 0;
             
-            // Create proper datetime: combine selected date with current time
-            const selectedDate = document.getElementById('quickPODate').value;
-            const now = new Date();
-            const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
-            const poDateTime = `${selectedDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
-            
-            const poData = {
-                supplierId: supplierId,
-                poDate: poDateTime,  // Full datetime format
-                expectedDate: document.getElementById('quickPOExpected').value || '',
-                notes: document.getElementById('quickPONotes').value || '',
-                status: 'Ordered',
-                lineItems: [{
-                    itemId: itemId,
-                    quantity: cases,
-                    unitCost: cost
-                }]
-            };
-            
             showLoading('Creating Purchase Order...');
             
             try {
+                // Get selected date and format as MMDDYY for invoice number
+                const selectedDate = document.getElementById('quickPODate').value;
+                const dateObj = new Date(selectedDate + 'T12:00:00');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const year = String(dateObj.getFullYear()).slice(-2);
+                const dateStr = `${month}${day}${year}`;
+                
+                // Get all existing POs to find the next number for this date
+                const existingPOs = await apiCall('getPurchaseOrders');
+                let nextNumber = 1;
+                
+                if (existingPOs && existingPOs.data && existingPOs.data.length > 0) {
+                    const prefix = `PO-${dateStr}-`;
+                    const todayPOs = existingPOs.data
+                        .filter(po => po.Invoice_Number && po.Invoice_Number.startsWith(prefix))
+                        .map(po => {
+                            const parts = po.Invoice_Number.split('-');
+                            return parseInt(parts[2]) || 0;
+                        });
+                    
+                    if (todayPOs.length > 0) {
+                        nextNumber = Math.max(...todayPOs) + 1;
+                    }
+                }
+                
+                // Generate PO number: PO-122125-001
+                const poNumber = `PO-${dateStr}-${String(nextNumber).padStart(3, '0')}`;
+                
+                // Create proper datetime: combine selected date with current time
+                const now = new Date();
+                const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+                const poDateTime = `${selectedDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
+                
+                const poData = {
+                    supplierId: supplierId,
+                    poDate: poDateTime,  // Full datetime format
+                    dueDate: document.getElementById('quickPOExpected').value || '',  // Expected Arrival → Due_Date
+                    invoiceNumber: poNumber,  // Auto-generated PO-MMDDYY-###
+                    notes: document.getElementById('quickPONotes').value || '',
+                    status: 'Ordered',
+                    lineItems: [{
+                        itemId: itemId,
+                        quantity: cases,
+                        unitCost: cost
+                    }]
+                };
+                
                 const result = await apiCall('createPurchaseOrder', poData);
                 hideLoading();
                 
@@ -26177,7 +26503,7 @@
                     if (typeof renderCriticalActionItems === 'function') {
                         renderCriticalActionItems();
                     }
-                    showSuccessModal('Purchase Order Created!', `PO #: ${result.poId}\n\nItems marked as "On Order".`);
+                    showSuccessModal('Purchase Order Created!', `PO #: ${poNumber}\n\nItems marked as "On Order".`);
                 } else {
                     showError('Error creating PO: ' + (result?.message || 'Unknown error'));
                 }
@@ -31275,19 +31601,39 @@
             const invoiceNumber = document.getElementById('receiveInvoiceNumber')?.value || '';
             const receiveDate = document.getElementById('receiveDate')?.value || '';
             
-            // Collect lines to receive
+            // Collect lines to receive with full item details
             const linesToReceive = [];
-            document.querySelectorAll('#receiveItemsBody tr').forEach(row => {
+            let totalValue = 0;
+            let totalUnits = 0;
+            
+            document.querySelectorAll('#receiveItemsBody tr[data-is-original="true"]').forEach(row => {
                 const qtyInput = row.querySelector('input[type="number"]');
                 if (qtyInput && !qtyInput.disabled) {
                     const qtyToReceive = parseFloat(qtyInput.value) || 0;
                     const lineId = qtyInput.dataset.lineId;
+                    const itemId = qtyInput.dataset.itemId;
+                    const unitCost = parseFloat(qtyInput.dataset.cost) || 0;
                     
                     if (qtyToReceive > 0 && lineId) {
+                        const item = cachedItems.find(i => i.Item_ID === itemId);
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const lineUnits = qtyToReceive * unitsPerPkg;
+                        const lineTotal = qtyToReceive * unitCost;
+                        
                         linesToReceive.push({
                             lineId: lineId,
-                            qtyToReceive: qtyToReceive
+                            itemId: itemId,
+                            qtyToReceive: qtyToReceive,
+                            itemName: item?.Item_Description || itemId,
+                            sku: item?.SKU || '',
+                            unitCost: unitCost,
+                            unitsPerPkg: unitsPerPkg,
+                            totalUnits: lineUnits,
+                            lineTotal: lineTotal
                         });
+                        
+                        totalValue += lineTotal;
+                        totalUnits += lineUnits;
                     }
                 }
             });
@@ -31297,15 +31643,13 @@
                 return;
             }
             
-            // Confirm
-            const totalQty = linesToReceive.reduce((sum, l) => sum + l.qtyToReceive, 0);
-            const confirmed = await showConfirmModal(
-                'Receive Items?',
-                `Receive <strong>${totalQty} items</strong> into inventory?<br><br>This will update your stock levels.`,
-                'Receive Items',
-                'Cancel',
-                'success'
-            );
+            // Get PO and supplier info
+            const po = window.currentReceivePO;
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === po.Supplier_ID);
+            const supplierName = supplier?.Supplier_Name || 'Unknown Supplier';
+            
+            // Show detailed preview modal
+            const confirmed = await showReceivePreviewModal(po, supplierName, linesToReceive, totalValue, totalUnits, receiveDate, invoiceNumber);
             if (!confirmed) return;
             
             isCommittingReceivePartial = true;
@@ -31319,7 +31663,7 @@
                 const data = {
                     poId: poId,
                     notes: notes,
-                    lines: linesToReceive
+                    lines: linesToReceive.map(l => ({ lineId: l.lineId, qtyToReceive: l.qtyToReceive }))
                 };
                 
                 console.log('Calling receivePOItems with:', JSON.stringify(data));
@@ -31377,6 +31721,141 @@
                     commitBtn.textContent = '✅ Receive Items into Inventory';
                 }
             }
+        }
+        
+        // Detailed Receive Preview Modal
+        function showReceivePreviewModal(po, supplierName, items, totalValue, totalUnits, receiveDate, supplierInvoice) {
+            return new Promise((resolve) => {
+                // Build items list HTML
+                let itemsHtml = items.map(item => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #10b981;">
+                        <div style="flex: 2;">
+                            <div style="font-weight: 600; font-size: 14px; color: #1f2937;">${item.itemName}</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">SKU: ${item.sku || 'N/A'}</div>
+                            <div style="font-size: 11px; color: #059669; margin-top: 4px;">
+                                📦 ${item.unitsPerPkg} units/pkg → <strong>${item.totalUnits} total units</strong>
+                            </div>
+                        </div>
+                        <div style="text-align: center; flex: 0.5; padding: 0 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #10b981;">${item.qtyToReceive}</div>
+                            <div style="font-size: 10px; color: #6b7280; text-transform: uppercase;">Cases</div>
+                        </div>
+                        <div style="text-align: right; flex: 0.7;">
+                            <div style="font-weight: 600; color: #1f2937;">${formatMoney(item.lineTotal)}</div>
+                            <div style="font-size: 11px; color: #6b7280;">${formatMoney(item.unitCost)}/case</div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                const totalCases = items.reduce((sum, i) => sum + i.qtyToReceive, 0);
+                
+                const modalHtml = `
+                    <div id="receivePreviewModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+                        <div style="max-width: 550px; width: 100%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; display: flex; flex-direction: column;">
+                            <!-- Header -->
+                            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; text-align: center; flex-shrink: 0;">
+                                <h2 style="margin: 0; font-size: 22px;">📦 Confirm Inventory Receipt</h2>
+                                <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Review items before adding to inventory</p>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                                <!-- PO Info -->
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                                    <div style="padding: 12px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+                                        <div style="font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 4px;">PO Number</div>
+                                        <div style="font-weight: 700; font-size: 16px; color: #166534;">${po.Invoice_Number || po.PO_ID}</div>
+                                    </div>
+                                    <div style="padding: 12px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                        <div style="font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Supplier</div>
+                                        <div style="font-weight: 600; font-size: 14px; color: #1e40af;">${supplierName}</div>
+                                    </div>
+                                </div>
+                                
+                                ${receiveDate ? `
+                                <div style="padding: 10px; background: #fefce8; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 18px;">📅</span>
+                                    <div>
+                                        <div style="font-size: 11px; color: #666;">Receive Date</div>
+                                        <div style="font-weight: 600;">${new Date(receiveDate).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${supplierInvoice ? `
+                                <div style="padding: 10px; background: #f5f3ff; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 18px;">🧾</span>
+                                    <div>
+                                        <div style="font-size: 11px; color: #666;">Supplier Invoice #</div>
+                                        <div style="font-weight: 600;">${supplierInvoice}</div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                <!-- Items Header -->
+                                <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px; color: #374151; display: flex; align-items: center; gap: 8px;">
+                                    <span style="background: #10b981; color: white; padding: 4px 10px; border-radius: 20px; font-size: 13px;">${items.length} Item${items.length !== 1 ? 's' : ''}</span>
+                                    <span>to receive into inventory:</span>
+                                </div>
+                                
+                                <!-- Items List -->
+                                <div style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
+                                    ${itemsHtml}
+                                </div>
+                                
+                                <!-- Totals -->
+                                <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 15px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
+                                        <div>
+                                            <div style="font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Cases</div>
+                                            <div style="font-size: 24px; font-weight: bold; color: #166534;">${totalCases}</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Total Units</div>
+                                            <div style="font-size: 24px; font-weight: bold; color: #166534;">${totalUnits.toLocaleString()}</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Value</div>
+                                            <div style="font-size: 24px; font-weight: bold; color: #166534;">${formatMoney(totalValue)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Warning -->
+                                <div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                                    <div style="font-size: 13px; color: #92400e;">
+                                        <strong>⚠️ Important:</strong> This will add these items to your inventory. Make sure quantities match the physical shipment.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Footer -->
+                            <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0;">
+                                <button id="receivePreviewCancel" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                                <button id="receivePreviewConfirm" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✅ Receive into Inventory</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add modal to page
+                const modalContainer = document.createElement('div');
+                modalContainer.innerHTML = modalHtml;
+                document.body.appendChild(modalContainer.firstElementChild);
+                
+                const modal = document.getElementById('receivePreviewModal');
+                
+                // Button handlers
+                modal.querySelector('#receivePreviewCancel').onclick = () => {
+                    modal.remove();
+                    resolve(false);
+                };
+                
+                modal.querySelector('#receivePreviewConfirm').onclick = () => {
+                    modal.remove();
+                    resolve(true);
+                };
+            });
         }
         
         function removeReceiveLine(index) {
@@ -31741,6 +32220,291 @@
                     saveBtn.textContent = '💾 Save PO';
                 }
             }
+        }
+        
+        // Show preview for Create PO (Placing an Order)
+        function showCreatePOPreview() {
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const poDate = document.getElementById('createPODate').value;
+            const expectedDeliveryDate = document.getElementById('createPOExpectedDate').value;
+            const notes = document.getElementById('createPONotes')?.value || '';
+            
+            if (!supplierId || !poDate) {
+                showWarning('Please select supplier and date');
+                return;
+            }
+            
+            if (!expectedDeliveryDate) {
+                showWarning('Please select an Expected Delivery Date');
+                return;
+            }
+            
+            // Get supplier info
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
+            if (!supplier) {
+                showError('Supplier not found');
+                return;
+            }
+            
+            // Get line items
+            const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
+            const lineItems = [];
+            
+            rows.forEach(row => {
+                const itemId = row.querySelector('.createpo-item').value;
+                const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
+                const costDiv = row.querySelector('.createpo-cost');
+                const totalUnitsDiv = row.querySelector('.createpo-totalunits');
+                
+                const costText = costDiv.textContent.replace('$', '');
+                const cost = costText === '-' ? 0 : parseFloat(costText);
+                
+                const totalUnitsText = totalUnitsDiv.textContent;
+                const totalUnits = totalUnitsText === '-' ? 0 : parseFloat(totalUnitsText);
+                
+                if (itemId && qty > 0) {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    if (item) {
+                        lineItems.push({
+                            sku: item.SKU || item.Item_ID,
+                            description: item.Item_Description,
+                            qty: qty,
+                            totalUnits: totalUnits,
+                            cost: cost,
+                            total: qty * cost
+                        });
+                    }
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                showWarning('Please add at least one line item');
+                return;
+            }
+            
+            const total = lineItems.reduce((sum, item) => sum + item.total, 0);
+            
+            // Build preview HTML
+            let itemsHtml = lineItems.map(item => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <div style="flex: 2;">
+                        <div style="font-weight: 600; font-size: 13px;">${item.description}</div>
+                        <div style="font-size: 11px; color: #666;">SKU: ${item.sku}</div>
+                    </div>
+                    <div style="text-align: center; flex: 0.5;">
+                        <div style="font-weight: 600;">${item.qty}</div>
+                        <div style="font-size: 10px; color: #666;">cases</div>
+                    </div>
+                    <div style="text-align: right; flex: 0.7;">
+                        <div style="font-weight: 600; color: #22c55e;">$${item.total.toFixed(2)}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            const html = `
+                <div style="margin-bottom: 15px; padding: 12px; background: #f0f9ff; border-radius: 10px; border-left: 4px solid #2563eb;">
+                    <div style="font-weight: 600; font-size: 14px; color: #1e40af;">📦 ${supplier.Supplier_Name}</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">${supplier.City || ''}, ${supplier.State || ''}</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Order Date</div>
+                        <div style="font-weight: 600;">${new Date(poDate).toLocaleDateString()}</div>
+                    </div>
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #666; text-transform: uppercase;">Expected Delivery</div>
+                        <div style="font-weight: 600;">${new Date(expectedDeliveryDate).toLocaleDateString()}</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">📋 ${lineItems.length} Item(s)</div>
+                    ${itemsHtml}
+                </div>
+                
+                <div style="padding: 15px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 10px; text-align: center;">
+                    <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 4px;">Total Order</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #15803d;">$${total.toFixed(2)}</div>
+                </div>
+                
+                ${notes ? `<div style="margin-top: 15px; padding: 10px; background: #fffbeb; border-radius: 8px; font-size: 13px;"><strong>Notes:</strong> ${notes}</div>` : ''}
+            `;
+            
+            document.getElementById('createPOPreviewContent').innerHTML = html;
+            document.getElementById('createPOPreviewModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeCreatePOPreview() {
+            document.getElementById('createPOPreviewModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        
+        // Show printable PO preview (for Print PO No Save button)
+        function showPrintablePOPreview() {
+            const supplierId = document.getElementById('createPOSupplier').value;
+            const poDate = document.getElementById('createPODate').value;
+            
+            if (!supplierId || !poDate) {
+                showWarning('Please select supplier and date');
+                return;
+            }
+            
+            // Get line items
+            const rows = document.querySelectorAll('#createPOLineItems .line-item-row');
+            const lineItems = [];
+            
+            rows.forEach(row => {
+                const itemId = row.querySelector('.createpo-item').value;
+                const qty = parseFloat(row.querySelector('.createpo-qty').value) || 0;
+                const costDiv = row.querySelector('.createpo-cost');
+                const unitsDiv = row.querySelector('.createpo-units');
+                const totalUnitsDiv = row.querySelector('.createpo-totalunits');
+                
+                const costText = costDiv.textContent.replace('$', '');
+                const cost = costText === '-' ? 0 : parseFloat(costText);
+                const unitsText = unitsDiv.textContent;
+                const unitsPerCase = unitsText === '-' ? 0 : parseFloat(unitsText);
+                const totalUnitsText = totalUnitsDiv.textContent;
+                const totalUnits = totalUnitsText === '-' ? 0 : parseFloat(totalUnitsText);
+                
+                if (itemId && qty > 0) {
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    if (item) {
+                        lineItems.push({
+                            sku: item.SKU || item.Item_ID,
+                            description: item.Item_Description,
+                            qty: qty,
+                            unitsPerCase: unitsPerCase,
+                            totalUnits: totalUnits,
+                            cost: cost,
+                            total: qty * cost
+                        });
+                    }
+                }
+            });
+            
+            if (lineItems.length === 0) {
+                showWarning('Please add at least one line item');
+                return;
+            }
+            
+            // Get supplier info
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId);
+            if (!supplier) {
+                showError('Supplier not found');
+                return;
+            }
+            
+            // Get invoice settings
+            const settings = getInvoiceSettings();
+            const themeColors = getThemeColors();
+            const total = lineItems.reduce((sum, item) => sum + item.total, 0);
+            
+            // Open print window with proper format (matching existing PO print format)
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showWarning('Please allow popups for this site');
+                return;
+            }
+            
+            let linesHtml = lineItems.map(item => `
+                <tr>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; font-size: 11pt;">${item.sku}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; font-size: 11pt;">${item.description}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-size: 11pt;">${item.qty}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-size: 11pt;">${item.unitsPerCase}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-weight: bold; font-size: 11pt;">${item.totalUnits}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11pt;">$${item.cost.toFixed(2)}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11pt;">$${item.total.toFixed(2)}</td>
+                </tr>
+            `).join('');
+            
+            const poHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Purchase Order - ${supplier.Supplier_Name}</title>
+    <style>
+        @media print {
+            @page { margin: 0.3in; }
+            body { margin: 0; }
+            .no-print { display: none !important; }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <button onclick="window.print()" style="padding: 12px 24px; background: ${themeColors.primary}; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-right: 10px;">🖨️ Print</button>
+        <button onclick="window.close()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">✖ Close</button>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid ${themeColors.primary}; padding-bottom: 20px;">
+        <h1 style="color: ${themeColors.primary}; margin: 0; font-size: 28pt;">PURCHASE ORDER</h1>
+        <p style="font-size: 14pt; margin: 8px 0;">${settings.companyName}</p>
+        <p style="margin: 5px 0; color: #666;">Date: ${new Date(poDate).toLocaleDateString()}</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+        <div style="flex: 1;">
+            <h3 style="color: ${themeColors.primary}; margin: 0 0 8px 0; font-size: 12pt;">From:</h3>
+            <p style="margin: 3px 0; font-weight: bold;">${settings.companyName}</p>
+            <p style="margin: 3px 0;">Phone: ${settings.phone}</p>
+            <p style="margin: 3px 0;">Email: ${settings.email}</p>
+        </div>
+        <div style="flex: 1; text-align: right;">
+            <h3 style="color: ${themeColors.primary}; margin: 0 0 8px 0; font-size: 12pt;">To:</h3>
+            <p style="margin: 3px 0; font-weight: bold;">${supplier.Supplier_Name}</p>
+            <p style="margin: 3px 0;">${supplier.Address || ''}</p>
+            <p style="margin: 3px 0;">${supplier.City || ''}, ${supplier.State || ''} ${supplier.ZIP || ''}</p>
+            <p style="margin: 3px 0;">Phone: ${supplier.Phone || ''}</p>
+            <p style="margin: 3px 0;">Email: ${supplier.Email || ''}</p>
+        </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+            <tr style="background: ${themeColors.primary}; color: white;">
+                <th style="padding: 12px; text-align: left; font-size: 11pt;">SKU</th>
+                <th style="padding: 12px; text-align: left; font-size: 11pt;">Description</th>
+                <th style="padding: 12px; text-align: center; font-size: 11pt;">Cases</th>
+                <th style="padding: 12px; text-align: center; font-size: 11pt;">Units/Case</th>
+                <th style="padding: 12px; text-align: center; font-size: 11pt;">Total Units</th>
+                <th style="padding: 12px; text-align: right; font-size: 11pt;">Cost/Case</th>
+                <th style="padding: 12px; text-align: right; font-size: 11pt;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${linesHtml}
+        </tbody>
+    </table>
+
+    <div style="text-align: right; margin-top: 20px;">
+        <table style="margin-left: auto;">
+            <tr>
+                <td style="padding: 8px 20px; font-weight: bold; font-size: 14pt;">TOTAL:</td>
+                <td style="padding: 8px 20px; font-weight: bold; font-size: 18pt; color: ${themeColors.primary};">$${total.toFixed(2)}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 10pt;">
+        <p>Thank you for your business!</p>
+    </div>
+</body>
+</html>`;
+
+            printWindow.document.write(poHTML);
+            printWindow.document.close();
         }
         
         function generatePrintablePO() {
@@ -32322,7 +33086,7 @@ NOTE: Please print the attached PO document for full details.`;
             renderItemPickerList();
             
             // Show modal
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
         }
         
@@ -32405,7 +33169,7 @@ NOTE: Please print the attached PO document for full details.`;
             renderItemPickerList();
             
             // Show modal
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
         }
         
@@ -33829,6 +34593,28 @@ NOTE: Please print the attached PO document for full details.`;
         </div>
     </div>
 
+    <!-- CREATE PO PREVIEW MODAL (For Outgoing/Placing Orders) -->
+    <div id="createPOPreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100000; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+        <div style="max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 20px; text-align: center;">
+                <h2 style="margin: 0; font-size: 24px;">📝 Confirm Purchase Order</h2>
+                <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Review before placing order</p>
+            </div>
+            
+            <!-- Content -->
+            <div id="createPOPreviewContent" style="padding: 20px;">
+                <!-- Populated by JavaScript -->
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                <button onclick="closeCreatePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button onclick="closeCreatePOPreview(); saveOutgoingPO();" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Place Order</button>
+            </div>
+        </div>
+    </div>
+
     <!-- UNIVERSAL STATUS PICKER MODAL -->
     <!-- UNIVERSAL STATUS PICKER MODAL -->
     <div id="statusPickerModal" class="item-picker-overlay" style="display: none;">
@@ -33909,6 +34695,46 @@ NOTE: Please print the attached PO document for full details.`;
             /* Center styled modals */
             align-items: center;
             justify-content: center;
+        }
+        
+        /* CRITICAL: Keep ALL picker modals hidden by default - only show when specific class is added */
+        #statusPickerModal,
+        #quickAddItemModal,
+        #styledConfirmModal,
+        #styledAlertModal,
+        #itemPickerModal,
+        #supplierPickerModal,
+        #customerPickerModal,
+        #reasonPickerModal,
+        #uomPickerModal,
+        #themePickerModal,
+        #poPickerModal,
+        #invoicePickerModal,
+        #poTypePickerModal {
+            display: none !important;
+        }
+        
+        /* Only show when explicit open class is added */
+        #statusPickerModal.modal-open,
+        #quickAddItemModal.modal-open,
+        #styledConfirmModal.modal-open,
+        #styledAlertModal.modal-open,
+        #itemPickerModal.modal-open,
+        #supplierPickerModal.modal-open,
+        #customerPickerModal.modal-open,
+        #reasonPickerModal.modal-open,
+        #uomPickerModal.modal-open,
+        #themePickerModal.modal-open,
+        #poPickerModal.modal-open,
+        #invoicePickerModal.modal-open,
+        #poTypePickerModal.modal-open {
+            display: flex !important;
+        }
+        
+        /* Legacy class support */
+        #statusPickerModal.status-picker-open,
+        #quickAddItemModal.quick-add-open {
+            display: flex !important;
         }
         
         /* When overlay contains a styled-modal-container AND is shown, use flex centering */
@@ -34675,7 +35501,7 @@ NOTE: Please print the attached PO document for full details.`;
             renderItemPickerList();
             
             // Show modal
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
             // Focus search after a moment - only on desktop
@@ -34684,7 +35510,7 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function closeItemPicker() {
-            document.getElementById('itemPickerModal').style.display = 'none';
+            document.getElementById('itemPickerModal').classList.remove('modal-open');
             window.itemPickerCallback = null;
             window.multiSelectMode = false;
             window.multiSelectedItems = new Set();
@@ -34845,7 +35671,7 @@ NOTE: Please print the attached PO document for full details.`;
             supplierPickerIsFilter = true;
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
@@ -34893,7 +35719,7 @@ NOTE: Please print the attached PO document for full details.`;
             renderItemPickerList();
             
             // Show modal
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
@@ -34915,7 +35741,7 @@ NOTE: Please print the attached PO document for full details.`;
             window.customerPickerIsFilter = true;
             document.getElementById('customerPickerSearch').value = '';
             renderCustomerPickerList();
-            document.getElementById('customerPickerModal').style.display = 'block';
+            document.getElementById('customerPickerModal').classList.add('modal-open');
             document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
@@ -34948,7 +35774,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('customerPickerSearch').value = '';
             renderCustomerPickerList();
-            document.getElementById('customerPickerModal').style.display = 'block';
+            document.getElementById('customerPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('customerPickerSearch');
@@ -34975,7 +35801,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('supplierPickerSearch');
@@ -35003,7 +35829,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('supplierPickerSearch');
@@ -35188,12 +36014,12 @@ NOTE: Please print the attached PO document for full details.`;
             document.getElementById('styledAlertHeader').style.background = colors[type] || colors.info;
             document.getElementById('styledAlertTitle').textContent = `${icons[type] || icons.info} ${title}`;
             document.getElementById('styledAlertContent').innerHTML = message.replace(/\n/g, '<br>');
-            document.getElementById('styledAlertModal').style.display = 'flex';
+            document.getElementById('styledAlertModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
         }
         
         function closeStyledAlert() {
-            document.getElementById('styledAlertModal').style.display = 'none';
+            document.getElementById('styledAlertModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             if (window.alertResolve) {
                 window.alertResolve();
@@ -35238,13 +36064,13 @@ NOTE: Please print the attached PO document for full details.`;
                 document.getElementById('styledConfirmOkBtn').textContent = confirmText;
                 document.getElementById('styledConfirmOkBtn').style.background = headerColor;
                 document.getElementById('styledConfirmCancelBtn').textContent = cancelText;
-                document.getElementById('styledConfirmModal').style.display = 'flex';
+                document.getElementById('styledConfirmModal').classList.add('modal-open');
                 document.body.style.overflow = 'hidden';
             });
         }
         
         function resolveConfirm(result) {
-            document.getElementById('styledConfirmModal').style.display = 'none';
+            document.getElementById('styledConfirmModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             if (confirmResolve) {
                 confirmResolve(result);
@@ -35401,7 +36227,7 @@ NOTE: Please print the attached PO document for full details.`;
                     'Notes': { new: newData.notes || '', old: originalOrder.Notes || '' }
                 } : {
                     'Status': { new: newData.status, old: originalOrder.Status },
-                    'Order Date': { new: newData.soDate, old: originalOrder.SO_Date?.split('T')[0] },
+                    'Order Date': { new: newData.soDate, old: (originalOrder.Sale_Date || originalOrder.SO_Date)?.split('T')[0] },
                     'Due Date': { new: newData.dueDate, old: originalOrder.Due_Date?.split('T')[0] },
                     'Amount Paid': { new: formatMoney(newData.amountPaid || 0), old: formatMoney(originalOrder.Amount_Paid || 0) },
                     'Notes': { new: newData.notes || '', old: originalOrder.Notes || '' }
@@ -35659,10 +36485,6 @@ NOTE: Please print the attached PO document for full details.`;
         };
         
         function openStatusPicker(type, targetId, callback) {
-            // DEBUG: Log who is calling this function
-            console.log('🚨 openStatusPicker called!', { type, targetId });
-            console.trace('Stack trace for openStatusPicker call');
-            
             document.activeElement?.blur();
             
             const config = STATUS_OPTIONS[type];
@@ -35700,7 +36522,9 @@ NOTE: Please print the attached PO document for full details.`;
             });
             
             document.getElementById('statusPickerList').innerHTML = html;
-            document.getElementById('statusPickerModal').style.display = 'flex';
+            // Use class-based display to avoid CSS specificity issues
+            const modal = document.getElementById('statusPickerModal');
+            modal.classList.add('status-picker-open');
             document.body.style.overflow = 'hidden';
         }
         
@@ -35720,7 +36544,8 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function closeStatusPicker() {
-            document.getElementById('statusPickerModal').style.display = 'none';
+            const modal = document.getElementById('statusPickerModal');
+            modal.classList.remove('status-picker-open');
             document.body.style.overflow = '';
             statusPickerCallback = null;
             statusPickerTargetId = null;
@@ -35797,7 +36622,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             
@@ -35830,7 +36655,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('supplierPickerSearch');
@@ -35856,7 +36681,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerListForPricing();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('supplierPickerSearch');
@@ -35867,13 +36692,13 @@ NOTE: Please print the attached PO document for full details.`;
             supplierPickerCallback = selectElement;
             document.getElementById('supplierPickerSearch').value = '';
             renderSupplierPickerList();
-            document.getElementById('supplierPickerModal').style.display = 'block';
+            document.getElementById('supplierPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             focusOnDesktop('supplierPickerSearch');
         }
         
         function closeSupplierPicker() {
-            document.getElementById('supplierPickerModal').style.display = 'none';
+            document.getElementById('supplierPickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             supplierPickerCallback = null;
@@ -36331,7 +37156,7 @@ NOTE: Please print the attached PO document for full details.`;
             customerPickerCallback = selectElement;
             document.getElementById('customerPickerSearch').value = '';
             renderCustomerPickerList();
-            document.getElementById('customerPickerModal').style.display = 'block';
+            document.getElementById('customerPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             focusOnDesktop('customerPickerSearch');
         }
@@ -36358,7 +37183,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('customerPickerSearch').value = '';
             renderCustomerPickerList();
-            document.getElementById('customerPickerModal').style.display = 'block';
+            document.getElementById('customerPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             
@@ -36371,7 +37196,7 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function closeCustomerPicker() {
-            document.getElementById('customerPickerModal').style.display = 'none';
+            document.getElementById('customerPickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             customerPickerCallback = null;
@@ -36415,7 +37240,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
             
-            document.getElementById('reasonPickerModal').style.display = 'block';
+            document.getElementById('reasonPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
         }
         
@@ -36429,7 +37254,7 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function closeReasonPicker() {
-            document.getElementById('reasonPickerModal').style.display = 'none';
+            document.getElementById('reasonPickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
@@ -36472,7 +37297,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             listContainer.innerHTML = html;
             
-            document.getElementById('uomPickerModal').style.display = 'block';
+            document.getElementById('uomPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
         }
         
@@ -36485,7 +37310,7 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function closeUOMPicker() {
-            document.getElementById('uomPickerModal').style.display = 'none';
+            document.getElementById('uomPickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             uomPickerTargetId = null;
@@ -36979,13 +37804,13 @@ NOTE: Please print the attached PO document for full details.`;
         function openThemePicker() {
             document.activeElement?.blur();
             renderThemePickerList();
-            document.getElementById('themePickerModal').style.display = 'block';
+            document.getElementById('themePickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             focusOnDesktop('themePickerSearch');
         }
         
         function closeThemePicker() {
-            document.getElementById('themePickerModal').style.display = 'none';
+            document.getElementById('themePickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
@@ -37366,7 +38191,7 @@ NOTE: Please print the attached PO document for full details.`;
             poPickerCallback = inputElement;
             document.getElementById('poPickerSearch').value = '';
             renderPOPickerList();
-            document.getElementById('poPickerModal').style.display = 'block';
+            document.getElementById('poPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             focusOnDesktop('poPickerSearch');
         }
@@ -37389,7 +38214,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('poPickerSearch').value = '';
             renderPOPickerList();
-            document.getElementById('poPickerModal').style.display = 'block';
+            document.getElementById('poPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('poPickerSearch');
@@ -37451,7 +38276,7 @@ NOTE: Please print the attached PO document for full details.`;
         }
         
         function closePOPicker() {
-            document.getElementById('poPickerModal').style.display = 'none';
+            document.getElementById('poPickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
             poPickerCallback = null;
@@ -37584,7 +38409,7 @@ NOTE: Please print the attached PO document for full details.`;
             invoicePickerCallback = inputElement;
             document.getElementById('invoicePickerSearch').value = '';
             renderInvoicePickerList();
-            document.getElementById('invoicePickerModal').style.display = 'block';
+            document.getElementById('invoicePickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             focusOnDesktop('invoicePickerSearch');
         }
@@ -37607,7 +38432,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('invoicePickerSearch').value = '';
             renderInvoicePickerList();
-            document.getElementById('invoicePickerModal').style.display = 'block';
+            document.getElementById('invoicePickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('invoicePickerSearch');
@@ -37682,7 +38507,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('itemPickerSearch').value = '';
             renderItemPickerListForReport();
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             focusOnDesktop('itemPickerSearch');
         }
@@ -37706,7 +38531,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('itemPickerSearch').value = '';
             renderItemPickerListForInventory();
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('itemPickerSearch');
@@ -37731,14 +38556,14 @@ NOTE: Please print the attached PO document for full details.`;
             
             document.getElementById('itemPickerSearch').value = '';
             renderItemPickerListForPricing();
-            document.getElementById('itemPickerModal').style.display = 'block';
+            document.getElementById('itemPickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             focusOnDesktop('itemPickerSearch');
         }
         
         function closeItemPickerForReport() {
-            document.getElementById('itemPickerModal').style.display = 'none';
+            document.getElementById('itemPickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
@@ -38281,12 +39106,12 @@ NOTE: Please print the attached PO document for full details.`;
         // ==================== PO TYPE PICKER (for reports) ====================
         
         function openPOTypePicker() {
-            document.getElementById('poTypePickerModal').style.display = 'block';
+            document.getElementById('poTypePickerModal').classList.add('modal-open');
             document.body.style.overflow = 'hidden';
         }
         
         function closePOTypePicker() {
-            document.getElementById('poTypePickerModal').style.display = 'none';
+            document.getElementById('poTypePickerModal').classList.remove('modal-open');
             document.body.style.overflow = '';
             document.body.classList.remove('modal-open'); // FIX: Remove modal-open class
         }
@@ -38384,21 +39209,21 @@ NOTE: Please print the attached PO document for full details.`;
                 // Blur any focused elements
                 document.activeElement?.blur();
                 
-                // CRITICAL: Close any open status picker on resize to prevent ghost popups
-                const statusPicker = document.getElementById('statusPickerModal');
-                if (statusPicker && statusPicker.style.display !== 'none') {
-                    statusPicker.style.display = 'none';
-                }
+                // CRITICAL: Close ALL picker modals on resize to prevent ghost popups
+                const allPickerModals = document.querySelectorAll('.item-picker-overlay');
+                allPickerModals.forEach(modal => {
+                    modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
+                });
                 
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(lockViewport, 150);
             });
             
-            // CRITICAL: Ensure statusPickerModal is hidden on page load
-            const statusPicker = document.getElementById('statusPickerModal');
-            if (statusPicker) {
-                statusPicker.style.display = 'none';
-            }
+            // CRITICAL: Ensure ALL picker modals are hidden on page load
+            const allPickerModals = document.querySelectorAll('.item-picker-overlay');
+            allPickerModals.forEach(modal => {
+                modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
+            });
         });
         
         // ==================== HOW-TO GUIDE FUNCTIONS ====================
