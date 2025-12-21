@@ -5,11 +5,10 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Saturday, December 21, 2025
-         VERSION: V16_106
+         VERSION: V16_112_DEBUG
          =====================================================
-         CHANGES IN THIS VERSION:
-         - Removed mobile bottom navigation bar (kept breaking)
-         - Fixed iOS select picker appearing on orientation change
+         DEBUG VERSION - Added console.trace to openStatusPicker
+         to find out what's triggering it
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -587,6 +586,26 @@
             /* Mobile nav bar - REMOVED - kept breaking and floating */
             #mobileNavBar {
                 display: none !important;
+            }
+            
+            /* CRITICAL FIX: When body overflow is hidden (modal open), 
+               completely hide all selects outside of modals to prevent iOS touch issues */
+            body[style*="overflow: hidden"] select:not(.modal-select),
+            body[style*="overflow:hidden"] select:not(.modal-select) {
+                visibility: hidden !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                left: -99999px !important;
+                opacity: 0 !important;
+            }
+            
+            /* Ensure selects in hidden forms are completely inaccessible */
+            [style*="display: none"] select,
+            [style*="display:none"] select {
+                pointer-events: none !important;
+                visibility: hidden !important;
+                position: absolute !important;
+                left: -99999px !important;
             }
         }
         
@@ -8275,6 +8294,13 @@
             document.getElementById('quickItemReorder').value = '50';
             document.getElementById('quickItemQty').value = '0';
             
+            // CRITICAL: Disable ALL select elements on the page to prevent iOS touch issues
+            document.querySelectorAll('select').forEach(sel => {
+                sel.dataset.wasDisabled = sel.disabled ? 'true' : 'false';
+                sel.disabled = true;
+                sel.style.pointerEvents = 'none';
+            });
+            
             // Show the modal
             document.getElementById('quickAddItemModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
@@ -8288,6 +8314,14 @@
         function closeQuickAddItem() {
             document.getElementById('quickAddItemModal').style.display = 'none';
             document.body.style.overflow = '';
+            
+            // Re-enable selects that weren't originally disabled
+            document.querySelectorAll('select').forEach(sel => {
+                if (sel.dataset.wasDisabled !== 'true') {
+                    sel.disabled = false;
+                    sel.style.pointerEvents = '';
+                }
+            });
         }
         
         async function saveQuickAddItem(e) {
@@ -8911,6 +8945,24 @@
             );
             document.body.classList.add('theme-' + savedTheme);
             
+            // CRITICAL: Disable all select elements in hidden forms to prevent iOS touch issues
+            // This fixes the "Select Status" popup appearing randomly on mobile
+            document.querySelectorAll('[style*="display: none"] select, [style*="display:none"] select').forEach(sel => {
+                sel.disabled = true;
+                sel.style.pointerEvents = 'none';
+            });
+            
+            // Also specifically disable selects in edit forms that start hidden
+            ['editItemForm', 'editSupplierForm', 'editCustomerForm', 'addSupplierForm', 'addCustomerForm', 'addItemForm'].forEach(formId => {
+                const form = document.getElementById(formId);
+                if (form && form.style.display === 'none') {
+                    form.querySelectorAll('select').forEach(sel => {
+                        sel.disabled = true;
+                        sel.style.pointerEvents = 'none';
+                    });
+                }
+            });
+            
             // Show splash screen if enabled
             showSplashScreen();
             
@@ -9055,20 +9107,21 @@
                 });
                 
                 const url = `${API_URL}?${params.toString()}`;
-                console.log(`API Call: ${action}`, { url: url.substring(0, 100) + '...' });
+                console.log(`API Call: ${action}`, data);
                 
-                // Add timeout to prevent indefinite hangs (30 seconds)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
-                
-                const response = await fetch(url, {
+                // Simple fetch without AbortController to avoid DataCloneError on some browsers
+                // Use Promise.race for timeout instead
+                const fetchPromise = fetch(url, {
                     method: 'GET',
-                    mode: 'cors',
-                    signal: controller.signal
+                    mode: 'cors'
                 });
                 
-                clearTimeout(timeoutId);
-
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Request timed out')), 30000);
+                });
+                
+                const response = await Promise.race([fetchPromise, timeoutPromise]);
+                
                 console.log(`API Response status: ${response.status} ${response.statusText}`);
                 
                 if (!response.ok) {
@@ -9087,7 +9140,7 @@
                     return { status: 'error', message: 'Invalid JSON response from server' };
                 }
             } catch (error) {
-                if (error.name === 'AbortError') {
+                if (error.message === 'Request timed out') {
                     console.error('API Timeout:', action);
                     return { status: 'error', message: 'Request timed out - please try again' };
                 }
@@ -9662,10 +9715,17 @@
             // Calculate unit cost for display
             calculateEditUnitCost();
             
-            document.getElementById('editItemForm').style.display = 'block';
+            const editForm = document.getElementById('editItemForm');
+            editForm.style.display = 'block';
+            
+            // Re-enable select elements that were disabled
+            editForm.querySelectorAll('select').forEach(sel => {
+                sel.disabled = false;
+                sel.style.pointerEvents = '';
+            });
             
             // Scroll to the edit form
-            document.getElementById('editItemForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         function goToAdjustInventory() {
@@ -9709,8 +9769,15 @@
         }
         
         function hideEditItemForm() {
-            document.getElementById('editItemForm').style.display = 'none';
+            const form = document.getElementById('editItemForm');
+            form.style.display = 'none';
             document.querySelector('#editItemForm form').reset();
+            
+            // Disable select elements to prevent iOS touch issues
+            form.querySelectorAll('select').forEach(sel => {
+                sel.disabled = true;
+                sel.style.pointerEvents = 'none';
+            });
             
             // Return to previous tab if we came from Reports
             if (returnToTab === 'reports') {
@@ -33763,7 +33830,8 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- UNIVERSAL STATUS PICKER MODAL -->
-    <div id="statusPickerModal" class="item-picker-overlay">
+    <!-- UNIVERSAL STATUS PICKER MODAL -->
+    <div id="statusPickerModal" class="item-picker-overlay" style="display: none;">
         <div class="item-picker-container styled-modal-container" style="max-width: 450px; width: 90%; height: auto; max-height: 90vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header">
                 <h3 id="statusPickerTitle">📋 Select Status</h3>
@@ -35591,6 +35659,10 @@ NOTE: Please print the attached PO document for full details.`;
         };
         
         function openStatusPicker(type, targetId, callback) {
+            // DEBUG: Log who is calling this function
+            console.log('🚨 openStatusPicker called!', { type, targetId });
+            console.trace('Stack trace for openStatusPicker call');
+            
             document.activeElement?.blur();
             
             const config = STATUS_OPTIONS[type];
@@ -38282,30 +38354,51 @@ NOTE: Please print the attached PO document for full details.`;
                 }
             }
             
-            // Handle orientation change
+            // Handle orientation change - prevent iOS select picker popup
             window.addEventListener('orientationchange', function() {
-                // Blur any focused select elements to prevent iOS picker popup
-                if (document.activeElement && document.activeElement.tagName === 'SELECT') {
-                    document.activeElement.blur();
-                }
-                // Also blur any focused input to be safe
-                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                    document.activeElement.blur();
-                }
+                // Immediately blur ALL form elements
+                document.activeElement?.blur();
+                
+                // Temporarily disable all select elements to prevent iOS picker
+                const allSelects = document.querySelectorAll('select');
+                allSelects.forEach(sel => {
+                    sel.style.pointerEvents = 'none';
+                    sel.setAttribute('disabled', 'disabled');
+                });
+                
+                // Re-enable after orientation change completes
+                setTimeout(function() {
+                    allSelects.forEach(sel => {
+                        sel.style.pointerEvents = '';
+                        sel.removeAttribute('disabled');
+                    });
+                }, 500);
+                
                 setTimeout(lockViewport, 100);
-                setTimeout(lockViewport, 300); // Double-check after animation
+                setTimeout(lockViewport, 300);
             });
             
             // Handle resize (also triggered by orientation on some devices)
             let resizeTimeout;
             window.addEventListener('resize', function() {
-                // Blur any focused select elements to prevent iOS picker popup
-                if (document.activeElement && document.activeElement.tagName === 'SELECT') {
-                    document.activeElement.blur();
+                // Blur any focused elements
+                document.activeElement?.blur();
+                
+                // CRITICAL: Close any open status picker on resize to prevent ghost popups
+                const statusPicker = document.getElementById('statusPickerModal');
+                if (statusPicker && statusPicker.style.display !== 'none') {
+                    statusPicker.style.display = 'none';
                 }
+                
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(lockViewport, 150);
             });
+            
+            // CRITICAL: Ensure statusPickerModal is hidden on page load
+            const statusPicker = document.getElementById('statusPickerModal');
+            if (statusPicker) {
+                statusPicker.style.display = 'none';
+            }
         });
         
         // ==================== HOW-TO GUIDE FUNCTIONS ====================
