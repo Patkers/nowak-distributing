@@ -27721,9 +27721,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 
                 if (result && result.status === 'success') {
                     closeBulkPOModal();
-                    loadItems();
-                    if (typeof renderCriticalActionItems === 'function') {
-                        renderCriticalActionItems();
+                    // Refresh items and clear report cache to get fresh data
+                    await loadItems(true);  // Force refresh
+                    reportDataCacheTime = null;  // Clear report cache so it reloads
+                    // Refresh the Action Dashboard report if it's currently displayed
+                    if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                        // Re-run the report to refresh the data
+                        setTimeout(() => executeReport(), 100);
                     }
                     showSuccessModal('Purchase Order Created!', `PO #: ${poNumber}\n\n${lineItems.length} item${lineItems.length > 1 ? 's' : ''} ordered.`);
                 } else {
@@ -27913,13 +27917,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 
                 if (result && result.status === 'success') {
                     closeQuickPOModal();
-                    // Refresh items to update On Order quantities
-                    loadItems();
+                    // Refresh items and clear report cache to get fresh data
+                    await loadItems(true);  // Force refresh
+                    reportDataCacheTime = null;  // Clear report cache so it reloads
                     // Refresh purchases list so new PO appears
                     loadPurchases(true);
-                    // Refresh the critical report if still open
-                    if (typeof renderCriticalActionItems === 'function') {
-                        renderCriticalActionItems();
+                    // Refresh the Action Dashboard report if it's currently displayed
+                    if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                        // Re-run the report to refresh the data
+                        setTimeout(() => executeReport(), 100);
                     }
                     showSuccessModal('Purchase Order Created!', `PO #: ${poNumber}\n\nItems marked as "On Order".`);
                 } else {
