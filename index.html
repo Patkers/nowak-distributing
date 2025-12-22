@@ -2807,6 +2807,28 @@
             color: #667eea;
         }
         
+        /* Maximized modal - full screen */
+        #reportSetupModalInner.modal-maximized {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            resize: none !important;
+        }
+        
+        #reportSetupModalInner.modal-maximized::after {
+            display: none;
+        }
+        
         /* ==================== IN-PLACE PRINT STYLES ==================== */
         @media print {
             /* ========================================
@@ -13057,7 +13079,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (modal) {
                 const size = {
                     width: modal.offsetWidth,
-                    height: modal.offsetHeight
+                    height: modal.offsetHeight,
+                    maximized: modal.classList.contains('modal-maximized')
                 };
                 localStorage.setItem('modalSize_' + modalId, JSON.stringify(size));
             }
@@ -13070,7 +13093,16 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const saved = localStorage.getItem('modalSize_' + modalId);
                     if (saved) {
                         const size = JSON.parse(saved);
-                        if (size.width && size.height) {
+                        
+                        // If it was maximized, restore to maximized state
+                        if (size.maximized && modalId === 'reportSetupModalInner') {
+                            // Trigger maximize
+                            setTimeout(() => {
+                                if (!reportModalMaximized) {
+                                    toggleReportModalSize();
+                                }
+                            }, 50);
+                        } else if (size.width && size.height) {
                             modal.style.width = size.width + 'px';
                             modal.style.height = size.height + 'px';
                             modal.style.maxWidth = 'none'; // Override max-width to allow custom size
@@ -18183,7 +18215,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 modal.classList.remove('modal-maximized');
                 modal.classList.remove('modal-dragged');
                 modalOuter.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: block; padding: 20px; box-sizing: border-box; overflow-y: auto;';
-                modal.style.cssText = 'background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto; position: relative;';
+                modal.style.cssText = 'background: white; width: 100%; max-width: 1400px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto; position: relative;';
                 
                 icon.textContent = '⬜';
                 reportModalMaximized = false;
@@ -18196,6 +18228,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 icon.textContent = '❐';
                 reportModalMaximized = true;
             }
+            
+            // Save the maximized state
+            saveModalSize('reportSetupModalInner');
         }
         
         // Sort report table by column
@@ -35816,7 +35851,7 @@ NOTE: Please print the attached PO document for full details.`;
 
     <!-- Report Setup Modal -->
     <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto;">
-        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 900px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto;">
+        <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 1400px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto;">
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
                 <div style="display: flex; gap: 8px; align-items: center;">
