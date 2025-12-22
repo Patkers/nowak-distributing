@@ -6664,8 +6664,14 @@
                 <button class="guide-tab" onclick="showGuideSection('orders')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
                     📝 Orders
                 </button>
+                <button class="guide-tab" onclick="showGuideSection('reports')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    📊 Reports
+                </button>
                 <button class="guide-tab" onclick="showGuideSection('advanced')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
                     ⚡ Advanced
+                </button>
+                <button class="guide-tab" onclick="showGuideSection('updates')" style="background: none; border: none; padding: 15px 20px; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">
+                    🆕 Updates
                 </button>
             </div>
 
@@ -6899,17 +6905,6 @@
                         <li>Apply new price if desired</li>
                     </ol>
 
-                    <h4>📈 Reports</h4>
-                    <p><strong>Available Reports:</strong></p>
-                    <ul style="line-height: 1.8;">
-                        <li><strong>Action Dashboard:</strong> Items needing immediate attention</li>
-                        <li><strong>Sales Dashboard:</strong> Revenue, orders, and payment tracking</li>
-                        <li><strong>Pick List:</strong> Items to gather for delivery routes</li>
-                        <li><strong>Dormant Customers:</strong> Win back customers who haven't ordered recently</li>
-                        <li><strong>Accounts Receivable:</strong> Outstanding customer balances</li>
-                        <li><strong>Inventory Reports:</strong> Stock levels, turnover, valuation</li>
-                    </ul>
-
                     <h4>💾 Backup & Data Access</h4>
                     <ol style="line-height: 1.8;">
                         <li>Go to <strong>Settings</strong> tab</li>
@@ -6927,6 +6922,126 @@
 
                     <div style="background: #d1f2eb; border-left: 4px solid #28a745; padding: 15px; margin-top: 20px; border-radius: 4px;">
                         <strong>✅ Pro Tip:</strong> Regularly backup your Google Sheet and use the bulk import for major updates!
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="guide-reports" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">📊 Reports Guide</h3>
+
+                    <div style="background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                        <strong>Report Window Features:</strong><br>
+                        • Drag the header to move the window<br>
+                        • Drag the corner to resize<br>
+                        • Click ⬜ to maximize/restore<br>
+                        • Window size is remembered between sessions
+                    </div>
+
+                    <h4>🚨 Action Dashboard</h4>
+                    <p>Your daily command center showing items needing immediate attention:</p>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Low Stock - Needs Reorder:</strong> Items below reorder point (considering pending POs)</li>
+                        <li><strong>Overdue POs:</strong> Purchase orders past their expected delivery date</li>
+                        <li><strong>Unpaid Invoices:</strong> Customer payments that are past due</li>
+                        <li><strong>Qty On Order Sync:</strong> Detects mismatches between item quantities and pending POs</li>
+                        <li><strong>Quick Order:</strong> Create POs directly from the dashboard with one click</li>
+                        <li><strong>Bulk Reorder:</strong> Select multiple items and create one PO</li>
+                    </ul>
+
+                    <h4>📦 Inventory Pick List</h4>
+                    <p>Generate picking lists for deliveries:</p>
+                    <ul style="line-height: 1.8;">
+                        <li>Organized by <strong>Customer → Item → Invoices</strong></li>
+                        <li>Shows <strong>cumulative inventory</strong> tracking across customers</li>
+                        <li><strong>Stock</strong> column: inventory before this customer's pick</li>
+                        <li><strong>After</strong> column: inventory after pick (running total)</li>
+                        <li>Alerts when stock goes negative</li>
+                        <li>Print-optimized layout</li>
+                    </ul>
+
+                    <h4>📈 Sales Reports</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Sales Dashboard:</strong> Revenue, cost, profit, and margin KPIs</li>
+                        <li><strong>Sales by Customer:</strong> Customer performance with addresses</li>
+                        <li><strong>Sales Order Detail:</strong> All invoices with customer addresses</li>
+                        <li><strong>Sales by Product:</strong> Product performance analysis</li>
+                        <li><strong>Product Dashboard:</strong> Top sellers and margins</li>
+                        <li><strong>Customer Dashboard:</strong> Individual customer deep-dive</li>
+                    </ul>
+
+                    <h4>📊 Inventory Reports</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Inventory List:</strong> Current stock levels</li>
+                        <li><strong>Gross Margin:</strong> Margin analysis with Top 10/Bottom 5 charts</li>
+                        <li><strong>Inventory Turnover:</strong> How fast items sell</li>
+                        <li><strong>Inventory Valuation:</strong> Total inventory value</li>
+                    </ul>
+
+                    <h4>💰 Financial Reports</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Accounts Receivable:</strong> What customers owe you</li>
+                        <li><strong>Accounts Payable:</strong> What you owe suppliers</li>
+                        <li><strong>Profit & Loss:</strong> Simplified P&L statement</li>
+                        <li><strong>Cash Flow Summary:</strong> Money in vs money out</li>
+                    </ul>
+                </div>
+
+                <!-- Updates Section -->
+                <div id="guide-updates" class="guide-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-top: 0;">🆕 Recent Updates (December 2025)</h3>
+
+                    <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                        <strong>Version 16.120</strong> - Latest Release
+                    </div>
+
+                    <h4>🖥️ Report Window Improvements</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Resizable windows:</strong> Drag the corner to resize report modals</li>
+                        <li><strong>Maximize button:</strong> Click ⬜ to go full-screen</li>
+                        <li><strong>Persistent sizing:</strong> Window size saved between sessions</li>
+                        <li><strong>Larger default:</strong> Reports now open at 1400px wide (up from 900px)</li>
+                    </ul>
+
+                    <h4>📦 Pick List Enhancements</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Cumulative inventory tracking:</strong> "After" column shows running total across all customers</li>
+                        <li><strong>Reorganized layout:</strong> Customer → Item → Invoices structure</li>
+                        <li><strong>Print optimization:</strong> Better alignment and formatting for printing</li>
+                    </ul>
+
+                    <h4>🚨 Action Dashboard Improvements</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Auto-refresh:</strong> Dashboard refreshes after creating POs</li>
+                        <li><strong>Fixed Qty Sync:</strong> Accurate detection of on-order mismatches</li>
+                        <li><strong>Faster loading:</strong> Uses cached data for better performance</li>
+                    </ul>
+
+                    <h4>📊 Report Enhancements</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Sales by Customer:</strong> Now includes customer address column</li>
+                        <li><strong>Sales Order Detail:</strong> Now includes customer address column</li>
+                        <li><strong>Gross Margin charts:</strong> Fixed to show actual margin percentages</li>
+                        <li><strong>Sales Dashboard:</strong> Cost and Profit now show cents (not rounded)</li>
+                    </ul>
+
+                    <h4>🐛 Bug Fixes</h4>
+                    <ul style="line-height: 1.8;">
+                        <li>Fixed chart data labels showing incorrect percentages</li>
+                        <li>Fixed Pick List empty report issues</li>
+                        <li>Fixed print layout alignment problems</li>
+                        <li>Fixed modal animation looping</li>
+                        <li>Fixed chart label cutoff issues</li>
+                    </ul>
+
+                    <h4>📱 Mobile Improvements</h4>
+                    <ul style="line-height: 1.8;">
+                        <li>Better touch sensitivity for scrolling</li>
+                        <li>Improved modal positioning on mobile</li>
+                        <li>Fixed date picker compatibility with Safari</li>
+                    </ul>
+
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                        <strong>💡 Tip:</strong> If you encounter any issues, try the <strong>Diagnostic Tool</strong> in Settings to test your connection!
                     </div>
                 </div>
 
@@ -11923,7 +12038,7 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="purchasesDataTable"><thead><tr>';
-            html += '<th>Invoice #</th><th>Supplier</th><th>PO Date</th><th>Status</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Actions</th>';
+            html += '<th>Invoice #</th><th>Supplier</th><th>PO Date</th><th>Total</th><th>Paid</th><th>Due Date</th><th>Paid Date</th><th>Payment</th><th>Status</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             orders.forEach(po => {
@@ -11951,12 +12066,12 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
                     <td>${getSupplierName(po.Supplier_ID)}</td>
                     <td data-sort="${sortableDate}">${formatDateSafe(po.PO_Date)}</td>
-                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : po.Status === 'In Transit' ? '#17a2b8' : po.Status === 'Void' || po.Status === 'Cancelled' || po.Status === 'Voided' ? '#dc3545' : po.Status === 'Partial' ? '#fd7e14' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status === 'Void' || po.Status === 'Voided' ? '⛔ VOID' : po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status === 'Ordered' ? '📝 Ordered' : po.Status === 'In Transit' ? '🚚 In Transit' : po.Status === 'Partial' ? '📦 Partial' : po.Status === 'Received' ? '✅ Received' : po.Status || 'Received'}</span></td>
                     <td>${formatMoney(total)}</td>
                     <td>${formatMoney(amountPaid)}</td>
                     <td data-sort="${sortableDueDate}">${dueDate}</td>
                     <td data-sort="${po.Payment_Date ? new Date(po.Payment_Date).toISOString().split('T')[0] : ''}">${po.Payment_Date ? formatDateSafe(po.Payment_Date) : '-'}</td>
                     <td>${paymentBadge}</td>
+                    <td><span style="background: ${po.Status === 'Ordered' ? '#ffc107' : po.Status === 'In Transit' ? '#17a2b8' : po.Status === 'Void' || po.Status === 'Cancelled' || po.Status === 'Voided' ? '#dc3545' : po.Status === 'Partial' ? '#fd7e14' : '#28a745'}; color: ${po.Status === 'Ordered' ? 'black' : 'white'}; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${po.Status === 'Void' || po.Status === 'Voided' ? '⛔ VOID' : po.Status === 'Cancelled' ? '❌ CANCELLED' : po.Status === 'Ordered' ? '📝 Ordered' : po.Status === 'In Transit' ? '🚚 In Transit' : po.Status === 'Partial' ? '📦 Partial' : po.Status === 'Received' ? '✅ Received' : po.Status || 'Received'}</span></td>
                     <td onclick="event.stopPropagation();">
                         ${po.Status === 'Ordered' || po.Status === 'Partial' || po.Status === 'In Transit' ? `<button class="btn-small" onclick="receiveOutgoingPO('${po.PO_ID}')" style="background: #28a745; color: white;">📦 Receive</button>` : ''}
                         ${po.Status === 'Void' || po.Status === 'Cancelled' || po.Status === 'Voided' ? `<button class="btn-small" onclick="duplicatePO('${po.PO_ID}')" style="background: #17a2b8; color: white;">📋 Copy to New PO</button>` : ''}
@@ -22021,9 +22136,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         📅 Generated: ${new Date().toLocaleString()}
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button class="pl-print-btn" onclick="window.print()">
-                            🖨️ Print Manifest
-                        </button>
                         <button class="pl-print-btn" style="background: #7c3aed;" onclick="printShippingLabels()">
                             🏷️ Print Labels
                         </button>
@@ -22348,7 +22460,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             return html;
         }
         
-        // Print Shipping Labels Function
+        // Print Shipping Labels Function - Aggregated by Customer + Item
         function printShippingLabels() {
             const labelData = window.pickListLabelData || [];
             
@@ -22357,11 +22469,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
-            // Generate all labels - one per item case
-            const allLabels = [];
+            // First, aggregate by customer + item (not per invoice)
+            const aggregated = {};
             const today = new Date().toLocaleDateString();
             
             labelData.forEach(order => {
+                const customerKey = order.customerName;
+                
                 // Build full address
                 const addressParts = [];
                 if (order.customerAddress) addressParts.push(order.customerAddress);
@@ -22369,51 +22483,88 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 if (cityStateZip) addressParts.push(cityStateZip);
                 const fullAddress = addressParts.join('<br>');
                 
-                // Create labels for each item's cases
+                if (!aggregated[customerKey]) {
+                    aggregated[customerKey] = {
+                        customerName: order.customerName,
+                        customerAddress: fullAddress,
+                        items: {}
+                    };
+                }
+                
+                // Aggregate items for this customer
                 order.lines.forEach(line => {
-                    const unitsPerPkg = line.unitsPerPkg || 1;
-                    const totalQty = line.qty;
+                    const itemKey = line.sku || line.description;
+                    if (!aggregated[customerKey].items[itemKey]) {
+                        aggregated[customerKey].items[itemKey] = {
+                            description: line.description,
+                            sku: line.sku || '-',
+                            unitsPerPkg: line.unitsPerPkg || 1,
+                            uom: line.uom || 'case',
+                            totalQty: 0,
+                            invoices: []
+                        };
+                    }
+                    aggregated[customerKey].items[itemKey].totalQty += line.qty;
+                    aggregated[customerKey].items[itemKey].invoices.push(order.invoiceNum);
+                });
+            });
+            
+            // Now generate labels based on aggregated cases
+            const allLabels = [];
+            
+            Object.values(aggregated).forEach(customer => {
+                Object.values(customer.items).forEach(item => {
+                    const unitsPerPkg = item.unitsPerPkg;
+                    const totalQty = item.totalQty;
                     const fullCases = Math.floor(totalQty / unitsPerPkg);
                     const partialUnits = totalQty % unitsPerPkg;
                     const totalLabels = fullCases + (partialUnits > 0 ? 1 : 0);
                     
-                    // Create labels for full cases
+                    // Invoice reference (combine if multiple)
+                    const invoiceRef = [...new Set(item.invoices)].join(', ');
+                    
+                    // Create labels for full cases only
                     for (let box = 1; box <= fullCases; box++) {
                         allLabels.push({
-                            customerName: order.customerName,
-                            customerAddress: fullAddress,
-                            invoiceNum: order.invoiceNum,
-                            date: order.date?.toLocaleDateString() || today,
-                            itemName: line.description,
-                            itemSku: line.sku || '-',
+                            customerName: customer.customerName,
+                            customerAddress: customer.customerAddress,
+                            invoiceNum: invoiceRef,
+                            date: today,
+                            itemName: item.description,
+                            itemSku: item.sku,
                             itemQty: unitsPerPkg,
                             isPartial: false,
                             unitsPerPkg: unitsPerPkg,
                             boxNum: box,
                             totalBoxesForItem: totalLabels,
-                            uom: line.uom || 'case'
+                            uom: item.uom
                         });
                     }
                     
                     // Create label for partial case if any
                     if (partialUnits > 0) {
                         allLabels.push({
-                            customerName: order.customerName,
-                            customerAddress: fullAddress,
-                            invoiceNum: order.invoiceNum,
-                            date: order.date?.toLocaleDateString() || today,
-                            itemName: line.description,
-                            itemSku: line.sku || '-',
+                            customerName: customer.customerName,
+                            customerAddress: customer.customerAddress,
+                            invoiceNum: invoiceRef,
+                            date: today,
+                            itemName: item.description,
+                            itemSku: item.sku,
                             itemQty: partialUnits,
                             isPartial: true,
                             unitsPerPkg: unitsPerPkg,
                             boxNum: fullCases + 1,
                             totalBoxesForItem: totalLabels,
-                            uom: line.uom || 'case'
+                            uom: item.uom
                         });
                     }
                 });
             });
+            
+            if (allLabels.length === 0) {
+                showWarning('No cases to print labels for! All orders are partial units only.');
+                return;
+            }
             
             // Create print window
             const printWindow = window.open('', '_blank');
@@ -22569,10 +22720,46 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                             .label { break-inside: avoid; }
+                            .print-controls { display: none !important; }
+                        }
+                        .print-controls {
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            display: flex;
+                            gap: 10px;
+                            z-index: 1000;
+                        }
+                        .print-controls button {
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            border: none;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        }
+                        .print-controls .print-btn {
+                            background: #28a745;
+                            color: white;
+                        }
+                        .print-controls .print-btn:hover {
+                            background: #218838;
+                        }
+                        .print-controls .cancel-btn {
+                            background: #dc3545;
+                            color: white;
+                        }
+                        .print-controls .cancel-btn:hover {
+                            background: #c82333;
                         }
                     </style>
                 </head>
                 <body>
+                    <div class="print-controls">
+                        <button class="print-btn" onclick="window.print()">🖨️ Print Labels</button>
+                        <button class="cancel-btn" onclick="window.close()">✖ Cancel</button>
+                    </div>
                     <div class="label-grid">
                         ${allLabels.map(label => `
                             <div class="label">
@@ -22616,11 +22803,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             </div>
                         `).join('')}
                     </div>
-                    <scr` + `ipt>
-                        window.onload = function() {
-                            window.print();
-                        }
-                    <` + `/script>
                 </body>
                 </html>
             `);
@@ -25507,24 +25689,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function generateActionDashboard() {
-            // Fetch all necessary data
-            const [salesResult, purchasesResult, itemsResult, customersResult, suppliersResult] = await Promise.all([
-                apiCall('getSalesOrders'),
-                apiCall('getPurchaseOrders'),
-                apiCall('getItems'),
-                apiCall('getCustomers'),
-                apiCall('getSuppliers')
-            ]);
+            // Load all report data (uses cache if available)
+            await loadReportData();
             
-            if (!salesResult?.data || !purchasesResult?.data || !itemsResult?.data || !customersResult?.data || !suppliersResult?.data) {
+            // Use cached data
+            const sales = cachedSalesOrders.filter(s => s.Status !== 'Voided');
+            const purchases = cachedPurchaseOrders.filter(p => p.Status !== 'Voided');
+            const items = cachedItems;
+            const customers = cachedCustomers;
+            const suppliers = cachedSuppliers;
+            
+            if (!sales.length && !purchases.length && !items.length) {
                 throw new Error('Failed to load data');
             }
-            
-            const sales = salesResult.data.filter(s => s.Status !== 'Voided');
-            const purchases = purchasesResult.data.filter(p => p.Status !== 'Voided');
-            const items = itemsResult.data;
-            const customers = customersResult.data;
-            const suppliers = suppliersResult.data;
             
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -25792,34 +25969,27 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 }
             });
             
-            // Fetch PO line items to calculate pending quantities
-            let poLinesResult = null;
-            try {
-                poLinesResult = await apiCall('getPurchaseOrderLines');
-            } catch(e) {
-                console.log('Could not fetch PO lines for sync check');
-            }
+            // Use cached PO lines (loaded by loadReportData)
+            const poLines = cachedPurchaseLines || [];
             
             const expectedOnOrderByItem = {};
-            if (poLinesResult?.data) {
-                poLinesResult.data.forEach(line => {
-                    if (!pendingPOIds.has(line.PO_ID)) return;
-                    
-                    const itemId = (line.Item_ID || '').trim();
-                    const qtyOrdered = parseInt(line.Quantity) || 0;
-                    const qtyReceived = parseInt(line.Qty_Received) || 0;
-                    const pendingCases = Math.max(0, qtyOrdered - qtyReceived);
-                    
-                    if (!itemId || pendingCases <= 0) return;
-                    
-                    // Find units per package for this item
-                    const item = items.find(i => i.Item_ID === itemId);
-                    const unitsPerPkg = parseInt(item?.Units_Per_Package) || 1;
-                    const pendingUnits = pendingCases * unitsPerPkg;
-                    
-                    expectedOnOrderByItem[itemId] = (expectedOnOrderByItem[itemId] || 0) + pendingUnits;
-                });
-            }
+            poLines.forEach(line => {
+                if (!pendingPOIds.has(line.PO_ID)) return;
+                
+                const itemId = (line.Item_ID || '').trim();
+                const qtyOrdered = parseInt(line.Quantity) || 0;
+                const qtyReceived = parseInt(line.Qty_Received) || 0;
+                const pendingCases = Math.max(0, qtyOrdered - qtyReceived);
+                
+                if (!itemId || pendingCases <= 0) return;
+                
+                // Find units per package for this item
+                const item = items.find(i => i.Item_ID === itemId);
+                const unitsPerPkg = parseInt(item?.Units_Per_Package) || 1;
+                const pendingUnits = pendingCases * unitsPerPkg;
+                
+                expectedOnOrderByItem[itemId] = (expectedOnOrderByItem[itemId] || 0) + pendingUnits;
+            });
             
             // Find items where Qty_On_Order doesn't match expected
             const qtyOnOrderMismatch = items.filter(item => {
