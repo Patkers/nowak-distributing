@@ -4315,44 +4315,52 @@
                         
                         <!-- Wrapper for horizontal scroll on mobile -->
                         <div id="poLineItemsWrapper" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; position: relative;">
-                            <div id="poLineItemsInner" style="min-width: 700px; width: 100%; max-width: 100%;">
+                            <div id="poLineItemsInner" style="min-width: 780px; width: 100%; max-width: 100%;">
                                 <!-- Header Row -->
-                                <div id="poLineItemsHeader" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 14px;">
+                                <div id="poLineItemsHeader" style="display: grid; grid-template-columns: 2.2fr 0.6fr 0.9fr 0.5fr 0.7fr 0.8fr 0.8fr 45px; gap: 6px; padding: 12px; background: var(--primary, #667eea); color: white; font-weight: bold; border-radius: 8px 8px 0 0; font-size: 13px;">
                                     <div>Item</div>
-                                    <div style="text-align: center;">Cases</div>
-                                    <div style="text-align: center;">Units/Case</div>
-                                    <div style="text-align: center;">Total Units</div>
-                                    <div style="text-align: center;">Catalog Cost</div>
-                                    <div style="text-align: right;">Line Total</div>
-                                    <div style="text-align: center;">Del</div>
+                                    <div style="text-align: center;">Eaches?</div>
+                                    <div style="text-align: center;">Qty</div>
+                                    <div style="text-align: center;">Pkg</div>
+                                    <div style="text-align: center;">Units</div>
+                                    <div style="text-align: center;">Cost</div>
+                                    <div style="text-align: right;">Total</div>
+                                    <div style="text-align: center;"></div>
                                 </div>
                                 
                                 <!-- Line Items Container -->
                                 <div class="line-items-container" id="poLineItems" style="border: 2px solid var(--primary, #667eea); border-top: none; border-radius: 0 0 8px 8px; padding: 10px; background: #fafafa;">
-                                    <div class="line-item-row" style="display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;">
+                                    <div class="line-item-row" data-eaches="false" style="display: grid; grid-template-columns: 2.2fr 0.6fr 0.9fr 0.5fr 0.7fr 0.8fr 0.8fr 45px; gap: 8px; margin-bottom: 10px; align-items: end;">
                                         <div>
                                             <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px;">📦 Item</label>
                                             <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid #ccc; border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: #f5f5f5;" required disabled>
                                                 <option value="">⚠️ Select Supplier First</option>
                                             </select>
                                         </div>
+                                        <div style="text-align: center;">
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 11px;">🔢</label>
+                                            <label class="eaches-toggle" style="display: inline-flex; align-items: center; justify-content: center; cursor: not-allowed; background: #ccc; padding: 12px; border-radius: 8px; min-height: 52px; width: 100%; box-sizing: border-box; opacity: 0.5;" title="Select supplier first">
+                                                <input type="checkbox" class="po-eaches" style="width: 20px; height: 20px; cursor: not-allowed;" onchange="togglePOEaches(this)" disabled>
+                                            </label>
+                                        </div>
                                         <div>
-                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; text-align: center;">📦 Cases</label>
-                                            <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required disabled>
+                                            <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 11px; text-align: center;" class="po-qty-label">📦 Cases</label>
+                                            <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 8px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; background: #fffde7; min-height: 52px;" required disabled>
                                         </div>
                                         <div style="margin-top: 26px;">
-                                            <div class="po-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
+                                            <div class="po-units" style="text-align: center; font-size: 13px; color: #666; padding: 6px;">-</div>
                                         </div>
                                         <div style="margin-top: 26px;">
-                                            <div class="po-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                                            <div class="po-totalunits" style="text-align: center; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
                                         </div>
                                         <div style="margin-top: 26px;">
-                                            <div class="po-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">-</div>
+                                            <div class="po-cost-display" style="text-align: center; font-size: 12px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 8px; border-radius: 6px;">-</div>
+                                            <input type="number" class="po-cost-input" step="0.01" min="0" style="display: none; width: 100%; padding: 8px 4px; border: 2px solid #9333ea; border-radius: 6px; text-align: center; font-size: 14px; font-weight: bold; background: #f3e8ff; color: #9333ea;" placeholder="0.00">
                                         </div>
                                         <div style="margin-top: 26px;">
-                                            <div class="po-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                                            <div class="po-linetotal" style="text-align: right; font-size: 12px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 8px; border-radius: 6px;">$0.00</div>
                                         </div>
-                                        <button type="button" class="remove-btn btn-danger" onclick="removeLineItem(this); calculatePOTotal();" style="width: 100%; padding: 10px; font-size: 14px; margin-top: 26px;">🗑️</button>
+                                        <button type="button" class="remove-btn btn-danger" onclick="removeLineItem(this); calculatePOTotal();" style="width: 100%; padding: 8px; font-size: 14px; margin-top: 26px;">🗑️</button>
                                     </div>
                                 </div>
                             </div>
@@ -10580,6 +10588,17 @@
                 document.querySelectorAll('#poLineItems .po-qty').forEach(input => {
                     input.disabled = true;
                 });
+                // Disable eaches checkboxes
+                document.querySelectorAll('#poLineItems .po-eaches').forEach(checkbox => {
+                    checkbox.disabled = true;
+                    const label = checkbox.closest('.eaches-toggle');
+                    if (label) {
+                        label.style.cursor = 'not-allowed';
+                        label.style.background = '#ccc';
+                        label.style.opacity = '0.5';
+                        label.title = 'Select supplier first';
+                    }
+                });
                 return;
             }
             
@@ -10610,6 +10629,18 @@
             document.querySelectorAll('#poLineItems .po-qty').forEach(input => {
                 input.disabled = false;
             });
+            
+            // Enable eaches checkboxes
+            document.querySelectorAll('#poLineItems .po-eaches').forEach(checkbox => {
+                checkbox.disabled = false;
+                const label = checkbox.closest('.eaches-toggle');
+                if (label) {
+                    label.style.cursor = 'pointer';
+                    label.style.background = '#e0e0e0';
+                    label.style.opacity = '1';
+                    label.title = 'Toggle to buy individual units instead of cases';
+                }
+            });
         }
 
         function addPOLineItem() {
@@ -10626,7 +10657,8 @@
             
             const newRow = document.createElement('div');
             newRow.className = 'line-item-row';
-            newRow.style.cssText = 'display: grid; grid-template-columns: 2.5fr 1fr 0.6fr 0.8fr 0.8fr 0.8fr 50px; gap: 8px; margin-bottom: 10px; align-items: end;';
+            newRow.dataset.eaches = 'false';
+            newRow.style.cssText = 'display: grid; grid-template-columns: 2.2fr 0.6fr 0.9fr 0.5fr 0.7fr 0.8fr 0.8fr 45px; gap: 8px; margin-bottom: 10px; align-items: end;';
             newRow.innerHTML = `
                 <div>
                     <select class="po-item" style="width: 100%; padding: 14px 12px; border: 2px solid var(--primary, #667eea); border-radius: 8px; font-size: 15px; min-height: 52px; font-weight: 500; background: white;" required>
@@ -10634,22 +10666,29 @@
                         ${supplierItems.map(item => `<option value="${item.Item_ID}" data-units="${item.Units_Per_Package || 1}" data-cost="${item.Package_Cost || 0}" data-uom="${item.Purchase_UOM || 'Case'}">${item.Item_Description}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 10px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 20px; font-weight: bold; background: #fffde7; min-height: 52px;" required>
+                <div style="text-align: center;">
+                    <label class="eaches-toggle" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: #e0e0e0; padding: 12px; border-radius: 8px; min-height: 52px; width: 100%; box-sizing: border-box;" title="Toggle to buy individual units instead of cases">
+                        <input type="checkbox" class="po-eaches" style="width: 20px; height: 20px; cursor: pointer;">
+                    </label>
                 </div>
                 <div>
-                    <div class="po-units" style="text-align: center; font-size: 14px; color: #666; padding: 6px;">-</div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 11px; text-align: center;" class="po-qty-label">📦 Cases</label>
+                    <input type="number" class="po-qty" placeholder="0" min="1" style="width: 100%; padding: 14px 8px; border: 2px solid #f9a825; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; background: #fffde7; min-height: 52px;" required>
                 </div>
                 <div>
-                    <div class="po-totalunits" style="text-align: center; font-size: 16px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
+                    <div class="po-units" style="text-align: center; font-size: 13px; color: #666; padding: 6px;">-</div>
                 </div>
                 <div>
-                    <div class="po-cost" style="text-align: center; font-size: 14px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 10px; border-radius: 6px;">-</div>
+                    <div class="po-totalunits" style="text-align: center; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); padding: 6px;">-</div>
                 </div>
                 <div>
-                    <div class="po-linetotal" style="text-align: right; font-size: 14px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 10px; border-radius: 6px;">$0.00</div>
+                    <div class="po-cost-display" style="text-align: center; font-size: 12px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 8px; border-radius: 6px;">-</div>
+                    <input type="number" class="po-cost-input" step="0.01" min="0" style="display: none; width: 100%; padding: 8px 4px; border: 2px solid #9333ea; border-radius: 6px; text-align: center; font-size: 14px; font-weight: bold; background: #f3e8ff; color: #9333ea;" placeholder="0.00">
                 </div>
-                <button type="button" class="remove-btn btn-danger" style="width: 100%; padding: 10px; font-size: 14px;">🗑️</button>
+                <div>
+                    <div class="po-linetotal" style="text-align: right; font-size: 12px; font-weight: bold; color: var(--primary, #667eea); background: var(--primary-light, #E3F2FD); padding: 8px; border-radius: 6px;">$0.00</div>
+                </div>
+                <button type="button" class="remove-btn btn-danger" style="width: 100%; padding: 8px; font-size: 14px;">🗑️</button>
             `;
             container.appendChild(newRow);
             
@@ -10657,6 +10696,8 @@
             const itemSelect = newRow.querySelector('.po-item');
             const qtyInput = newRow.querySelector('.po-qty');
             const removeBtn = newRow.querySelector('.remove-btn');
+            const eachesCheckbox = newRow.querySelector('.po-eaches');
+            const costInput = newRow.querySelector('.po-cost-input');
             
             itemSelect.addEventListener('change', function() {
                 updatePOItemInfo(this);
@@ -10671,6 +10712,14 @@
                 removeLineItem(this);
                 calculatePOTotal();
             });
+            
+            eachesCheckbox.addEventListener('change', function() {
+                togglePOEaches(this);
+            });
+            
+            costInput.addEventListener('input', function() {
+                updatePOEachesCost(this);
+            });
         }
         
         function updatePOItemInfo(selectElement) {
@@ -10680,14 +10729,37 @@
             
             const row = selectElement.closest('.line-item-row');
             const unitsDiv = row.querySelector('.po-units');
-            const costDiv = row.querySelector('.po-cost');
+            const costDisplay = row.querySelector('.po-cost-display');
+            const costInput = row.querySelector('.po-cost-input');
+            const isEaches = row.dataset.eaches === 'true';
+            
+            // Store base data on row for calculations
+            row.dataset.packageCost = cost;
+            row.dataset.unitsPerPackage = units;
+            
+            // Calculate unit cost for eaches mode
+            const unitCostEach = units > 0 ? cost / units : 0;
+            row.dataset.unitCostEach = unitCostEach;
+            row.dataset.unitCostEachOriginal = unitCostEach; // Store original for reference
             
             if (unitsDiv) unitsDiv.textContent = units;
-            if (costDiv) costDiv.textContent = cost > 0 ? formatMoney(cost) : '-';
             
-            // Store data on row for calculations
-            row.dataset.unitCost = cost;
-            row.dataset.unitsPerPackage = units;
+            // Show cost based on eaches mode
+            if (isEaches) {
+                row.dataset.unitCost = unitCostEach;
+                if (costDisplay) costDisplay.style.display = 'none';
+                if (costInput) {
+                    costInput.style.display = 'block';
+                    costInput.value = unitCostEach.toFixed(2);
+                }
+            } else {
+                row.dataset.unitCost = cost;
+                if (costDisplay) {
+                    costDisplay.style.display = 'block';
+                    costDisplay.innerHTML = cost > 0 ? `${formatMoney(cost)}<br><span style="font-size:10px;color:#666;">/case</span>` : '-';
+                }
+                if (costInput) costInput.style.display = 'none';
+            }
             
             // Update line display
             const qtyInput = row.querySelector('.po-qty');
@@ -10698,20 +10770,127 @@
             calculatePOTotal();
         }
         
+        // Handle cost override input in eaches mode
+        function updatePOEachesCost(costInput) {
+            const row = costInput.closest('.line-item-row');
+            const overrideCost = parseFloat(costInput.value) || 0;
+            
+            // Update the unit cost for eaches
+            row.dataset.unitCostEach = overrideCost;
+            row.dataset.unitCost = overrideCost;
+            
+            // Recalculate line total
+            const qtyInput = row.querySelector('.po-qty');
+            if (qtyInput) {
+                updatePOLineDisplay(qtyInput);
+            }
+            calculatePOTotal();
+        }
+        
         function updatePOLineDisplay(qtyInput) {
             const row = qtyInput.closest('.line-item-row');
             const qty = parseInt(qtyInput.value) || 0;
             const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || parseInt(row.querySelector('.po-units')?.textContent) || 1;
-            const unitCost = parseFloat(row.dataset.unitCost) || 0;
+            const isEaches = row.dataset.eaches === 'true';
             
-            const totalUnits = qty * unitsPerPackage;
-            const lineTotal = qty * unitCost;
+            let totalUnits, lineTotal;
+            
+            if (isEaches) {
+                // Eaches mode: qty is individual units, cost is per unit
+                const unitCostEach = parseFloat(row.dataset.unitCostEach) || 0;
+                totalUnits = qty; // qty is already in units
+                lineTotal = qty * unitCostEach;
+            } else {
+                // Cases mode: qty is cases, cost is per case
+                const packageCost = parseFloat(row.dataset.packageCost) || parseFloat(row.dataset.unitCost) || 0;
+                totalUnits = qty * unitsPerPackage;
+                lineTotal = qty * packageCost;
+            }
             
             const totalUnitsDiv = row.querySelector('.po-totalunits');
             const lineTotalDiv = row.querySelector('.po-linetotal');
+            const unitsDiv = row.querySelector('.po-units');
             
             if (totalUnitsDiv) totalUnitsDiv.textContent = qty > 0 ? totalUnits : '-';
             if (lineTotalDiv) lineTotalDiv.textContent = qty > 0 ? formatMoney(lineTotal) : '$0.00';
+            
+            // In eaches mode, show fractional cases as reference (e.g., "26 units = 1.08 cases")
+            if (isEaches && unitsDiv && qty > 0 && unitsPerPackage > 0) {
+                const fractionalCases = (qty / unitsPerPackage).toFixed(2);
+                unitsDiv.innerHTML = `${unitsPerPackage}<br><span style="font-size:10px;color:#9333ea;">(${fractionalCases} cases)</span>`;
+            } else if (unitsDiv) {
+                unitsDiv.textContent = unitsPerPackage || '-';
+            }
+        }
+        
+        function togglePOEaches(checkbox) {
+            const row = checkbox.closest('.line-item-row');
+            const isEaches = checkbox.checked;
+            row.dataset.eaches = isEaches ? 'true' : 'false';
+            
+            const qtyLabel = row.querySelector('.po-qty-label');
+            const qtyInput = row.querySelector('.po-qty');
+            const toggleLabel = checkbox.closest('.eaches-toggle');
+            const costDisplay = row.querySelector('.po-cost-display');
+            const costInput = row.querySelector('.po-cost-input');
+            const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || 1;
+            const packageCost = parseFloat(row.dataset.packageCost) || 0;
+            const unitCostEach = parseFloat(row.dataset.unitCostEach) || (unitsPerPackage > 0 ? packageCost / unitsPerPackage : 0);
+            
+            if (isEaches) {
+                // Switch to eaches mode
+                if (qtyLabel) qtyLabel.innerHTML = '🔢 Units';
+                if (qtyInput) {
+                    qtyInput.style.borderColor = '#9333ea';
+                    qtyInput.style.background = '#f3e8ff';
+                    qtyInput.placeholder = 'Units';
+                }
+                if (toggleLabel) {
+                    toggleLabel.style.background = '#9333ea';
+                    toggleLabel.innerHTML = '<input type="checkbox" class="po-eaches" style="width: 20px; height: 20px; cursor: pointer;" checked><span style="color:white;font-size:10px;margin-left:4px;">✓</span>';
+                    toggleLabel.querySelector('.po-eaches').addEventListener('change', function() { togglePOEaches(this); });
+                }
+                // Show editable cost input, hide display
+                if (costDisplay) costDisplay.style.display = 'none';
+                if (costInput) {
+                    costInput.style.display = 'block';
+                    costInput.value = unitCostEach.toFixed(2);
+                    // Add event listener if not already added
+                    if (!costInput.dataset.listenerAdded) {
+                        costInput.addEventListener('input', function() { updatePOEachesCost(this); });
+                        costInput.dataset.listenerAdded = 'true';
+                    }
+                }
+                row.dataset.unitCost = unitCostEach;
+            } else {
+                // Switch to cases mode
+                if (qtyLabel) qtyLabel.innerHTML = '📦 Cases';
+                if (qtyInput) {
+                    qtyInput.style.borderColor = '#f9a825';
+                    qtyInput.style.background = '#fffde7';
+                    qtyInput.placeholder = '0';
+                }
+                if (toggleLabel) {
+                    toggleLabel.style.background = '#e0e0e0';
+                    toggleLabel.innerHTML = '<input type="checkbox" class="po-eaches" style="width: 20px; height: 20px; cursor: pointer;">';
+                    toggleLabel.querySelector('.po-eaches').addEventListener('change', function() { togglePOEaches(this); });
+                }
+                // Show cost display, hide input
+                if (costDisplay) {
+                    costDisplay.style.display = 'block';
+                    if (packageCost > 0) {
+                        costDisplay.innerHTML = `${formatMoney(packageCost)}<br><span style="font-size:10px;color:#666;">/case</span>`;
+                    }
+                }
+                if (costInput) costInput.style.display = 'none';
+                row.dataset.unitCost = packageCost;
+            }
+            
+            // Recalculate line display
+            if (qtyInput && qtyInput.value) {
+                updatePOLineDisplay(qtyInput);
+            }
+            calculatePOTotal();
         }
         
         function showPOPreview() {
@@ -10745,7 +10924,9 @@
             
             // Get line items
             const lineItems = [];
-            let totalQty = 0;
+            let totalCases = 0;
+            let totalUnits = 0;
+            let looseUnits = 0;
             let totalAmount = 0;
             
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
@@ -10753,8 +10934,26 @@
                 const itemId = itemSelect?.value;
                 const itemName = itemSelect?.options[itemSelect.selectedIndex]?.text || '';
                 const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
-                const cost = parseFloat(row.dataset.unitCost) || 0;
-                const lineTotal = qty * cost;
+                const isEaches = row.dataset.eaches === 'true';
+                const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || 1;
+                
+                let cost, lineTotal, displayQty;
+                
+                if (isEaches) {
+                    // Eaches mode: qty is individual units
+                    cost = parseFloat(row.dataset.unitCostEach) || 0;
+                    lineTotal = qty * cost;
+                    displayQty = `${qty} units`;
+                    looseUnits += qty;
+                    totalUnits += qty;
+                } else {
+                    // Cases mode: qty is cases
+                    cost = parseFloat(row.dataset.packageCost) || parseFloat(row.dataset.unitCost) || 0;
+                    lineTotal = qty * cost;
+                    displayQty = `${qty}`;
+                    totalCases += qty;
+                    totalUnits += qty * unitsPerPackage;
+                }
                 
                 if (itemId && qty > 0) {
                     // Get item details from cache
@@ -10763,10 +10962,11 @@
                         name: item?.Item_Description || itemName,
                         sku: item?.SKU || '',
                         qty: qty,
+                        displayQty: displayQty,
                         cost: cost,
-                        total: lineTotal
+                        total: lineTotal,
+                        isEaches: isEaches
                     });
-                    totalQty += qty;
                     totalAmount += lineTotal;
                 }
             });
@@ -10804,16 +11004,27 @@
             `;
             
             lineItems.forEach((item, index) => {
+                const qtyStyle = item.isEaches ? 'color: #9333ea; font-weight: 600;' : '';
                 html += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${index % 2 === 0 ? '#f8fafc' : 'white'}; border-radius: 8px; margin-bottom: 8px;">
                         <div style="flex: 1;">
                             <div style="font-weight: 600; color: #333;">${item.name}</div>
-                            <div style="font-size: 12px; color: #666;">${item.sku} • ${item.qty} × ${formatMoney(item.cost)}</div>
+                            <div style="font-size: 12px; color: #666;">${item.sku} • <span style="${qtyStyle}">${item.displayQty}</span> × ${formatMoney(item.cost)}</div>
                         </div>
                         <div style="font-weight: 700; color: #7c3aed; font-size: 16px;">${formatMoney(item.total)}</div>
                     </div>
                 `;
             });
+            
+            // Build cases display
+            let casesDisplay = '';
+            if (totalCases > 0 && looseUnits > 0) {
+                casesDisplay = `${totalCases}<br><span style="font-size:11px;">+ ${looseUnits} loose</span>`;
+            } else if (looseUnits > 0) {
+                casesDisplay = `<span style="font-size:16px;">${looseUnits} loose</span>`;
+            } else {
+                casesDisplay = totalCases;
+            }
             
             html += `
                 </div>
@@ -10822,11 +11033,11 @@
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px;">
                     <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 10px; border: 2px solid #7c3aed;">
                         <div style="font-size: 12px; color: #5b21b6; margin-bottom: 4px; font-weight: 600;">Cases</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">${totalQty}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">${casesDisplay}</div>
                     </div>
                     <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 10px; border: 2px solid #f9a825;">
                         <div style="font-size: 12px; color: #ef6c00; margin-bottom: 4px; font-weight: 600;">Units</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #f9a825;">${lineItems.reduce((sum, item) => sum + (item.qty * (cachedItems.find(i => i.Item_Description === item.name)?.Units_Per_Package || 1)), 0)}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #f9a825;">${totalUnits}</div>
                     </div>
                     <div style="text-align: center; padding: 15px 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 10px; border: 2px solid #28a745;">
                         <div style="font-size: 12px; color: #2e7d32; margin-bottom: 4px; font-weight: 600;">Total</div>
@@ -10844,16 +11055,28 @@
             let totalCases = 0;
             let totalUnits = 0;
             let totalCost = 0;
+            let looseUnits = 0; // Track units bought as eaches
             
             document.querySelectorAll('#poLineItems .line-item-row').forEach(row => {
                 const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
-                const unitCost = parseFloat(row.dataset.unitCost) || 0;
                 const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || parseInt(row.querySelector('.po-units')?.textContent) || 1;
+                const isEaches = row.dataset.eaches === 'true';
                 
                 if (qty > 0) {
-                    totalCases += qty;
-                    totalUnits += qty * unitsPerPackage;
-                    totalCost += qty * unitCost;
+                    if (isEaches) {
+                        // Eaches mode: qty is units, cost is per unit
+                        const unitCostEach = parseFloat(row.dataset.unitCostEach) || 0;
+                        totalUnits += qty;
+                        looseUnits += qty;
+                        totalCost += qty * unitCostEach;
+                        // Don't add to cases - these are loose units
+                    } else {
+                        // Cases mode: qty is cases
+                        const packageCost = parseFloat(row.dataset.packageCost) || parseFloat(row.dataset.unitCost) || 0;
+                        totalCases += qty;
+                        totalUnits += qty * unitsPerPackage;
+                        totalCost += qty * packageCost;
+                    }
                 }
             });
             
@@ -10868,7 +11091,16 @@
             const unitsBox = document.getElementById('poTotalUnits');
             const costBox = document.getElementById('poTotalCost');
             
-            if (casesBox) casesBox.textContent = totalCases;
+            // Show cases + loose units if any
+            if (casesBox) {
+                if (looseUnits > 0 && totalCases > 0) {
+                    casesBox.innerHTML = `${totalCases}<br><span style="font-size:12px;color:#9333ea;">+ ${looseUnits} loose</span>`;
+                } else if (looseUnits > 0) {
+                    casesBox.innerHTML = `<span style="color:#9333ea;">${looseUnits} loose</span>`;
+                } else {
+                    casesBox.textContent = totalCases;
+                }
+            }
             if (unitsBox) unitsBox.textContent = totalUnits;
             if (costBox) costBox.textContent = formatMoney(totalCost);
         }
@@ -11122,14 +11354,31 @@
             document.querySelectorAll('#poLineItems .line-item-row').forEach((row, index) => {
                 const itemId = row.querySelector('.po-item').value;
                 const qty = parseInt(row.querySelector('.po-qty').value) || 0;
-                const cost = parseFloat(row.dataset.unitCost) || 0;
-                const lineTotal = qty * cost;
+                const isEaches = row.dataset.eaches === 'true';
+                const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || 1;
+                
+                let unitCost, lineTotal, quantityForBackend;
+                
+                if (isEaches) {
+                    // Eaches mode: qty is individual units, cost is per unit
+                    const unitCostEach = parseFloat(row.dataset.unitCostEach) || 0;
+                    unitCost = unitCostEach;
+                    lineTotal = qty * unitCostEach;
+                    quantityForBackend = qty; // Send actual units
+                } else {
+                    // Cases mode: qty is cases, cost is per case
+                    const packageCost = parseFloat(row.dataset.packageCost) || parseFloat(row.dataset.unitCost) || 0;
+                    unitCost = packageCost;
+                    lineTotal = qty * packageCost;
+                    quantityForBackend = qty; // Send cases
+                }
                 
                 if (itemId && qty > 0) {
                     lineItems.push({
                         itemId: itemId,
-                        quantity: qty,
-                        unitCost: cost
+                        quantity: quantityForBackend,
+                        unitCost: unitCost,
+                        isEaches: isEaches // Flag to tell backend this is unit quantity, not cases
                     });
                     calculatedTotal += lineTotal;
                 } else if (itemId || qty > 0) {
@@ -11253,11 +11502,21 @@
                 poType: 'INCOMING'
             };
 
-            // Set saving flag and disable button
+            // Set saving flag and disable ALL form buttons
             isSavingPO = true;
             const submitBtn = document.getElementById('savePOBtn');
+            const printBtn = document.querySelector('#addPurchaseForm button[onclick*="Print"]');
+            const clearBtn = document.querySelector('#addPurchaseForm button[onclick*="clearPurchaseForm"], #addPurchaseForm button[onclick*="Clear"]');
+            const cancelBtn = document.querySelector('#addPurchaseForm button[onclick*="hideAddPurchaseForm"]');
+            
+            const allPOFormBtns = [submitBtn, printBtn, clearBtn, cancelBtn].filter(b => b);
+            allPOFormBtns.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            });
+            
             if (submitBtn) {
-                submitBtn.disabled = true;
                 submitBtn.innerHTML = '⏳ Saving...';
             }
 
@@ -11272,10 +11531,14 @@
                     showStatus('purchasesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
             } finally {
-                // Always reset the flag and button
+                // Always reset the flag and ALL buttons
                 isSavingPO = false;
+                allPOFormBtns.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                });
                 if (submitBtn) {
-                    submitBtn.disabled = false;
                     submitBtn.innerHTML = '💾 Save Purchase Order';
                 }
             }
@@ -14519,11 +14782,21 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // LOCK - Prevent double submit
             isSavingSale = true;
             
-            // Find and disable submit button
+            // Find and disable ALL form buttons
             const submitBtn = document.querySelector('#addSaleForm button[type="submit"]');
             const originalText = submitBtn ? submitBtn.textContent : '';
+            const printBtn = document.querySelector('#addSaleForm button[onclick*="Print"]');
+            const clearBtn = document.querySelector('#addSaleForm button[onclick*="clearSaleForm"], #addSaleForm button[onclick*="Clear"]');
+            const cancelBtn = document.querySelector('#addSaleForm button[onclick*="hideAddSaleForm"]');
+            
+            const allSOFormBtns = [submitBtn, printBtn, clearBtn, cancelBtn].filter(b => b);
+            allSOFormBtns.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            });
+            
             if (submitBtn) {
-                submitBtn.disabled = true;
                 submitBtn.textContent = '⏳ Saving...';
             }
             
@@ -14532,22 +14805,27 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 const status = document.getElementById('soStatus').value;
                 const dueDate = document.getElementById('soDueDate').value;
                 
+                // Helper to re-enable buttons on validation failure
+                const reEnableSOFormBtns = () => {
+                    isSavingSale = false;
+                    allSOFormBtns.forEach(btn => {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                    });
+                    if (submitBtn) submitBtn.textContent = originalText;
+                };
+                
                 if (!status) {
                     showStatus('salesStatus', '❌ Please select a Status', 'error');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                    }
+                    reEnableSOFormBtns();
                     document.getElementById('soStatus').focus();
                     return;
                 }
                 
                 if (!dueDate) {
                     showStatus('salesStatus', '❌ Please select a Due Date', 'error');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                    }
+                    reEnableSOFormBtns();
                     document.getElementById('soDueDate').focus();
                     return;
                 }
@@ -14617,12 +14895,16 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     showStatus('salesStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
             } finally {
-                // UNLOCK
+                // UNLOCK and re-enable ALL buttons
                 isSavingSale = false;
                 
-                // Re-enable button
+                allSOFormBtns.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                });
+                
                 if (submitBtn) {
-                    submitBtn.disabled = false;
                     submitBtn.textContent = originalText || '💾 Save Sale';
                 }
             }
