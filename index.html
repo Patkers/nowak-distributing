@@ -14,7 +14,11 @@
            - Only content area scrolls, header stays put
          - FIXED: Cases to Load rounding error in Pick List
            - Now displays clean numbers (whole or 1 decimal)
-           - No more 0.11538461538461539 type displays
+         - IMPROVED: Pick List reorganized by Customer → Item → Invoices
+           - Shows item summary row with total qty to pick
+           - Lists each invoice underneath with fractional cases
+           - Better for picking: grab all of one item at once
+           - Stock/After columns show totals at item level
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -21357,6 +21361,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
         // ==================== INVENTORY PICK LIST ====================
         
         async function generatePickListModal() {
+            // Ensure cached data is loaded (includes sales lines)
+            await loadReportData();
+            
             const fromDate = reportFilters.fromDate ? parseLocalDate(reportFilters.fromDate) : null;
             let toDate = reportFilters.toDate ? parseLocalDate(reportFilters.toDate) : null;
             if (toDate) toDate.setHours(23, 59, 59, 999);
@@ -21365,22 +21372,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const deliveryStatus = reportFilters.deliveryStatus || 'needs-delivery';
             const salesInvoiceFilter = reportFilters.salesInvoice || '';
             
-            // Fetch all data
-            const [salesResult, customersResult, itemsResult, suppliersResult] = await Promise.all([
-                apiCall('getSalesOrders'),
-                apiCall('getCustomers'),
-                apiCall('getItems'),
-                apiCall('getSuppliers')
-            ]);
-            
-            if (!salesResult?.data || !itemsResult?.data) {
-                throw new Error('Failed to load data');
-            }
-            
-            const customers = customersResult?.data || [];
-            const items = itemsResult?.data || [];
-            const suppliers = suppliersResult?.data || [];
-            let sales = salesResult.data;
+            // Use cached data instead of fetching fresh
+            const customers = cachedCustomers || [];
+            const items = cachedItems || [];
+            const suppliers = cachedSuppliers || [];
+            let sales = cachedSalesOrders || [];
             
             // Exclude voided orders
             sales = sales.filter(so => so.Status !== 'Voided' && so.Status !== 'Void');
@@ -21450,21 +21446,42 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 };
             });
             
-            // Gather all line items grouped by customer/order
-            const pickListData = [];
+            // Gather all line items grouped by CUSTOMER -> ITEM -> INVOICES
+            // New structure: customerPickData[customerId].items[itemId].invoices[]
+            const customerPickData = {};
             let totalCost = 0, totalSale = 0, totalUnits = 0, totalCases = 0;
-            const itemQuantities = {}; // Track total quantities needed per item
+            const itemQuantities = {}; // Track total quantities needed per item (for consolidated list)
+            const allInvoices = new Set(); // Track unique invoices
             
             for (const so of sales) {
                 const customer = customers.find(c => c.Customer_ID === so.Customer_ID);
                 const customerName = customer?.Customer_Name || so.Customer_ID;
                 const soDate = parseDate(so.Sale_Date || so.SO_Date);
                 
+                // Initialize customer if not exists
+                if (!customerPickData[so.Customer_ID]) {
+                    customerPickData[so.Customer_ID] = {
+                        customerId: so.Customer_ID,
+                        customerName: customerName,
+                        customerAddress: customer?.Address || '',
+                        customerCity: customer?.City || '',
+                        customerState: customer?.State || '',
+                        customerZip: customer?.Zip || '',
+                        customerPhone: customer?.Phone || '',
+                        items: {},
+                        totalCost: 0,
+                        totalSale: 0,
+                        totalUnits: 0,
+                        totalCases: 0,
+                        invoiceCount: 0
+                    };
+                }
+                
                 // Get line items
                 const lines = getSalesLinesFromCache(so.SO_ID);
                 if (lines && lines.length > 0) {
-                    const orderLines = [];
-                    let orderCost = 0, orderSale = 0;
+                    allInvoices.add(so.Invoice_Number || so.SO_ID);
+                    customerPickData[so.Customer_ID].invoiceCount++;
                     
                     for (const line of lines) {
                         const item = itemMap[line.Item_ID];
@@ -21476,33 +21493,60 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         const lineCost = qty * unitCost;
                         const lineSale = qty * unitPrice;
                         const qtyOnHand = parseInt(item?.Qty_On_Hand) || 0;
-                        // Calculate exact cases (can be fractional)
                         const exactCases = qty / unitsPerPkg;
                         const uom = item?.Unit_of_Measure || item?.UOM || 'case';
                         
-                        orderLines.push({
-                            itemId: line.Item_ID,
-                            sku: item?.SKU || '-',
-                            description: item?.Item_Description || line.Item_ID,
-                            supplier: item?.supplierName || 'Unknown',
+                        // Initialize item for this customer if not exists
+                        if (!customerPickData[so.Customer_ID].items[line.Item_ID]) {
+                            customerPickData[so.Customer_ID].items[line.Item_ID] = {
+                                itemId: line.Item_ID,
+                                sku: item?.SKU || '-',
+                                description: item?.Item_Description || line.Item_ID,
+                                supplier: item?.supplierName || 'Unknown',
+                                unitsPerPkg: unitsPerPkg,
+                                uom: uom,
+                                unitCost: unitCost,
+                                qtyOnHand: qtyOnHand,
+                                invoices: [],
+                                totalQty: 0,
+                                totalCases: 0,
+                                totalCost: 0,
+                                totalSale: 0
+                            };
+                        }
+                        
+                        // Add invoice detail for this item
+                        customerPickData[so.Customer_ID].items[line.Item_ID].invoices.push({
+                            invoiceNum: so.Invoice_Number || so.SO_ID,
+                            soId: so.SO_ID,
+                            date: soDate,
+                            status: so.Status || 'Pending',
                             qty: qty,
-                            unitsPerPkg: unitsPerPkg,
                             exactCases: exactCases,
-                            uom: uom,
-                            unitCost: unitCost,
                             unitPrice: unitPrice,
                             lineCost: lineCost,
-                            lineSale: lineSale,
-                            qtyOnHand: qtyOnHand,
-                            afterPick: qtyOnHand - qty
+                            lineSale: lineSale
                         });
                         
-                        orderCost += lineCost;
-                        orderSale += lineSale;
+                        // Update item totals
+                        customerPickData[so.Customer_ID].items[line.Item_ID].totalQty += qty;
+                        customerPickData[so.Customer_ID].items[line.Item_ID].totalCases += exactCases;
+                        customerPickData[so.Customer_ID].items[line.Item_ID].totalCost += lineCost;
+                        customerPickData[so.Customer_ID].items[line.Item_ID].totalSale += lineSale;
+                        
+                        // Update customer totals
+                        customerPickData[so.Customer_ID].totalCost += lineCost;
+                        customerPickData[so.Customer_ID].totalSale += lineSale;
+                        customerPickData[so.Customer_ID].totalUnits += qty;
+                        customerPickData[so.Customer_ID].totalCases += exactCases;
+                        
+                        // Update grand totals
+                        totalCost += lineCost;
+                        totalSale += lineSale;
                         totalUnits += qty;
                         totalCases += exactCases;
                         
-                        // Track quantities per item
+                        // Track quantities per item (for consolidated pick list)
                         if (!itemQuantities[line.Item_ID]) {
                             itemQuantities[line.Item_ID] = {
                                 description: item?.Item_Description || line.Item_ID,
@@ -21518,33 +21562,12 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         itemQuantities[line.Item_ID].qtyNeeded += qty;
                         itemQuantities[line.Item_ID].exactCases += exactCases;
                     }
-                    
-                    pickListData.push({
-                        soId: so.SO_ID,
-                        invoiceNum: so.Invoice_Number || so.SO_ID,
-                        customerName: customerName,
-                        customerId: so.Customer_ID,
-                        customerAddress: customer?.Address || '',
-                        customerCity: customer?.City || '',
-                        customerState: customer?.State || '',
-                        customerZip: customer?.Zip || '',
-                        customerPhone: customer?.Phone || '',
-                        date: soDate,
-                        status: so.Status || 'Pending',
-                        lines: orderLines,
-                        orderCost: orderCost,
-                        orderSale: orderSale,
-                        itemCount: orderLines.length
-                    });
-                    
-                    totalCost += orderCost;
-                    totalSale += orderSale;
                 }
             }
             
-            totalSale = pickListData.reduce((sum, o) => sum + o.orderSale, 0);
             const totalProfit = totalSale - totalCost;
-            const totalOrders = pickListData.length;
+            const totalOrders = allInvoices.size;
+            const customerCount = Object.keys(customerPickData).length;
             
             // Check for stock issues
             const stockIssues = Object.entries(itemQuantities).filter(([id, data]) => data.qtyNeeded > data.qtyOnHand);
@@ -21754,6 +21777,14 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     }
                     
                     @media print {
+                        /* CRITICAL: Reset all positioning and centering */
+                        * {
+                            position: static !important;
+                            transform: none !important;
+                            left: auto !important;
+                            right: auto !important;
+                        }
+                        
                         /* Hide buttons */
                         .pl-print-btn { display: none !important; }
                         
@@ -21763,7 +21794,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             -webkit-print-color-adjust: exact !important;
                             print-color-adjust: exact !important;
                             padding: 15px !important;
-                            margin-bottom: 15px !important;
+                            margin: 0 0 15px 0 !important;
+                            width: 100% !important;
+                            box-sizing: border-box !important;
                         }
                         
                         .pl-header h2 {
@@ -21780,13 +21813,17 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             display: flex !important;
                             flex-wrap: wrap !important;
                             gap: 8px !important;
-                            margin-bottom: 15px !important;
+                            margin: 0 0 15px 0 !important;
+                            padding: 0 !important;
+                            width: 100% !important;
+                            box-sizing: border-box !important;
                         }
                         
                         .pl-stat {
                             flex: 1 1 100px !important;
                             padding: 8px !important;
                             border: 1px solid #ddd !important;
+                            margin: 0 !important;
                         }
                         
                         .pl-stat .value {
@@ -21801,8 +21838,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         .pl-alert {
                             border: 2px solid #dc2626 !important;
                             padding: 10px !important;
-                            margin-bottom: 15px !important;
+                            margin: 0 0 15px 0 !important;
                             page-break-inside: avoid !important;
+                            width: 100% !important;
+                            box-sizing: border-box !important;
                         }
                         
                         .pl-alert h4 {
@@ -21818,8 +21857,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         /* Orders */
                         .pl-order {
                             page-break-inside: avoid !important;
-                            margin-bottom: 15px !important;
+                            margin: 0 0 15px 0 !important;
                             border: 1px solid #ddd !important;
+                            width: 100% !important;
+                            box-sizing: border-box !important;
                         }
                         
                         .pl-order-header {
@@ -21838,6 +21879,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         }
                         
                         /* Item rows - table layout for print */
+                        .pl-items {
+                            display: table !important;
+                            width: 100% !important;
+                            box-sizing: border-box !important;
+                            table-layout: fixed !important;
+                        }
+                        
                         .pl-item {
                             display: table-row !important;
                             font-size: 9pt !important;
@@ -21847,6 +21895,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             display: table-cell !important;
                             padding: 4px 6px !important;
                             border-bottom: 1px solid #eee !important;
+                            vertical-align: middle !important;
                         }
                         
                         .pl-item.pl-item-header {
@@ -21854,11 +21903,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             background: #f0f0f0 !important;
                             font-size: 8pt !important;
                             font-weight: bold !important;
-                        }
-                        
-                        .pl-items {
-                            display: table !important;
-                            width: 100% !important;
                         }
                         
                         /* Remove ::before labels in print */
@@ -21875,6 +21919,17 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             padding: 8px 10px !important;
                             font-size: 9pt !important;
                             background: #f8f8f8 !important;
+                            width: 100% !important;
+                            box-sizing: border-box !important;
+                        }
+                        
+                        /* Pick list totals */
+                        .pl-totals {
+                            width: 100% !important;
+                            box-sizing: border-box !important;
+                            margin: 15px 0 0 0 !important;
+                            padding: 15px !important;
+                            border: 1px solid #ddd !important;
                         }
                     }
                 </style>
@@ -22017,109 +22072,135 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     </div>
                 ` : ''}
                 
-                ${pickListData.length === 0 ? `
+                ${customerCount === 0 ? `
                     <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px;">
                         <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
                         <h3 style="margin: 0; color: #666;">No Orders Found</h3>
                         <p style="color: #999;">Try adjusting your filters to see orders.</p>
                     </div>
-                ` : `
-                    <!-- Orders -->
-                    ${pickListData.map(order => {
-                        // Build address string
-                        const addressParts = [];
-                        if (order.customerAddress) addressParts.push(order.customerAddress);
-                        const cityStateZip = [order.customerCity, order.customerState, order.customerZip].filter(Boolean).join(', ');
-                        if (cityStateZip) addressParts.push(cityStateZip);
-                        const fullAddress = addressParts.join('<br>');
-                        
-                        return `
-                        <div class="pl-order">
-                            <div class="pl-order-header">
-                                <div>
-                                    <div class="customer">👤 ${order.customerName}</div>
-                                    ${fullAddress ? `<div style="font-size: 13px; color: #475569; margin-top: 4px; line-height: 1.4;">📍 ${fullAddress}</div>` : ''}
-                                    <div class="invoice" style="margin-top: 4px;">📋 ${order.invoiceNum}</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div class="date">📅 ${order.date?.toLocaleDateString() || '-'}</div>
-                                    <span class="status ${
-                                        order.status === 'Completed' ? 'completed' : 
-                                        order.status === 'Delivered' ? 'delivered' : 
-                                        order.status === 'Out for Delivery' ? 'out' : 
-                                        order.status === 'Ready' ? 'ready' : 
-                                        'pending'
-                                    }">
-                                        ${
-                                            order.status === 'Completed' ? '💰 Completed' : 
-                                            order.status === 'Delivered' ? '✅ Delivered' : 
-                                            order.status === 'Out for Delivery' ? '🚚 Out for Delivery' : 
-                                            order.status === 'Ready' ? '📦 Ready' : 
-                                            '📝 Pending'
-                                        }
-                                    </span>
-                                </div>
-                            </div>
+                ` : Object.values(customerPickData).map(customer => {
+                    // Build address string
+                    const addressParts = [];
+                    if (customer.customerAddress) addressParts.push(customer.customerAddress);
+                    const cityStateZip = [customer.customerCity, customer.customerState, customer.customerZip].filter(Boolean).join(', ');
+                    if (cityStateZip) addressParts.push(cityStateZip);
+                    const fullAddress = addressParts.join('<br>');
+                    const itemCount = Object.keys(customer.items).length;
+                    
+                    // Build items HTML
+                    const itemsHtml = Object.values(customer.items)
+                        .sort((a, b) => b.totalCases - a.totalCases)
+                        .map(item => {
+                            const afterPick = item.qtyOnHand - item.totalQty;
+                            const isShort = afterPick < 0;
                             
-                            <div class="pl-items">
-                                <div class="pl-item pl-item-header" style="background: #f8fafc; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #64748b;">
-                                    <div>Item</div>
-                                    <div style="text-align: center;">Units</div>
-                                    <div style="text-align: center;">📦 Cases</div>
-                                    <div style="text-align: center;">Stock</div>
-                                    <div style="text-align: center;">After</div>
-                                    <div style="text-align: right;">Price</div>
-                                </div>
-                                ${order.lines.map(line => {
-                                    // Format cases display - show as fraction or whole number
-                                    let casesDisplay;
-                                    if (line.exactCases >= 1) {
-                                        // Show whole cases, and partial if any
-                                        const wholeCases = Math.floor(line.exactCases);
-                                        const partialUnits = line.qty - (wholeCases * line.unitsPerPkg);
-                                        if (partialUnits > 0) {
-                                            casesDisplay = `${wholeCases}<span style="font-size: 10px; color: #666;"> + ${partialUnits}</span>`;
-                                        } else {
-                                            casesDisplay = `${wholeCases}`;
-                                        }
+                            // Format cases display for item total
+                            let casesDisplay;
+                            if (item.totalCases >= 1) {
+                                const wholeCases = Math.floor(item.totalCases);
+                                const partialUnits = item.totalQty - (wholeCases * item.unitsPerPkg);
+                                if (partialUnits > 0) {
+                                    casesDisplay = wholeCases + '<span style="font-size: 10px; color: #666;"> + ' + partialUnits + '</span>';
+                                } else {
+                                    casesDisplay = '' + wholeCases;
+                                }
+                            } else {
+                                casesDisplay = '<span style="color: #666;">' + item.totalQty + ' unit' + (item.totalQty !== 1 ? 's' : '') + '</span>';
+                            }
+                            
+                            // Build invoice lines HTML
+                            const invoicesHtml = item.invoices.map(inv => {
+                                let invCasesDisplay;
+                                if (inv.exactCases >= 1) {
+                                    const wholeCases = Math.floor(inv.exactCases);
+                                    const partialUnits = inv.qty - (wholeCases * item.unitsPerPkg);
+                                    if (partialUnits > 0) {
+                                        invCasesDisplay = wholeCases + '<span style="font-size: 9px; color: #888;"> + ' + partialUnits + '</span>';
                                     } else {
-                                        // Less than one case - just show the unit count
-                                        casesDisplay = `<span style="color: #666;">${line.qty} unit${line.qty !== 1 ? 's' : ''}</span>`;
+                                        invCasesDisplay = '' + wholeCases;
                                     }
-                                    return `
-                                    <div class="pl-item">
-                                        <div>
-                                            <div class="pl-item-desc">${line.description}</div>
-                                            <div class="pl-item-sku">${line.sku}</div>
-                                            <div class="pl-item-supplier">📦 ${line.supplier}</div>
-                                        </div>
-                                        <div class="qty">${line.qty}</div>
-                                        <div class="cases" title="${line.unitsPerPkg} per ${line.uom}">
-                                            ${casesDisplay} <span style="font-size: 10px; font-weight: normal; color: #666;">${line.exactCases >= 1 ? line.uom + (Math.floor(line.exactCases) !== 1 ? 's' : '') : ''}</span>
-                                        </div>
-                                        <div class="stock ${line.qtyOnHand < line.qty ? 'low' : 'ok'}">
-                                            ${line.qtyOnHand}
-                                        </div>
-                                        <div class="after ${line.afterPick < 0 ? 'low' : 'ok'}">
-                                            ${line.afterPick}
-                                        </div>
-                                        <div class="price">${formatMoney(line.lineSale)}</div>
-                                    </div>
-                                `}).join('')}
-                            </div>
+                                } else {
+                                    invCasesDisplay = '<span style="color: #888;">' + inv.qty + 'u</span>';
+                                }
+                                
+                                const statusClass = inv.status === 'Completed' ? 'completed' : 
+                                    inv.status === 'Delivered' ? 'delivered' : 
+                                    inv.status === 'Out for Delivery' ? 'out' : 
+                                    inv.status === 'Ready' ? 'ready' : 'pending';
+                                
+                                const statusIcon = inv.status === 'Out for Delivery' ? '🚚' : 
+                                    inv.status === 'Ready' ? '📦' : 
+                                    (inv.status === 'Delivered' || inv.status === 'Completed') ? '✅' : '📝';
+                                
+                                return '<div class="pl-item" style="background: #fafafa; padding-left: 30px; font-size: 12px; border-left: 3px solid #e2e8f0;">' +
+                                    '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">' +
+                                        '<span style="color: #0891b2; font-weight: 500;">📋 ' + inv.invoiceNum + '</span>' +
+                                        '<span style="color: #94a3b8;">•</span>' +
+                                        '<span style="color: #64748b;">' + (inv.date?.toLocaleDateString() || '-') + '</span>' +
+                                        '<span class="status ' + statusClass + '" style="padding: 2px 8px; font-size: 10px;">' + statusIcon + ' ' + inv.status + '</span>' +
+                                    '</div>' +
+                                    '<div class="qty" style="color: #64748b;">' + inv.qty + '</div>' +
+                                    '<div class="cases" style="color: #9ca3af; font-size: 12px;">' + invCasesDisplay + '</div>' +
+                                    '<div></div>' +
+                                    '<div></div>' +
+                                    '<div class="price" style="color: #64748b;">' + formatMoney(inv.lineSale) + '</div>' +
+                                '</div>';
+                            }).join('');
                             
-                            <div class="pl-order-footer">
-                                <div>
-                                    <span style="color: #666;">${order.itemCount} item(s)</span>
-                                </div>
-                                <div style="display: flex; gap: 20px;">
-                                    <span class="cost">Cost: ${formatMoney(order.orderCost)}</span>
-                                    <span class="sale">Sale: ${formatMoney(order.orderSale)}</span>
-                                    <span class="profit">Profit: ${formatMoney(order.orderSale - order.orderCost)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `}).join('')}
+                            const uomDisplay = item.totalCases >= 1 ? item.uom + (Math.floor(item.totalCases) !== 1 ? 's' : '') : '';
+                            
+                            return '<div class="pl-item" style="background: #f0fdf4; border-left: 3px solid #059669;">' +
+                                '<div>' +
+                                    '<div class="pl-item-desc">' + item.description + '</div>' +
+                                    '<div class="pl-item-sku">' + item.sku + '</div>' +
+                                    '<div class="pl-item-supplier">📦 ' + item.supplier + '</div>' +
+                                '</div>' +
+                                '<div class="qty" style="font-size: 18px; color: #059669;">' + item.totalQty + '</div>' +
+                                '<div class="cases" title="' + item.unitsPerPkg + ' per ' + item.uom + '" style="font-size: 16px;">' +
+                                    casesDisplay + ' <span style="font-size: 10px; font-weight: normal; color: #666;">' + uomDisplay + '</span>' +
+                                '</div>' +
+                                '<div class="stock ' + (item.qtyOnHand < item.totalQty ? 'low' : 'ok') + '">' + item.qtyOnHand + '</div>' +
+                                '<div class="after ' + (isShort ? 'low' : 'ok') + '">' + afterPick + '</div>' +
+                                '<div class="price" style="font-weight: 600;">' + formatMoney(item.totalSale) + '</div>' +
+                            '</div>' + invoicesHtml;
+                        }).join('');
+                    
+                    return '<div class="pl-order">' +
+                        '<div class="pl-order-header">' +
+                            '<div>' +
+                                '<div class="customer">👤 ' + customer.customerName + '</div>' +
+                                (fullAddress ? '<div style="font-size: 13px; color: #475569; margin-top: 4px; line-height: 1.4;">📍 ' + fullAddress + '</div>' : '') +
+                            '</div>' +
+                            '<div style="text-align: right;">' +
+                                '<div style="font-size: 13px; color: #64748b;">' + customer.invoiceCount + ' Invoice' + (customer.invoiceCount !== 1 ? 's' : '') + '</div>' +
+                                '<div style="margin-top: 4px; font-size: 14px; font-weight: 600; color: #7c3aed;">' +
+                                    '📦 ' + (customer.totalCases % 1 === 0 ? customer.totalCases : customer.totalCases.toFixed(1)) + ' Cases' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="pl-items">' +
+                            '<div class="pl-item pl-item-header" style="background: #f8fafc; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #64748b;">' +
+                                '<div>Item</div>' +
+                                '<div style="text-align: center;">Total Pick</div>' +
+                                '<div style="text-align: center;">📦 Cases</div>' +
+                                '<div style="text-align: center;">Stock</div>' +
+                                '<div style="text-align: center;">After</div>' +
+                                '<div style="text-align: right;">Total</div>' +
+                            '</div>' +
+                            itemsHtml +
+                        '</div>' +
+                        '<div class="pl-order-footer">' +
+                            '<div>' +
+                                '<span style="color: #666;">' + itemCount + ' item(s) across ' + customer.invoiceCount + ' invoice(s)</span>' +
+                            '</div>' +
+                            '<div style="display: flex; gap: 20px;">' +
+                                '<span class="cost">Cost: ' + formatMoney(customer.totalCost) + '</span>' +
+                                '<span class="sale">Sale: ' + formatMoney(customer.totalSale) + '</span>' +
+                                '<span class="profit">Profit: ' + formatMoney(customer.totalSale - customer.totalCost) + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('') + `
                     
                     <!-- Totals -->
                     <div class="pl-totals">
@@ -22152,26 +22233,41 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 `}
             `;
             
-            // Store label data for printing
-            window.pickListLabelData = pickListData.map(order => ({
-                customerName: order.customerName,
-                customerAddress: order.customerAddress,
-                customerCity: order.customerCity,
-                customerState: order.customerState,
-                customerZip: order.customerZip,
-                invoiceNum: order.invoiceNum,
-                date: order.date,
-                lines: order.lines.map(line => ({
-                    description: line.description,
-                    sku: line.sku,
-                    exactCases: line.exactCases,
-                    unitsPerPkg: line.unitsPerPkg,
-                    uom: line.uom,
-                    qty: line.qty
-                })),
-                totalCases: order.lines.reduce((sum, line) => sum + line.exactCases, 0),
-                status: order.status
-            }));
+            // Store label data for printing - need to flatten back to per-invoice format
+            const labelDataArray = [];
+            Object.values(customerPickData).forEach(customer => {
+                // Group all invoices for this customer
+                const invoiceMap = {};
+                Object.values(customer.items).forEach(item => {
+                    item.invoices.forEach(inv => {
+                        if (!invoiceMap[inv.invoiceNum]) {
+                            invoiceMap[inv.invoiceNum] = {
+                                customerName: customer.customerName,
+                                customerAddress: customer.customerAddress,
+                                customerCity: customer.customerCity,
+                                customerState: customer.customerState,
+                                customerZip: customer.customerZip,
+                                invoiceNum: inv.invoiceNum,
+                                date: inv.date,
+                                status: inv.status,
+                                lines: [],
+                                totalCases: 0
+                            };
+                        }
+                        invoiceMap[inv.invoiceNum].lines.push({
+                            description: item.description,
+                            sku: item.sku,
+                            exactCases: inv.exactCases,
+                            unitsPerPkg: item.unitsPerPkg,
+                            uom: item.uom,
+                            qty: inv.qty
+                        });
+                        invoiceMap[inv.invoiceNum].totalCases += inv.exactCases;
+                    });
+                });
+                labelDataArray.push(...Object.values(invoiceMap));
+            });
+            window.pickListLabelData = labelDataArray;
             
             return html;
         }
