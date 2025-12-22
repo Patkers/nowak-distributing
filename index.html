@@ -18861,7 +18861,22 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const byCustomer = {};
             filtered.forEach(d => {
                 if (!byCustomer[d.customerId]) {
-                    byCustomer[d.customerId] = { name: d.customerName, sales: 0, cost: 0, profit: 0, orders: new Set() };
+                    // Find customer for address info
+                    const cust = customers.find(c => c.Customer_ID === d.customerId);
+                    const addressParts = [];
+                    if (cust?.Address) addressParts.push(cust.Address);
+                    const cityStateZip = [cust?.City, cust?.State, cust?.ZIP].filter(Boolean).join(', ');
+                    if (cityStateZip) addressParts.push(cityStateZip);
+                    
+                    byCustomer[d.customerId] = { 
+                        name: d.customerName, 
+                        address: addressParts.join(', ') || '-',
+                        phone: cust?.Phone || '',
+                        sales: 0, 
+                        cost: 0, 
+                        profit: 0, 
+                        orders: new Set() 
+                    };
                 }
                 byCustomer[d.customerId].sales += d.lineTotal;
                 byCustomer[d.customerId].cost += d.lineCost;
@@ -18956,6 +18971,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div style="overflow-x: auto;"><table class="data-table">
                             <thead><tr>
                                 <th>Customer</th>
+                                <th>Address</th>
                                 <th style="text-align: right;">Orders</th>
                                 <th style="text-align: right;">Sales</th>
                                 <th style="text-align: right;">Cost</th>
@@ -18967,6 +18983,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 const margin = data.sales > 0 ? (data.profit / data.sales * 100) : 0;
                 html += `<tr>
                     <td>${data.name}</td>
+                    <td style="font-size: 12px; color: #666;">${data.address}</td>
                     <td style="text-align: right;">${data.orders.size}</td>
                     <td style="text-align: right;">${formatMoney(data.sales)}</td>
                     <td style="text-align: right;">${formatMoney(data.cost)}</td>
@@ -18977,6 +18994,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td>TOTAL</td>
+                <td></td>
                 <td style="text-align: right;">${totalOrders}</td>
                 <td style="text-align: right;">${formatMoney(totalSales)}</td>
                 <td style="text-align: right;">${formatMoney(totalCost)}</td>
@@ -19305,6 +19323,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <th>Invoice #</th>
                     <th>Sale Date</th>
                     <th>Customer</th>
+                    <th>Address</th>
                     <th style="text-align: right;">Total</th>
                     <th style="text-align: right;">Paid</th>
                     <th style="text-align: right;">Balance</th>
@@ -19317,6 +19336,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let tableTotal = 0;
             let tableTotalPaid = 0;
             let tableTotalBalance = 0;
+            
+            // Helper to get customer address
+            function getCustomerAddress(customerId) {
+                const cust = cachedCustomers.find(c => c.Customer_ID === customerId);
+                if (!cust) return '-';
+                const parts = [];
+                if (cust.Address) parts.push(cust.Address);
+                const cityStateZip = [cust.City, cust.State, cust.ZIP].filter(Boolean).join(', ');
+                if (cityStateZip) parts.push(cityStateZip);
+                return parts.join(', ') || '-';
+            }
+            
             sales.sort((a, b) => new Date(b.Sale_Date || b.SO_Date) - new Date(a.Sale_Date || a.SO_Date))
                 .forEach(s => {
                     const amt = parseFloat(s.Total_Amount) || 0;
@@ -19334,6 +19365,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <td><strong style="color: #667eea;">${s.Invoice_Number || s.SO_Number || '-'}</strong></td>
                         <td data-sort="${sortableDate}">${formatDateSafe(s.Sale_Date || s.SO_Date)}</td>
                         <td>${getCustomerName(s.Customer_ID)}</td>
+                        <td style="font-size: 11px; color: #666; max-width: 200px;">${getCustomerAddress(s.Customer_ID)}</td>
                         <td style="text-align: right;">${formatMoney(amt)}</td>
                         <td style="text-align: right; color: #16a34a;">${formatMoney(paid)}</td>
                         <td style="text-align: right; color: ${balance > 0 ? '#dc2626' : '#16a34a'}; font-weight: ${balance > 0 ? 'bold' : 'normal'};">${formatMoney(balance)}</td>
@@ -19345,7 +19377,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 });
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="3">TOTAL</td>
+                <td colspan="4">TOTAL</td>
                 <td style="text-align: right;">${formatMoney(tableTotal)}</td>
                 <td style="text-align: right; color: #16a34a;">${formatMoney(tableTotalPaid)}</td>
                 <td style="text-align: right; color: ${tableTotalBalance > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(tableTotalBalance)}</td>
@@ -21572,6 +21604,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // Check for stock issues
             const stockIssues = Object.entries(itemQuantities).filter(([id, data]) => data.qtyNeeded > data.qtyOnHand);
             
+            // Running inventory tracker - tracks cumulative picks across customers
+            const runningInventory = {};
+            
             let html = `
                 <style>
                     .pl-header {
@@ -22091,7 +22126,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const itemsHtml = Object.values(customer.items)
                         .sort((a, b) => b.totalCases - a.totalCases)
                         .map(item => {
-                            const afterPick = item.qtyOnHand - item.totalQty;
+                            // Use running inventory tracker for cumulative "After" calculation
+                            if (!runningInventory[item.itemId]) {
+                                runningInventory[item.itemId] = item.qtyOnHand;
+                            }
+                            const stockBefore = runningInventory[item.itemId];
+                            const afterPick = stockBefore - item.totalQty;
+                            runningInventory[item.itemId] = afterPick; // Update for next customer
                             const isShort = afterPick < 0;
                             
                             // Format cases display for item total
@@ -22159,7 +22200,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 '<div class="cases" title="' + item.unitsPerPkg + ' per ' + item.uom + '" style="font-size: 16px;">' +
                                     casesDisplay + ' <span style="font-size: 10px; font-weight: normal; color: #666;">' + uomDisplay + '</span>' +
                                 '</div>' +
-                                '<div class="stock ' + (item.qtyOnHand < item.totalQty ? 'low' : 'ok') + '">' + item.qtyOnHand + '</div>' +
+                                '<div class="stock ' + (stockBefore < item.totalQty ? 'low' : 'ok') + '">' + stockBefore + '</div>' +
                                 '<div class="after ' + (isShort ? 'low' : 'ok') + '">' + afterPick + '</div>' +
                                 '<div class="price" style="font-weight: 600;">' + formatMoney(item.totalSale) + '</div>' +
                             '</div>' + invoicesHtml;
@@ -23517,10 +23558,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     },
                                     options: {
                                         indexAxis: 'y',
-                                        responsive: false, animation: false,
+                                        responsive: false, 
+                                        animation: false,
                                         maintainAspectRatio: false,
-                                        plugins: { legend: { display: false } },
-                                        scales: { x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } } }
+                                        plugins: { 
+                                            legend: { display: false },
+                                            datalabels: {
+                                                display: true,
+                                                color: '#fff',
+                                                font: { weight: 'bold', size: 11 },
+                                                anchor: 'end',
+                                                align: 'start',
+                                                formatter: (value) => Math.round(value) + '%'
+                                            }
+                                        },
+                                        scales: { 
+                                            x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } },
+                                            y: { ticks: { font: { size: 10 } } }
+                                        }
                                     }
                                 });
                             }
@@ -23539,10 +23594,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     },
                                     options: {
                                         indexAxis: 'y',
-                                        responsive: false, animation: false,
+                                        responsive: false, 
+                                        animation: false,
                                         maintainAspectRatio: false,
-                                        plugins: { legend: { display: false } },
-                                        scales: { x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } } }
+                                        plugins: { 
+                                            legend: { display: false },
+                                            datalabels: {
+                                                display: true,
+                                                color: '#fff',
+                                                font: { weight: 'bold', size: 11 },
+                                                anchor: 'end',
+                                                align: 'start',
+                                                formatter: (value) => Math.round(value) + '%'
+                                            }
+                                        },
+                                        scales: { 
+                                            x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } },
+                                            y: { ticks: { font: { size: 10 } } }
+                                        }
                                     }
                                 });
                             }
@@ -28184,13 +28253,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     <div class="dash-card" style="border-color: #FF9800;">
                         <div class="dash-card-label" style="color: #FF9800;">📦 COST</div>
-                        <div class="dash-card-value">$${totalCost.toFixed(0)}</div>
+                        <div class="dash-card-value">${formatMoney(totalCost)}</div>
                         <div class="dash-card-sub">cost of goods</div>
                     </div>
                     
                     <div class="dash-card" style="border-color: #4CAF50;">
                         <div class="dash-card-label" style="color: #4CAF50;">📈 PROFIT</div>
-                        <div class="dash-card-value" style="color: ${profit >= 0 ? '#2e7d32' : '#c62828'};">$${profit.toFixed(0)}</div>
+                        <div class="dash-card-value" style="color: ${profit >= 0 ? '#2e7d32' : '#c62828'};">${formatMoney(profit)}</div>
                         <div class="dash-card-sub">gross profit</div>
                     </div>
                     
