@@ -4,15 +4,17 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Saturday, December 21, 2025
-         VERSION: V16_118
+         LAST UPDATED: Monday, December 22, 2025
+         VERSION: V16_120
          =====================================================
          CHANGES IN THIS VERSION:
-         - IMPROVED: PO Receive now shows detailed preview modal
-           - Shows PO number, supplier, receive date
-           - Lists all items with SKU, qty, units, and value
-           - Shows totals: cases, total units, total value
-           - Confirmation before adding to inventory
+         - FIXED: Report modal header now stays fixed on mobile
+           - Removed conflicting overflow-y:auto CSS rule
+           - Report modal inner container uses flex layout
+           - Only content area scrolls, header stays put
+         - FIXED: Cases to Load rounding error in Pick List
+           - Now displays clean numbers (whole or 1 decimal)
+           - No more 0.11538461538461539 type displays
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -2727,11 +2729,9 @@
                 height: 100% !important;
             }
             
-            /* Inner modal content - scrollable */
+            /* Inner modal content - base positioning (flex containers handle their own scrolling) */
             #orderModal > div,
             #orderModalInner,
-            #reportSetupModal > div,
-            #reportSetupModalInner,
             #howToGuideModal > div,
             #uploadItemsModal > div,
             .item-picker-container {
@@ -2753,6 +2753,31 @@
                 -webkit-overflow-scrolling: touch !important;
                 z-index: 100000 !important;
                 resize: none !important; /* Disable resize on mobile */
+            }
+            
+            /* Report modal inner - FLEX CONTAINER, does NOT scroll itself */
+            /* Header stays fixed, only content area scrolls */
+            #reportSetupModal > div,
+            #reportSetupModalInner {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                min-width: 0 !important;
+                min-height: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                transform: none !important;
+                border-radius: 0 !important;
+                overflow: hidden !important; /* CRITICAL: Don't scroll here */
+                display: flex !important;
+                flex-direction: column !important;
+                z-index: 100000 !important;
+                resize: none !important;
             }
         }
         
@@ -21887,7 +21912,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div class="label">Orders</div>
                     </div>
                     <div class="pl-stat" style="border-top-color: #7c3aed;">
-                        <div class="value" style="color: #7c3aed;">${totalCases}</div>
+                        <div class="value" style="color: #7c3aed;">${totalCases % 1 === 0 ? totalCases : totalCases.toFixed(1)}</div>
                         <div class="label">📦 Cases to Load</div>
                     </div>
                     <div class="pl-stat" style="border-top-color: #059669;">
@@ -22105,7 +22130,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         </div>
                         <div class="pl-total-row">
                             <span>📦 Total Cases to Load</span>
-                            <span style="color: #7c3aed; font-weight: 600;">${totalCases}</span>
+                            <span style="color: #7c3aed; font-weight: 600;">${totalCases % 1 === 0 ? totalCases : totalCases.toFixed(1)}</span>
                         </div>
                         <div class="pl-total-row">
                             <span>Total Units to Pick</span>
