@@ -3678,7 +3678,7 @@
                 <button class="btn" onclick="showAddItemForm()">➕ Add Item</button>
                 <button class="btn" onclick="downloadItemsReport()" style="background: #17a2b8;">📥 Download Items</button>
                 <button class="btn" onclick="openUploadItemsModal()" style="background: #28a745;">📤 Upload Items</button>
-                <button class="btn" onclick="recalculateOnOrder()" style="background: #f39c12;" title="Recalculate On Order quantities based on pending POs">🔧 Fix On Order</button>
+                <button class="btn" onclick="recalculateOnOrder()" style="background: var(--secondary, #764ba2); color: white;" title="Recalculate On Order quantities based on pending POs - also available in Action Dashboard">🔧 Fix On Order</button>
             </div>
             
             <!-- Filter Controls -->
@@ -25553,6 +25553,67 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 };
             }).sort((a, b) => b.Total_Sales - a.Total_Sales); // Sort by best customers first
             
+            // ===== 8. QTY ON ORDER SYNC CHECK =====
+            // Calculate expected Qty_On_Order from pending POs
+            const pendingPOIds = new Set();
+            purchases.forEach(p => {
+                const status = (p.Status || '').trim();
+                const poType = (p.PO_Type || 'INCOMING').trim();
+                // Include OUTGOING POs (orders sent to supplier, waiting for goods)
+                // and INCOMING POs that aren't received or voided
+                if ((poType === 'OUTGOING' || poType === 'INCOMING') && 
+                    status !== 'Received' && status !== 'Voided' && status !== 'Cancelled') {
+                    pendingPOIds.add(p.PO_ID);
+                }
+            });
+            
+            // Fetch PO line items to calculate pending quantities
+            let poLinesResult = null;
+            try {
+                poLinesResult = await apiCall('getPurchaseOrderLines');
+            } catch(e) {
+                console.log('Could not fetch PO lines for sync check');
+            }
+            
+            const expectedOnOrderByItem = {};
+            if (poLinesResult?.data) {
+                poLinesResult.data.forEach(line => {
+                    if (!pendingPOIds.has(line.PO_ID)) return;
+                    
+                    const itemId = (line.Item_ID || '').trim();
+                    const qtyOrdered = parseInt(line.Quantity) || 0;
+                    const qtyReceived = parseInt(line.Qty_Received) || 0;
+                    const pendingCases = Math.max(0, qtyOrdered - qtyReceived);
+                    
+                    if (!itemId || pendingCases <= 0) return;
+                    
+                    // Find units per package for this item
+                    const item = items.find(i => i.Item_ID === itemId);
+                    const unitsPerPkg = parseInt(item?.Units_Per_Package) || 1;
+                    const pendingUnits = pendingCases * unitsPerPkg;
+                    
+                    expectedOnOrderByItem[itemId] = (expectedOnOrderByItem[itemId] || 0) + pendingUnits;
+                });
+            }
+            
+            // Find items where Qty_On_Order doesn't match expected
+            const qtyOnOrderMismatch = items.filter(item => {
+                const currentOnOrder = parseInt(item.Qty_On_Order) || 0;
+                const expectedOnOrder = expectedOnOrderByItem[item.Item_ID] || 0;
+                return currentOnOrder !== expectedOnOrder;
+            }).map(item => {
+                const currentOnOrder = parseInt(item.Qty_On_Order) || 0;
+                const expectedOnOrder = expectedOnOrderByItem[item.Item_ID] || 0;
+                const supplier = suppliers.find(s => s.Supplier_ID === item.Supplier_ID);
+                return {
+                    ...item,
+                    Current_On_Order: currentOnOrder,
+                    Expected_On_Order: expectedOnOrder,
+                    Difference: currentOnOrder - expectedOnOrder,
+                    Supplier_Name: supplier?.Supplier_Name || 'Unknown'
+                };
+            }).sort((a, b) => Math.abs(b.Difference) - Math.abs(a.Difference));
+            
             // ===== BUILD HTML =====
             let html = `
                 <style>
@@ -26144,6 +26205,67 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 html += `
                         </tbody>
                     </table>
+                `;
+            }
+            html += '</div>';
+            
+            // 3.5. QTY ON ORDER SYNC
+            html += `
+                <div class="action-section ${qtyOnOrderMismatch.length > 0 ? 'warning' : 'info'}">
+                    <div class="action-section-header">
+                        <div class="action-section-title">
+                            🔄 QTY ON ORDER SYNC
+                            <span class="action-count ${qtyOnOrderMismatch.length > 0 ? 'warning' : 'info'}">${qtyOnOrderMismatch.length}</span>
+                        </div>
+                        ${qtyOnOrderMismatch.length > 0 ? '<button class="action-btn action-btn-warning" onclick="fixQtyOnOrderFromDashboard()">🔧 Fix All</button>' : ''}
+                    </div>
+                    <p style="color: #6b7280; font-size: 14px; margin: -10px 0 15px 0; padding: 0; line-height: 1.5;">
+                        <strong>Items where Qty On Order doesn't match pending POs.</strong> This can happen if POs were edited manually or data got out of sync.
+                    </p>
+            `;
+            
+            if (qtyOnOrderMismatch.length === 0) {
+                html += '<p style="color: #10b981; font-weight: 600;">✅ All Qty On Order values are in sync!</p>';
+            } else {
+                html += `
+                    <div class="action-table-wrapper">
+                    <table class="action-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Item</th>
+                                <th>Supplier</th>
+                                <th style="text-align: right;">Current</th>
+                                <th style="text-align: right;">Expected</th>
+                                <th style="text-align: right;">Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                qtyOnOrderMismatch.slice(0, 15).forEach(item => {
+                    const diffColor = item.Difference > 0 ? '#dc2626' : '#059669';
+                    const diffSign = item.Difference > 0 ? '+' : '';
+                    html += `
+                        <tr>
+                            <td>${item.SKU || 'N/A'}</td>
+                            <td>${item.Item_Description || 'Unknown'}</td>
+                            <td>${item.Supplier_Name}</td>
+                            <td style="text-align: right; font-weight: bold;">${item.Current_On_Order}</td>
+                            <td style="text-align: right; color: #059669; font-weight: bold;">${item.Expected_On_Order}</td>
+                            <td style="text-align: right; color: ${diffColor}; font-weight: bold;">${diffSign}${item.Difference}</td>
+                        </tr>
+                    `;
+                });
+                
+                if (qtyOnOrderMismatch.length > 15) {
+                    html += `<tr><td colspan="6" style="text-align: center; color: #666; padding: 15px;">... and ${qtyOnOrderMismatch.length - 15} more items</td></tr>`;
+                }
+                
+                html += `
+                        </tbody>
+                    </table>
+                    </div>
                 `;
             }
             html += '</div>';
@@ -41449,6 +41571,45 @@ NOTE: Please print the attached PO document for full details.`;
             } catch (error) {
                 hideLoading();
                 showError('Error recalculating: ' + error.message);
+            }
+        }
+        
+        async function fixQtyOnOrderFromDashboard() {
+            const confirmed = await showConfirmModal(
+                'Fix Qty On Order?',
+                'This will recalculate Qty On Order for all items based on pending Purchase Orders.<br><br>' +
+                '<strong>Items shown above will be corrected to match their expected values.</strong><br><br>' +
+                'Continue?',
+                '🔧 Fix Now',
+                'Cancel',
+                'warning'
+            );
+            if (!confirmed) return;
+            
+            showLoading('Fixing Qty On Order values...');
+            
+            try {
+                const result = await apiCall('recalculateQtyOnOrder');
+                
+                if (result && result.status === 'success') {
+                    hideLoading();
+                    showSuccessModal(
+                        'Qty On Order Fixed!',
+                        `${result.updatedCount || 0} items were corrected.\n\nRefreshing dashboard...`,
+                        async () => {
+                            // Refresh items cache and re-run the report
+                            await loadItems();
+                            // Re-run the Action Dashboard to show updated status
+                            showReport('action-dashboard');
+                        }
+                    );
+                } else {
+                    hideLoading();
+                    showError('Error: ' + (result?.message || 'Unknown error'));
+                }
+            } catch (error) {
+                hideLoading();
+                showError('Error fixing: ' + error.message);
             }
         }
 
