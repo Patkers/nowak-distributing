@@ -4294,6 +4294,7 @@
                             <div class="form-group">
                                 <label>Invoice Total *</label>
                                 <input type="number" id="poTotal" step="0.01" min="0" readonly style="background: #f0f0f0; display: none;">
+                                <div id="poTotalDisplay" style="font-size: 24px; font-weight: bold; color: #28a745; padding: 10px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; text-align: center; border: 2px solid #28a745;">$0.00</div>
                             </div>
                             <div class="form-group">
                                 <label>Amount Paid</label>
@@ -11086,6 +11087,12 @@
                 totalField.value = totalCost.toFixed(2);
             }
             
+            // Update Invoice Total display
+            const totalDisplay = document.getElementById('poTotalDisplay');
+            if (totalDisplay) {
+                totalDisplay.textContent = formatMoney(totalCost);
+            }
+            
             // Update summary boxes
             const casesBox = document.getElementById('poTotalCases');
             const unitsBox = document.getElementById('poTotalUnits');
@@ -11150,6 +11157,10 @@
             document.getElementById('poTotalCases').textContent = '0';
             document.getElementById('poTotalUnits').textContent = '0';
             document.getElementById('poTotalCost').textContent = '$0.00';
+            
+            // Reset Invoice Total display
+            const totalDisplay = document.getElementById('poTotalDisplay');
+            if (totalDisplay) totalDisplay.textContent = '$0.00';
             
             // Reset to ordering type
             setPurchaseType('ordering');
@@ -19797,8 +19808,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             }
             
             // Show PO type filter in header
-            const poTypeLabel = reportFilters.poType === 'INCOMING' ? '📥 Incoming Only' : 
-                               reportFilters.poType === 'OUTGOING' ? '📤 Outgoing Only' : '📋 All Types';
+            const poTypeLabel = reportFilters.poType === 'INCOMING' ? '📥 Received Only' : 
+                               reportFilters.poType === 'OUTGOING' ? '📤 On Order Only' : '📋 All Types';
             
             // Calculate totals FIRST for KPI cards
             let totalAmount = 0, totalPaid = 0, receivedCount = 0, pendingCount = 0;
@@ -20169,8 +20180,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const avgPerOrder = totalOrderCount > 0 ? grandTotal / totalOrderCount : 0;
             
             // Show PO type filter in header
-            const poTypeLabel = reportFilters.poType === 'INCOMING' ? '📥 Incoming Only' : 
-                               reportFilters.poType === 'OUTGOING' ? '📤 Outgoing Only' : '📋 All Types';
+            const poTypeLabel = reportFilters.poType === 'INCOMING' ? '📥 Received Only' : 
+                               reportFilters.poType === 'OUTGOING' ? '📤 On Order Only' : '📋 All Types';
             
             // Build inline filter summary for oval header
             const filterSummaryInline = generateFilterSummary({ inline: true });
@@ -24170,11 +24181,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let totalCOGS = 0;
             
             if (cogsMethod === 'actual') {
-                // COGS from actual purchase orders (INCOMING POs only)
+                // COGS from actual purchase orders (both INCOMING and OUTGOING)
                 purchasesInPeriod.forEach(p => {
-                    if (p.PO_Type !== 'OUTGOING') {
-                        totalCOGS += parseFloat(p.Total_Amount) || 0;
-                    }
+                    totalCOGS += parseFloat(p.Total_Amount) || 0;
                 });
             } else {
                 // COGS from standard costs based on units sold
@@ -24250,7 +24259,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             </tr>
                             <tr>
                                 <td style="padding: 12px; padding-left: 30px; color: #666;">
-                                    ${cogsMethod === 'actual' ? `Purchase Orders (${purchasesInPeriod.filter(p => p.PO_Type !== 'OUTGOING').length})` : 'Standard unit costs × units sold'}
+                                    ${cogsMethod === 'actual' ? `Purchase Orders (${purchasesInPeriod.length})` : 'Standard unit costs × units sold'}
                                 </td>
                                 <td style="padding: 12px; text-align: right;">${formatMoney(totalCOGS)}</td>
                             </tr>
@@ -29899,10 +29908,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 supplierName = 'All Suppliers';
             }
             
-            // Get all POs for selected supplier(s) (exclude OUTGOING) - use matchesFilter for multi-select
+            // Get all POs for selected supplier(s) - use matchesFilter for multi-select
+            // Both INCOMING and OUTGOING are purchases from suppliers
             let allSupplierPOs = purchases.filter(p => {
-                if (!supplierId) return p.PO_Type !== 'OUTGOING';
-                return matchesFilter(p.Supplier_ID, supplierId) && p.PO_Type !== 'OUTGOING';
+                if (!supplierId) return true;
+                return matchesFilter(p.Supplier_ID, supplierId);
             });
             
             // Apply date filter if provided
@@ -32185,11 +32195,14 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             const reason = prompt('Optional: Enter reason for voiding (e.g., "Prices increased 10%"):', 'Supplier prices changed');
             
+            // If user clicked Cancel on the prompt, abort
+            if (reason === null) return;
+            
             try {
                 const result = await apiCall('updatePurchaseOrder', {
                     poId: poId,
                     status: 'Void',
-                    notes: `VOIDED: ${reason || 'No reason provided'} - ${new Date().toLocaleDateString()}`
+                    notes: 'VOIDED - ' + (reason || 'No reason provided') + ' - ' + new Date().toLocaleDateString()
                 });
                 
                 if (result && result.status === 'success') {
@@ -33255,19 +33268,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
             const poDateTime = `${poDate}T${timeStr}`; // YYYY-MM-DDTHH:MM:SS
             
-            // Create OUTGOING PO
+            // Create PO (sending order OUT to supplier)
             const data = {
                 supplierId: supplierId,
                 invoiceNumber: poNumber,
                 poDate: poDateTime,  // Full datetime format
                 dueDate: expectedDeliveryDate,
                 paymentTerms: 'Net 30',
-                status: 'Ordered', // OUTGOING status
+                status: 'Ordered',
                 totalAmount: total,
                 amountPaid: 0,
                 notes: notes || '',
                 lineItems: lineItems,
-                poType: 'OUTGOING' // Placing order with supplier
+                poType: 'OUTGOING' // PO sent OUT to supplier, waiting for goods
             };
             
             const result = await apiCall('createPurchaseOrder', data);
@@ -35450,10 +35463,10 @@ NOTE: Please print the attached PO document for full details.`;
                 <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <!-- Window Controls -->
-                    <button id="reportMaximizeBtn" onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: rgba(255,255,255,0.3); border: none; color: white; font-size: 16px; cursor: pointer; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.3)'">
+                    <button id="reportMaximizeBtn" onclick="toggleReportModalSize()" title="Maximize/Restore" style="background: var(--secondary, rgba(255,255,255,0.3)); border: none; color: white; font-size: 16px; cursor: pointer; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; opacity: 0.85;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">
                         <span id="reportMaximizeIcon">⬜</span>
                     </button>
-                    <button onclick="closeReportSetup()" title="Close" style="background: rgba(255,255,255,0.3); border: none; color: white; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.5)'" onmouseout="this.style.background='rgba(255,255,255,0.3)'">&times;</button>
+                    <button onclick="closeReportSetup()" title="Close" style="background: var(--secondary, rgba(255,255,255,0.3)); border: none; color: white; font-size: 20px; cursor: pointer; width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; opacity: 0.85;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">&times;</button>
                 </div>
             </div>
             <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
@@ -35811,17 +35824,17 @@ NOTE: Please print the attached PO document for full details.`;
                     </div>
                     <div style="font-size: 13px; color: #6c757d; margin-top: 5px;">Show both inbound and outbound POs</div>
                 </div>
-                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('INCOMING', 'Incoming (Purchases)')" onclick="selectPOType('INCOMING', 'Incoming (Purchases)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
+                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('INCOMING', 'Received (In Stock)')" onclick="selectPOType('INCOMING', 'Received (In Stock)')" style="border-left: 4px solid #28a745; background: #e8f5e9; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #2e7d32;">
-                        <span style="font-size: 24px; margin-right: 12px;">📥</span> Incoming (Purchases)
+                        <span style="font-size: 24px; margin-right: 12px;">📥</span> Received (In Stock)
                     </div>
-                    <div style="font-size: 13px; color: #388e3c; margin-top: 5px;">Products received from suppliers</div>
+                    <div style="font-size: 13px; color: #388e3c; margin-top: 5px;">Products already received into inventory</div>
                 </div>
-                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('OUTGOING', 'Outgoing (Returns/Transfers)')" onclick="selectPOType('OUTGOING', 'Outgoing (Returns/Transfers)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
+                <div class="item-picker-card" ontouchstart="pickerTouchStart(event)" ontouchmove="pickerTouchMove(event)" ontouchend="if(pickerTouchEnd()) selectPOType('OUTGOING', 'On Order (Pending)')" onclick="selectPOType('OUTGOING', 'On Order (Pending)')" style="border-left: 4px solid #1976d2; background: #e3f2fd; margin-bottom: 10px;">
                     <div class="item-picker-desc" style="font-weight: bold; color: #1565c0;">
-                        <span style="font-size: 24px; margin-right: 12px;">📤</span> Outgoing (Returns/Transfers)
+                        <span style="font-size: 24px; margin-right: 12px;">📤</span> On Order (Pending)
                     </div>
-                    <div style="font-size: 13px; color: #1976d2; margin-top: 5px;">Products sent back to suppliers or transferred out</div>
+                    <div style="font-size: 13px; color: #1976d2; margin-top: 5px;">PO sent to supplier, awaiting delivery</div>
                 </div>
             </div>
         </div>
@@ -37654,7 +37667,7 @@ NOTE: Please print the attached PO document for full details.`;
                     { value: 'Manual', label: 'Manual Adjustments', icon: '✏️', color: '#8b5cf6', bg: '#f5f3ff' },
                     { value: 'Sale', label: 'Sales (Out)', icon: '📤', color: '#f59e0b', bg: '#fff7ed' },
                     { value: 'Purchase', label: 'Purchases (In)', icon: '📥', color: '#10b981', bg: '#ecfdf5' },
-                    { value: 'OUTGOING', label: 'Outgoing/Returns', icon: '🚚', color: '#3b82f6', bg: '#eff6ff' }
+                    { value: 'OUTGOING', label: 'On Order (Pending)', icon: '🚚', color: '#3b82f6', bg: '#eff6ff' }
                 ]
             }
         };
