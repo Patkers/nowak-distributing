@@ -11177,15 +11177,22 @@
                 const itemSelect = row.querySelector('.po-item');
                 const itemId = itemSelect?.value;
                 const qty = parseInt(row.querySelector('.po-qty')?.value) || 0;
+                const isEaches = row.dataset.eaches === 'true';
                 if (itemId && qty > 0) {
                     const item = cachedItems.find(i => i.Item_ID === itemId);
+                    const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || parseInt(item?.Units_Per_Package) || 1;
+                    const unitCost = parseFloat(row.dataset.unitCost) || 0;
+                    const totalUnits = isEaches ? qty : (qty * unitsPerPackage);
                     lineItems.push({
                         itemId: itemId,
                         description: item?.Item_Description || '',
                         sku: item?.SKU || '',
-                        quantity: qty,
-                        unitCost: parseFloat(row.dataset.unitCost) || 0,
-                        unitsPerPackage: parseInt(row.dataset.unitsPerPackage) || 1
+                        qty: qty,
+                        isEaches: isEaches,
+                        unitsPerCase: unitsPerPackage,
+                        totalUnits: totalUnits,
+                        cost: unitCost,
+                        total: qty * unitCost
                     });
                 }
             });
@@ -11197,117 +11204,156 @@
             
             // Get form data
             const supplierSelect = document.getElementById('poSupplier');
+            const supplierId = supplierSelect.value;
             const supplierName = supplierSelect.options[supplierSelect.selectedIndex]?.text || 'Unknown';
             const poDate = document.getElementById('poDate')?.value || new Date().toISOString().split('T')[0];
             
-            // Generate printable PO (reuse existing function if available, or create inline)
-            generatePrintablePOFromForm(supplierName, poDate, lineItems);
+            // Get supplier details
+            const supplier = cachedSuppliers.find(s => s.Supplier_ID === supplierId) || {};
+            
+            // Generate printable PO with professional format
+            generatePrintablePOFromForm(supplier, supplierName, poDate, lineItems);
         }
         
-        function generatePrintablePOFromForm(supplierName, poDate, lineItems) {
+        function generatePrintablePOFromForm(supplier, supplierName, poDate, lineItems) {
             const settings = getInvoiceSettings();
+            const themeColors = { primary: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#667eea' };
             const dateFormatted = new Date(poDate).toLocaleDateString().replace(/\//g, '-');
-            let totalCost = 0;
-            let itemsHtml = lineItems.map(item => {
-                const lineTotal = item.quantity * item.unitCost;
-                totalCost += lineTotal;
-                return `
-                    <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.sku}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.description}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${formatMoney(item.unitCost)}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${formatMoney(lineTotal)}</td>
-                    </tr>
-                `;
-            }).join('');
+            const draftPONum = 'DRAFT-' + new Date().toISOString().slice(0,10).replace(/-/g, '');
+            
+            let total = 0;
+            let totalCases = 0;
+            let totalUnits = 0;
+            
+            lineItems.forEach(item => {
+                total += item.total;
+                if (!item.isEaches) totalCases += item.qty;
+                totalUnits += item.totalUnits;
+            });
+            
+            // Build email content
+            const supplierEmail = supplier.Email || '';
+            const itemsList = lineItems.map(item => 
+                `${item.qty}${item.isEaches ? ' units' : ' cases'} - ${item.description} @ $${item.cost.toFixed(2)}${item.isEaches ? '/unit' : '/case'} = $${item.total.toFixed(2)}`
+            ).join('\n');
+            
+            const emailSubject = encodeURIComponent(`Purchase Order ${draftPONum} from ${settings.companyName}`);
+            const emailBody = encodeURIComponent(`Dear ${supplierName},
+
+Please find our purchase order below:
+
+${itemsList}
+---
+Total: $${total.toFixed(2)}
+
+Please confirm receipt and expected delivery date.
+
+Best regards,
+${settings.companyName}
+${settings.phone}
+${settings.email}
+
+---
+NOTE: Please print or save the PO as PDF from the print preview and attach it to this email.`);
+            
+            let linesHtml = lineItems.map(item => `
+                <tr>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; font-size: 11pt;">${item.sku}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; font-size: 11pt;">${item.description}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-size: 11pt;">${item.isEaches ? '<span style="color:#9333ea;">'+item.qty+' units</span>' : item.qty}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-size: 11pt;">${item.unitsPerCase}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-weight: bold; font-size: 11pt;">${item.totalUnits}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11pt;">$${item.cost.toFixed(2)}${item.isEaches ? '<span style="font-size:9pt;color:#666;">/ea</span>' : ''}</td>
+                    <td style="border: 1px solid #e5e7eb; padding: 10px; text-align: right; font-size: 11pt;">$${item.total.toFixed(2)}</td>
+                </tr>
+            `).join('');
             
             const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>${settings.companyName} - Purchase Order Draft - ${dateFormatted}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; padding-top: 60px; }
-                        table { width: 100%; border-collapse: collapse; }
-                        th { background: #667eea; color: white; padding: 10px; text-align: left; }
-                        .total { font-size: 20px; font-weight: bold; margin-top: 20px; text-align: right; }
-                        .close-btn {
-                            position: fixed;
-                            top: 10px;
-                            right: 10px;
-                            background: #dc3545;
-                            color: white;
-                            border: none;
-                            border-radius: 50%;
-                            width: 44px;
-                            height: 44px;
-                            font-size: 24px;
-                            cursor: pointer;
-                            z-index: 9999;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }
-                        .close-btn:hover { background: #c82333; }
-                        .action-bar {
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            right: 0;
-                            background: #f8f9fa;
-                            padding: 10px 15px;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                            z-index: 9998;
-                        }
-                        .print-btn {
-                            background: #667eea;
-                            color: white;
-                            border: none;
-                            border-radius: 8px;
-                            padding: 10px 20px;
-                            font-size: 16px;
-                            cursor: pointer;
-                        }
-                        @media print {
-                            .action-bar, .close-btn { display: none !important; }
-                            body { padding-top: 20px; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="action-bar">
-                        <button class="print-btn" onclick="window.print()">🖨️ Print</button>
-                        <button class="close-btn" onclick="window.close()">✕</button>
-                    </div>
-                    <h1>PURCHASE ORDER (DRAFT)</h1>
-                    <p><strong>Supplier:</strong> ${supplierName}</p>
-                    <p><strong>Date:</strong> ${new Date(poDate).toLocaleDateString()}</p>
-                    <p><strong>From:</strong> Nowak Distributing</p>
-                    <hr>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Description</th>
-                                <th style="text-align: center;">Qty</th>
-                                <th style="text-align: right;">Unit Cost</th>
-                                <th style="text-align: right;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsHtml}
-                        </tbody>
-                    </table>
-                    <div class="total">Total: ${formatMoney(totalCost)}</div>
-                    <p style="margin-top: 40px; color: #666; font-style: italic;">* This is a draft PO - not yet saved to system</p>
-                </body>
-                </html>
-            `);
+            const poHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${settings.companyName} - Purchase Order Draft - ${dateFormatted}</title>
+    <style>
+        @media print {
+            @page { margin: 0.3in; }
+            body { margin: 0; }
+            .no-print { display: none !important; }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <button onclick="window.print()" style="padding: 12px 24px; background: ${themeColors.primary}; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-right: 10px;">🖨️ Print</button>
+        ${supplierEmail ? `<a href="mailto:${supplierEmail}?subject=${emailSubject}&body=${emailBody}" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin-right: 10px; text-decoration: none; display: inline-block;">📧 Email Supplier</a>` : ''}
+        <button onclick="window.close()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">✖ Close</button>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid ${themeColors.primary}; padding-bottom: 20px;">
+        <h1 style="color: ${themeColors.primary}; margin: 0; font-size: 28pt;">PURCHASE ORDER</h1>
+        <p style="font-size: 14pt; margin: 8px 0;">${settings.companyName}</p>
+        <p style="margin: 5px 0; color: #666;">Date: ${new Date(poDate).toLocaleDateString()}</p>
+        <p style="margin: 5px 0; color: #999; font-style: italic;">* Draft - Not Yet Saved</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+        <div style="flex: 1;">
+            <h3 style="color: ${themeColors.primary}; margin: 0 0 8px 0; font-size: 12pt;">From:</h3>
+            <p style="margin: 3px 0; font-weight: bold;">${settings.companyName}</p>
+            <p style="margin: 3px 0;">Phone: ${settings.phone}</p>
+            <p style="margin: 3px 0;">Email: ${settings.email}</p>
+        </div>
+        <div style="flex: 1; text-align: right;">
+            <h3 style="color: ${themeColors.primary}; margin: 0 0 8px 0; font-size: 12pt;">To:</h3>
+            <p style="margin: 3px 0; font-weight: bold;">${supplierName}</p>
+            ${supplier.Address ? `<p style="margin: 3px 0;">${supplier.Address}</p>` : ''}
+            ${supplier.City || supplier.State ? `<p style="margin: 3px 0;">${supplier.City || ''}, ${supplier.State || ''} ${supplier.ZIP || ''}</p>` : ''}
+            ${supplier.Phone ? `<p style="margin: 3px 0;">Phone: ${supplier.Phone}</p>` : ''}
+            ${supplier.Email ? `<p style="margin: 3px 0;">Email: ${supplier.Email}</p>` : ''}
+        </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <thead>
+            <tr style="background: ${themeColors.primary}; color: white;">
+                <th style="padding: 12px; text-align: left; font-size: 11pt;">SKU</th>
+                <th style="padding: 12px; text-align: left; font-size: 11pt;">Description</th>
+                <th style="padding: 12px; text-align: center; font-size: 11pt;">Cases</th>
+                <th style="padding: 12px; text-align: center; font-size: 11pt;">Units/Case</th>
+                <th style="padding: 12px; text-align: center; font-size: 11pt;">Total Units</th>
+                <th style="padding: 12px; text-align: right; font-size: 11pt;">Cost/Case</th>
+                <th style="padding: 12px; text-align: right; font-size: 11pt;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${linesHtml}
+        </tbody>
+    </table>
+
+    <div style="text-align: right; margin-top: 20px;">
+        <table style="margin-left: auto;">
+            <tr>
+                <td style="padding: 8px 20px; font-weight: bold; font-size: 14pt;">TOTAL:</td>
+                <td style="padding: 8px 20px; font-weight: bold; font-size: 18pt; color: ${themeColors.primary};">$${total.toFixed(2)}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 10pt;">
+        <p>Thank you for your business!</p>
+    </div>
+</body>
+</html>`;
+
+            printWindow.document.write(poHTML);
             printWindow.document.close();
         }
         
