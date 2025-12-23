@@ -4552,15 +4552,8 @@
                             </div>
                             <div class="form-group">
                                 <label>Status *</label>
-                                <select id="soStatus">
-                                    <option value="" disabled selected>-- Select Status --</option>
-                                    <option value="Pending">📝 Pending - Order placed</option>
-                                    <option value="Ready">📦 Ready for Pickup - Picked & ready to load</option>
-                                    <option value="Out for Delivery">🚚 Out for Delivery - On the truck</option>
-                                    <option value="Delivered">✅ Delivered - Product delivered</option>
-                                    <option value="Completed">💰 Completed - Delivered & Paid</option>
-                                    <option value="Voided">❌ Voided - Cancelled</option>
-                                </select>
+                                <input type="hidden" id="soStatus" value="Pending">
+                                <input type="text" id="soStatus_display" value="📝 Pending - Order placed" onclick="openStatusPicker('soStatus', 'soStatus')" readonly style="cursor: pointer; background: #fff; font-weight: 600; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; width: 100%;">
                             </div>
                         </div>
                     </div>
@@ -14380,8 +14373,12 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // Auto-populate Status (default to Pending)
             const soStatusField = document.getElementById('soStatus');
+            const soStatusDisplay = document.getElementById('soStatus_display');
             if (soStatusField) {
                 soStatusField.value = 'Pending';
+            }
+            if (soStatusDisplay) {
+                soStatusDisplay.value = '📝 Pending - Order placed';
             }
             
             // Add fresh line item (skip customer check since form just opened)
@@ -14852,6 +14849,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
             `;
             
             document.getElementById('orderPreviewContent').innerHTML = html;
+            
+            // Reset the confirm button state before showing modal
+            const confirmBtn = document.getElementById('soConfirmSaveBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '✓ Confirm & Save';
+                confirmBtn.dataset.saving = 'false';
+            }
+            
             document.getElementById('orderPreviewModal').style.display = 'block';
             document.body.style.overflow = 'hidden';
         }
@@ -14864,10 +14870,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '✓ Confirm & Save';
+                btn.dataset.saving = 'false';
             }
         }
         
         async function submitSaleWithLoading(btn) {
+            // Guard: Only proceed if user actually clicked the button
+            if (!btn || btn.disabled) {
+                console.log('submitSaleWithLoading called but button is invalid or disabled');
+                return;
+            }
+            
+            // Prevent double-click
+            if (btn.dataset.saving === 'true') {
+                console.log('Already saving, ignoring duplicate call');
+                return;
+            }
+            btn.dataset.saving = 'true';
+            
             // Show loading state on preview button
             btn.disabled = true;
             btn.innerHTML = '⏳ Saving...';
@@ -23620,14 +23640,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function generateInventoryReportModal(type) {
+            // Route to appropriate report
+            if (type === 'margin') {
+                return await generateGrossMarginReport();
+            } else {
+                return await generateInventoryListReport();
+            }
+        }
+        
+        // ========== INVENTORY LIST REPORT ==========
+        // Focus: Stock levels, availability, reorder status
+        async function generateInventoryListReport() {
             const itemsResult = await apiCall('getItems');
             const suppliersResult = await apiCall('getSuppliers');
             if (!itemsResult?.data) throw new Error('Failed to load items');
             
-            let items = itemsResult.data;
+            let items = itemsResult.data.filter(i => i.Status === 'Active');
             const suppliers = suppliersResult?.data || [];
             
-            // Helper to get supplier name
             function getSupplierNameLocal(supplierId) {
                 const supplier = suppliers.find(s => s.Supplier_ID == supplierId);
                 return supplier ? supplier.Supplier_Name : '-';
@@ -23640,7 +23670,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (reportFilters.stockStatus) {
                 items = items.filter(i => {
                     const qty = parseInt(i.Qty_On_Hand) || 0;
-                    const reorder = parseInt(i.Reorder_Level) || 0;
+                    const reorder = parseInt(i.Reorder_Point) || 0;
                     switch(reportFilters.stockStatus) {
                         case 'negative': return qty < 0;
                         case 'out': return qty === 0;
@@ -23651,199 +23681,74 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 });
             }
             
-            // Calculate totals and margin data
-            let totalQty = 0, totalValue = 0, totalSellValue = 0, totalBackorder = 0;
-            let negativeCount = 0, lowStockCount = 0, inStockCount = 0;
-            const marginData = [];
+            // Calculate stock health metrics
+            let totalQty = 0, totalOnOrder = 0, totalBackorder = 0, totalValue = 0;
+            let negativeCount = 0, outOfStockCount = 0, lowStockCount = 0, inStockCount = 0;
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
                 const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const reorder = parseInt(item.Reorder_Point) || 0;
                 const cost = parseFloat(item.Package_Cost) || 0;
-                const sell = parseFloat(item.Unit_Sell_Price) || parseFloat(item.Sell_Price) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
                 const unitCost = cost / units;
-                const reorder = parseInt(item.Reorder_Point) || 0;
-                const margin = sell > 0 ? ((sell - unitCost) / sell * 100) : 0;
-                const effectiveAvailable = qty - backorder + onOrder;
+                const available = qty - backorder + onOrder;
                 
                 totalQty += qty;
+                totalOnOrder += onOrder;
                 totalBackorder += backorder;
                 totalValue += Math.abs(qty) * unitCost;
-                totalSellValue += Math.abs(qty) * sell;
                 
-                // Low stock = effective available (with on-order) below reorder point
                 if (qty < 0) negativeCount++;
-                else if (effectiveAvailable < reorder && reorder > 0) lowStockCount++;
-                else if (qty > 0) inStockCount++;
-                
-                // Collect margin data for chart
-                if (sell > 0) {
-                    marginData.push({
-                        name: (item.Item_Description || item.SKU || '-').substring(0, 20),
-                        margin: margin,
-                        value: Math.abs(qty) * unitCost
-                    });
-                }
+                else if (qty === 0) outOfStockCount++;
+                else if (available < reorder && reorder > 0) lowStockCount++;
+                else inStockCount++;
             });
             
-            const totalMargin = totalSellValue > 0 ? ((totalSellValue - totalValue) / totalSellValue * 100) : 0;
-            const potentialProfit = totalSellValue - totalValue;
-            
-            // Sort by margin for chart
-            marginData.sort((a, b) => b.margin - a.margin);
-            const top10Margins = marginData.slice(0, 10);
-            const bottom5Margins = marginData.slice(-5).reverse();
-            
-            // Build inline filter summary for oval header
             const filterSummaryInline = generateFilterSummary({ inline: true });
             
-            const reportTitle = type === 'turnover' ? '🔄 Inventory Turnover' : type === 'margin' ? '📊 Gross Margin Analysis' : '📋 Inventory List';
             let html = `
-                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
-                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">${reportTitle}</h2>
-                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${items.length} items | ${totalQty.toLocaleString()} total units</p>
-                    ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
-                </div>`;
-            
-            // KPI Summary Cards
-            html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <div style="font-size: 12px; color: #1565c0; margin-bottom: 5px;">📦 Total Units</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #1976d2;">${totalQty.toLocaleString()}</div>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(8, 145, 178, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px;">📦 Inventory List</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${items.length} active items | Stock Health Overview</p>
+                    ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;">${filterSummaryInline}</div>` : ''}
+                </div>
+                
+                <!-- Stock Health KPIs -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #10b981; text-align: center;">
+                        <div style="font-size: 11px; color: #047857; margin-bottom: 5px;">✅ In Stock</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #059669;">${inStockCount}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, ${totalBackorder > 0 ? '#fef2f2 0%, #fecaca 100%' : '#f5f5f5 0%, #e0e0e0 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalBackorder > 0 ? '#dc2626' : '#9e9e9e'};">
-                        <div style="font-size: 12px; color: ${totalBackorder > 0 ? '#991b1b' : '#666'}; margin-bottom: 5px;">⚠️ On Backorder</div>
-                        <div style="font-size: 22px; font-weight: bold; color: ${totalBackorder > 0 ? '#dc2626' : '#666'};">${totalBackorder > 0 ? totalBackorder.toLocaleString() : '0'}</div>
+                    <div style="background: linear-gradient(135deg, ${lowStockCount > 0 ? '#fef3c7 0%, #fde68a 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${lowStockCount > 0 ? '#f59e0b' : '#9ca3af'}; text-align: center;">
+                        <div style="font-size: 11px; color: ${lowStockCount > 0 ? '#b45309' : '#6b7280'}; margin-bottom: 5px;">⚠️ Low Stock</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${lowStockCount > 0 ? '#d97706' : '#9ca3af'};">${lowStockCount}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">
-                        <div style="font-size: 12px; color: #2e7d32; margin-bottom: 5px;">💰 Cost Value</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #388e3c;">${formatMoney(totalValue)}</div>
+                    <div style="background: linear-gradient(135deg, ${outOfStockCount > 0 ? '#fee2e2 0%, #fecaca 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${outOfStockCount > 0 ? '#ef4444' : '#9ca3af'}; text-align: center;">
+                        <div style="font-size: 11px; color: ${outOfStockCount > 0 ? '#b91c1c' : '#6b7280'}; margin-bottom: 5px;">🚫 Out of Stock</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${outOfStockCount > 0 ? '#dc2626' : '#9ca3af'};">${outOfStockCount}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9c27b0;">
-                        <div style="font-size: 12px; color: #7b1fa2; margin-bottom: 5px;">💵 Retail Value</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #8e24aa;">${formatMoney(totalSellValue)}</div>
+                    <div style="background: linear-gradient(135deg, ${negativeCount > 0 ? '#fce7f3 0%, #fbcfe8 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${negativeCount > 0 ? '#ec4899' : '#9ca3af'}; text-align: center;">
+                        <div style="font-size: 11px; color: ${negativeCount > 0 ? '#be185d' : '#6b7280'}; margin-bottom: 5px;">📉 Negative</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${negativeCount > 0 ? '#db2777' : '#9ca3af'};">${negativeCount}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
-                        <div style="font-size: 12px; color: #e65100; margin-bottom: 5px;">📊 Avg Margin</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #f57c00;">${totalMargin.toFixed(1)}%</div>
+                    <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; text-align: center;">
+                        <div style="font-size: 11px; color: #1d4ed8; margin-bottom: 5px;">📦 On Order</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #2563eb;">${totalOnOrder.toLocaleString()}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6366f1; text-align: center;">
+                        <div style="font-size: 11px; color: #4338ca; margin-bottom: 5px;">💰 Inv Value</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #4f46e5;">${formatMoney(totalValue)}</div>
                     </div>
                 </div>
-            `;
-            
-            // Add charts for margin type
-            if (type === 'margin' && marginData.length > 0) {
-                const topChartId = 'marginTopChart_' + Date.now();
-                const bottomChartId = 'marginBottomChart_' + Date.now();
                 
-                html += `
-                    <div style="margin-bottom: 20px;">
-                        <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'grid' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
-                             style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
-                            <span class="toggle-icon">▼</span>
-                            <strong>📊 Margin Charts</strong>
-                            <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 15px;">
-                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <h4 style="margin: 0 0 15px 0; color: #2e7d32;">🏆 Top 10 Margins</h4>
-                                <canvas id="${topChartId}" height="220"></canvas>
-                            </div>
-                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <h4 style="margin: 0 0 15px 0; color: #c62828;">⚠️ Lowest 5 Margins</h4>
-                                <canvas id="${bottomChartId}" height="220"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <scr` + `ipt>
-                        setTimeout(() => {
-                            const ctx1 = document.getElementById('${topChartId}');
-                            if (ctx1) {
-                                if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
-                                    type: 'bar',
-                                    data: {
-                                        labels: [${top10Margins.map(d => `'${d.name.replace(/'/g, "\\'")}'`).join(', ')}],
-                                        datasets: [{
-                                            label: 'Margin %',
-                                            data: [${top10Margins.map(d => d.margin.toFixed(1)).join(', ')}],
-                                            backgroundColor: '#4caf50',
-                                            borderRadius: 6
-                                        }]
-                                    },
-                                    options: {
-                                        indexAxis: 'y',
-                                        responsive: false, 
-                                        animation: false,
-                                        maintainAspectRatio: false,
-                                        plugins: { 
-                                            legend: { display: false },
-                                            datalabels: {
-                                                display: true,
-                                                color: '#fff',
-                                                font: { weight: 'bold', size: 11 },
-                                                anchor: 'end',
-                                                align: 'start',
-                                                formatter: (value) => Math.round(value) + '%'
-                                            }
-                                        },
-                                        scales: { 
-                                            x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } },
-                                            y: { ticks: { font: { size: 10 } } }
-                                        }
-                                    }
-                                });
-                            }
-                            const ctx2 = document.getElementById('${bottomChartId}');
-                            if (ctx2) {
-                                if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
-                                    type: 'bar',
-                                    data: {
-                                        labels: [${bottom5Margins.map(d => `'${d.name.replace(/'/g, "\\'")}'`).join(', ')}],
-                                        datasets: [{
-                                            label: 'Margin %',
-                                            data: [${bottom5Margins.map(d => d.margin.toFixed(1)).join(', ')}],
-                                            backgroundColor: [${bottom5Margins.map(d => d.margin < 10 ? "'#f44336'" : d.margin < 20 ? "'#ff9800'" : "'#4caf50'").join(', ')}],
-                                            borderRadius: 6
-                                        }]
-                                    },
-                                    options: {
-                                        indexAxis: 'y',
-                                        responsive: false, 
-                                        animation: false,
-                                        maintainAspectRatio: false,
-                                        plugins: { 
-                                            legend: { display: false },
-                                            datalabels: {
-                                                display: true,
-                                                color: '#fff',
-                                                font: { weight: 'bold', size: 11 },
-                                                anchor: 'end',
-                                                align: 'start',
-                                                formatter: (value) => Math.round(value) + '%'
-                                            }
-                                        },
-                                        scales: { 
-                                            x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } },
-                                            y: { ticks: { font: { size: 10 } } }
-                                        }
-                                    }
-                                });
-                            }
-                        }, 100);
-                    <` + `/script>
-                `;
-            }
-            
-            // Detail table section
-            html += `
+                <!-- Detail Table -->
                 <div>
                     <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
                          style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
                         <span class="toggle-icon">▼</span>
-                        <strong>📋 Detail Table</strong>
+                        <strong>📋 Item Details</strong>
                         <span style="color: #666; font-size: 12px;">(${items.length} items - click to hide/show)</span>
                     </div>
                     <div style="margin-top: 15px;">
@@ -23852,45 +23757,568 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <th>SKU</th>
                                 <th>Description</th>
                                 <th>Supplier</th>
-                                <th style="text-align: right;">Qty</th>
+                                <th style="text-align: right;">On Hand</th>
+                                <th style="text-align: right;">On Order</th>
                                 <th style="text-align: right;">Backorder</th>
-                                <th style="text-align: right;">Cost</th>
-                                <th style="text-align: right;">Sell</th>
-                                <th style="text-align: right;">Value</th>
-                                ${type === 'margin' ? '<th style="text-align: right;">Margin</th>' : ''}
+                                <th style="text-align: right;">Available</th>
+                                <th style="text-align: right;">Reorder Pt</th>
+                                <th style="text-align: center;">Status</th>
                             </tr></thead><tbody>`;
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
                 const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const reorder = parseInt(item.Reorder_Point) || 0;
+                const available = qty - backorder + onOrder;
+                
+                // Determine status
+                let status, statusColor, statusBg;
+                if (qty < 0) {
+                    status = '📉 Negative'; statusColor = '#be185d'; statusBg = '#fce7f3';
+                } else if (qty === 0) {
+                    status = '🚫 Out'; statusColor = '#dc2626'; statusBg = '#fee2e2';
+                } else if (available < reorder && reorder > 0) {
+                    status = '⚠️ Low'; statusColor = '#d97706'; statusBg = '#fef3c7';
+                } else {
+                    status = '✅ OK'; statusColor = '#059669'; statusBg = '#ecfdf5';
+                }
+                
+                html += `<tr>
+                    <td style="font-weight: 600;">${item.SKU || '-'}</td>
+                    <td>${item.Item_Description || '-'}</td>
+                    <td style="font-size: 12px; color: #666;">${getSupplierNameLocal(item.Supplier_ID)}</td>
+                    <td style="text-align: right; font-weight: 600; color: ${qty <= 0 ? '#dc2626' : '#333'};">${qty}</td>
+                    <td style="text-align: right; color: ${onOrder > 0 ? '#2563eb' : '#999'}; font-weight: ${onOrder > 0 ? '600' : 'normal'};">${onOrder > 0 ? onOrder : '-'}</td>
+                    <td style="text-align: right; color: ${backorder > 0 ? '#dc2626' : '#999'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
+                    <td style="text-align: right; font-weight: 600; color: ${available < reorder ? '#d97706' : '#059669'};">${available}</td>
+                    <td style="text-align: right; color: #666;">${reorder > 0 ? reorder : '-'}</td>
+                    <td style="text-align: center;"><span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${status}</span></td>
+                </tr>`;
+            });
+            
+            html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                <td colspan="3">TOTALS</td>
+                <td style="text-align: right;">${totalQty.toLocaleString()}</td>
+                <td style="text-align: right; color: #2563eb;">${totalOnOrder > 0 ? totalOnOrder.toLocaleString() : '-'}</td>
+                <td style="text-align: right; color: #dc2626;">${totalBackorder > 0 ? totalBackorder.toLocaleString() : '-'}</td>
+                <td colspan="3"></td>
+            </tr></tfoot></table></div>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+        
+        // ========== GROSS MARGIN ANALYSIS REPORT ==========
+        // Focus: Profitability, margin analysis, cost vs sell
+        async function generateGrossMarginReport() {
+            const itemsResult = await apiCall('getItems');
+            const suppliersResult = await apiCall('getSuppliers');
+            if (!itemsResult?.data) throw new Error('Failed to load items');
+            
+            let items = itemsResult.data.filter(i => i.Status === 'Active');
+            const suppliers = suppliersResult?.data || [];
+            
+            function getSupplierNameLocal(supplierId) {
+                const supplier = suppliers.find(s => s.Supplier_ID == supplierId);
+                return supplier ? supplier.Supplier_Name : '-';
+            }
+            
+            // Apply supplier filter
+            if (reportFilters.supplier) {
+                items = items.filter(i => matchesFilter(i.Supplier_ID, reportFilters.supplier));
+            }
+            
+            // Calculate margin metrics
+            let totalCostValue = 0, totalSellValue = 0;
+            let highMarginCount = 0, medMarginCount = 0, lowMarginCount = 0, negMarginCount = 0;
+            const marginData = [];
+            
+            items.forEach(item => {
+                const qty = parseInt(item.Qty_On_Hand) || 0;
                 const cost = parseFloat(item.Package_Cost) || 0;
                 const sell = parseFloat(item.Unit_Sell_Price) || parseFloat(item.Sell_Price) || 0;
                 const units = parseInt(item.Units_Per_Package) || 1;
                 const unitCost = cost / units;
                 const margin = sell > 0 ? ((sell - unitCost) / sell * 100) : 0;
-                // Use absolute value for calculations - negative inventory still has positive value
-                const itemValue = Math.abs(qty) * unitCost;
+                const profit = sell - unitCost;
+                
+                totalCostValue += Math.abs(qty) * unitCost;
+                totalSellValue += Math.abs(qty) * sell;
+                
+                if (margin >= 30) highMarginCount++;
+                else if (margin >= 20) medMarginCount++;
+                else if (margin >= 0) lowMarginCount++;
+                else negMarginCount++;
+                
+                if (sell > 0) {
+                    marginData.push({
+                        sku: item.SKU || '-',
+                        name: item.Item_Description || '-',
+                        shortName: (item.Item_Description || item.SKU || '-').substring(0, 20),
+                        supplier: getSupplierNameLocal(item.Supplier_ID),
+                        unitCost: unitCost,
+                        sell: sell,
+                        margin: margin,
+                        profit: profit,
+                        value: Math.abs(qty) * unitCost
+                    });
+                }
+            });
+            
+            const avgMargin = totalSellValue > 0 ? ((totalSellValue - totalCostValue) / totalSellValue * 100) : 0;
+            const totalProfit = totalSellValue - totalCostValue;
+            
+            // Sort for charts
+            marginData.sort((a, b) => b.margin - a.margin);
+            const top10Margins = marginData.slice(0, 10);
+            const bottom5Margins = marginData.slice(-5).reverse();
+            
+            const filterSummaryInline = generateFilterSummary({ inline: true });
+            const topChartId = 'marginTopChart_' + Date.now();
+            const bottomChartId = 'marginBottomChart_' + Date.now();
+            const pieChartId = 'marginPieChart_' + Date.now();
+            const histogramChartId = 'marginHistogram_' + Date.now();
+            const scatterChartId = 'marginScatter_' + Date.now();
+            const paretoChartId = 'marginPareto_' + Date.now();
+            
+            // Prepare histogram data (margin distribution in 5% buckets)
+            const histogramBuckets = {};
+            for (let i = 0; i <= 60; i += 5) {
+                histogramBuckets[i] = 0;
+            }
+            marginData.forEach(item => {
+                const bucket = Math.floor(item.margin / 5) * 5;
+                const key = Math.min(Math.max(bucket, 0), 60);
+                histogramBuckets[key] = (histogramBuckets[key] || 0) + 1;
+            });
+            const histogramLabels = Object.keys(histogramBuckets).map(k => k + '-' + (parseInt(k) + 5) + '%');
+            const histogramValues = Object.values(histogramBuckets);
+            
+            // Prepare Pareto data (top 10 by profit contribution)
+            const profitSorted = [...marginData].sort((a, b) => b.profit - a.profit);
+            const top10Profit = profitSorted.slice(0, 10);
+            const totalProfitAll = marginData.reduce((sum, item) => sum + Math.max(0, item.profit), 0);
+            let cumulativePct = 0;
+            const paretoCumulative = top10Profit.map(item => {
+                cumulativePct += (item.profit / totalProfitAll) * 100;
+                return Math.min(cumulativePct, 100);
+            });
+            
+            let html = `
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(5, 150, 105, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px;">📊 Gross Margin Analysis</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${items.length} items | Profitability Overview</p>
+                    ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;">${filterSummaryInline}</div>` : ''}
+                </div>
+                
+                <!-- Profitability KPIs -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                        <div style="font-size: 11px; color: #047857; margin-bottom: 5px;">📊 Avg Margin</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #059669;">${avgMargin.toFixed(1)}%</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                        <div style="font-size: 11px; color: #15803d; margin-bottom: 5px;">💰 Total Cost</div>
+                        <div style="font-size: 22px; font-weight: bold; color: #16a34a;">${formatMoney(totalCostValue)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <div style="font-size: 11px; color: #1d4ed8; margin-bottom: 5px;">💵 Retail Value</div>
+                        <div style="font-size: 22px; font-weight: bold; color: #2563eb;">${formatMoney(totalSellValue)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7;">
+                        <div style="font-size: 11px; color: #7e22ce; margin-bottom: 5px;">🎯 Potential Profit</div>
+                        <div style="font-size: 22px; font-weight: bold; color: #9333ea;">${formatMoney(totalProfit)}</div>
+                    </div>
+                </div>
+                
+                <!-- Margin Distribution with Pie Chart -->
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: stretch;">
+                    <div style="flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                        <div style="background: #dcfce7; padding: 20px 15px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: #16a34a;">${highMarginCount}</div>
+                            <div style="font-size: 11px; color: #15803d; margin-top: 5px;">High (≥30%)</div>
+                        </div>
+                        <div style="background: #fef9c3; padding: 20px 15px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: #ca8a04;">${medMarginCount}</div>
+                            <div style="font-size: 11px; color: #a16207; margin-top: 5px;">Medium (20-30%)</div>
+                        </div>
+                        <div style="background: #fed7aa; padding: 20px 15px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: #ea580c;">${lowMarginCount}</div>
+                            <div style="font-size: 11px; color: #c2410c; margin-top: 5px;">Low (0-20%)</div>
+                        </div>
+                        <div style="background: ${negMarginCount > 0 ? '#fecaca' : '#f5f5f5'}; padding: 20px 15px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: ${negMarginCount > 0 ? '#dc2626' : '#999'};">${negMarginCount}</div>
+                            <div style="font-size: 11px; color: ${negMarginCount > 0 ? '#b91c1c' : '#666'}; margin-top: 5px;">Negative</div>
+                        </div>
+                    </div>
+                    <div style="flex: 0 0 140px; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+                        <canvas id="${pieChartId}" width="120" height="120"></canvas>
+                    </div>
+                </div>
+                
+                <scr` + `ipt>
+                    setTimeout(() => {
+                        const pieCtx = document.getElementById('${pieChartId}');
+                        if (pieCtx) {
+                            if(Chart.getChart(pieCtx)) Chart.getChart(pieCtx).destroy();
+                            new Chart(pieCtx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: ['High (≥30%)', 'Medium (20-30%)', 'Low (0-20%)'${negMarginCount > 0 ? ", 'Negative'" : ''}],
+                                    datasets: [{
+                                        data: [${highMarginCount}, ${medMarginCount}, ${lowMarginCount}${negMarginCount > 0 ? `, ${negMarginCount}` : ''}],
+                                        backgroundColor: ['#22c55e', '#eab308', '#f97316'${negMarginCount > 0 ? ", '#ef4444'" : ''}],
+                                        borderWidth: 2,
+                                        borderColor: '#fff'
+                                    }]
+                                },
+                                options: {
+                                    responsive: false,
+                                    animation: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        datalabels: {
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                                                return pct > 5 ? pct + '%' : '';
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }, 100);
+                <` + `/script>
+                
+                <!-- Margin Charts -->
+                <div style="margin-bottom: 20px;">
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'grid' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📈 Margin Charts</strong>
+                        <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 15px;">
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <h4 style="margin: 0 0 15px 0; color: #16a34a;">🏆 Top 10 Margins</h4>
+                            <canvas id="${topChartId}" height="220"></canvas>
+                        </div>
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <h4 style="margin: 0 0 15px 0; color: #dc2626;">⚠️ Bottom 5 Margins</h4>
+                            <canvas id="${bottomChartId}" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <scr` + `ipt>
+                    setTimeout(() => {
+                        const ctx1 = document.getElementById('${topChartId}');
+                        if (ctx1) {
+                            if(Chart.getChart(ctx1))Chart.getChart(ctx1).destroy(); new Chart(ctx1, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${top10Margins.map(d => `'${d.shortName.replace(/'/g, "\\'")}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Margin %',
+                                        data: [${top10Margins.map(d => d.margin.toFixed(1)).join(', ')}],
+                                        backgroundColor: '#22c55e',
+                                        borderRadius: 6
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: false, 
+                                    animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: { 
+                                        legend: { display: false },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            anchor: 'end',
+                                            align: 'start',
+                                            formatter: (value) => Math.round(value) + '%'
+                                        }
+                                    },
+                                    scales: { 
+                                        x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } },
+                                        y: { ticks: { font: { size: 10 } } }
+                                    }
+                                }
+                            });
+                        }
+                        const ctx2 = document.getElementById('${bottomChartId}');
+                        if (ctx2) {
+                            if(Chart.getChart(ctx2))Chart.getChart(ctx2).destroy(); new Chart(ctx2, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${bottom5Margins.map(d => `'${d.shortName.replace(/'/g, "\\'")}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Margin %',
+                                        data: [${bottom5Margins.map(d => d.margin.toFixed(1)).join(', ')}],
+                                        backgroundColor: [${bottom5Margins.map(d => d.margin < 10 ? "'#ef4444'" : d.margin < 20 ? "'#f59e0b'" : "'#22c55e'").join(', ')}],
+                                        borderRadius: 6
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: false, 
+                                    animation: false,
+                                    maintainAspectRatio: false,
+                                    plugins: { 
+                                        legend: { display: false },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#fff',
+                                            font: { weight: 'bold', size: 11 },
+                                            anchor: 'end',
+                                            align: 'start',
+                                            formatter: (value) => Math.round(value) + '%'
+                                        }
+                                    },
+                                    scales: { 
+                                        x: { beginAtZero: true, max: 100, ticks: { callback: (val) => val + '%' } },
+                                        y: { ticks: { font: { size: 10 } } }
+                                    }
+                                }
+                            });
+                        }
+                    }, 100);
+                <` + `/script>
+                
+                <!-- Advanced Analysis Charts -->
+                <div style="margin-bottom: 20px;">
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📊 Advanced Analysis</strong>
+                        <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <!-- Top row: Histogram and Scatter -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <!-- Histogram -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 5px 0; color: #6366f1;">📊 Margin Distribution</h4>
+                                <p style="margin: 0 0 15px 0; font-size: 11px; color: #666;">How margins are spread across items</p>
+                                <canvas id="${histogramChartId}" height="200"></canvas>
+                            </div>
+                            <!-- Scatter Plot -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <h4 style="margin: 0 0 5px 0; color: #8b5cf6;">💰 Cost vs Price Analysis</h4>
+                                <p style="margin: 0 0 15px 0; font-size: 11px; color: #666;">Bubble size = profit per unit</p>
+                                <canvas id="${scatterChartId}" height="200"></canvas>
+                            </div>
+                        </div>
+                        <!-- Full width: Pareto Chart -->
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <h4 style="margin: 0 0 5px 0; color: #ec4899;">🎯 Pareto: Top Profit Contributors</h4>
+                            <p style="margin: 0 0 15px 0; font-size: 11px; color: #666;">Items driving most of your profit (80/20 rule)</p>
+                            <div style="height: 280px;"><canvas id="${paretoChartId}"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <scr` + `ipt>
+                    setTimeout(() => {
+                        // Histogram Chart
+                        const histCtx = document.getElementById('${histogramChartId}');
+                        if (histCtx) {
+                            if(Chart.getChart(histCtx)) Chart.getChart(histCtx).destroy();
+                            new Chart(histCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${histogramLabels.map(l => `'${l}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Items',
+                                        data: [${histogramValues.join(', ')}],
+                                        backgroundColor: [${histogramLabels.map((l, i) => {
+                                            const val = parseInt(l);
+                                            if (val >= 30) return "'#22c55e'";
+                                            if (val >= 20) return "'#eab308'";
+                                            if (val >= 0) return "'#f97316'";
+                                            return "'#ef4444'";
+                                        }).join(', ')}],
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    responsive: false,
+                                    animation: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#374151',
+                                            anchor: 'end',
+                                            align: 'top',
+                                            font: { size: 10, weight: 'bold' },
+                                            formatter: (val) => val > 0 ? val : ''
+                                        }
+                                    },
+                                    scales: {
+                                        y: { beginAtZero: true, title: { display: true, text: '# Items', font: { size: 10 } } },
+                                        x: { title: { display: true, text: 'Margin Range', font: { size: 10 } } }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Scatter Plot
+                        const scatterCtx = document.getElementById('${scatterChartId}');
+                        if (scatterCtx) {
+                            if(Chart.getChart(scatterCtx)) Chart.getChart(scatterCtx).destroy();
+                            const scatterData = [${marginData.slice(0, 50).map(d => `{x: ${d.unitCost.toFixed(2)}, y: ${d.sell.toFixed(2)}, r: ${Math.max(3, Math.min(15, d.profit * 3))}}`).join(', ')}];
+                            new Chart(scatterCtx, {
+                                type: 'bubble',
+                                data: {
+                                    datasets: [{
+                                        label: 'Items',
+                                        data: scatterData,
+                                        backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                                        borderColor: 'rgba(139, 92, 246, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    responsive: false,
+                                    animation: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        datalabels: { display: false }
+                                    },
+                                    scales: {
+                                        x: { title: { display: true, text: 'Unit Cost ($)', font: { size: 10 } }, beginAtZero: true },
+                                        y: { title: { display: true, text: 'Sell Price ($)', font: { size: 10 } }, beginAtZero: true }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Pareto Chart
+                        const paretoCtx = document.getElementById('${paretoChartId}');
+                        if (paretoCtx) {
+                            if(Chart.getChart(paretoCtx)) Chart.getChart(paretoCtx).destroy();
+                            new Chart(paretoCtx, {
+                                type: 'bar',
+                                data: {
+                                    labels: [${top10Profit.map(d => `'${d.shortName.replace(/'/g, "\\'")}'`).join(', ')}],
+                                    datasets: [{
+                                        type: 'bar',
+                                        label: 'Profit/Unit',
+                                        data: [${top10Profit.map(d => d.profit.toFixed(2)).join(', ')}],
+                                        backgroundColor: '#ec4899',
+                                        borderRadius: 4,
+                                        yAxisID: 'y'
+                                    }, {
+                                        type: 'line',
+                                        label: 'Cumulative %',
+                                        data: [${paretoCumulative.map(v => v.toFixed(1)).join(', ')}],
+                                        borderColor: '#6366f1',
+                                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                        borderWidth: 3,
+                                        pointBackgroundColor: '#6366f1',
+                                        pointRadius: 4,
+                                        fill: true,
+                                        tension: 0.3,
+                                        yAxisID: 'y1',
+                                        datalabels: {
+                                            display: true,
+                                            align: 'top',
+                                            offset: 5,
+                                            color: '#4f46e5',
+                                            font: { size: 10, weight: 'bold' },
+                                            formatter: (value) => Math.round(value) + '%'
+                                        }
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    animation: false,
+                                    plugins: {
+                                        legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
+                                        datalabels: {
+                                            display: function(context) {
+                                                return context.datasetIndex === 0; // Only show for bars
+                                            },
+                                            anchor: 'end',
+                                            align: 'top',
+                                            color: '#be185d',
+                                            font: { size: 11, weight: 'bold' },
+                                            formatter: (value) => '$' + parseFloat(value).toFixed(2)
+                                        }
+                                    },
+                                    scales: {
+                                        x: { ticks: { font: { size: 10 } } },
+                                        y: { 
+                                            type: 'linear', 
+                                            position: 'left', 
+                                            title: { display: true, text: 'Profit ($)', font: { size: 11 } },
+                                            beginAtZero: true
+                                        },
+                                        y1: { 
+                                            type: 'linear', 
+                                            position: 'right', 
+                                            title: { display: true, text: 'Cumulative %', font: { size: 10 } },
+                                            min: 0,
+                                            max: 100,
+                                            grid: { drawOnChartArea: false }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }, 150);
+                <` + `/script>
+                
+                <!-- Detail Table -->
+                <div>
+                    <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                         style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                        <span class="toggle-icon">▼</span>
+                        <strong>📋 Margin Details</strong>
+                        <span style="color: #666; font-size: 12px;">(${marginData.length} items - click to hide/show)</span>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div style="overflow-x: auto;"><table class="data-table">
+                            <thead><tr>
+                                <th>SKU</th>
+                                <th>Description</th>
+                                <th>Supplier</th>
+                                <th style="text-align: right;">Unit Cost</th>
+                                <th style="text-align: right;">Sell Price</th>
+                                <th style="text-align: right;">Profit/Unit</th>
+                                <th style="text-align: right;">Margin %</th>
+                            </tr></thead><tbody>`;
+            
+            // Sort by margin descending for table
+            marginData.sort((a, b) => b.margin - a.margin);
+            
+            marginData.forEach(item => {
+                const marginColor = item.margin >= 30 ? '#16a34a' : item.margin >= 20 ? '#ca8a04' : item.margin >= 0 ? '#ea580c' : '#dc2626';
+                const marginBg = item.margin >= 30 ? '#dcfce7' : item.margin >= 20 ? '#fef9c3' : item.margin >= 0 ? '#fed7aa' : '#fecaca';
                 
                 html += `<tr>
-                    <td>${item.SKU || '-'}</td>
-                    <td>${item.Item_Description || '-'}</td>
-                    <td>${getSupplierNameLocal(item.Supplier_ID)}</td>
-                    <td style="text-align: right; color: ${qty <= 0 ? '#c62828' : '#333'};">${qty}</td>
-                    <td style="text-align: right; color: ${backorder > 0 ? '#dc2626' : '#666'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
-                    <td style="text-align: right;">${formatMoney(unitCost)}</td>
-                    <td style="text-align: right;">${formatMoney(sell)}</td>
-                    <td style="text-align: right;">${formatMoney(itemValue)}</td>
-                    ${type === 'margin' ? `<td style="text-align: right; color: ${margin >= 20 ? '#2e7d32' : '#ff9800'};">${margin.toFixed(1)}%</td>` : ''}
+                    <td style="font-weight: 600;">${item.sku}</td>
+                    <td>${item.name}</td>
+                    <td style="font-size: 12px; color: #666;">${item.supplier}</td>
+                    <td style="text-align: right;">${formatMoney(item.unitCost)}</td>
+                    <td style="text-align: right;">${formatMoney(item.sell)}</td>
+                    <td style="text-align: right; color: ${item.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatMoney(item.profit)}</td>
+                    <td style="text-align: right;"><span style="background: ${marginBg}; color: ${marginColor}; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">${item.margin.toFixed(1)}%</span></td>
                 </tr>`;
             });
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="3">TOTAL</td>
-                <td style="text-align: right;">${totalQty}</td>
-                <td style="text-align: right; color: ${totalBackorder > 0 ? '#dc2626' : '#666'};">${totalBackorder > 0 ? totalBackorder : '-'}</td>
-                <td colspan="2" style="text-align: right;">Inventory Value:</td>
-                <td style="text-align: right;">${formatMoney(totalValue)}</td>
-                ${type === 'margin' ? `<td style="text-align: right;">${totalMargin.toFixed(1)}%</td>` : ''}
+                <td colspan="6" style="text-align: right;">Average Gross Margin:</td>
+                <td style="text-align: right;"><span style="background: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 12px; font-weight: 700; font-size: 14px;">${avgMargin.toFixed(1)}%</span></td>
             </tr></tfoot></table></div>
                     </div>
                 </div>
@@ -28560,7 +28988,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (toDate) toDate.setHours(23, 59, 59, 999);
             if (fromDate) fromDate.setHours(0, 0, 0, 0);
             
-            // Load all report data (uses cache if available)
+            // Load all report data
             await loadReportData();
             
             const items = cachedItems;
@@ -28572,113 +29000,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (!items.length) {
                 throw new Error('Failed to load data');
             }
-            
-            // Calculate inventory stats including backorder and on order
-            let totalBackorder = 0;
-            let backorderItems = 0;
-            let totalOnOrder = 0;
-            let onOrderItems = 0;
-            items.forEach(item => {
-                const backorder = parseInt(item.Qty_On_Backorder) || 0;
-                const onOrder = parseInt(item.Qty_On_Order) || 0;
-                if (backorder > 0) {
-                    totalBackorder += backorder;
-                    backorderItems++;
-                }
-                if (onOrder > 0) {
-                    totalOnOrder += onOrder;
-                    onOrderItems++;
-                }
-            });
-            
-            // Filter purchases by date and calculate stats
-            const filteredPurchases = purchases.filter(po => {
-                if (po.Status === 'Voided' || po.Status === 'Cancelled') return false;
-                const poDate = parseDate(po.PO_Date);
-                if (!poDate) return false;
-                if (fromDate && poDate < fromDate) return false;
-                if (toDate && poDate > toDate) return false;
-                return true;
-            });
-            
-            // Calculate purchase stats
-            let totalPOAmount = 0, totalPOPaid = 0, totalPOOutstanding = 0;
-            let poCount = filteredPurchases.length;
-            let paidPOCount = 0, unpaidPOCount = 0, partialPOCount = 0;
-            let receivedPOCount = 0, pendingPOCount = 0;
-            const supplierSpend = {};
-            const monthlyPurchases = {};
-            
-            for (const po of filteredPurchases) {
-                const poAmount = parseFloat(po.Total_Amount) || 0;
-                const poPaid = parseFloat(po.Amount_Paid) || 0;
-                
-                totalPOAmount += poAmount;
-                totalPOPaid += poPaid;
-                totalPOOutstanding += (poAmount - poPaid);
-                
-                // Payment status counts
-                if (po.Payment_Status === 'Paid') paidPOCount++;
-                else if (po.Payment_Status === 'Partial') partialPOCount++;
-                else unpaidPOCount++;
-                
-                // Receiving status counts
-                if (po.Status === 'Received') receivedPOCount++;
-                else pendingPOCount++;
-                
-                // Supplier breakdown
-                const suppId = po.Supplier_ID;
-                if (!supplierSpend[suppId]) {
-                    const supp = suppliers.find(s => s.Supplier_ID === suppId);
-                    supplierSpend[suppId] = { name: supp?.Supplier_Name || 'Unknown', spend: 0, paid: 0, orders: 0 };
-                }
-                supplierSpend[suppId].spend += poAmount;
-                supplierSpend[suppId].paid += poPaid;
-                supplierSpend[suppId].orders++;
-                
-                // Monthly breakdown
-                const poDate = parseDate(po.PO_Date);
-                if (poDate) {
-                    const monthKey = `${poDate.getFullYear()}-${String(poDate.getMonth() + 1).padStart(2, '0')}`;
-                    if (!monthlyPurchases[monthKey]) {
-                        monthlyPurchases[monthKey] = { spend: 0, paid: 0, orders: 0 };
-                    }
-                    monthlyPurchases[monthKey].spend += poAmount;
-                    monthlyPurchases[monthKey].paid += poPaid;
-                    monthlyPurchases[monthKey].orders++;
-                }
-            }
-            
-            // Sort suppliers by spend
-            const topSuppliersBySpend = Object.values(supplierSpend).sort((a, b) => b.spend - a.spend);
-            const maxSupplierSpend = topSuppliersBySpend.length > 0 ? topSuppliersBySpend[0].spend : 1;
-            
-            // Sort monthly purchases
-            const sortedMonthlyPurchases = Object.entries(monthlyPurchases).sort((a, b) => a[0].localeCompare(b[0]));
-            const maxMonthlySpend = Math.max(...sortedMonthlyPurchases.map(([, d]) => d.spend), 1);
-            
-            // Calculate date range for comparison (same period last year)
-            const now = new Date();
-            let periodStart = fromDate || new Date(now.getFullYear(), 0, 1); // Default to YTD
-            let periodEnd = toDate || now;
-            const periodDays = Math.ceil((periodEnd - periodStart) / (1000 * 60 * 60 * 24));
-            
-            // Calculate WORKING days (exclude weekends)
-            let workingDays = 0;
-            let currentDate = new Date(periodStart);
-            while (currentDate <= periodEnd) {
-                const dayOfWeek = currentDate.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0=Sunday, 6=Saturday
-                    workingDays++;
-                }
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-            
-            // Last year same period
-            const lyStart = new Date(periodStart);
-            lyStart.setFullYear(lyStart.getFullYear() - 1);
-            const lyEnd = new Date(periodEnd);
-            lyEnd.setFullYear(lyEnd.getFullYear() - 1);
             
             // Date label
             let dateLabel = 'All Time';
@@ -28699,789 +29020,458 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return true;
             });
             
-            // Last year sales for comparison
-            const lastYearSales = sales.filter(so => {
-                const soDate = parseDate(so.Sale_Date || so.SO_Date);
-                if (!soDate) return false;
-                if (soDate < lyStart || soDate > lyEnd) return false;
+            // Filter purchases by date
+            const filteredPurchases = purchases.filter(po => {
+                if (po.Status === 'Voided' || po.Status === 'Cancelled') return false;
+                const poDate = parseDate(po.PO_Date);
+                if (!poDate) return false;
+                if (fromDate && poDate < fromDate) return false;
+                if (toDate && poDate > toDate) return false;
                 return true;
             });
             
-            // Calculate current period stats
+            // Calculate Sales Stats
             let totalRevenue = 0, totalCost = 0, orderCount = filteredSales.length;
-            const customerSales = {}, productSales = {}, supplierSales = {};
             const monthlySales = {};
+            const customerSet = new Set();
+            const productSet = new Set();
+            let totalUnitsSold = 0;
             
             for (const so of filteredSales) {
                 const soDate = parseDate(so.Sale_Date || so.SO_Date);
                 const monthKey = soDate ? `${soDate.getFullYear()}-${String(soDate.getMonth() + 1).padStart(2, '0')}` : 'Unknown';
+                customerSet.add(so.Customer_ID);
                 
                 const lines = getSalesLinesFromCache(so.SO_ID);
-                if (lines.length > 0) {
-                    lines.forEach(line => {
-                        const qty = parseInt(line.Quantity) || 0;
-                        const unitPrice = parseFloat(line.Unit_Price) || 0;
-                        const revenue = qty * unitPrice;
-                        
-                        const item = items.find(i => i.Item_ID === line.Item_ID);
-                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                        const unitCost = pkgCost / unitsPerPkg;
-                        const cost = qty * unitCost;
-                        
-                        totalRevenue += revenue;
-                        totalCost += cost;
-                        
-                        // Customer breakdown
-                        if (!customerSales[so.Customer_ID]) {
-                            const cust = customers.find(c => c.Customer_ID === so.Customer_ID);
-                            const loc = cust ? [cust.Address, cust.City].filter(Boolean).join(', ') : '';
-                            customerSales[so.Customer_ID] = { name: cust?.Customer_Name || 'Unknown', location: loc, revenue: 0, orders: 0 };
-                        }
-                        customerSales[so.Customer_ID].revenue += revenue;
-                        customerSales[so.Customer_ID].orders++;
-                        
-                        // Product breakdown - include supplier name
-                        const suppId = item?.Supplier_ID || 'Unknown';
-                        const supp = suppliers.find(s => s.Supplier_ID === suppId);
-                        if (!productSales[line.Item_ID]) {
-                            productSales[line.Item_ID] = { 
-                                name: item?.Item_Description || line.Item_ID, 
-                                sku: item?.SKU || '-',
-                                supplierName: supp?.Supplier_Name || 'Unknown',
-                                revenue: 0, 
-                                qty: 0 
-                            };
-                        }
-                        productSales[line.Item_ID].revenue += revenue;
-                        productSales[line.Item_ID].qty += qty;
-                        
-                        // Supplier breakdown
-                        if (!supplierSales[suppId]) {
-                            supplierSales[suppId] = { name: supp?.Supplier_Name || 'Unknown', revenue: 0, cost: 0 };
-                        }
-                        supplierSales[suppId].revenue += revenue;
-                        supplierSales[suppId].cost += cost;
-                        
-                        // Monthly breakdown
-                        if (!monthlySales[monthKey]) {
-                            monthlySales[monthKey] = { revenue: 0, cost: 0, orders: 0 };
-                        }
-                        monthlySales[monthKey].revenue += revenue;
-                        monthlySales[monthKey].cost += cost;
-                    });
-                }
+                lines.forEach(line => {
+                    const qty = parseInt(line.Quantity) || 0;
+                    const unitPrice = parseFloat(line.Unit_Price) || 0;
+                    const revenue = qty * unitPrice;
+                    
+                    const item = items.find(i => i.Item_ID === line.Item_ID);
+                    const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                    const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                    const unitCost = pkgCost / unitsPerPkg;
+                    const cost = qty * unitCost;
+                    
+                    totalRevenue += revenue;
+                    totalCost += cost;
+                    totalUnitsSold += qty;
+                    productSet.add(line.Item_ID);
+                    
+                    if (!monthlySales[monthKey]) {
+                        monthlySales[monthKey] = { revenue: 0, cost: 0, profit: 0, orders: 0 };
+                    }
+                    monthlySales[monthKey].revenue += revenue;
+                    monthlySales[monthKey].cost += cost;
+                    monthlySales[monthKey].profit += (revenue - cost);
+                });
                 if (monthlySales[monthKey]) monthlySales[monthKey].orders++;
             }
             
-            // Last year stats
-            let lyRevenue = 0;
-            for (const so of lastYearSales) {
-                const lines = getSalesLinesFromCache(so.SO_ID);
-                if (lines.length > 0) {
-                    lines.forEach(line => {
-                        const qty = parseInt(line.Quantity) || 0;
-                        const unitPrice = parseFloat(line.Unit_Price) || 0;
-                        lyRevenue += qty * unitPrice;
-                    });
-                }
-            }
-            
-            // Calculate metrics
             const totalProfit = totalRevenue - totalCost;
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
             const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
-            const yoyGrowth = lyRevenue > 0 ? ((totalRevenue - lyRevenue) / lyRevenue) * 100 : (totalRevenue > 0 ? 100 : 0);
             
-            // Sort and get top N
-            const topCustomers = Object.values(customerSales).sort((a, b) => b.revenue - a.revenue).slice(0, topN);
-            const topProducts = Object.values(productSales).sort((a, b) => b.revenue - a.revenue).slice(0, topN);
-            const topSuppliers = Object.values(supplierSales).sort((a, b) => b.revenue - a.revenue);
+            // Calculate Purchase Stats
+            let totalPOAmount = 0, totalPOPaid = 0;
+            let receivedPOCount = 0, pendingPOCount = 0;
             
-            // Sort monthly data
-            const sortedMonths = Object.entries(monthlySales).sort((a, b) => a[0].localeCompare(b[0]));
-            const maxMonthlyRevenue = Math.max(...sortedMonths.map(([, d]) => d.revenue), 1);
+            for (const po of filteredPurchases) {
+                const poAmount = parseFloat(po.Total_Amount) || 0;
+                const poPaid = parseFloat(po.Amount_Paid) || 0;
+                totalPOAmount += poAmount;
+                totalPOPaid += poPaid;
+                if (po.Status === 'Received') receivedPOCount++;
+                else pendingPOCount++;
+            }
+            const totalPOOutstanding = totalPOAmount - totalPOPaid;
             
-            // Max values for bar charts
-            const maxCustomerRevenue = topCustomers.length > 0 ? topCustomers[0].revenue : 1;
-            const maxProductRevenue = topProducts.length > 0 ? topProducts[0].revenue : 1;
-            const maxSupplierRevenue = topSuppliers.length > 0 ? topSuppliers[0].revenue : 1;
-            const totalSupplierRevenue = topSuppliers.reduce((sum, s) => sum + s.revenue, 0);
+            // Inventory Stats
+            let totalBackorder = 0, backorderItems = 0, totalOnOrder = 0, onOrderItems = 0;
+            items.forEach(item => {
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                if (backorder > 0) { totalBackorder += backorder; backorderItems++; }
+                if (onOrder > 0) { totalOnOrder += onOrder; onOrderItems++; }
+            });
             
-            // Colors
-            const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
-            const supplierColors = ['#1e40af', '#047857', '#b45309', '#b91c1c', '#6d28d9', '#be185d'];
+            // Monthly data for chart
+            const sortedMonths = Object.entries(monthlySales).sort((a, b) => a[0].localeCompare(b[0])).slice(-12);
+            const monthLabels = sortedMonths.map(([m]) => {
+                const [year, month] = m.split('-');
+                return new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short' });
+            });
+            const revenueData = sortedMonths.map(([, d]) => d.revenue.toFixed(2));
+            const profitData = sortedMonths.map(([, d]) => d.profit.toFixed(2));
+            
+            // Chart IDs
+            const salesChartId = 'bizSalesChart_' + Date.now();
+            const poChartId = 'bizPOChart_' + Date.now();
+            
+            // Get theme color from CSS variable
+            const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#1e3a5f';
             
             let html = `
                 <style>
-                    .biz-header {
-                        padding: 35px;
-                        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-                        color: white;
+                    .biz-dash {
+                        background: white;
                         border-radius: 16px;
-                        margin-bottom: 30px;
-                        box-shadow: 0 10px 30px rgba(5, 150, 105, 0.3), 0 4px 12px rgba(0,0,0,0.1);
-                        border: 2px solid rgba(255, 255, 255, 0.1);
+                        padding: 25px;
+                        color: #1f2937;
+                        border: 2px solid #e0e0e0;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
                     }
-                    .biz-header h2 { 
-                        margin: 0 0 10px 0; 
-                        font-size: 32px;
+                    .biz-dash-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 25px;
+                        padding-bottom: 20px;
+                        border-bottom: 2px solid #e5e7eb;
+                    }
+                    .biz-dash-header h2 {
+                        margin: 0;
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: ${themeColor};
+                    }
+                    .biz-dash-header p {
+                        margin: 5px 0 0 0;
+                        color: #6b7280;
+                        font-size: 14px;
+                    }
+                    .biz-dash-badge {
+                        background: ${themeColor};
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        font-weight: 500;
+                    }
+                    .biz-dash-grid {
+                        display: grid;
+                        grid-template-columns: 1.5fr 1fr 1fr;
+                        gap: 20px;
+                        margin-bottom: 20px;
+                    }
+                    @media (max-width: 900px) {
+                        .biz-dash-grid { grid-template-columns: 1fr; }
+                    }
+                    .biz-dash-card {
+                        background: #f8fafc;
+                        border-radius: 12px;
+                        padding: 20px;
+                        border: 1px solid #e2e8f0;
+                    }
+                    .biz-dash-card-title {
+                        font-size: 18px;
+                        font-weight: 600;
+                        margin-bottom: 15px;
                         display: flex;
                         align-items: center;
-                        gap: 15px;
-                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        gap: 10px;
+                        color: #1e3a5f;
                     }
-                    .biz-header p { 
-                        margin: 0; 
-                        opacity: 0.95; 
-                        font-size: 16px; 
-                    }
-                    
-                    .biz-kpi-grid {
-                        display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                        gap: 15px;
-                        margin-bottom: 25px;
-                    }
-                    .biz-kpi {
-                        background: white;
-                        border-radius: 12px;
-                        padding: 20px;
-                        text-align: center;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-                        position: relative;
-                        overflow: hidden;
-                    }
-                    .biz-kpi::before {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        height: 4px;
-                    }
-                    .biz-kpi .icon { font-size: 32px; margin-bottom: 10px; }
-                    .biz-kpi .value { font-size: 28px; font-weight: bold; color: #1f2937; }
-                    .biz-kpi .label { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-top: 5px; }
-                    .biz-kpi .change { font-size: 13px; margin-top: 8px; font-weight: 600; }
-                    .biz-kpi .change.up { color: #059669; }
-                    .biz-kpi .change.down { color: #dc2626; }
-                    
-                    .biz-section {
-                        background: white;
-                        border-radius: 12px;
-                        padding: 20px;
-                        margin-bottom: 20px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-                    }
-                    .biz-section h3 {
-                        margin: 0 0 20px 0;
-                        padding-bottom: 12px;
-                        border-bottom: 2px solid #e5e7eb;
-                        color: #1f2937;
+                    .biz-dash-card-title .icon {
+                        background: ${themeColor};
+                        color: white;
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                         font-size: 18px;
                     }
-                    
-                    .biz-row {
-                        display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-                        gap: 20px;
-                        margin-bottom: 20px;
-                    }
-                    
-                    .biz-chart-bar {
-                        display: flex;
-                        align-items: center;
-                        margin-bottom: 12px;
-                        gap: 10px;
-                    }
-                    .biz-chart-label {
-                        width: 140px;
-                        font-size: 13px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        color: #374151;
-                    }
-                    .biz-chart-bar-bg {
-                        flex: 1;
-                        height: 24px;
-                        background: #f3f4f6;
-                        border-radius: 12px;
-                        overflow: hidden;
-                    }
-                    .biz-chart-bar-fill {
-                        height: 100%;
-                        border-radius: 12px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: flex-end;
-                        padding-right: 8px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        color: white;
-                        min-width: 50px;
-                        transition: width 0.5s ease;
-                    }
-                    .biz-chart-value {
-                        width: 80px;
-                        text-align: right;
-                        font-weight: 600;
-                        font-size: 13px;
-                        color: #1f2937;
-                    }
-                    
-                    .biz-compare-grid {
+                    .biz-dash-kpi-grid {
                         display: grid;
                         grid-template-columns: repeat(2, 1fr);
-                        gap: 20px;
+                        gap: 12px;
                     }
-                    .biz-compare-card {
-                        background: #f9fafb;
-                        border-radius: 12px;
-                        padding: 20px;
-                        text-align: center;
+                    .biz-dash-kpi {
+                        background: white;
+                        border-radius: 8px;
+                        padding: 12px;
+                        border: 1px solid #e5e7eb;
                     }
-                    .biz-compare-card.current { border-left: 4px solid #10b981; }
-                    .biz-compare-card.previous { border-left: 4px solid #6b7280; }
-                    .biz-compare-card .period { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }
-                    .biz-compare-card .amount { font-size: 32px; font-weight: bold; }
-                    .biz-compare-card.current .amount { color: #059669; }
-                    .biz-compare-card.previous .amount { color: #6b7280; }
-                    .biz-compare-card .sub { font-size: 13px; color: #9ca3af; margin-top: 5px; }
-                    
-                    .biz-growth-badge {
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 5px;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-size: 16px;
-                        font-weight: 600;
-                    }
-                    .biz-growth-badge.up { background: #d1fae5; color: #059669; }
-                    .biz-growth-badge.down { background: #fee2e2; color: #dc2626; }
-                    .biz-growth-badge.neutral { background: #f3f4f6; color: #6b7280; }
-                    
-                    .biz-monthly-chart {
-                        display: flex;
-                        align-items: flex-end;
-                        justify-content: space-between;
-                        height: 200px;
-                        padding: 20px 10px 40px 10px;
-                        gap: 8px;
-                    }
-                    .biz-monthly-bar {
-                        flex: 1;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: flex-end;
-                        height: 100%;
-                    }
-                    .biz-monthly-bar-fill {
-                        width: 100%;
-                        max-width: 50px;
-                        background: linear-gradient(180deg, #3b82f6, #1d4ed8);
-                        border-radius: 6px 6px 0 0;
-                        transition: height 0.5s ease;
-                        position: relative;
-                        flex-shrink: 0;
-                    }
-                    .biz-monthly-bar-fill:hover {
-                        background: linear-gradient(180deg, #60a5fa, #3b82f6);
-                    }
-                    .biz-monthly-bar-fill::after {
-                        content: attr(data-value);
-                        position: absolute;
-                        top: -25px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        font-size: 10px;
-                        font-weight: 600;
-                        color: #1f2937;
-                        white-space: nowrap;
-                    }
-                    .biz-monthly-label {
+                    .biz-dash-kpi-label {
                         font-size: 11px;
                         color: #6b7280;
-                        margin-top: 8px;
-                        transform: rotate(-45deg);
-                        white-space: nowrap;
+                        text-transform: uppercase;
+                        margin-bottom: 5px;
+                        letter-spacing: 0.5px;
                     }
-                    
-                    .biz-pie-legend {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 10px;
+                    .biz-dash-kpi-value {
+                        font-size: 22px;
+                        font-weight: 700;
+                        color: #1f2937;
                     }
-                    .biz-pie-item {
+                    .biz-dash-chart {
+                        height: 200px;
+                        margin: 15px 0;
+                    }
+                    .biz-dash-donut {
                         display: flex;
                         align-items: center;
-                        gap: 10px;
+                        justify-content: center;
+                        padding: 10px 0;
                     }
-                    .biz-pie-color {
-                        width: 16px;
-                        height: 16px;
-                        border-radius: 4px;
+                    .biz-dash-bottom {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 15px;
+                        margin-top: 20px;
                     }
-                    .biz-pie-name { flex: 1; font-size: 13px; color: #374151; }
-                    .biz-pie-value { font-weight: 600; color: #1f2937; }
-                    .biz-pie-pct { font-size: 12px; color: #6b7280; width: 50px; text-align: right; }
-                    
-                    .biz-stat-row {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 12px 0;
-                        border-bottom: 1px solid #f3f4f6;
+                    @media (max-width: 700px) {
+                        .biz-dash-bottom { grid-template-columns: repeat(2, 1fr); }
                     }
-                    .biz-stat-row:last-child { border-bottom: none; }
-                    .biz-stat-label { color: #6b7280; }
-                    .biz-stat-value { font-weight: 600; color: #1f2937; }
+                    .biz-dash-stat {
+                        background: #f8fafc;
+                        border-radius: 10px;
+                        padding: 18px;
+                        text-align: center;
+                        border: 1px solid #e2e8f0;
+                    }
+                    .biz-dash-stat-label {
+                        font-size: 11px;
+                        color: #6b7280;
+                        margin-bottom: 8px;
+                        text-transform: uppercase;
+                    }
+                    .biz-dash-stat-value {
+                        font-size: 26px;
+                        font-weight: 700;
+                        color: #1f2937;
+                    }
+                    .biz-dash-stat-sub {
+                        font-size: 12px;
+                        color: #6b7280;
+                        margin-top: 5px;
+                    }
+                    @media print {
+                        .biz-dash { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
                 </style>
                 
-                <div class="biz-header">
-                    <h2>📊 Business Overview Dashboard</h2>
-                    <p>${dateLabel} • Top ${topN} Analysis</p>
-                </div>
-                
-                <!-- KPI Cards -->
-                <div class="biz-kpi-grid">
-                    <div class="biz-kpi" style="border-top: 4px solid #10b981;">
-                        <div class="icon">💰</div>
-                        <div class="value">$${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div class="label">Total Revenue</div>
-                        <div class="change ${yoyGrowth >= 0 ? 'up' : 'down'}">${yoyGrowth >= 0 ? '↑' : '↓'} ${Math.abs(yoyGrowth).toFixed(1)}% vs Last Year</div>
-                    </div>
-                    <div class="biz-kpi" style="border-top: 4px solid #3b82f6;">
-                        <div class="icon">📈</div>
-                        <div class="value">$${totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                        <div class="label">Gross Profit</div>
-                        <div class="change up">${avgMargin.toFixed(1)}% margin</div>
-                    </div>
-                    <div class="biz-kpi" style="border-top: 4px solid #8b5cf6;">
-                        <div class="icon">🧾</div>
-                        <div class="value">${orderCount.toLocaleString()}</div>
-                        <div class="label">Total Orders</div>
-                        <div class="change up">${lastYearSales.length > 0 ? ((orderCount - lastYearSales.length) / lastYearSales.length * 100).toFixed(1) : '100'}% vs LY</div>
-                    </div>
-                    <div class="biz-kpi" style="border-top: 4px solid #f59e0b;">
-                        <div class="icon">🛒</div>
-                        <div class="value">${formatMoney(avgOrderValue)}</div>
-                        <div class="label">Avg Order Value</div>
-                    </div>
-                    <div class="biz-kpi" style="border-top: 4px solid #ec4899;">
-                        <div class="icon">👥</div>
-                        <div class="value">${Object.keys(customerSales).length}</div>
-                        <div class="label">Active Customers</div>
-                    </div>
-                    <div class="biz-kpi" style="border-top: 4px solid #06b6d4;">
-                        <div class="icon">📦</div>
-                        <div class="value">${Object.keys(productSales).length}</div>
-                        <div class="label">Products Sold</div>
-                    </div>
-                    <div class="biz-kpi" style="border-top: 4px solid ${totalBackorder > 0 ? '#dc2626' : '#9ca3af'};">
-                        <div class="icon">⚠️</div>
-                        <div class="value" style="color: ${totalBackorder > 0 ? '#dc2626' : '#666'};">${totalBackorder}</div>
-                        <div class="label">On Backorder</div>
-                        <div class="change ${totalBackorder > 0 ? 'down' : 'up'}">${backorderItems} items</div>
-                    </div>
-                </div>
-                
-                <!-- Purchases KPI Cards -->
-                <div style="margin-top: 10px; margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 15px 0; color: #dc2626; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                        📋 Purchase Orders Summary
-                    </h3>
-                    <div class="biz-kpi-grid">
-                        <div class="biz-kpi" style="border-top: 4px solid #dc2626;">
-                            <div class="icon">🛍️</div>
-                            <div class="value">$${totalPOAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div class="label">Total PO Amount</div>
-                            <div class="change">${poCount} orders</div>
+                <div class="biz-dash">
+                    <div class="biz-dash-header">
+                        <div>
+                            <h2>📊 Business Overview</h2>
+                            <p>Sales Performance, Customer and Operations</p>
                         </div>
-                        <div class="biz-kpi" style="border-top: 4px solid #16a34a;">
-                            <div class="icon">✅</div>
-                            <div class="value">$${totalPOPaid.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div class="label">Amount Paid</div>
-                            <div class="change up">${paidPOCount} paid in full</div>
-                        </div>
-                        <div class="biz-kpi" style="border-top: 4px solid #f59e0b;">
-                            <div class="icon">⏳</div>
-                            <div class="value" style="color: ${totalPOOutstanding > 0 ? '#dc2626' : '#16a34a'};">$${totalPOOutstanding.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div class="label">Outstanding Payables</div>
-                            <div class="change ${totalPOOutstanding > 0 ? 'down' : 'up'}">${unpaidPOCount + partialPOCount} unpaid</div>
-                        </div>
-                        <div class="biz-kpi" style="border-top: 4px solid #7c3aed;">
-                            <div class="icon">📥</div>
-                            <div class="value">${receivedPOCount}</div>
-                            <div class="label">POs Received</div>
-                            <div class="change">${pendingPOCount} pending</div>
-                        </div>
-                        <div class="biz-kpi" style="border-top: 4px solid #0891b2;">
-                            <div class="icon">📦</div>
-                            <div class="value">${totalOnOrder.toLocaleString()}</div>
-                            <div class="label">Qty On Order</div>
-                            <div class="change">${onOrderItems} items</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Year over Year Comparison -->
-                <div class="biz-section">
-                    <h3>📅 Year-over-Year Comparison</h3>
-                    <div class="biz-compare-grid">
-                        <div class="biz-compare-card current">
-                            <div class="period">Current Period</div>
-                            <div class="amount">$${totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div class="sub">${orderCount} orders</div>
-                        </div>
-                        <div class="biz-compare-card previous">
-                            <div class="period">Same Period Last Year</div>
-                            <div class="amount">$${lyRevenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                            <div class="sub">${lastYearSales.length} orders</div>
-                        </div>
-                    </div>
-                    <div style="text-align: center; margin-top: 20px;">
-                        <span class="biz-growth-badge ${yoyGrowth > 0 ? 'up' : yoyGrowth < 0 ? 'down' : 'neutral'}">
-                            ${yoyGrowth > 0 ? '📈 ↑' : yoyGrowth < 0 ? '📉 ↓' : '➡️'} 
-                            ${yoyGrowth > 0 ? '+' : ''}${yoyGrowth.toFixed(1)}% 
-                            ${yoyGrowth > 0 ? 'Growth' : yoyGrowth < 0 ? 'Decline' : 'No Change'}
-                        </span>
-                        <p style="color: #6b7280; font-size: 13px; margin-top: 10px;">
-                            ${yoyGrowth > 0 ? `You've earned ${formatMoney(totalRevenue - lyRevenue)} more than last year!` : 
-                              yoyGrowth < 0 ? `Revenue is down ${formatMoney(Math.abs(totalRevenue - lyRevenue))} from last year` : 
-                              'Revenue is the same as last year'}
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="biz-row">
-                    <!-- Top Customers -->
-                    <div class="biz-section">
-                        <h3>🏆 Top ${topN} Customers</h3>
-                        ${topCustomers.length === 0 ? '<p style="color: #6b7280; text-align: center;">No customer data</p>' :
-                        topCustomers.map((c, i) => {
-                            const width = (c.revenue / maxCustomerRevenue) * 100;
-                            const displayName = c.location ? `${c.name} (${c.location})` : c.name;
-                            return `
-                                <div class="biz-chart-bar">
-                                    <div class="biz-chart-label" title="${displayName}">${i + 1}. ${c.name}${c.location ? `<br><span style="font-size: 10px; color: #888; font-weight: normal;">${c.location}</span>` : ''}</div>
-                                    <div class="biz-chart-bar-bg">
-                                        <div class="biz-chart-bar-fill" style="width: ${Math.max(width, 8)}%; background: ${chartColors[i % chartColors.length]};">
-                                            ${c.orders}
-                                        </div>
-                                    </div>
-                                    <div class="biz-chart-value">$${c.revenue.toFixed(0)}</div>
-                                </div>
-                            `;
-                        }).join('')}
+                        <div class="biz-dash-badge">${dateLabel}</div>
                     </div>
                     
-                    <!-- Top Products -->
-                    <div class="biz-section">
-                        <h3>📦 Top ${topN} Products</h3>
-                        ${topProducts.length === 0 ? '<p style="color: #6b7280; text-align: center;">No product data</p>' :
-                        topProducts.map((p, i) => {
-                            const width = (p.revenue / maxProductRevenue) * 100;
-                            return `
-                                <div class="biz-chart-bar">
-                                    <div class="biz-chart-label" title="${p.name}">
-                                        <div>${i + 1}. ${p.name}</div>
-                                        <div style="font-size: 11px; color: #888; font-weight: normal;">${p.qty} units • ${p.supplierName || 'Unknown'}</div>
-                                    </div>
-                                    <div class="biz-chart-bar-bg">
-                                        <div class="biz-chart-bar-fill" style="width: ${Math.max(width, 8)}%; background: ${chartColors[i % chartColors.length]};">
-                                            ${p.qty}
-                                        </div>
-                                    </div>
-                                    <div class="biz-chart-value">$${p.revenue.toFixed(0)}</div>
+                    <!-- Main 3-Column Grid -->
+                    <div class="biz-dash-grid">
+                        <!-- Sales Performance -->
+                        <div class="biz-dash-card">
+                            <div class="biz-dash-card-title">
+                                <span class="icon">📈</span>
+                                Sales Performance
+                            </div>
+                            <div class="biz-dash-chart">
+                                <canvas id="${salesChartId}"></canvas>
+                            </div>
+                            <div class="biz-dash-kpi-grid">
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Avg Order Value</div>
+                                    <div class="biz-dash-kpi-value">${formatMoney(avgOrderValue)}</div>
                                 </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-                
-                <div class="biz-row">
-                    <!-- Supplier Breakdown -->
-                    <div class="biz-section">
-                        <h3>🏭 Revenue by Supplier</h3>
-                        <div class="biz-pie-legend">
-                            ${topSuppliers.map((s, i) => {
-                                const pct = totalSupplierRevenue > 0 ? (s.revenue / totalSupplierRevenue) * 100 : 0;
-                                return `
-                                    <div class="biz-pie-item">
-                                        <div class="biz-pie-color" style="background: ${supplierColors[i % supplierColors.length]};"></div>
-                                        <div class="biz-pie-name">${s.name}</div>
-                                        <div class="biz-pie-value">${formatMoney(s.revenue)}</div>
-                                        <div class="biz-pie-pct">${pct.toFixed(1)}%</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
-                            ${topSuppliers.map((s, i) => {
-                                const width = (s.revenue / maxSupplierRevenue) * 100;
-                                return `
-                                    <div style="height: 20px; background: #f3f4f6; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
-                                        <div style="height: 100%; width: ${width}%; background: ${supplierColors[i % supplierColors.length]}; border-radius: 10px;"></div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Stats -->
-                    <div class="biz-section">
-                        <h3>📋 Quick Stats</h3>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">💵 Total Revenue</span>
-                            <span class="biz-stat-value">${formatMoney(totalRevenue)}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">💸 Total Cost</span>
-                            <span class="biz-stat-value">${formatMoney(totalCost)}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📈 Gross Profit</span>
-                            <span class="biz-stat-value" style="color: #059669;">${formatMoney(totalProfit)}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">🎯 Profit Margin</span>
-                            <span class="biz-stat-value">${avgMargin.toFixed(1)}%</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">🧾 Total Orders</span>
-                            <span class="biz-stat-value">${orderCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">🛒 Avg Order Value</span>
-                            <span class="biz-stat-value">${formatMoney(avgOrderValue)}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">👥 Active Customers</span>
-                            <span class="biz-stat-value">${Object.keys(customerSales).length}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📦 Products Sold</span>
-                            <span class="biz-stat-value">${Object.keys(productSales).length}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📅 Working Days</span>
-                            <span class="biz-stat-value">${workingDays} days</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📊 Daily Avg Revenue</span>
-                            <span class="biz-stat-value">${formatMoney(totalRevenue / Math.max(workingDays, 1))}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ==================== PURCHASES SECTION ==================== -->
-                <div style="margin-top: 30px; padding-top: 30px; border-top: 3px solid #dc2626;">
-                    <h2 style="color: #dc2626; margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
-                        📋 Purchase Orders Analysis
-                    </h2>
-                </div>
-                
-                <div class="biz-row">
-                    <!-- Top Suppliers by Spend -->
-                    <div class="biz-section">
-                        <h3>🏭 Top Suppliers by Spend</h3>
-                        ${topSuppliersBySpend.length === 0 ? '<p style="color: #6b7280; text-align: center;">No purchase data</p>' :
-                        topSuppliersBySpend.slice(0, topN).map((s, i) => {
-                            const width = (s.spend / maxSupplierSpend) * 100;
-                            const outstanding = s.spend - s.paid;
-                            return `
-                                <div class="biz-chart-bar">
-                                    <div class="biz-chart-label" title="${s.name}">${i + 1}. ${s.name}</div>
-                                    <div class="biz-chart-bar-bg">
-                                        <div class="biz-chart-bar-fill" style="width: ${Math.max(width, 8)}%; background: linear-gradient(90deg, #dc2626, #f87171);">
-                                            ${s.orders}
-                                        </div>
-                                    </div>
-                                    <div class="biz-chart-value">$${s.spend.toFixed(0)}</div>
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Total Orders</div>
+                                    <div class="biz-dash-kpi-value">${orderCount.toLocaleString()}</div>
                                 </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    
-                    <!-- Purchase Quick Stats -->
-                    <div class="biz-section">
-                        <h3>📋 Purchase Stats</h3>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">🛍️ Total PO Amount</span>
-                            <span class="biz-stat-value">${formatMoney(totalPOAmount)}</span>
+                            </div>
                         </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">✅ Amount Paid</span>
-                            <span class="biz-stat-value" style="color: #16a34a;">${formatMoney(totalPOPaid)}</span>
+                        
+                        <!-- Customer & Operations -->
+                        <div class="biz-dash-card">
+                            <div class="biz-dash-card-title">
+                                <span class="icon">👥</span>
+                                Customer & Operations
+                            </div>
+                            <div class="biz-dash-kpi-grid">
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Active Customers</div>
+                                    <div class="biz-dash-kpi-value">${customerSet.size}</div>
+                                </div>
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Products Sold</div>
+                                    <div class="biz-dash-kpi-value">${productSet.size}</div>
+                                </div>
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Units Sold</div>
+                                    <div class="biz-dash-kpi-value">${totalUnitsSold.toLocaleString()}</div>
+                                </div>
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">On Backorder</div>
+                                    <div class="biz-dash-kpi-value" style="${totalBackorder > 0 ? 'color: #fca5a5;' : ''}">${totalBackorder}</div>
+                                </div>
+                            </div>
+                            <div class="biz-dash-kpi" style="margin-top: 12px;">
+                                <div class="biz-dash-kpi-label">Qty On Order (from suppliers)</div>
+                                <div class="biz-dash-kpi-value">${totalOnOrder.toLocaleString()}</div>
+                            </div>
                         </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">⏳ Outstanding</span>
-                            <span class="biz-stat-value" style="color: ${totalPOOutstanding > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(totalPOOutstanding)}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📦 Total POs</span>
-                            <span class="biz-stat-value">${poCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">💵 Paid in Full</span>
-                            <span class="biz-stat-value">${paidPOCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">🔄 Partial Payment</span>
-                            <span class="biz-stat-value">${partialPOCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">❌ Unpaid</span>
-                            <span class="biz-stat-value" style="color: ${unpaidPOCount > 0 ? '#dc2626' : '#16a34a'};">${unpaidPOCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📥 Received</span>
-                            <span class="biz-stat-value">${receivedPOCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">⏳ Pending Receipt</span>
-                            <span class="biz-stat-value">${pendingPOCount}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">📦 Qty On Order</span>
-                            <span class="biz-stat-value" style="color: #0891b2;">${totalOnOrder.toLocaleString()}</span>
-                        </div>
-                        <div class="biz-stat-row">
-                            <span class="biz-stat-label">🛒 Avg PO Value</span>
-                            <span class="biz-stat-value">${formatMoney(poCount > 0 ? totalPOAmount / poCount : 0)}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Supplier Spend Table -->
-                ${topSuppliersBySpend.length > 0 ? `
-                <div class="biz-section">
-                    <h3>🏭 Supplier Spend Details</h3>
-                    <div style="overflow-x: auto;">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Supplier</th>
-                                    <th style="text-align: right;">PO Count</th>
-                                    <th style="text-align: right;">Total Spend</th>
-                                    <th style="text-align: right;">Amount Paid</th>
-                                    <th style="text-align: right;">Outstanding</th>
-                                    <th style="text-align: right;">% of Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${topSuppliersBySpend.map((s, i) => {
-                                    const pct = totalPOAmount > 0 ? (s.spend / totalPOAmount) * 100 : 0;
-                                    const outstanding = s.spend - s.paid;
-                                    return `
-                                        <tr>
-                                            <td><strong>${i + 1}</strong></td>
-                                            <td>${s.name}</td>
-                                            <td style="text-align: right;">${s.orders}</td>
-                                            <td style="text-align: right;">${formatMoney(s.spend)}</td>
-                                            <td style="text-align: right; color: #16a34a;">${formatMoney(s.paid)}</td>
-                                            <td style="text-align: right; color: ${outstanding > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(outstanding)}</td>
-                                            <td style="text-align: right;">
-                                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                                                    <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
-                                                        <div style="height: 100%; width: ${pct}%; background: #dc2626; border-radius: 4px;"></div>
-                                                    </div>
-                                                    <span>${pct.toFixed(1)}%</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                            <tfoot style="font-weight: bold; background: #f9fafb;">
-                                <tr>
-                                    <td colspan="2">TOTAL</td>
-                                    <td style="text-align: right;">${poCount}</td>
-                                    <td style="text-align: right;">${formatMoney(totalPOAmount)}</td>
-                                    <td style="text-align: right; color: #16a34a;">${formatMoney(totalPOPaid)}</td>
-                                    <td style="text-align: right; color: ${totalPOOutstanding > 0 ? '#dc2626' : '#16a34a'};">${formatMoney(totalPOOutstanding)}</td>
-                                    <td style="text-align: right;">100%</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-                ` : ''}
-                
-                <!-- Cash Flow Summary -->
-                <div class="biz-section" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #16a34a;">
-                    <h3 style="color: #16a34a;">💵 Cash Flow Summary</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                        <div style="text-align: center; padding: 20px; background: white; border-radius: 12px;">
-                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">💰 Revenue (Sales)</div>
-                            <div style="font-size: 28px; font-weight: bold; color: #16a34a;">+${formatMoney(totalRevenue)}</div>
-                        </div>
-                        <div style="text-align: center; padding: 20px; background: white; border-radius: 12px;">
-                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">🛍️ Expenses (Purchases)</div>
-                            <div style="font-size: 28px; font-weight: bold; color: #dc2626;">-${formatMoney(totalPOAmount)}</div>
-                        </div>
-                        <div style="text-align: center; padding: 20px; background: white; border-radius: 12px;">
-                            <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">📊 Net Cash Flow</div>
-                            <div style="font-size: 28px; font-weight: bold; color: ${totalRevenue - totalPOAmount >= 0 ? '#16a34a' : '#dc2626'};">
-                                ${totalRevenue - totalPOAmount >= 0 ? '+' : ''}${formatMoney(totalRevenue - totalPOAmount)}
+                        
+                        <!-- Purchase Orders Summary -->
+                        <div class="biz-dash-card">
+                            <div class="biz-dash-card-title">
+                                <span class="icon">📦</span>
+                                Purchase Orders
+                            </div>
+                            <div class="biz-dash-kpi-grid">
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Total PO Amount</div>
+                                    <div class="biz-dash-kpi-value">${formatMoney(totalPOAmount)}</div>
+                                </div>
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">Amount Paid</div>
+                                    <div class="biz-dash-kpi-value">${formatMoney(totalPOPaid)}</div>
+                                </div>
+                            </div>
+                            <div class="biz-dash-donut">
+                                <canvas id="${poChartId}" width="140" height="140"></canvas>
+                            </div>
+                            <div class="biz-dash-kpi-grid">
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">POs Received</div>
+                                    <div class="biz-dash-kpi-value">${receivedPOCount}</div>
+                                </div>
+                                <div class="biz-dash-kpi">
+                                    <div class="biz-dash-kpi-label">POs Pending</div>
+                                    <div class="biz-dash-kpi-value" style="${pendingPOCount > 0 ? 'color: #fde047;' : ''}">${pendingPOCount}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; text-align: center;">
-                        <span style="font-size: 14px; color: #6b7280;">
-                            ${totalRevenue - totalPOAmount >= 0 
-                                ? '✅ Positive cash flow! Revenue exceeds purchase expenses.' 
-                                : '⚠️ Negative cash flow. Purchase expenses exceed revenue.'}
-                        </span>
+                    
+                    <!-- Bottom Stats Row -->
+                    <div class="biz-dash-bottom">
+                        <div class="biz-dash-stat">
+                            <div class="biz-dash-stat-label">💰 Total Revenue</div>
+                            <div class="biz-dash-stat-value" style="color: ${themeColor};">${formatMoney(totalRevenue)}</div>
+                        </div>
+                        <div class="biz-dash-stat">
+                            <div class="biz-dash-stat-label">📈 Gross Profit</div>
+                            <div class="biz-dash-stat-value" style="color: #10b981;">${formatMoney(totalProfit)}</div>
+                            <div class="biz-dash-stat-sub">${avgMargin.toFixed(1)}% margin</div>
+                        </div>
+                        <div class="biz-dash-stat">
+                            <div class="biz-dash-stat-label">📊 Cost of Goods</div>
+                            <div class="biz-dash-stat-value" style="color: #f59e0b;">${formatMoney(totalCost)}</div>
+                        </div>
+                        <div class="biz-dash-stat">
+                            <div class="biz-dash-stat-label">💳 PO Outstanding</div>
+                            <div class="biz-dash-stat-value" style="color: ${totalPOOutstanding > 0 ? '#ef4444' : '#10b981'};">${formatMoney(totalPOOutstanding)}</div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Top Products Table -->
-                <div class="biz-section">
-                    <h3>📦 Product Performance Details</h3>
-                    <div style="overflow-x: auto;">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>SKU</th>
-                                    <th>Product</th>
-                                    <th>Supplier</th>
-                                    <th style="text-align: right;">Units Sold</th>
-                                    <th style="text-align: right;">Revenue</th>
-                                    <th style="text-align: right;">% of Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${topProducts.map((p, i) => {
-                                    const pct = totalRevenue > 0 ? (p.revenue / totalRevenue) * 100 : 0;
-                                    return `
-                                        <tr>
-                                            <td><strong>${i + 1}</strong></td>
-                                            <td>${p.sku}</td>
-                                            <td>${p.name}</td>
-                                            <td style="color: #666; font-size: 13px;">${p.supplierName || '-'}</td>
-                                            <td style="text-align: right;">${p.qty.toLocaleString()}</td>
-                                            <td style="text-align: right;">${formatMoney(p.revenue)}</td>
-                                            <td style="text-align: right;">
-                                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                                                    <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
-                                                        <div style="height: 100%; width: ${pct}%; background: #3b82f6; border-radius: 4px;"></div>
-                                                    </div>
-                                                    <span>${pct.toFixed(1)}%</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <scr` + `ipt>
+                    setTimeout(() => {
+                        // Sales Trend Chart
+                        const salesCtx = document.getElementById('${salesChartId}');
+                        if (salesCtx) {
+                            if(Chart.getChart(salesCtx)) Chart.getChart(salesCtx).destroy();
+                            new Chart(salesCtx, {
+                                type: 'line',
+                                data: {
+                                    labels: [${monthLabels.map(l => `'${l}'`).join(', ')}],
+                                    datasets: [{
+                                        label: 'Revenue',
+                                        data: [${revenueData.join(', ')}],
+                                        borderColor: '${themeColor}',
+                                        backgroundColor: '${themeColor}22',
+                                        borderWidth: 3,
+                                        fill: true,
+                                        tension: 0.4,
+                                        pointRadius: 4,
+                                        pointBackgroundColor: '${themeColor}'
+                                    }, {
+                                        label: 'Profit',
+                                        data: [${profitData.join(', ')}],
+                                        borderColor: '#10b981',
+                                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4,
+                                        pointRadius: 3,
+                                        pointBackgroundColor: '#10b981'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    animation: false,
+                                    plugins: {
+                                        legend: { 
+                                            display: true, 
+                                            position: 'top',
+                                            labels: { color: '#374151', font: { size: 11 }, usePointStyle: true, padding: 15 }
+                                        },
+                                        datalabels: { display: false }
+                                    },
+                                    scales: {
+                                        x: { 
+                                            ticks: { color: '#6b7280', font: { size: 10 } },
+                                            grid: { color: '#e5e7eb' }
+                                        },
+                                        y: { 
+                                            ticks: { 
+                                                color: '#6b7280', 
+                                                font: { size: 10 },
+                                                callback: (val) => '$' + (val >= 1000 ? (val/1000).toFixed(0) + 'k' : val.toFixed(0))
+                                            },
+                                            grid: { color: '#e5e7eb' }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // PO Donut Chart
+                        const poCtx = document.getElementById('${poChartId}');
+                        if (poCtx) {
+                            if(Chart.getChart(poCtx)) Chart.getChart(poCtx).destroy();
+                            new Chart(poCtx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: ['Paid', 'Outstanding'],
+                                    datasets: [{
+                                        data: [${totalPOPaid.toFixed(2)}, ${totalPOOutstanding.toFixed(2)}],
+                                        backgroundColor: ['#10b981', '#e5e7eb'],
+                                        borderWidth: 0
+                                    }]
+                                },
+                                options: {
+                                    responsive: false,
+                                    animation: false,
+                                    cutout: '60%',
+                                    plugins: {
+                                        legend: { 
+                                            display: true, 
+                                            position: 'bottom',
+                                            labels: { color: '#374151', font: { size: 10 }, padding: 10 }
+                                        },
+                                        datalabels: {
+                                            display: true,
+                                            color: '#1f2937',
+                                            font: { weight: 'bold', size: 11 },
+                                            formatter: (value, ctx) => {
+                                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                                const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                                                return pct > 5 ? pct + '%' : '';
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }, 100);
+                <` + `/script>
             `;
             
             return html;
@@ -36294,8 +36284,8 @@ NOTE: Please print the attached PO document for full details.`;
             
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
-                <button onclick="closeOrderPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
-                <button id="soConfirmSaveBtn" onclick="submitSaleWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
+                <button type="button" onclick="closeOrderPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button type="button" id="soConfirmSaveBtn" onclick="submitSaleWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
             </div>
         </div>
     </div>
@@ -36316,8 +36306,8 @@ NOTE: Please print the attached PO document for full details.`;
             
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
-                <button onclick="closePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
-                <button id="poConfirmSaveBtn" onclick="submitPOWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
+                <button type="button" onclick="closePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button type="button" id="poConfirmSaveBtn" onclick="submitPOWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
             </div>
         </div>
     </div>
