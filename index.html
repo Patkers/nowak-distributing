@@ -15545,6 +15545,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
         // Apply date filter from oval buttons
         function applySalesDateFilter(period, evt) {
             console.log('Date filter clicked:', period); // Debug
+            activeSalesFilter = period; // Track active filter
             
             const now = new Date();
             let fromDate = null;
@@ -15594,19 +15595,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     document.getElementById('filterSaleDateFrom').value = '';
                     document.getElementById('filterSaleDateTo').value = '';
                     filterSales();
-                    
-                    // Update button active state - only within sales tab
-                    if (evt) {
-                        const salesCard = evt.target.closest('.sales-data-card');
-                        if (salesCard) {
-                            salesCard.querySelectorAll('.oval-filter-btn').forEach(btn => {
-                                btn.style.opacity = '0.6';
-                                btn.style.transform = 'scale(1)';
-                            });
-                        }
-                        evt.target.style.opacity = '1';
-                        evt.target.style.transform = 'scale(1.05)';
-                    }
+                    updateSalesFilterButtons(period);
                     return;
             }
             
@@ -15625,18 +15614,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             console.log('Filter applied'); // Debug
             
-            // Update button active state - only within sales tab
-            if (evt) {
-                const salesCard = evt.target.closest('.sales-data-card');
-                if (salesCard) {
-                    salesCard.querySelectorAll('.oval-filter-btn').forEach(btn => {
-                        btn.style.opacity = '0.6';
-                        btn.style.transform = 'scale(1)';
-                    });
-                }
-                evt.target.style.opacity = '1';
-                evt.target.style.transform = 'scale(1.05)';
-            }
+            // Update button active state
+            updateSalesFilterButtons(period);
+        }
+        
+        // Track active sales filter
+        let activeSalesFilter = 'all';
+        
+        function updateSalesFilterButtons(activePeriod) {
+            setTimeout(() => {
+                document.querySelectorAll('.oval-filter-btn-so').forEach(btn => {
+                    const onclick = btn.getAttribute('onclick') || '';
+                    const isActive = onclick.includes(`'${activePeriod}'`);
+                    btn.style.opacity = isActive ? '1' : '0.6';
+                    btn.style.transform = isActive ? 'scale(1.05)' : 'scale(1)';
+                    btn.style.boxShadow = isActive ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)';
+                });
+            }, 50);
         }
 
         function displaySales(orders) {
@@ -15665,34 +15659,34 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <!-- Oval Buttons - Muted Professional Colors -->
                     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 10px;">
-                            <button onclick="applySalesDateFilter('today', event)" class="oval-filter-btn" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('today', event)" class="oval-filter-btn-so" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 Last Day
                             </button>
-                            <button onclick="applySalesDateFilter('week', event)" class="oval-filter-btn" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('week', event)" class="oval-filter-btn-so" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📆 Last Week
                             </button>
-                            <button onclick="applySalesDateFilter('3months', event)" class="oval-filter-btn" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('3months', event)" class="oval-filter-btn-so" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 🗓️ Last 3 Months
                             </button>
-                            <button onclick="applySalesDateFilter('6months', event)" class="oval-filter-btn" style="background: #e8f0e8; color: #5a7a6d; border: 2px solid #6b9a8d; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('6months', event)" class="oval-filter-btn-so" style="background: #e8f0e8; color: #5a7a6d; border: 2px solid #6b9a8d; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📊 6 Months
                             </button>
-                            <button onclick="applySalesDateFilter('9months', event)" class="oval-filter-btn" style="background: #e8f0f5; color: #5a7a8a; border: 2px solid #7a9bb8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('9months', event)" class="oval-filter-btn-so" style="background: #e8f0f5; color: #5a7a8a; border: 2px solid #7a9bb8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📈 9 Months
                             </button>
-                            <button onclick="applySalesDateFilter('ytd', event)" class="oval-filter-btn" style="background: #f0e8f0; color: #7a6a8a; border: 2px solid #9a8ab8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('ytd', event)" class="oval-filter-btn-so" style="background: #f0e8f0; color: #7a6a8a; border: 2px solid #9a8ab8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📋 YTD
                             </button>
-                            <button onclick="applySalesDateFilter('1year', event)" class="oval-filter-btn" style="background: #f5eaea; color: #8a6a6a; border: 2px solid #b88a8a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('1year', event)" class="oval-filter-btn-so" style="background: #f5eaea; color: #8a6a6a; border: 2px solid #b88a8a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 1 Year
                             </button>
-                            <button onclick="applySalesDateFilter('3years', event)" class="oval-filter-btn" style="background: #e8f0f5; color: #5a7a8a; border: 2px solid #7a9bb8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('3years', event)" class="oval-filter-btn-so" style="background: #e8f0f5; color: #5a7a8a; border: 2px solid #7a9bb8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📊 3 Years
                             </button>
-                            <button onclick="applySalesDateFilter('5years', event)" class="oval-filter-btn" style="background: #e8f0e8; color: #5a7a6d; border: 2px solid #6b9a8d; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('5years', event)" class="oval-filter-btn-so" style="background: #e8f0e8; color: #5a7a6d; border: 2px solid #6b9a8d; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📈 5 Years
                             </button>
-                            <button onclick="applySalesDateFilter('all', event)" class="oval-filter-btn active" style="background: #4a5568; color: white; border: 2px solid #4a5568; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applySalesDateFilter('all', event)" class="oval-filter-btn-so active" style="background: #4a5568; color: white; border: 2px solid #4a5568; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 🌐 All Time
                             </button>
                         </div>
@@ -15885,10 +15879,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
             `;
             
             if (lines.length > 0) {
+                // Calculate total discount for this order
+                let orderListTotal = 0;
+                let orderActualTotal = 0;
+                lines.forEach(line => {
+                    const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                    const qty = parseInt(line.Quantity) || 0;
+                    const unitPrice = parseFloat(line.Unit_Price) || 0;
+                    const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                    orderListTotal += qty * listPrice;
+                    orderActualTotal += qty * unitPrice;
+                });
+                const orderDiscount = orderListTotal - orderActualTotal;
+                
                 html += `
                     <!-- Card 2: Line Items -->
                     <div class="content-card" style="margin-bottom: 20px;">
-                        <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📦 Line Items</h3>
+                        <h3 style="color: #667eea; margin-top: 0; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">📦 Line Items${orderDiscount > 0.01 ? ` <span style="font-size: 13px; font-weight: normal; color: #b88a8a; margin-left: 10px;">(${formatMoney(orderDiscount)} discount)</span>` : ''}</h3>
                         <div style="overflow-x: auto;">
                         <table class="data-table" style="margin-bottom: 0; font-size: 14px;">
                             <thead>
@@ -15896,7 +15903,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <th style="padding: 12px 15px;">Item</th>
                                     <th style="padding: 12px 15px;">Description</th>
                                     <th style="padding: 12px 15px;">Qty</th>
-                                    <th style="padding: 12px 15px;">Unit Price</th>
+                                    <th style="padding: 12px 15px;">List Price</th>
+                                    <th style="padding: 12px 15px;">Sold Price</th>
+                                    <th style="padding: 12px 15px;">Discount</th>
                                     <th style="padding: 12px 15px;">Line Total</th>
                                 </tr>
                             </thead>
@@ -15905,13 +15914,22 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 
                 lines.forEach(line => {
                     const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
-                    const lineTotal = (parseFloat(line.Quantity) || 0) * (parseFloat(line.Unit_Price) || 0);
+                    const qty = parseInt(line.Quantity) || 0;
+                    const unitPrice = parseFloat(line.Unit_Price) || 0;
+                    const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                    const lineTotal = qty * unitPrice;
+                    const lineListTotal = qty * listPrice;
+                    const lineDiscount = lineListTotal - lineTotal;
+                    const hasDiscount = lineDiscount > 0.01;
+                    
                     html += `
                         <tr style="border-bottom: 1px solid #eee;">
                             <td style="padding: 12px 15px;"><strong>${item?.SKU || line.Item_ID}</strong></td>
                             <td style="padding: 12px 15px;">${item ? item.Item_Description : '-'}</td>
-                            <td style="padding: 12px 15px; text-align: center; font-weight: bold;">${line.Quantity}</td>
-                            <td style="padding: 12px 15px; text-align: right;">${formatMoney(parseFloat(line.Unit_Price || 0))}</td>
+                            <td style="padding: 12px 15px; text-align: center; font-weight: bold;">${qty}</td>
+                            <td style="padding: 12px 15px; text-align: right; color: #b8a86b;">${formatMoney(listPrice)}</td>
+                            <td style="padding: 12px 15px; text-align: right;${hasDiscount ? ' color: #6b9a8d; font-weight: 600;' : ''}">${formatMoney(unitPrice)}</td>
+                            <td style="padding: 12px 15px; text-align: right; color: ${hasDiscount ? '#b88a8a' : '#999'}; font-weight: ${hasDiscount ? '600' : 'normal'};">${hasDiscount ? formatMoney(lineDiscount) : '-'}</td>
                             <td style="padding: 12px 15px; text-align: right; font-weight: bold;">${formatMoney(lineTotal)}</td>
                         </tr>
                     `;
@@ -19168,6 +19186,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         const unitPrice = parseFloat(line.Unit_Price) || 0;
                         const lineTotal = quantity * unitPrice;
                         const lineCost = quantity * unitCost;
+                        // Get listed sell price for discount calculation
+                        const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                        const listTotal = quantity * listPrice;
+                        const discount = listTotal - lineTotal; // Positive = discount given
                         
                         allDetails.push({
                             soId: so.SO_ID,
@@ -19177,7 +19199,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             itemId: line.Item_ID,
                             itemDescription: item?.Item_Description || line.Item_ID,
                             quantity: quantity,
+                            unitPrice: unitPrice,
+                            listPrice: listPrice,
                             lineTotal: lineTotal,
+                            listTotal: listTotal,
+                            discount: discount,
                             lineCost: lineCost,
                             profit: lineTotal - lineCost
                         });
@@ -19259,22 +19285,28 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         phone: cust?.Phone || '',
                         sales: 0, 
                         cost: 0, 
-                        profit: 0, 
+                        profit: 0,
+                        listTotal: 0,
+                        discount: 0,
                         orders: new Set() 
                     };
                 }
                 byCustomer[d.customerId].sales += d.lineTotal;
                 byCustomer[d.customerId].cost += d.lineCost;
                 byCustomer[d.customerId].profit += d.profit;
+                byCustomer[d.customerId].listTotal += d.listTotal;
+                byCustomer[d.customerId].discount += d.discount;
                 byCustomer[d.customerId].orders.add(d.soId);
             });
             
             // Calculate totals FIRST for KPI cards
-            let totalSales = 0, totalCost = 0, totalProfit = 0, totalOrders = 0;
+            let totalSales = 0, totalCost = 0, totalProfit = 0, totalOrders = 0, totalListTotal = 0, totalDiscount = 0;
             Object.values(byCustomer).forEach(data => {
                 totalSales += data.sales;
                 totalCost += data.cost;
                 totalProfit += data.profit;
+                totalListTotal += data.listTotal;
+                totalDiscount += data.discount;
                 totalOrders += data.orders.size;
             });
             const totalMargin = totalSales > 0 ? (totalProfit / totalSales * 100) : 0;
@@ -19293,30 +19325,38 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // Build HTML with oval gradient header
             let html = `
-                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #7a9bb8 0%, #9a8ab8 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(122, 155, 184, 0.3);">
                     <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">👥 Sales by Customer Report</h2>
-                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${Object.keys(byCustomer).length} customers | ${totalOrders} orders | ${totalMargin.toFixed(1)}% avg margin</p>
+                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${Object.keys(byCustomer).length} customers | ${totalOrders} orders | ${totalMargin.toFixed(1)}% avg margin${totalDiscount > 0 ? ' | ' + formatMoney(totalDiscount) + ' discounts' : ''}</p>
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
                 </div>`;
             
             // KPI Summary Cards - Muted Professional Colors
             html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
-                        <div style="font-size: 12px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalSales)}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
-                        <div style="font-size: 12px; color: #5a7a6d; margin-bottom: 5px;">💵 Cost</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
-                        <div style="font-size: 12px; color: #4a7a5d; margin-bottom: 5px;">📈 Profit</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                        <div style="font-size: 11px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalSales)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #f5f0e0 0%, #ede4cc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 12px; color: #8a7a4a; margin-bottom: 5px;">📊 Margin</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #b8a86b;">${totalMargin.toFixed(1)}%</div>
+                        <div style="font-size: 11px; color: #8a7a4a; margin-bottom: 5px;">🏷️ List Price</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #b8a86b;">${formatMoney(totalListTotal)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${totalDiscount > 0 ? '#ffebee 0%, #ffcdd2 100%' : '#f5f5f5 0%, #e8e8e8 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalDiscount > 0 ? '#b88a8a' : '#999'};">
+                        <div style="font-size: 11px; color: ${totalDiscount > 0 ? '#8a6a6a' : '#666'}; margin-bottom: 5px;">🎫 Discounts</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${formatMoney(totalDiscount)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
+                        <div style="font-size: 11px; color: #5a7a6d; margin-bottom: 5px;">💵 Cost</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
+                        <div style="font-size: 11px; color: #4a7a5d; margin-bottom: 5px;">📈 Profit</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9a8ab8;">
+                        <div style="font-size: 11px; color: #7a6a8a; margin-bottom: 5px;">📊 Margin</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #9a8ab8;">${totalMargin.toFixed(1)}%</div>
                     </div>
                 </div>
             `;
@@ -19358,6 +19398,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <th>Customer</th>
                                 <th>Address</th>
                                 <th style="text-align: right;">Orders</th>
+                                <th style="text-align: right;">List Price</th>
+                                <th style="text-align: right;">Discount</th>
                                 <th style="text-align: right;">Sales</th>
                                 <th style="text-align: right;">Cost</th>
                                 <th style="text-align: right;">Profit</th>
@@ -19370,9 +19412,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <td>${data.name}</td>
                     <td style="font-size: 12px; color: #666;">${data.address}</td>
                     <td style="text-align: right;">${data.orders.size}</td>
+                    <td style="text-align: right; color: #b8a86b;">${formatMoney(data.listTotal)}</td>
+                    <td style="text-align: right; color: ${data.discount > 0 ? '#b88a8a' : '#999'}; font-weight: ${data.discount > 0 ? '600' : 'normal'};">${data.discount > 0 ? formatMoney(data.discount) : '-'}</td>
                     <td style="text-align: right;">${formatMoney(data.sales)}</td>
                     <td style="text-align: right;">${formatMoney(data.cost)}</td>
-                    <td style="text-align: right; color: ${data.profit >= 0 ? '#2e7d32' : '#c62828'};">${formatMoney(data.profit)}</td>
+                    <td style="text-align: right; color: ${data.profit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(data.profit)}</td>
                     <td style="text-align: right;">${margin.toFixed(1)}%</td>
                 </tr>`;
             });
@@ -19381,9 +19425,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 <td>TOTAL</td>
                 <td></td>
                 <td style="text-align: right;">${totalOrders}</td>
+                <td style="text-align: right; color: #b8a86b;">${formatMoney(totalListTotal)}</td>
+                <td style="text-align: right; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '-'}</td>
                 <td style="text-align: right;">${formatMoney(totalSales)}</td>
                 <td style="text-align: right;">${formatMoney(totalCost)}</td>
-                <td style="text-align: right; color: ${totalProfit >= 0 ? '#2e7d32' : '#c62828'};">${formatMoney(totalProfit)}</td>
+                <td style="text-align: right; color: ${totalProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(totalProfit)}</td>
                 <td style="text-align: right;">${totalMargin.toFixed(1)}%</td>
             </tr></tfoot></table></div>
                     </div>
@@ -19548,6 +19594,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // Calculate totals FIRST for KPI cards
             let totalAmount = 0, totalPaid = 0, paidCount = 0, unpaidCount = 0;
+            let totalListPrice = 0, totalDiscount = 0;
             sales.forEach(s => {
                 const amt = parseFloat(s.Total_Amount) || 0;
                 const paid = parseFloat(s.Amount_Paid) || 0;
@@ -19558,6 +19605,17 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 const isPaid = s.Payment_Status === 'Paid' || (balance <= 0.01 && amt > 0);
                 if (isPaid) paidCount++;
                 else if (amt > 0) unpaidCount++;
+                
+                // Calculate discount from line items
+                const lines = getSalesLinesFromCache(s.SO_ID);
+                lines.forEach(line => {
+                    const qty = parseInt(line.Quantity) || 0;
+                    const unitPrice = parseFloat(line.Unit_Price) || 0;
+                    const item = items.find(i => i.Item_ID === line.Item_ID);
+                    const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                    totalListPrice += qty * listPrice;
+                    totalDiscount += (qty * listPrice) - (qty * unitPrice);
+                });
             });
             const totalOwed = totalAmount - totalPaid;
             
@@ -19565,30 +19623,34 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const filterSummaryInline = generateFilterSummary({ inline: true });
             
             let html = `
-                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #7a9bb8 0%, #9a8ab8 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(122, 155, 184, 0.3);">
                     <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📋 Sales Order Detail</h2>
-                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sales.length} orders found</p>
+                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sales.length} orders found${totalDiscount > 0 ? ' | ' + formatMoney(totalDiscount) + ' discounts' : ''}</p>
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
                 </div>`;
             
             // KPI Summary Cards
             html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
-                        <div style="font-size: 12px; color: #5a7a8a; margin-bottom: 5px;">💰 Total Sales</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalAmount)}</div>
+                        <div style="font-size: 11px; color: #5a7a8a; margin-bottom: 5px;">💰 Total Sales</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalAmount)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
-                        <div style="font-size: 12px; color: #5a7a6d; margin-bottom: 5px;">💵 Collected</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalPaid)}</div>
+                        <div style="font-size: 11px; color: #5a7a6d; margin-bottom: 5px;">💵 Collected</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalPaid)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #f5f0e0 0%, #ede4cc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 12px; color: #8a7a4a; margin-bottom: 5px;">💸 Outstanding</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #b8a86b;">${formatMoney(totalOwed)}</div>
+                        <div style="font-size: 11px; color: #8a7a4a; margin-bottom: 5px;">💸 Outstanding</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #b8a86b;">${formatMoney(totalOwed)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${totalDiscount > 0 ? '#ffebee 0%, #ffcdd2 100%' : '#f5f5f5 0%, #e8e8e8 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalDiscount > 0 ? '#b88a8a' : '#999'};">
+                        <div style="font-size: 11px; color: ${totalDiscount > 0 ? '#8a6a6a' : '#666'}; margin-bottom: 5px;">🎫 Discounts</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '$0.00'}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #f0e8f0 0%, #e4d8e8 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9a8ab8;">
-                        <div style="font-size: 12px; color: #7a6a8a; margin-bottom: 5px;">📊 Paid / Total</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #9a8ab8;">${paidCount} / ${sales.length}</div>
+                        <div style="font-size: 11px; color: #7a6a8a; margin-bottom: 5px;">📊 Paid / Total</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #9a8ab8;">${paidCount} / ${sales.length}</div>
                     </div>
                 </div>
             `;
@@ -19733,6 +19795,21 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <div style="margin-top: 15px;">
             `;
             
+            // Pre-calculate discounts per order
+            const orderDiscounts = {};
+            sales.forEach(s => {
+                let orderDiscount = 0;
+                const lines = getSalesLinesFromCache(s.SO_ID);
+                lines.forEach(line => {
+                    const qty = parseInt(line.Quantity) || 0;
+                    const unitPrice = parseFloat(line.Unit_Price) || 0;
+                    const item = items.find(i => i.Item_ID === line.Item_ID);
+                    const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                    orderDiscount += (qty * listPrice) - (qty * unitPrice);
+                });
+                orderDiscounts[s.SO_ID] = orderDiscount;
+            });
+            
             html += `<div style="overflow-x: auto;"><table class="data-table">
                 <thead><tr>
                     <th>Invoice #</th>
@@ -19740,6 +19817,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <th>Customer</th>
                     <th>Address</th>
                     <th style="text-align: right;">Total</th>
+                    <th style="text-align: right;">Discount</th>
                     <th style="text-align: right;">Paid</th>
                     <th style="text-align: right;">Balance</th>
                     <th>Due Date</th>
@@ -19751,6 +19829,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let tableTotal = 0;
             let tableTotalPaid = 0;
             let tableTotalBalance = 0;
+            let tableTotalDiscount = 0;
             
             // Helper to get customer address
             function getCustomerAddress(customerId) {
@@ -19768,9 +19847,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const amt = parseFloat(s.Total_Amount) || 0;
                     const paid = parseFloat(s.Amount_Paid) || 0;
                     const balance = amt - paid;
+                    const discount = orderDiscounts[s.SO_ID] || 0;
                     tableTotal += amt;
                     tableTotalPaid += paid;
                     tableTotalBalance += balance;
+                    tableTotalDiscount += discount;
                     const dateObj = parseDate(s.Sale_Date || s.SO_Date);
                     const sortableDate = dateObj ? dateObj.toISOString().split('T')[0] : '';
                     const paymentStatus = s.Payment_Status || (paid >= amt ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid');
@@ -19782,6 +19863,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <td>${getCustomerName(s.Customer_ID)}</td>
                         <td style="font-size: 11px; color: #666; max-width: 200px;">${getCustomerAddress(s.Customer_ID)}</td>
                         <td style="text-align: right;">${formatMoney(amt)}</td>
+                        <td style="text-align: right; color: ${discount > 0.01 ? '#b88a8a' : '#999'}; font-weight: ${discount > 0.01 ? '600' : 'normal'};">${discount > 0.01 ? formatMoney(discount) : '-'}</td>
                         <td style="text-align: right; color: #6b9a8d;">${formatMoney(paid)}</td>
                         <td style="text-align: right; color: ${balance > 0 ? '#b88a8a' : '#6b9a8d'}; font-weight: ${balance > 0 ? 'bold' : 'normal'};">${formatMoney(balance)}</td>
                         <td>${formatDateSafe(s.Due_Date) || '-'}</td>
@@ -19794,6 +19876,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td colspan="4">TOTAL</td>
                 <td style="text-align: right;">${formatMoney(tableTotal)}</td>
+                <td style="text-align: right; color: ${tableTotalDiscount > 0.01 ? '#b88a8a' : '#999'};">${tableTotalDiscount > 0.01 ? formatMoney(tableTotalDiscount) : '-'}</td>
                 <td style="text-align: right; color: #6b9a8d;">${formatMoney(tableTotalPaid)}</td>
                 <td style="text-align: right; color: ${tableTotalBalance > 0 ? '#b88a8a' : '#6b9a8d'};">${formatMoney(tableTotalBalance)}</td>
                 <td colspan="4"></td>
@@ -20021,6 +20104,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         const qty = parseInt(line.Quantity || 0);
                         const unitPrice = parseFloat(line.Unit_Price || 0);
                         line.Line_Total = qty * unitPrice;
+                        // Store actual unit price for discount calculation
+                        line.Actual_Unit_Price = unitPrice;
                         allLines.push(line);
                     });
                 }
@@ -20035,15 +20120,25 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 filteredLines = filteredLines.filter(line => matchesFilter(line.Item_ID, reportFilters.item));
             }
             
-            // Calculate units sold per item
+            // Calculate units sold per item and track discounts
             const unitsSoldByItem = {};
             const revenueBYItem = {};
+            const listTotalByItem = {};
+            const discountByItem = {};
             filteredLines.forEach(line => {
                 const itemId = line.Item_ID;
                 const qty = parseInt(line.Quantity || 0);
                 const lineTotal = parseFloat(line.Line_Total || 0);
+                const actualUnitPrice = parseFloat(line.Actual_Unit_Price || 0);
+                const item = items.find(i => i.Item_ID === itemId);
+                const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                const listTotal = qty * listPrice;
+                const lineDiscount = listTotal - lineTotal;
+                
                 unitsSoldByItem[itemId] = (unitsSoldByItem[itemId] || 0) + qty;
                 revenueBYItem[itemId] = (revenueBYItem[itemId] || 0) + lineTotal;
+                listTotalByItem[itemId] = (listTotalByItem[itemId] || 0) + listTotal;
+                discountByItem[itemId] = (discountByItem[itemId] || 0) + lineDiscount;
             });
             
             // Build product list with margins - ONLY items that were sold
@@ -20058,6 +20153,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const marginPercent = unitSellPrice > 0 ? (margin / unitSellPrice) * 100 : 0;
                     const unitsSold = unitsSoldByItem[item.Item_ID] || 0;
                     const revenue = revenueBYItem[item.Item_ID] || 0;
+                    const listTotal = listTotalByItem[item.Item_ID] || 0;
+                    const discount = discountByItem[item.Item_ID] || 0;
                     const cost = unitsSold * unitCost;
                     const totalProfit = revenue - cost;
                     
@@ -20073,6 +20170,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         marginPercent: marginPercent,
                         unitsSold: unitsSold,
                         revenue: revenue,
+                        listTotal: listTotal,
+                        discount: discount,
                         cost: cost,
                         totalProfit: totalProfit,
                         qtyOnHand: parseInt(item.Qty_On_Hand) || 0,
@@ -20086,6 +20185,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // Calculate totals
             const totalUnits = sorted.reduce((sum, p) => sum + p.unitsSold, 0);
             const totalRevenue = sorted.reduce((sum, p) => sum + p.revenue, 0);
+            const totalListPrice = sorted.reduce((sum, p) => sum + p.listTotal, 0);
+            const totalDiscount = sorted.reduce((sum, p) => sum + p.discount, 0);
             const totalCost = sorted.reduce((sum, p) => sum + p.cost, 0);
             const totalProfit = sorted.reduce((sum, p) => sum + p.totalProfit, 0);
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
@@ -20099,29 +20200,37 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const filterSummaryInline = generateFilterSummary({ inline: true });
             
             let html = `
-                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #7a9bb8 0%, #9a8ab8 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(122, 155, 184, 0.3);">
                     <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📦 Sales by Item</h2>
-                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sorted.length} items sold | ${totalUnits.toLocaleString()} units | ${avgMargin.toFixed(1)}% avg margin</p>
+                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sorted.length} items sold | ${totalUnits.toLocaleString()} units | ${avgMargin.toFixed(1)}% avg margin${totalDiscount > 0 ? ' | ' + formatMoney(totalDiscount) + ' discounts' : ''}</p>
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
                 </div>
                 
                 <!-- KPI Cards - Muted Professional Colors -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
-                        <div style="font-size: 12px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalRevenue)}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #f5eaea 0%, #edd8d8 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b88a8a;">
-                        <div style="font-size: 12px; color: #8a6a6a; margin-bottom: 5px;">💸 Cost</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #b88a8a;">${formatMoney(totalCost)}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
-                        <div style="font-size: 12px; color: #5a7a6d; margin-bottom: 5px;">📈 Profit</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalProfit)}</div>
+                        <div style="font-size: 11px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalRevenue)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #f5f0e0 0%, #ede4cc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 12px; color: #8a7a4a; margin-bottom: 5px;">📊 Margin</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #b8a86b;">${avgMargin.toFixed(1)}%</div>
+                        <div style="font-size: 11px; color: #8a7a4a; margin-bottom: 5px;">🏷️ List Price</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #b8a86b;">${formatMoney(totalListPrice)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${totalDiscount > 0 ? '#ffebee 0%, #ffcdd2 100%' : '#f5f5f5 0%, #e8e8e8 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalDiscount > 0 ? '#b88a8a' : '#999'};">
+                        <div style="font-size: 11px; color: ${totalDiscount > 0 ? '#8a6a6a' : '#666'}; margin-bottom: 5px;">🎫 Discounts</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '$0.00'}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
+                        <div style="font-size: 11px; color: #5a7a6d; margin-bottom: 5px;">💵 Cost</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
+                        <div style="font-size: 11px; color: #4a7a5d; margin-bottom: 5px;">📈 Profit</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9a8ab8;">
+                        <div style="font-size: 11px; color: #7a6a8a; margin-bottom: 5px;">📊 Margin</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #9a8ab8;">${avgMargin.toFixed(1)}%</div>
                     </div>
                 </div>
             `;
@@ -20170,12 +20279,14 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <th style="text-align: center;">📦 Stock</th>
                                     <th style="text-align: center;">Status</th>
                                     <th style="text-align: right;">Revenue</th>
+                                    <th style="text-align: right;">Discount</th>
                                     <th style="text-align: right;">Cost</th>
                                     <th style="text-align: right;">Profit</th>
                                     <th style="text-align: right;">Margin %</th>
                                 </tr></thead>
                                 <tbody>`;
                 
+                let tableTotalDiscount = 0;
                 sorted.forEach(item => {
                     let stockIcon = '';
                     if (item.qtyOnHand <= 0) {
@@ -20185,6 +20296,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     } else {
                         stockIcon = '🟢';
                     }
+                    tableTotalDiscount += item.discount;
+                    const hasDiscount = item.discount > 0.01;
                     
                     html += `<tr>
                         <td><strong>${item.sku}</strong></td>
@@ -20194,13 +20307,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <td style="text-align: center;">${item.qtyOnHand}</td>
                         <td style="text-align: center; font-size: 16px;">${stockIcon}</td>
                         <td style="text-align: right;">${formatMoney(item.revenue)}</td>
-                        <td style="text-align: right; color: #b88a8a;">${formatMoney(item.cost)}</td>
+                        <td style="text-align: right; color: ${hasDiscount ? '#b88a8a' : '#999'}; font-weight: ${hasDiscount ? '600' : 'normal'};">${hasDiscount ? formatMoney(item.discount) : '-'}</td>
+                        <td style="text-align: right; color: #b8a86b;">${formatMoney(item.cost)}</td>
                         <td style="text-align: right; color: ${item.totalProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(item.totalProfit)}</td>
                         <td style="text-align: right; font-weight: bold;">${item.marginPercent.toFixed(1)}%</td>
                     </tr>`;
                 });
                 
-                html += `</tbody></table></div>
+                html += `</tbody>
+                    <tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                        <td colspan="6">TOTAL</td>
+                        <td style="text-align: right;">${formatMoney(totalRevenue)}</td>
+                        <td style="text-align: right; color: ${tableTotalDiscount > 0.01 ? '#b88a8a' : '#999'};">${tableTotalDiscount > 0.01 ? formatMoney(tableTotalDiscount) : '-'}</td>
+                        <td style="text-align: right; color: #b8a86b;">${formatMoney(totalCost)}</td>
+                        <td style="text-align: right; color: ${totalProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(totalProfit)}</td>
+                        <td style="text-align: right;">${avgMargin.toFixed(1)}%</td>
+                    </tr></tfoot>
+                </table></div>
                         </div>
                     </div>
                 `;
@@ -24097,6 +24220,64 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let items = itemsResult.data.filter(i => i.Status === 'Active');
             const suppliers = suppliersResult?.data || [];
             
+            // Load sales data for actual margin calculation
+            await loadReportData();
+            let sales = cachedSalesOrders.filter(so => so.Status !== 'Voided');
+            
+            // Apply date filters to sales
+            if (reportFilters.fromDate && reportFilters.fromDate.trim() !== '') {
+                const fromDate = parseLocalDate(reportFilters.fromDate);
+                if (!isNaN(fromDate.getTime())) {
+                    fromDate.setHours(0, 0, 0, 0);
+                    sales = sales.filter(s => {
+                        const saleDate = parseDateSafe(s.Sale_Date || s.SO_Date);
+                        return saleDate && saleDate >= fromDate;
+                    });
+                }
+            }
+            if (reportFilters.toDate && reportFilters.toDate.trim() !== '') {
+                const toDate = parseLocalDate(reportFilters.toDate);
+                if (!isNaN(toDate.getTime())) {
+                    toDate.setHours(23, 59, 59, 999);
+                    sales = sales.filter(s => {
+                        const saleDate = parseDateSafe(s.Sale_Date || s.SO_Date);
+                        return saleDate && saleDate <= toDate;
+                    });
+                }
+            }
+            
+            // Calculate actual sales metrics (list price vs actual price)
+            let actualSalesTotal = 0, listPriceTotal = 0, actualCostTotal = 0;
+            for (const so of sales) {
+                const lines = getSalesLinesFromCache(so.SO_ID);
+                lines.forEach(line => {
+                    const qty = parseInt(line.Quantity) || 0;
+                    const unitPrice = parseFloat(line.Unit_Price) || 0;
+                    const item = items.find(i => i.Item_ID === line.Item_ID);
+                    const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                    const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                    const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                    const unitCost = pkgCost / unitsPerPkg;
+                    
+                    // Apply supplier filter if set
+                    if (reportFilters.supplier && item?.Supplier_ID !== reportFilters.supplier) {
+                        return; // Skip this line
+                    }
+                    
+                    actualSalesTotal += qty * unitPrice;
+                    listPriceTotal += qty * listPrice;
+                    actualCostTotal += qty * unitCost;
+                });
+            }
+            
+            const totalDiscount = listPriceTotal - actualSalesTotal;
+            const actualProfit = actualSalesTotal - actualCostTotal;
+            const listProfit = listPriceTotal - actualCostTotal;
+            const actualMargin = actualSalesTotal > 0 ? (actualProfit / actualSalesTotal * 100) : 0;
+            const listMargin = listPriceTotal > 0 ? (listProfit / listPriceTotal * 100) : 0;
+            const marginLost = listMargin - actualMargin;
+            const profitLost = listProfit - actualProfit;
+            
             function getSupplierNameLocal(supplierId) {
                 const supplier = suppliers.find(s => s.Supplier_ID == supplierId);
                 return supplier ? supplier.Supplier_Name : '-';
@@ -24107,7 +24288,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 items = items.filter(i => matchesFilter(i.Supplier_ID, reportFilters.supplier));
             }
             
-            // Calculate margin metrics
+            // Calculate margin metrics (for inventory/catalog analysis)
             let totalCostValue = 0, totalSellValue = 0;
             let highMarginCount = 0, medMarginCount = 0, lowMarginCount = 0, negMarginCount = 0;
             const marginData = [];
@@ -24186,18 +24367,66 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let html = `
                 <div style="padding: 25px 30px; background: linear-gradient(135deg, #6b9a8d 0%, #8a9a6b 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(107, 154, 141, 0.3);">
                     <h2 style="margin: 0 0 8px 0; font-size: 26px;">📊 Gross Margin Analysis</h2>
-                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${items.length} items | Profitability Overview</p>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${items.length} items | ${sales.length} orders analyzed${totalDiscount > 0 ? ' | ' + formatMoney(totalDiscount) + ' in discounts' : ''}</p>
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;">${filterSummaryInline}</div>` : ''}
                 </div>
                 
-                <!-- Profitability KPIs -->
+                <!-- Actual Sales Margin Comparison -->
+                ${sales.length > 0 ? `
+                <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 2px solid #dee2e6;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #495057; display: flex; align-items: center; gap: 8px;">
+                        <span>📈</span> Actual Sales Margin Analysis
+                        <span style="font-size: 12px; font-weight: normal; color: #6c757d;">(${sales.length} orders)</span>
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                        <!-- At List Price -->
+                        <div style="background: white; border-radius: 10px; padding: 15px; border-left: 4px solid #b8a86b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #6c757d; margin-bottom: 3px; text-transform: uppercase;">🏷️ At List Price</div>
+                            <div style="font-size: 24px; font-weight: bold; color: #b8a86b;">${listMargin.toFixed(1)}%</div>
+                            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                                Revenue: ${formatMoney(listPriceTotal)}<br>
+                                Profit: ${formatMoney(listProfit)}
+                            </div>
+                        </div>
+                        <!-- At Actual Price -->
+                        <div style="background: white; border-radius: 10px; padding: 15px; border-left: 4px solid #6b9a8d; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #6c757d; margin-bottom: 3px; text-transform: uppercase;">💰 At Actual Price</div>
+                            <div style="font-size: 24px; font-weight: bold; color: #6b9a8d;">${actualMargin.toFixed(1)}%</div>
+                            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                                Revenue: ${formatMoney(actualSalesTotal)}<br>
+                                Profit: ${formatMoney(actualProfit)}
+                            </div>
+                        </div>
+                        <!-- Discount Impact -->
+                        <div style="background: ${totalDiscount > 0 ? 'linear-gradient(135deg, #fff5f5 0%, #ffe3e3 100%)' : 'white'}; border-radius: 10px; padding: 15px; border-left: 4px solid ${totalDiscount > 0 ? '#b88a8a' : '#6c757d'}; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #6c757d; margin-bottom: 3px; text-transform: uppercase;">🎫 Discount Impact</div>
+                            <div style="font-size: 24px; font-weight: bold; color: ${totalDiscount > 0 ? '#b88a8a' : '#6c757d'};">${totalDiscount > 0 ? '-' : ''}${formatMoney(totalDiscount)}</div>
+                            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                                Margin Lost: ${marginLost.toFixed(1)}%<br>
+                                Profit Lost: ${formatMoney(profitLost)}
+                            </div>
+                        </div>
+                        <!-- Cost Basis -->
+                        <div style="background: white; border-radius: 10px; padding: 15px; border-left: 4px solid #9a8ab8; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #6c757d; margin-bottom: 3px; text-transform: uppercase;">📦 Cost of Goods</div>
+                            <div style="font-size: 24px; font-weight: bold; color: #9a8ab8;">${formatMoney(actualCostTotal)}</div>
+                            <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+                                Base cost for<br>
+                                all ${sales.length} orders
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Inventory/Catalog Profitability KPIs -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
-                        <div style="font-size: 11px; color: #2e7d32; margin-bottom: 5px;">📊 Avg Margin</div>
+                        <div style="font-size: 11px; color: #2e7d32; margin-bottom: 5px;">📊 Catalog Avg Margin</div>
                         <div style="font-size: 26px; font-weight: bold; color: #6b9a8d;">${avgMargin.toFixed(1)}%</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 11px; color: #b8a86b; margin-bottom: 5px;">💰 Total Cost</div>
+                        <div style="font-size: 11px; color: #b8a86b; margin-bottom: 5px;">💰 Inventory Cost</div>
                         <div style="font-size: 22px; font-weight: bold; color: #a09050;">${formatMoney(totalCostValue)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9a8ab8;">
@@ -28976,6 +29205,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let totalQtySold = 0;
             let totalSales = 0;
             let totalCost = 0;
+            let totalListPrice = 0;
+            let totalDiscount = 0;
             let orderCount = salesInPeriod.length;
             
             // Get line items for each sale - USE CACHED DATA
@@ -29034,6 +29265,12 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         // Calculate line total (Line_Total may not exist in data)
                         const unitPrice = parseFloat(line.Unit_Price) || 0;
                         const lineTotal = qty * unitPrice;
+                        
+                        // Calculate list price and discount
+                        const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                        const listTotal = qty * listPrice;
+                        totalListPrice += listTotal;
+                        totalDiscount += (listTotal - lineTotal); // Positive = discount given
                         
                         // Track product sales - include supplier
                         const itemId = line.Item_ID;
@@ -29414,7 +29651,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div class="daily-dash-badge">${dateLabel}</div>
                     </div>
                     
-                    <!-- Primary KPIs - 6 columns -->
+                    <!-- Primary KPIs - 7 columns -->
                     <div class="daily-dash-stats">
                         <div class="daily-dash-stat">
                             <div class="daily-dash-stat-label">📦 Units Sold</div>
@@ -29430,6 +29667,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="daily-dash-stat-label">💰 Sales</div>
                             <div class="daily-dash-stat-value" style="color: ${themeColor};">${formatMoney(totalSales)}</div>
                             <div class="daily-dash-stat-sub">total revenue</div>
+                        </div>
+                        <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">🎫 Discounts</div>
+                            <div class="daily-dash-stat-value" style="color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '$0.00'}</div>
+                            <div class="daily-dash-stat-sub">given</div>
                         </div>
                         <div class="daily-dash-stat">
                             <div class="daily-dash-stat-label">📊 Cost</div>
@@ -29554,6 +29796,14 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <div class="daily-dash-quick-stat">
                                     <span class="daily-dash-quick-label">📦 Total Cost</span>
                                     <span class="daily-dash-quick-value">${formatMoney(totalCost)}</span>
+                                </div>
+                                <div class="daily-dash-quick-stat">
+                                    <span class="daily-dash-quick-label">🏷️ List Price Total</span>
+                                    <span class="daily-dash-quick-value" style="color: #b8a86b;">${formatMoney(totalListPrice)}</span>
+                                </div>
+                                <div class="daily-dash-quick-stat">
+                                    <span class="daily-dash-quick-label">🎫 Discounts Given</span>
+                                    <span class="daily-dash-quick-value" style="color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '-'}</span>
                                 </div>
                                 <div class="daily-dash-quick-stat">
                                     <span class="daily-dash-quick-label">📈 Gross Profit</span>
