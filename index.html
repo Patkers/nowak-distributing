@@ -2256,6 +2256,147 @@
                 max-height: 120px !important;
             }
             
+            /* ========== DASHBOARD REPORT CARDS - LANDSCAPE FIX ========== */
+            /* Fix Top 10 lists and dashboard grids being cut off in landscape */
+            
+            /* Dashboard card grids - single column in landscape */
+            #reportSetupContent [style*="grid-template-columns: repeat(auto-fit"],
+            #reportSetupContent [style*="grid-template-columns: repeat(2"],
+            #reportSetupContent [style*="display: grid"] {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
+            }
+            
+            /* Dashboard cards - full width, proper overflow */
+            .daily-dash-card,
+            .biz-dash-card,
+            .prod-dash-card,
+            .supplier-dash-card,
+            #reportSetupContent > div > div[style*="background: #f8fafc"],
+            #reportSetupContent > div > div[style*="border-radius: 12px"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* Bar chart lists - proper overflow handling */
+            .daily-dash-bar-list,
+            .biz-dash-bar-list,
+            .prod-dash-bar-list,
+            .supplier-dash-bar-list,
+            [class*="-bar-list"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+            }
+            
+            /* Bar items - proper flex layout */
+            .daily-dash-bar-item,
+            .biz-dash-bar-item,
+            .prod-dash-bar-item,
+            .supplier-dash-bar-item,
+            [class*="-bar-item"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex-wrap: nowrap !important;
+                overflow: hidden !important;
+            }
+            
+            /* Labels narrower in landscape */
+            .daily-dash-bar-label,
+            .biz-dash-bar-label,
+            .prod-dash-bar-label,
+            .supplier-dash-bar-label,
+            [class*="-bar-label"] {
+                width: 80px !important;
+                min-width: 80px !important;
+                max-width: 80px !important;
+            }
+            
+            /* Values narrower in landscape */
+            .daily-dash-bar-value,
+            .biz-dash-bar-value,
+            .prod-dash-bar-value,
+            .supplier-dash-bar-value,
+            [class*="-bar-value"] {
+                width: 55px !important;
+                min-width: 55px !important;
+                max-width: 55px !important;
+                font-size: 10px !important;
+            }
+            
+            /* Titles smaller in landscape */
+            .daily-dash-bar-title,
+            .biz-dash-bar-title,
+            .prod-dash-bar-title,
+            .supplier-dash-bar-title,
+            [class*="-bar-title"] {
+                font-size: 10px !important;
+            }
+            
+            /* Subtitles smaller */
+            .daily-dash-bar-sub,
+            .biz-dash-bar-sub,
+            .prod-dash-bar-sub,
+            .supplier-dash-bar-sub,
+            [class*="-bar-sub"] {
+                font-size: 8px !important;
+            }
+            
+            /* Track minimum width smaller */
+            .daily-dash-bar-track,
+            .biz-dash-bar-track,
+            .prod-dash-bar-track,
+            .supplier-dash-bar-track,
+            [class*="-bar-track"] {
+                min-width: 30px !important;
+            }
+            
+            /* Quick stats grid - 2 columns */
+            .daily-dash-quick-stats,
+            .biz-dash-quick-stats,
+            .prod-dash-quick-stats,
+            .supplier-dash-quick-stats,
+            [class*="-quick-stats"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 6px !important;
+            }
+            
+            /* Quick stat items smaller */
+            .daily-dash-quick-stat,
+            .biz-dash-quick-stat,
+            .prod-dash-quick-stat,
+            .supplier-dash-quick-stat,
+            [class*="-quick-stat"] {
+                padding: 6px 8px !important;
+            }
+            
+            [class*="-quick-label"] {
+                font-size: 9px !important;
+            }
+            
+            [class*="-quick-value"] {
+                font-size: 11px !important;
+            }
+            
+            /* Card titles smaller */
+            .daily-dash-card-title,
+            .biz-dash-card-title,
+            .prod-dash-card-title,
+            .supplier-dash-card-title,
+            [class*="-card-title"] {
+                font-size: 13px !important;
+                margin-bottom: 8px !important;
+            }
+            
+            [class*="-card-title"] .icon {
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 12px !important;
+            }
+
             #reportSetupFooter {
                 position: relative !important;
                 flex-shrink: 0 !important;
@@ -3125,6 +3266,73 @@
                 margin: 0.4in;
                 size: auto;
             }
+        }
+        
+        /* ==================== GLOBAL HORIZONTAL OVERFLOW PREVENTION ==================== */
+        /* This ensures ALL report content stays within the viewport horizontally */
+        
+        #reportSetupContent {
+            overflow-x: hidden !important;
+        }
+        
+        #reportSetupContent > div,
+        #reportSetupContent > div > div {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* All grid containers in reports must not overflow */
+        #reportSetupContent [style*="grid"],
+        #reportSetupContent [style*="display: grid"] {
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        /* All flex containers in reports must not overflow */
+        #reportSetupContent [style*="flex"],
+        #reportSetupContent [style*="display: flex"] {
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        /* Dashboard cards and similar report sections */
+        #reportSetupContent [class*="-card"],
+        #reportSetupContent [class*="-section"],
+        #reportSetupContent [class*="-container"] {
+            max-width: 100% !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Bar chart lists */
+        #reportSetupContent [class*="-bar-list"],
+        #reportSetupContent [class*="-bar-item"] {
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        /* KPI grids */
+        #reportSetupContent [class*="-kpi"],
+        #reportSetupContent [class*="-stats"],
+        #reportSetupContent [class*="-summary"] {
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        
+        /* Chart containers - allow vertical but not horizontal */
+        #reportSetupContent [style*="border-radius"][style*="padding"],
+        #reportSetupContent [style*="box-shadow"] {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Tables are allowed to scroll horizontally within their wrapper */
+        #reportSetupContent div[style*="overflow-x: auto"] {
+            max-width: 100% !important;
+        }
+        
+        #reportSetupContent div[style*="overflow-x: auto"] table {
+            /* Table can be wider than container, wrapper handles scroll */
         }
     </style>
     <link rel="stylesheet" href="sports-themes.css">
@@ -37083,7 +37291,7 @@ NOTE: Please print the attached PO document for full details.`;
             <div id="reportSetupFilters" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; flex-shrink: 0;">
                 <!-- Filters will be populated by JavaScript -->
             </div>
-            <div id="reportSetupContent" style="padding: 20px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0;">
+            <div id="reportSetupContent" style="padding: 20px; flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; min-height: 0;">
                 <div style="text-align: center; padding: 40px; color: #888;">
                     <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
                     <p>Configure filters above and click <strong>Run Report</strong></p>
@@ -37924,8 +38132,27 @@ NOTE: Please print the attached PO document for full details.`;
         #reportSetupContent {
             flex: 1 !important;
             overflow-y: auto !important;
-            overflow-x: auto !important;
+            overflow-x: hidden !important;
             min-height: 0 !important;
+        }
+        
+        /* GLOBAL FIX: Prevent horizontal overflow in all report content */
+        #reportSetupContent > * {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        
+        #reportSetupContent > div {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+        
+        /* Allow tables to scroll horizontally within their wrapper */
+        #reportSetupContent [style*="overflow-x: auto"],
+        #reportSetupContent .table-wrapper {
+            overflow-x: auto !important;
+            max-width: 100% !important;
         }
         
         /* Desktop report footer stays at bottom */
@@ -37983,13 +38210,19 @@ NOTE: Please print the attached PO document for full details.`;
                 flex-shrink: 0 !important;
             }
             
-            /* Report content area - scrollable */
+            /* Report content area - scrollable vertically only */
             #reportSetupContent {
                 flex: 1 !important;
                 overflow-y: auto !important;
-                overflow-x: auto !important;
+                overflow-x: hidden !important;
                 -webkit-overflow-scrolling: touch;
                 min-height: 0 !important; /* Important for flex scrolling */
+            }
+            
+            /* Ensure all report content children stay within bounds */
+            #reportSetupContent > * {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
             }
             
             /* Order modal content */
@@ -38073,13 +38306,28 @@ NOTE: Please print the attached PO document for full details.`;
                 display: none !important;
             }
             
-            /* Content area takes remaining space */
+            /* Content area takes remaining space - NO HORIZONTAL SCROLL */
             #reportSetupContent {
                 flex: 1 1 auto !important;
                 min-height: 100px !important; /* Force minimum height */
                 padding: 5px !important;
-                overflow: auto !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
                 -webkit-overflow-scrolling: touch !important;
+            }
+            
+            /* Ensure all report children stay within bounds in landscape */
+            #reportSetupContent > * {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+            
+            /* Grid containers in reports - prevent overflow */
+            #reportSetupContent [style*="display: grid"],
+            #reportSetupContent [style*="grid-template-columns"] {
+                max-width: 100% !important;
+                overflow: hidden !important;
             }
             
             #modalContent {
