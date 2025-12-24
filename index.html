@@ -19204,6 +19204,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     indexAxis: 'y',
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
+                                    layout: {
+                                        padding: { right: 50 }
+                                    },
                                     plugins: {
                                         legend: { display: false },
                                         tooltip: {
@@ -19671,6 +19674,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     indexAxis: 'y',
                                     responsive: false, animation: false,
                                     maintainAspectRatio: false,
+                                    layout: { padding: { right: 50 } },
                                     plugins: {
                                         legend: { display: false },
                                         tooltip: {
@@ -31764,6 +31768,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     responsive: true,
                                     maintainAspectRatio: false,
                                     animation: false,
+                                    layout: { padding: { top: 20 } },
                                     plugins: {
                                         legend: { display: false },
                                         datalabels: {
@@ -35589,6 +35594,10 @@ NOTE: Please print the attached PO document for full details.`;
         // Define globally immediately so inline handlers can find it
         window.filterItemPicker = function() {
             window.renderItemPickerList();
+            // Also update report picker if active
+            if (typeof filterItemPickerForReport === 'function') {
+                filterItemPickerForReport();
+            }
         };
         
         window.renderItemPickerList = function() {
@@ -38613,8 +38622,8 @@ NOTE: Please print the attached PO document for full details.`;
             // Set flag for report mode
             window.invoicePickerForReport = true;
             
-            // Show modal
-            modal.style.display = 'block';
+            // Show modal using modal-open class (same as other pickers)
+            modal.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             
@@ -41328,6 +41337,22 @@ NOTE: Please print the attached PO document for full details.`;
                 selectedItemsForReport = [];
             }
             
+            // Show and populate supplier filter dropdown
+            const supplierFilterDiv = document.getElementById('itemPickerSupplierFilter');
+            const supplierSelect = document.getElementById('itemPickerSupplier');
+            if (supplierFilterDiv) {
+                supplierFilterDiv.style.display = 'block';
+            }
+            if (supplierSelect) {
+                supplierSelect.innerHTML = '<option value="">All Suppliers</option>';
+                if (cachedSuppliers && cachedSuppliers.length > 0) {
+                    cachedSuppliers.forEach(s => {
+                        supplierSelect.innerHTML += `<option value="${s.Supplier_ID}">${s.Supplier_Name}</option>`;
+                    });
+                }
+                supplierSelect.value = ''; // Reset to all suppliers
+            }
+            
             document.getElementById('itemPickerSearch').value = '';
             renderItemPickerListForReport();
             document.getElementById('itemPickerModal').classList.add('modal-open');
@@ -41512,14 +41537,22 @@ NOTE: Please print the attached PO document for full details.`;
         
         function renderItemPickerListForReport() {
             const search = document.getElementById('itemPickerSearch').value.toLowerCase().trim();
+            const supplierEl = document.getElementById('itemPickerSupplier');
+            const supplierFilter = supplierEl ? supplierEl.value : '';
             const listContainer = document.getElementById('itemPickerList');
             
             let items = cachedItems || [];
             
             let filtered = items.filter(item => {
-                return !search || 
-                    (item.Item_Description && item.Item_Description.toLowerCase().includes(search)) ||
-                    (item.SKU && item.SKU.toLowerCase().includes(search));
+                // Search filter - check SKU and Description
+                const sku = String(item.SKU || '').toLowerCase();
+                const desc = String(item.Item_Description || '').toLowerCase();
+                const matchesSearch = !search || sku.includes(search) || desc.includes(search);
+                
+                // Supplier filter
+                const matchesSupplier = !supplierFilter || matchesFilter(item.Supplier_ID, supplierFilter);
+                
+                return matchesSearch && matchesSupplier;
             });
             
             let html = '';
@@ -41544,11 +41577,11 @@ NOTE: Please print the attached PO document for full details.`;
                 `;
             }
             
-            if (filtered.length === 0 && search) {
+            if (filtered.length === 0 && (search || supplierFilter)) {
                 listContainer.innerHTML = html + `
                     <div class="item-picker-empty">
                         <div class="item-picker-empty-icon">📦</div>
-                        <div>No items found matching "${search}"</div>
+                        <div>No items found${search ? ` matching "${search}"` : ''}${supplierFilter ? ' for selected supplier' : ''}</div>
                     </div>
                 `;
                 return;
