@@ -87,7 +87,7 @@
         [style*="overflow-x:auto"] {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain; /* Prevent horizontal scroll from triggering page navigation */
-            scroll-behavior: smooth;
+            scroll-behavior: auto; /* Use auto for more responsive feel */
         }
         
         /* Larger touch targets on mobile */
@@ -106,20 +106,21 @@
             }
             
             /* MOBILE HORIZONTAL SCROLL FIX */
-            /* When inside a horizontal scroll container, prioritize horizontal scroll */
+            /* Prioritize horizontal scrolling in scroll containers */
             .table-scroll-wrapper,
             .horizontal-scroll,
             div[style*="overflow-x: auto"],
             div[style*="overflow-x:auto"] {
-                touch-action: pan-x pan-y; /* Allow both but browser decides based on gesture */
+                touch-action: pan-x pan-y pinch-zoom;
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior: contain;
+                scroll-snap-type: none; /* Disable any snap behavior */
             }
             
-            /* Tables inside scroll wrappers */
+            /* Tables inside scroll wrappers - allow natural scrolling */
             .table-scroll-wrapper > table,
             .horizontal-scroll > table {
-                touch-action: pan-x pan-y;
+                touch-action: auto; /* Let table content scroll naturally */
             }
             
             /* Give horizontal scroll containers a visual hint */
@@ -989,6 +990,8 @@
                 overflow-x: auto;
                 white-space: nowrap;
                 -webkit-overflow-scrolling: touch;
+                touch-action: pan-x pan-y; /* Enable smooth horizontal scrolling */
+                scroll-behavior: auto; /* Immediate response to touch */
             }
             
             .data-table th,
@@ -1711,10 +1714,19 @@
                 flex: 1 !important;
                 min-height: 0 !important;
                 overflow-y: auto !important;
-                overflow-x: hidden !important;
+                overflow-x: auto !important; /* Changed: allow horizontal scroll for tables */
                 -webkit-overflow-scrolling: touch !important;
                 padding: 12px !important;
                 padding-bottom: 80px !important;
+            }
+            
+            /* Allow horizontal scroll on table containers inside reports */
+            #reportSetupContent div[style*="overflow-x"],
+            #reportSetupContent .table-wrapper,
+            #reportSetupContent .data-table {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                touch-action: pan-x pan-y !important;
             }
             
             /* Report Modal Footer - Ensure buttons are visible */
@@ -8249,6 +8261,110 @@
             const item = cachedItems.find(i => i.Item_ID === itemId);
             return item ? item.Item_Description : itemId;
         }
+        
+        // ==================== GLOBAL MODAL SAFETY ====================
+        // Emergency function to close all modals and reset body state
+        function globalModalReset() {
+            console.log('🔧 Global modal reset triggered');
+            
+            // Reset body state
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
+            document.body.classList.remove('modal-open');
+            
+            // Close all known modals
+            const modalIds = [
+                'reportSetupModal', 'itemPickerModal', 'customerPickerModal', 
+                'supplierPickerModal', 'invoicePickerModal', 'poPickerModal',
+                'bulkPOModalContainer', 'confirmationModal', 'alertModal',
+                'lineItemsModal', 'adjustmentModal', 'quickViewModal'
+            ];
+            
+            modalIds.forEach(id => {
+                const modal = document.getElementById(id);
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('modal-open');
+                }
+            });
+            
+            // Remove any dynamically created modals
+            document.querySelectorAll('[id*="Modal"]').forEach(el => {
+                if (el.style.display !== 'none' && el.style.position === 'fixed') {
+                    el.style.display = 'none';
+                }
+            });
+            
+            // Reset maximize state
+            if (typeof reportModalMaximized !== 'undefined') {
+                reportModalMaximized = false;
+            }
+        }
+        
+        // Expose globally for emergency use
+        window.globalModalReset = globalModalReset;
+        
+        // Escape key handler to close modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Try to close the topmost modal
+                const reportModal = document.getElementById('reportSetupModal');
+                const itemPicker = document.getElementById('itemPickerModal');
+                const customerPicker = document.getElementById('customerPickerModal');
+                const supplierPicker = document.getElementById('supplierPickerModal');
+                const invoicePicker = document.getElementById('invoicePickerModal');
+                const poPicker = document.getElementById('poPickerModal');
+                const bulkPOModal = document.getElementById('bulkPOModalContainer');
+                
+                // Close in order of priority (pickers first, then main modals)
+                if (bulkPOModal && bulkPOModal.innerHTML) {
+                    if (typeof closeBulkPOModal === 'function') closeBulkPOModal();
+                    return;
+                }
+                if (itemPicker && itemPicker.classList.contains('modal-open')) {
+                    if (typeof closeItemPicker === 'function') closeItemPicker();
+                    return;
+                }
+                if (customerPicker && customerPicker.classList.contains('modal-open')) {
+                    if (typeof closeCustomerPicker === 'function') closeCustomerPicker();
+                    return;
+                }
+                if (supplierPicker && supplierPicker.classList.contains('modal-open')) {
+                    if (typeof closeSupplierPicker === 'function') closeSupplierPicker();
+                    return;
+                }
+                if (invoicePicker && invoicePicker.classList.contains('modal-open')) {
+                    if (typeof closeInvoicePicker === 'function') closeInvoicePicker();
+                    return;
+                }
+                if (poPicker && poPicker.classList.contains('modal-open')) {
+                    if (typeof closePOPicker === 'function') closePOPicker();
+                    return;
+                }
+                if (reportModal && reportModal.style.display !== 'none') {
+                    if (typeof closeReportSetup === 'function') closeReportSetup();
+                    return;
+                }
+            }
+        });
+        
+        // Periodic safety check - detect stuck modal states
+        setInterval(function() {
+            // If body has overflow hidden but no modals are visible, reset
+            if (document.body.style.overflow === 'hidden' || document.body.classList.contains('modal-open')) {
+                const hasVisibleModal = document.querySelector('[id*="Modal"][style*="display: block"], [id*="Modal"][style*="display: flex"], [id*="Modal"].modal-open');
+                const reportModal = document.getElementById('reportSetupModal');
+                const reportModalVisible = reportModal && reportModal.style.display !== 'none' && reportModal.style.display !== '';
+                
+                if (!hasVisibleModal && !reportModalVisible) {
+                    console.log('⚠️ Stuck modal state detected - auto-resetting');
+                    document.body.style.overflow = '';
+                    document.body.classList.remove('modal-open');
+                }
+            }
+        }, 3000); // Check every 3 seconds
 
         window.addEventListener('DOMContentLoaded', () => {
             // SAFETY: Remove any stuck modal-open class and reset body styles
@@ -18572,22 +18688,33 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         function closeReportSetup() {
-            document.getElementById('reportSetupModal').style.display = 'none';
+            const modal = document.getElementById('reportSetupModal');
+            if (modal) modal.style.display = 'none';
+            
+            // Always reset body state
             document.body.style.overflow = '';
+            document.body.style.position = '';
             document.body.classList.remove('modal-open');
             
             // Reset maximize state only (position is saved to localStorage)
             reportModalMaximized = false;
             
-            const modal = document.getElementById('reportSetupModalInner');
+            const modalInner = document.getElementById('reportSetupModalInner');
             const icon = document.getElementById('reportMaximizeIcon');
             
             // Only reset maximize state, not position
-            if (modal) {
-                modal.classList.remove('modal-maximized');
+            if (modalInner) {
+                modalInner.classList.remove('modal-maximized');
                 // Don't remove modal-dragged or reset position - we want to remember it
             }
             if (icon) icon.textContent = '⬜';
+            
+            // Safety: also close any picker modals that might be open
+            const pickerModals = ['itemPickerModal', 'customerPickerModal', 'supplierPickerModal', 'invoicePickerModal', 'poPickerModal'];
+            pickerModals.forEach(id => {
+                const picker = document.getElementById(id);
+                if (picker) picker.classList.remove('modal-open');
+            });
         }
         
         // Toggle report modal between maximized and normal size
@@ -39224,7 +39351,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- Report Setup Modal -->
-    <div id="reportSetupModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto;">
+    <div id="reportSetupModal" onclick="if(event.target === this) closeReportSetup()" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto;">
         <div id="reportSetupModalInner" style="background: white; width: 100%; max-width: 1400px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: calc(100vh - 40px); display: flex; flex-direction: column; overflow: hidden; resize: both; min-width: 500px; min-height: 400px; margin: 0 auto;">
             <div id="reportSetupHeader" style="background: var(--primary, #667eea); color: white; padding: 15px 20px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
                 <h2 id="reportSetupTitle" style="margin: 0; flex: 1;">📊 Report Setup</h2>
@@ -39579,7 +39706,7 @@ NOTE: Please print the attached PO document for full details.`;
     <!-- ITEM PICKER MODAL (for reports) -->
     <!-- PO TYPE PICKER MODAL -->
     <div id="poTypePickerModal" class="item-picker-overlay">
-        <div class="item-picker-container" style="max-width: 400px;">
+        <div class="item-picker-container styled-modal-container" style="max-width: 400px; width: 90%; height: auto; max-height: 80vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header">
                 <h3>📦 Select PO Type</h3>
                 <button class="item-picker-close" onclick="closePOTypePicker()">&times;</button>
@@ -39656,6 +39783,8 @@ NOTE: Please print the attached PO document for full details.`;
         #invoicePickerModal.modal-open,
         #poTypePickerModal.modal-open {
             display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         
         /* Legacy class support */
@@ -39680,6 +39809,17 @@ NOTE: Please print the attached PO document for full details.`;
             margin: 0 auto;
             position: relative;
             z-index: 100000 !important;  /* Ensure it's on top */
+        }
+        
+        /* Styled modal containers (alerts, confirms) should NOT be full screen */
+        .item-picker-container.styled-modal-container {
+            width: 90% !important;
+            max-width: 450px !important;
+            height: auto !important;
+            max-height: 85vh !important;
+            margin: auto !important;
+            border-radius: 16px !important;
+            overflow: hidden !important;
         }
         
         @media (min-width: 768px) {
