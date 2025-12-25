@@ -21469,16 +21469,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 // Count total invoices
                 const totalInvoiceCount = sortedItemSales.reduce((sum, item) => sum + item.invoices.length, 0);
                 
+                const itemDetailTableId = 'salesByItemDetailTable_' + Date.now();
+                
                 html += `
                     <div style="margin-top: 20px;">
                         <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
                              style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
-                            <span class="toggle-icon">▶</span>
+                            <span class="toggle-icon">▼</span>
                             <strong>📋 Sales by Item Detail</strong>
-                            <span style="color: #666; font-size: 12px;">(${sortedItemSales.length} items, ${totalInvoiceCount} invoice lines - click to show)</span>
+                            <span style="color: #666; font-size: 12px;">(${sortedItemSales.length} items, ${totalInvoiceCount} invoice lines - click to hide/show)</span>
                         </div>
-                        <div style="display: none; margin-top: 15px;">
-                            <div style="overflow-x: auto;"><table class="data-table">
+                        <div style="display: block; margin-top: 15px;">
+                            <div style="overflow-x: auto;"><table id="${itemDetailTableId}" class="data-table">
                                 <thead><tr>
                                     <th>Item / Invoice</th>
                                     <th>SKU / Date</th>
@@ -21560,6 +21562,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 html += `
                     <scr` + `ipt>
                         setTimeout(() => {
+                            // Make Sales by Item Detail table sortable
+                            if (typeof makeSortable === 'function') {
+                                makeSortable('${itemDetailTableId}');
+                            }
+                            
                             // Sales Trend Line Chart
                             const ctx = document.getElementById('${trendChartId}');
                             if (ctx) {
