@@ -5413,7 +5413,7 @@
                         <span id="inventoryReports-toggle" class="report-toggle">▼</span>
                     </div>
                     <div id="inventoryReports" class="report-buttons">
-                        <button class="btn report-btn" onclick="switchTab('invflow')">🔄 Inventory Flow Dashboard</button>
+                        <button class="btn report-btn" onclick="showReport('inventory-flow')">🔄 Inventory Flow Dashboard</button>
                         <button class="btn report-btn" onclick="showReport('simple-inventory')">📋 Inventory List / Bulk Order</button>
                         <button class="btn report-btn" onclick="showReport('inventory-turnover')">🔄 Inventory Turnover</button>
                         <button class="btn report-btn" onclick="showReport('gross-margin')">💰 Gross Margin</button>
@@ -7400,8 +7400,8 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="closeQuickAdjustModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 16px; cursor: pointer;">Cancel</button>
-                    <button onclick="submitQuickAdjustment()" style="flex: 2; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; font-size: 16px; font-weight: 600; cursor: pointer;">💾 Save Adjustment</button>
+                    <button id="quickAdjustCancelBtn" onclick="closeQuickAdjustModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 8px; background: white; font-size: 16px; cursor: pointer;">Cancel</button>
+                    <button id="quickAdjustSubmitBtn" onclick="submitQuickAdjustment()" style="flex: 2; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, #f39c12, #e67e22); color: white; font-size: 16px; font-weight: 600; cursor: pointer;">💾 Save Adjustment</button>
                 </div>
             </div>
         </div>
@@ -8153,6 +8153,59 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+        }
+        
+        /**
+         * Convert PO line item quantity to display format
+         * Detects "eaches" purchases and converts to fractional cases
+         * Uses stored Units_Per_Package if available, falls back to current item data
+         * @param {object} line - The PO line item with Quantity, Unit_Cost, Item_ID, Units_Per_Package, Is_Eaches
+         * @param {array} items - Cached items array
+         * @returns {object} - { displayQty, displayCost, isEaches, tooltip }
+         */
+        function convertPOLineToDisplay(line, items) {
+            const qty = parseFloat(line.Quantity) || 0;
+            const unitCost = parseFloat(line.Unit_Cost) || 0;
+            const item = (items || cachedItems || []).find(i => i.Item_ID === line.Item_ID);
+            
+            // Use stored values if available (from time of purchase), fall back to current item data
+            const storedUnitsPerPkg = parseFloat(line.Units_Per_Package);
+            const unitsPerPackage = !isNaN(storedUnitsPerPkg) && storedUnitsPerPkg > 0 
+                ? storedUnitsPerPkg 
+                : (parseFloat(item?.Units_Per_Package) || 1);
+            
+            // Check if Is_Eaches flag is stored, otherwise detect from cost comparison
+            let isEaches = false;
+            if (line.Is_Eaches !== undefined && line.Is_Eaches !== null && line.Is_Eaches !== '') {
+                isEaches = line.Is_Eaches === true || line.Is_Eaches === 'true';
+            } else {
+                // Fall back to detection: unit cost < 50% of package cost means eaches
+                const packageCost = parseFloat(item?.Package_Cost) || 0;
+                isEaches = packageCost > 0 && unitCost < (packageCost * 0.5);
+            }
+            
+            if (isEaches && unitsPerPackage > 1) {
+                const fractionalCases = qty / unitsPerPackage;
+                return {
+                    displayQty: fractionalCases,
+                    displayQtyFormatted: fractionalCases.toFixed(2),
+                    displayCost: unitCost * unitsPerPackage, // Convert to per-case equivalent
+                    isEaches: true,
+                    tooltip: `${qty} of ${unitsPerPackage} units`,
+                    originalQty: qty,
+                    unitsPerPackage: unitsPerPackage
+                };
+            }
+            
+            return {
+                displayQty: qty,
+                displayQtyFormatted: qty.toString(),
+                displayCost: unitCost,
+                isEaches: false,
+                tooltip: null,
+                originalQty: qty,
+                unitsPerPackage: unitsPerPackage
+            };
         }
         
         // ==================== MULTI-SELECT FILTER HELPER ====================
@@ -10274,12 +10327,13 @@
             let totalQty = 0;
             
             let html = '<div class="table-scroll-wrapper"><table class="data-table" id="itemsDataTable"><thead><tr>';
-            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Sell Price</th><th>Qty</th><th>On Order</th><th>Reorder</th><th>Actions</th>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>UOM</th><th>Units/Pkg</th><th>Pkg Cost</th><th>Unit Cost</th><th>Sell Price</th><th>Qty</th><th>On Order</th><th>Backorder</th><th>Reorder</th><th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
                 const qtyOnOrder = parseFloat(item.Qty_On_Order) || 0;
+                const qtyOnBackorder = parseFloat(item.Qty_On_Backorder) || 0;
                 const unitsPerPkg = parseFloat(item.Units_Per_Package) || 1;
                 const packageCost = parseFloat(item.Package_Cost) || 0;
                 const unitCost = packageCost / unitsPerPkg;
@@ -10314,6 +10368,7 @@
                     <td style="color: #6b9a8d; font-weight: bold;">${formatMoney(unitSellPrice)}</td>
                     <td style="${qtyStyle}">${formatNum(qty)}</td>
                     <td><span style="background: ${qtyOnOrder > 0 ? '#b8a86b' : '#e0e0e0'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnOrder > 0 ? qtyOnOrder : '-'}</span></td>
+                    <td><span style="background: ${qtyOnBackorder > 0 ? '#f57c00' : '#e0e0e0'}; color: ${qtyOnBackorder > 0 ? 'white' : '#999'}; padding: 3px 8px; border-radius: 4px; font-weight: bold;">${qtyOnBackorder > 0 ? qtyOnBackorder : '-'}</span></td>
                     <td>${item.Reorder_Point || 0}</td>
                     <td onclick="event.stopPropagation();">
                         <button class="btn-delete-icon" onclick="toggleArchiveItem('${item.Item_ID}', '${item.Item_Description.replace(/'/g, "\\'")}', ${isArchived})" title="${isArchived ? 'Reactivate Item' : 'Archive Item'}" style="font-size: 18px;">${isArchived ? '♻️' : '📦'}</button>
@@ -11929,11 +11984,16 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                 }
                 
                 if (itemId && qty > 0) {
+                    // Get unitsPerPackage from the row data or item
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    const unitsPerPackage = parseInt(row.dataset.unitsPerPackage) || parseInt(item?.Units_Per_Package) || 1;
+                    
                     lineItems.push({
                         itemId: itemId,
                         quantity: quantityForBackend,
                         unitCost: unitCost,
-                        isEaches: isEaches // Flag to tell backend this is unit quantity, not cases
+                        isEaches: isEaches,
+                        unitsPerPackage: unitsPerPackage  // Store package size at time of purchase
                     });
                     calculatedTotal += lineTotal;
                 } else if (itemId || qty > 0) {
@@ -12554,15 +12614,21 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
             `;
             
             if (lines.length > 0) {
-                // Calculate receiving progress
+                // Calculate receiving progress (using converted fractional cases for eaches)
                 let totalOrdered = 0;
                 let totalReceived = 0;
                 lines.forEach(line => {
-                    totalOrdered += parseFloat(line.Quantity) || 0;
-                    totalReceived += parseFloat(line.Qty_Received) || 0;
+                    const converted = convertPOLineToDisplay(line, cachedItems);
+                    totalOrdered += converted.displayQty;
+                    const qtyReceivedRaw = parseFloat(line.Qty_Received) || 0;
+                    totalReceived += converted.isEaches ? qtyReceivedRaw / converted.unitsPerPackage : qtyReceivedRaw;
                 });
                 const receivingProgress = totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0;
                 const canReceive = po.Status === 'Ordered' || po.Status === 'Partial' || po.Status === 'In Transit';
+                
+                // Format totals for display (show 2 decimals if fractional)
+                const totalOrderedDisplay = totalOrdered % 1 === 0 ? totalOrdered : totalOrdered.toFixed(2);
+                const totalReceivedDisplay = totalReceived % 1 === 0 ? totalReceived : totalReceived.toFixed(2);
                 
                 html += `
                     <!-- Card 2: Line Items -->
@@ -12578,7 +12644,7 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                         
                         ${totalReceived > 0 || po.Status === 'Partial' || po.Status === 'Received' ? `
                         <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #7a9bb8;">
-                            <strong>📊 Receiving Progress:</strong> ${totalReceived} of ${totalOrdered} items received (${receivingProgress}%)
+                            <strong>📊 Receiving Progress:</strong> ${totalReceivedDisplay} of ${totalOrderedDisplay} cases received (${receivingProgress}%)
                             <div style="background: #ddd; border-radius: 4px; height: 8px; margin-top: 8px; overflow: hidden;">
                                 <div style="background: ${receivingProgress >= 100 ? '#6b9a8d' : '#7a9bb8'}; height: 100%; width: ${Math.min(receivingProgress, 100)}%;"></div>
                             </div>
@@ -12607,6 +12673,20 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                     const qtyOrdered = parseFloat(line.Quantity) || 0;
                     const qtyReceived = parseFloat(line.Qty_Received) || 0;
                     
+                    // Convert eaches to fractional cases for display
+                    const converted = convertPOLineToDisplay(line, cachedItems);
+                    const orderedDisplay = converted.isEaches 
+                        ? `<span title="${converted.tooltip}" style="color: #9333ea; cursor: help;">${converted.displayQtyFormatted}</span>`
+                        : qtyOrdered;
+                    const costDisplay = converted.isEaches
+                        ? `<span title="$${(parseFloat(line.Unit_Cost) || 0).toFixed(2)}/unit" style="color: #9333ea;">${formatMoney(converted.displayCost)}</span>`
+                        : formatMoney(parseFloat(line.Unit_Cost || 0));
+                    
+                    // Convert received qty too if it's eaches
+                    const receivedDisplay = qtyReceived > 0 
+                        ? (converted.isEaches ? (qtyReceived / converted.unitsPerPackage).toFixed(2) : qtyReceived)
+                        : '-';
+                    
                     // Line status
                     let lineStatus, lineStatusBg;
                     if (qtyReceived >= qtyOrdered) {
@@ -12624,10 +12704,10 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                         <tr style="border-bottom: 1px solid #eee; background: ${lineStatusBg};">
                             <td style="padding: 12px 15px;"><strong>${item?.SKU || line.Item_ID}</strong></td>
                             <td style="padding: 12px 15px;">${item ? item.Item_Description : '-'}</td>
-                            <td style="padding: 12px 15px; text-align: center; font-weight: bold;">${qtyOrdered}</td>
-                            <td style="padding: 12px 15px; text-align: center; font-weight: bold; color: ${qtyReceived > 0 ? '#6b9a8d' : '#999'};">${qtyReceived > 0 ? qtyReceived : '-'}</td>
+                            <td style="padding: 12px 15px; text-align: center; font-weight: bold;">${orderedDisplay}</td>
+                            <td style="padding: 12px 15px; text-align: center; font-weight: bold; color: ${qtyReceived > 0 ? '#6b9a8d' : '#999'};">${receivedDisplay}</td>
                             <td style="padding: 12px 15px; text-align: center; font-size: 12px;">${lineStatus}</td>
-                            <td style="padding: 12px 15px; text-align: right;">${formatMoney(parseFloat(line.Unit_Cost || 0))}</td>
+                            <td style="padding: 12px 15px; text-align: right;">${costDisplay}</td>
                             <td style="padding: 12px 15px; text-align: right; font-weight: bold;">${formatMoney(lineTotal)}</td>
                         </tr>
                     `;
@@ -12987,11 +13067,16 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                 const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
                 const lineTotal = (parseFloat(line.Quantity) || 0) * (parseFloat(line.Unit_Cost) || 0);
                 
+                // Convert eaches to fractional cases
+                const converted = convertPOLineToDisplay(line, cachedItems);
+                const qtyDisplay = converted.isEaches ? converted.displayQtyFormatted : line.Quantity;
+                const costDisplay = converted.isEaches ? formatMoney(converted.displayCost) : formatMoney(parseFloat(line.Unit_Cost || 0));
+                
                 poHTML += `
             <tr>
-                <td style="text-align: center;">${line.Quantity}</td>
+                <td style="text-align: center;">${qtyDisplay}</td>
                 <td>${item?.Item_Description || line.Item_ID}</td>
-                <td style="text-align: right;">${formatMoney(parseFloat(line.Unit_Cost || 0))}</td>
+                <td style="text-align: right;">${costDisplay}</td>
                 <td style="text-align: right;">${formatMoney(lineTotal)}</td>
             </tr>`;
             });
@@ -15309,10 +15394,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 
                 // Only add valid line items (has item selected, qty > 0)
                 if (itemId && qty > 0) {
+                    // Look up cost info from cached items to store at time of sale
+                    const item = cachedItems.find(i => i.Item_ID === itemId);
+                    const packageCost = parseFloat(item?.Package_Cost) || 0;
+                    const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
+                    const unitCost = packageCost / unitsPerPackage;
+                    
                     lineItems.push({
                         itemId: itemId,
                         quantity: qty,
-                        unitPrice: price
+                        unitPrice: price,
+                        unitCost: unitCost,              // Cost at time of sale
+                        unitsPerPackage: unitsPerPackage  // Package size at time of sale
                     });
                     calculatedTotal += lineTotal;
                 }
@@ -16157,7 +16250,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         
                         <!-- Buttons -->
                         <div style="padding: 20px 25px; background: #f9fafb; display: flex; gap: 12px;">
-                            <button onclick="document.getElementById('paymentModal').remove()" 
+                            <button id="paymentCancelBtn" onclick="document.getElementById('paymentModal').remove()" 
                                 style="flex: 1; padding: 14px; background: white; border: 2px solid #d1d5db; border-radius: 10px; font-weight: 600; cursor: pointer; color: #374151;">
                                 Cancel
                             </button>
@@ -16231,10 +16324,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             showSuccessModal('Payment Recorded!', `Payment Applied: ${formatMoney(paymentAmount)}\nInvoice Total: ${formatMoney(invoiceTotal)}\nTotal Paid: ${formatMoney(newTotalPaid)}\nRemaining: ${formatMoney(remaining)}`);
                         }
                         
-                        // Refresh the report if we're in Action Dashboard
-                        if (document.getElementById('reportSetupModal').style.display !== 'none') {
-                            const runBtn = document.querySelector('#reportSetupFilters button[onclick*="runReport"]');
-                            if (runBtn) runBtn.click();
+                        // Refresh the report if we're in Action Dashboard or any report
+                        reportDataCacheTime = null;  // Clear report cache
+                        if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                            setTimeout(() => executeReport(), 100);
                         }
                         
                         loadSales();
@@ -16512,11 +16605,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // BUILD TABLE
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="inventoryDataTable"><thead><tr>';
-            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
+            html += '<th>SKU</th><th>Description</th><th>Supplier</th><th>Qty</th><th>On Order</th><th>Backorder</th><th>Reorder</th><th>Cost</th><th>Sell</th><th>Cost Value</th><th>Sell Value</th><th>Net Profit</th><th>Updated</th><th>Status</th>';
             html += '</tr></thead><tbody>';
 
             items.forEach(item => {
                 const qty = parseFloat(item.Qty_On_Hand) || 0;
+                const onOrder = parseFloat(item.Qty_On_Order) || 0;
+                const backorder = parseFloat(item.Qty_On_Backorder) || 0;
                 const reorderPoint = parseFloat(item.Reorder_Point) || 0;
                 const lastUpdated = item.Last_Updated ? new Date(item.Last_Updated).toLocaleDateString() : '-';
                 
@@ -16557,6 +16652,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <td style="color: #667eea;"><strong>${item.Item_Description}</strong></td>
                     <td>${getSupplierName(item.Supplier_ID)}</td>
                     <td><strong style="${qty < 0 ? 'color: #b88a8a;' : ''}">${qty}</strong></td>
+                    <td style="${onOrder > 0 ? 'color: #1976d2; font-weight: 600;' : 'color: #999;'}">${onOrder > 0 ? onOrder : '-'}</td>
+                    <td style="${backorder > 0 ? 'color: #f57c00; font-weight: 600;' : 'color: #999;'}">${backorder > 0 ? backorder : '-'}</td>
                     <td>${reorderPoint}</td>
                     <td>$${unitCost.toFixed(3)}</td>
                     <td>${formatMoney(unitSellPrice)}</td>
@@ -17912,6 +18009,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     ]
                 }
             },
+            'inventory-flow': {
+                title: '🔄 Inventory Flow Dashboard',
+                filters: [],
+                dateLabel: '',
+                description: {
+                    purpose: 'Real-time visibility into inventory movement and stock alerts.',
+                    insights: [
+                        'Critical alerts for stock issues',
+                        'Items on backorder',
+                        'Pending purchase order arrivals',
+                        'Critical items needing attention'
+                    ]
+                }
+            },
             'inventory-adjustments': {
                 title: '📝 Inventory Adjustment History',
                 filters: ['quickDateOnly', 'item', 'adjustmentType'],
@@ -18522,6 +18633,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
             document.body.style.overflow = 'hidden';
             document.body.classList.add('modal-open');
             console.log('📱 Modal should now be visible');
+            
+            // Apply default settings for specific reports
+            if (reportType === 'daily-dashboard') {
+                // Default Daily Sales Dashboard to "Today"
+                setTimeout(() => {
+                    selectDatePreset('today', '📆 Today');
+                }, 50);
+            }
+            
+            if (reportType === 'supplier-dashboard') {
+                // Default Supplier Performance Dashboard to "All Suppliers"
+                setTimeout(() => {
+                    const displayEl = document.getElementById('rptFilter_supplier_display');
+                    const hiddenEl = document.getElementById('rptFilter_supplier');
+                    if (displayEl) displayEl.value = '🏭 All Suppliers';
+                    if (hiddenEl) hiddenEl.value = '';
+                }, 50);
+            }
         }
         
         function setDatePreset(preset) {
@@ -19210,6 +19339,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         break;
                     case 'simple-inventory':
                         reportHtml = await generateSimpleInventoryModal();
+                        break;
+                    case 'inventory-flow':
+                        reportHtml = await generateInventoryFlowModal();
                         break;
                     case 'inventory-adjustments':
                         reportHtml = await generateInventoryAdjustmentsModal();
@@ -20086,15 +20218,25 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 else if (amt > 0) unpaidCount++;
                 
                 // Calculate discount and cost from line items
+                // Uses stored Unit_Cost if available (accurate at time of sale)
                 const lines = getSalesLinesFromCache(s.SO_ID);
                 lines.forEach(line => {
                     const qty = parseInt(line.Quantity) || 0;
                     const unitPrice = parseFloat(line.Unit_Price) || 0;
                     const item = items.find(i => i.Item_ID === line.Item_ID);
                     const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
-                    const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                    const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                    const unitCost = pkgCost / unitsPerPkg;
+                    
+                    // Use stored Unit_Cost if available, fall back to current item cost
+                    let unitCost;
+                    const storedUnitCost = parseFloat(line.Unit_Cost);
+                    if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                        unitCost = storedUnitCost;
+                    } else {
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        unitCost = pkgCost / unitsPerPkg;
+                    }
+                    
                     totalListPrice += qty * listPrice;
                     totalDiscount += (qty * listPrice) - (qty * unitPrice);
                     totalCost += qty * unitCost;
@@ -20568,7 +20710,16 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             const qty = parseInt(line.Quantity) || 0;
                             const unitPrice = parseFloat(line.Unit_Price) || 0;
                             const lineTotal = qty * unitPrice;
-                            const unitCost = itemInfo.pkgCost / itemInfo.unitsPerPkg;
+                            
+                            // Use stored Unit_Cost if available, fall back to current item cost
+                            let unitCost;
+                            const storedUnitCost = parseFloat(line.Unit_Cost);
+                            if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                                unitCost = storedUnitCost;
+                            } else {
+                                unitCost = itemInfo.pkgCost / itemInfo.unitsPerPkg;
+                            }
+                            
                             const lineCost = qty * unitCost;
                             const listTotal = qty * itemInfo.listPrice;
                             const lineDiscount = listTotal - lineTotal;
@@ -21398,9 +21549,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         const qty = parseInt(line.Quantity) || 0;
                         const unitPrice = parseFloat(line.Unit_Price) || 0;
                         const lineTotal = qty * unitPrice;
-                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                        const unitCost = pkgCost / unitsPerPkg;
+                        
+                        // Use stored Unit_Cost if available, fall back to current item cost
+                        let unitCost;
+                        const storedUnitCost = parseFloat(line.Unit_Cost);
+                        if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                            unitCost = storedUnitCost;
+                        } else {
+                            const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                            const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                            unitCost = pkgCost / unitsPerPkg;
+                        }
+                        
                         const lineCost = qty * unitCost;
                         const lineProfit = lineTotal - lineCost;
                         const lineMargin = lineTotal > 0 ? (lineProfit / lineTotal * 100) : 0;
@@ -22137,6 +22297,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 </tr></thead><tbody>`;
             
             let grandTotal = 0;
+            let grandTotalQty = 0;
             purchases.sort((a, b) => new Date(b.PO_Date) - new Date(a.PO_Date))
                 .forEach(po => {
                     const poType = po.PO_Type || 'INCOMING';
@@ -22151,6 +22312,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     // Get line items for this PO and calculate filtered total
                     const lines = getPurchaseLinesFromCache(po.PO_ID);
                     let poFilteredTotal = 0;
+                    let poQty = 0;
                     let filteredLines = [];
                     
                     if (lines.length > 0) {
@@ -22165,13 +22327,28 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             const unitCost = parseFloat(line.Unit_Cost) || 0;
                             const lineTotal = qty * unitCost;
                             
+                            // Detect if this is an "eaches" purchase by comparing unit cost to item's package cost
+                            // If the unit cost is less than half the package cost, it's likely eaches (per-unit pricing)
+                            const item = cachedItems.find(i => i.Item_ID === line.Item_ID);
+                            const packageCost = parseFloat(item?.Package_Cost) || 0;
+                            const unitsPerPackage = parseFloat(item?.Units_Per_Package) || 1;
+                            const isEaches = packageCost > 0 && unitCost < (packageCost * 0.5);
+                            
+                            // Convert eaches to fractional cases for display
+                            let displayQty = qty;
+                            if (isEaches && unitsPerPackage > 1) {
+                                displayQty = qty / unitsPerPackage; // Convert units to fractional cases
+                            }
+                            
                             poFilteredTotal += lineTotal;
-                            filteredLines.push({ itemInfo, qty, unitCost, lineTotal });
+                            poQty += displayQty; // Add fractional cases to total
+                            filteredLines.push({ itemInfo, qty: displayQty, unitCost, lineTotal, isEaches, originalQty: qty, unitsPerPackage });
                         });
                     }
                     
                     // Add to grand total (only filtered lines)
                     grandTotal += poFilteredTotal;
+                    grandTotalQty += poQty;
                     
                     // PO Header Row - show filtered total when item filter is active
                     const displayTotal = reportFilters.item ? poFilteredTotal : (parseFloat(po.Total_Amount) || 0);
@@ -22182,7 +22359,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         </td>
                         <td>${formattedDate}</td>
                         <td>${getSupplierName(po.Supplier_ID)}</td>
-                        <td></td>
+                        <td style="text-align: center; font-weight: bold;">${poQty}</td>
                         <td></td>
                         <td style="text-align: right; color: #667eea;">${formatMoney(displayTotal)}</td>
                         <td><span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${po.Status || '-'}</span></td>
@@ -22190,13 +22367,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     // Render line items
                     if (filteredLines.length > 0) {
-                        filteredLines.forEach(({ itemInfo, qty, unitCost, lineTotal }) => {
+                        filteredLines.forEach(({ itemInfo, qty, unitCost, lineTotal, isEaches, originalQty, unitsPerPackage }) => {
+                            // For eaches: show fractional cases with tooltip showing original units
+                            let qtyDisplay, costDisplay;
+                            if (isEaches) {
+                                // Show as fractional case (e.g., 0.15) with tooltip showing "4 of 26 units"
+                                qtyDisplay = `<span title="${originalQty} of ${unitsPerPackage} units" style="color: #9333ea; cursor: help;">${qty.toFixed(2)}</span>`;
+                                costDisplay = `<span title="$${unitCost.toFixed(2)}/unit" style="color: #9333ea;">${formatMoney(unitCost * unitsPerPackage)}</span>`;
+                            } else {
+                                qtyDisplay = qty;
+                                costDisplay = formatMoney(unitCost);
+                            }
+                            
                             html += `<tr style="font-size: 13px;">
                                 <td style="padding-left: 30px; color: #6b7280;">↳</td>
                                 <td style="color: #6b7280; font-size: 12px;">${itemInfo.sku || '-'}</td>
                                 <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemInfo.name}">${itemInfo.name}</td>
-                                <td style="text-align: center;">${qty}</td>
-                                <td style="text-align: right;">${formatMoney(unitCost)}</td>
+                                <td style="text-align: center;">${qtyDisplay}</td>
+                                <td style="text-align: right;">${costDisplay}</td>
                                 <td style="text-align: right;">${formatMoney(lineTotal)}</td>
                                 <td></td>
                             </tr>`;
@@ -22210,7 +22398,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 });
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="5">GRAND TOTAL</td>
+                <td colspan="3">GRAND TOTAL</td>
+                <td style="text-align: center;">${grandTotalQty}</td>
+                <td></td>
                 <td style="text-align: right;">${formatMoney(grandTotal)}</td>
                 <td></td>
             </tr></tfoot></table></div>
@@ -23863,8 +24053,17 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         const qty = parseInt(line.Quantity) || 0;
                         const unitPrice = parseFloat(line.Unit_Price) || 0;
                         const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                        const unitCost = pkgCost / unitsPerPkg;
+                        
+                        // Use stored Unit_Cost if available, fall back to current item cost
+                        let unitCost;
+                        const storedUnitCost = parseFloat(line.Unit_Cost);
+                        if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                            unitCost = storedUnitCost;
+                        } else {
+                            const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                            unitCost = pkgCost / unitsPerPkg;
+                        }
+                        
                         const lineCost = qty * unitCost;
                         const lineSale = qty * unitPrice;
                         const qtyOnHand = parseInt(item?.Qty_On_Hand) || 0;
@@ -25864,6 +26063,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // Calculate stock health metrics
             let totalQty = 0, totalOnOrder = 0, totalBackorder = 0, totalValue = 0;
             let negativeCount = 0, outOfStockCount = 0, lowStockCount = 0, inStockCount = 0;
+            let itemsOnOrderCount = 0, itemsOnBackorderCount = 0;
             
             items.forEach(item => {
                 const qty = parseInt(item.Qty_On_Hand) || 0;
@@ -25879,6 +26079,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 totalOnOrder += onOrder;
                 totalBackorder += backorder;
                 totalValue += Math.abs(qty) * unitCost;
+                
+                if (onOrder > 0) itemsOnOrderCount++;
+                if (backorder > 0) itemsOnBackorderCount++;
                 
                 if (qty < 0) negativeCount++;
                 else if (qty === 0) outOfStockCount++;
@@ -25896,7 +26099,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 </div>
                 
                 <!-- Stock Health KPIs -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d; text-align: center;">
                         <div style="font-size: 11px; color: #2e7d32; margin-bottom: 5px;">✅ In Stock</div>
                         <div style="font-size: 24px; font-weight: bold; color: #6b9a8d;">${inStockCount}</div>
@@ -25913,9 +26116,17 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div style="font-size: 11px; color: ${negativeCount > 0 ? '#b88a8a' : '#6b7280'}; margin-bottom: 5px;">📉 Negative</div>
                         <div style="font-size: 24px; font-weight: bold; color: ${negativeCount > 0 ? '#b88a8a' : '#9ca3af'};">${negativeCount}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8; text-align: center;">
-                        <div style="font-size: 11px; color: #1565c0; margin-bottom: 5px;">📦 On Order</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #7a9bb8;">${totalOnOrder.toLocaleString()}</div>
+                    <div style="background: linear-gradient(135deg, ${itemsOnOrderCount > 0 ? '#e3f2fd 0%, #bbdefb 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${itemsOnOrderCount > 0 ? '#7a9bb8' : '#9ca3af'}; text-align: center;">
+                        <div style="font-size: 11px; color: ${itemsOnOrderCount > 0 ? '#1565c0' : '#6b7280'}; margin-bottom: 5px;">📋 Items On Order</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${itemsOnOrderCount > 0 ? '#7a9bb8' : '#9ca3af'};">${itemsOnOrderCount}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${totalOnOrder > 0 ? '#e3f2fd 0%, #bbdefb 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalOnOrder > 0 ? '#7a9bb8' : '#9ca3af'}; text-align: center;">
+                        <div style="font-size: 11px; color: ${totalOnOrder > 0 ? '#1565c0' : '#6b7280'}; margin-bottom: 5px;">📦 Qty On Order</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${totalOnOrder > 0 ? '#7a9bb8' : '#9ca3af'};">${totalOnOrder.toLocaleString()}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, ${totalBackorder > 0 ? '#ffebee 0%, #ffcdd2 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalBackorder > 0 ? '#b88a8a' : '#9ca3af'}; text-align: center;">
+                        <div style="font-size: 11px; color: ${totalBackorder > 0 ? '#b88a8a' : '#6b7280'}; margin-bottom: 5px;">⏳ On Backorder</div>
+                        <div style="font-size: 24px; font-weight: bold; color: ${totalBackorder > 0 ? '#b88a8a' : '#9ca3af'};">${totalBackorder.toLocaleString()}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9a8ab8; text-align: center;">
                         <div style="font-size: 11px; color: #5e35b1; margin-bottom: 5px;">💰 Inv Value</div>
@@ -25964,7 +26175,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <th style="text-align: right;">On Hand</th>
                                 <th style="text-align: right;">On Order</th>
                                 <th style="text-align: right;">Backorder</th>
-                                <th style="text-align: right;">Available</th>
                                 <th style="text-align: right;">Reorder Pt</th>
                                 <th style="text-align: center;">Status</th>
                             </tr></thead><tbody>`;
@@ -26006,7 +26216,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <td style="text-align: right; font-weight: 600; color: ${qty <= 0 ? '#b88a8a' : '#333'};">${qty}</td>
                     <td style="text-align: right; color: ${onOrder > 0 ? '#2563eb' : '#999'}; font-weight: ${onOrder > 0 ? '600' : 'normal'};">${onOrder > 0 ? onOrder : '-'}</td>
                     <td style="text-align: right; color: ${backorder > 0 ? '#b88a8a' : '#999'}; font-weight: ${backorder > 0 ? '600' : 'normal'};">${backorder > 0 ? backorder : '-'}</td>
-                    <td style="text-align: right; font-weight: 600; color: ${available < reorder ? '#d97706' : '#059669'};">${available}</td>
                     <td style="text-align: right; color: #666;">${reorder > 0 ? reorder : '-'}</td>
                     <td style="text-align: center;"><span style="background: ${statusBg}; color: ${statusColor}; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">${status}</span></td>
                 </tr>`;
@@ -26018,13 +26227,350 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 <td style="text-align: right;">${totalQty.toLocaleString()}</td>
                 <td style="text-align: right; color: #2563eb;">${totalOnOrder > 0 ? totalOnOrder.toLocaleString() : '-'}</td>
                 <td style="text-align: right; color: #b88a8a;">${totalBackorder > 0 ? totalBackorder.toLocaleString() : '-'}</td>
-                <td colspan="3"></td>
+                <td colspan="2"></td>
             </tr></tfoot></table></div>
                     </div>
                 </div>
             `;
             return html;
         }
+        
+        // Inventory Flow Dashboard Modal Generator
+        async function generateInventoryFlowModal() {
+            // Load all required data
+            await loadReportData();
+            
+            const items = cachedItems || [];
+            const pos = cachedPurchaseOrders || [];
+            const suppliers = cachedSuppliers || [];
+            
+            // Calculate summary metrics
+            let totalOnOrder = 0, totalBackorder = 0, totalValue = 0;
+            let itemsOnBackorder = [];
+            let criticalItems = [];
+            
+            items.forEach(item => {
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
+                const reorderPoint = parseInt(item.Reorder_Point) || 0;
+                
+                totalOnOrder += onOrder;
+                totalBackorder += backorder;
+                
+                // Only show in backorder section if there's a gap (backorder not covered by on-order)
+                if (backorder > 0 && backorder > onOrder) {
+                    itemsOnBackorder.push({
+                        ...item,
+                        backorder,
+                        onOrder,
+                        qtyOnHand,
+                        gap: backorder - onOrder
+                    });
+                }
+                
+                // Critical items logic
+                const isOutOfStock = qtyOnHand <= 0;
+                const isBelowReorderNoOrders = qtyOnHand <= reorderPoint && reorderPoint > 0 && onOrder === 0;
+                const hasUnfulfillableBackorder = backorder > 0 && backorder > onOrder;
+                
+                if (isOutOfStock || isBelowReorderNoOrders || hasUnfulfillableBackorder) {
+                    criticalItems.push({
+                        ...item,
+                        qtyOnHand,
+                        onOrder,
+                        backorder,
+                        reorderPoint,
+                        gap: backorder - onOrder,
+                        reason: isOutOfStock ? '🚫 OUT OF STOCK' : 
+                               isBelowReorderNoOrders ? '⚠️ LOW STOCK - NO ORDERS' : '⏳ BACKORDER GAP'
+                    });
+                }
+            });
+            
+            // Sort backorder items by gap (worst first)
+            itemsOnBackorder.sort((a, b) => b.gap - a.gap);
+            
+            // Sort critical items
+            criticalItems.sort((a, b) => {
+                if (a.qtyOnHand <= 0 && b.qtyOnHand > 0) return -1;
+                if (b.qtyOnHand <= 0 && a.qtyOnHand > 0) return 1;
+                return (b.backorder - b.onOrder) - (a.backorder - a.onOrder);
+            });
+            
+            // Pending POs (Ordered status)
+            const pendingPOs = pos.filter(po => po.Status === 'Ordered').sort((a, b) => {
+                const dateA = new Date(a.Expected_Date || a.PO_Date);
+                const dateB = new Date(b.Expected_Date || b.PO_Date);
+                return dateA - dateB;
+            });
+            
+            // Calculate pending value
+            pendingPOs.forEach(po => {
+                totalValue += parseFloat(po.Total_Amount) || 0;
+            });
+            
+            // Count POs expected this week
+            const today = new Date();
+            const nextWeek = new Date(today);
+            nextWeek.setDate(today.getDate() + 7);
+            const posThisWeek = pendingPOs.filter(po => {
+                const expectedDate = new Date(po.Expected_Date || po.PO_Date);
+                return expectedDate >= today && expectedDate <= nextWeek;
+            }).length;
+            
+            // Count critical gap items
+            const criticalGapCount = items.filter(item => {
+                const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const onOrder = parseInt(item.Qty_On_Order) || 0;
+                return backorder > 0 && backorder > onOrder;
+            }).length;
+            
+            // Build alerts HTML
+            let alertsHtml = '';
+            if (criticalGapCount > 0 || itemsOnBackorder.length > 0) {
+                if (criticalGapCount > 0) {
+                    alertsHtml += `
+                        <div style="background: #fee2e2; border: 2px solid #b88a8a; border-radius: 12px; padding: 15px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 28px;">🚨</span>
+                                <div>
+                                    <strong style="color: #b88a8a;">${criticalGapCount} Item${criticalGapCount > 1 ? 's' : ''} with Backorder Gap!</strong>
+                                    <p style="margin: 4px 0 0 0; color: #991b1b; font-size: 13px;">Customer backorders exceed incoming stock</p>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+                if (itemsOnBackorder.length > 0) {
+                    alertsHtml += `
+                        <div style="background: #fff3e0; border: 2px solid #f57c00; border-radius: 12px; padding: 15px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 28px;">⚠️</span>
+                                <div>
+                                    <strong style="color: #e65100;">${itemsOnBackorder.length} Item${itemsOnBackorder.length > 1 ? 's' : ''} on Backorder</strong>
+                                    <p style="margin: 4px 0 0 0; color: #bf360c; font-size: 13px;">Customers waiting for ${totalBackorder.toLocaleString()} units</p>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            } else {
+                alertsHtml = `
+                    <div style="background: #e8f5e9; border: 2px solid #6b9a8d; border-radius: 12px; padding: 20px; text-align: center;">
+                        <span style="font-size: 36px;">✅</span>
+                        <p style="margin: 10px 0 0 0; color: #2e7d32; font-weight: 600;">All Clear!</p>
+                        <p style="margin: 4px 0 0 0; color: #388e3c; font-size: 13px;">No critical inventory alerts</p>
+                    </div>`;
+            }
+            
+            // Build HTML
+            let html = `
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px;">🔄 Inventory Flow Dashboard</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">Real-time visibility into inventory movement and stock alerts</p>
+                </div>
+                
+                <!-- Critical Alerts -->
+                <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 12px; border: 2px solid #b88a8a;">
+                    <h3 style="margin: 0 0 10px 0; color: #b88a8a; display: flex; align-items: center; gap: 8px;">
+                        🚨 Critical Alerts
+                    </h3>
+                    <div style="background: #fef2f2; border-radius: 6px; padding: 10px 12px; margin-bottom: 15px; font-size: 12px; color: #7f1d1d; border-left: 3px solid #b88a8a;">
+                        <strong>ℹ️ Alert triggers:</strong> Alerts appear when items have <strong>backorder gaps</strong> (customer backorders exceed incoming purchase orders) or when there are <strong>items on backorder</strong> waiting for stock.
+                    </div>
+                    ${alertsHtml}
+                </div>
+                
+                <!-- Summary Metrics -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); border-radius: 12px; border: 2px solid #7a9bb8;">
+                        <div style="font-size: 32px; margin-bottom: 8px;">📦</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #5a7a8a;">${totalOnOrder.toLocaleString()}</div>
+                        <div style="font-size: 13px; color: #7a9bb8; margin-top: 4px;">Total On Order</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, ${totalBackorder > 0 ? '#fff3e0 0%, #ffe0b2 100%' : '#f5f5f5 0%, #e5e5e5 100%'}); border-radius: 12px; border: 2px solid ${totalBackorder > 0 ? '#f57c00' : '#9ca3af'};">
+                        <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+                        <div style="font-size: 28px; font-weight: bold; color: ${totalBackorder > 0 ? '#e65100' : '#9ca3af'};">${totalBackorder.toLocaleString()}</div>
+                        <div style="font-size: 13px; color: ${totalBackorder > 0 ? '#f57c00' : '#9ca3af'}; margin-top: 4px;">Total Backorder</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12px; border: 2px solid #6b9a8d;">
+                        <div style="font-size: 32px; margin-bottom: 8px;">📅</div>
+                        <div style="font-size: 28px; font-weight: bold; color: #4a7a6d;">${posThisWeek}</div>
+                        <div style="font-size: 13px; color: #6b9a8d; margin-top: 4px;">POs This Week</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%); border-radius: 12px; border: 2px solid #9a8ab8;">
+                        <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #6a5a8a;">${formatMoney(totalValue)}</div>
+                        <div style="font-size: 13px; color: #9a8ab8; margin-top: 4px;">Value Pending</div>
+                    </div>
+                </div>
+            `;
+            
+            // Items On Backorder Section - Card Style with Action Buttons
+            html += `
+                <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 12px; border: 2px solid #f57c00;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="margin: 0; color: #f57c00; display: flex; align-items: center; gap: 8px;">
+                            ⚠️ Items On Backorder
+                            <span style="background: #f57c00; color: white; padding: 2px 10px; border-radius: 12px; font-size: 13px;">${itemsOnBackorder.length}</span>
+                        </h3>
+                        <button onclick="switchTab('createpo');" class="btn-small" style="background: #f57c00; color: white; font-size: 12px;">📦 Restock Items</button>
+                    </div>
+                    <div style="background: #fff8e1; border-radius: 6px; padding: 10px 12px; margin-bottom: 15px; font-size: 12px; color: #6d5200; border-left: 3px solid #f57c00;">
+                        <strong>ℹ️ How items appear here:</strong> Items where <strong>Qty_On_Backorder > Qty_On_Order</strong> (backorder not fully covered by incoming POs). When you create a PO that covers the backorder, the item disappears from this list. Gap = Backorder − On Order.
+                    </div>`;
+            
+            if (itemsOnBackorder.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 30px; color: #999; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #666;">No items on backorder</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">All customer orders can be fulfilled!</div>
+                    </div>`;
+            } else {
+                itemsOnBackorder.slice(0, 10).forEach(item => {
+                    html += `
+                        <div style="padding: 15px; border: 2px solid #ffe0b2; border-radius: 8px; margin-bottom: 10px; background: #fffaf0;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="font-weight: 600; font-size: 15px; color: #333; margin-bottom: 8px;">${item.Item_Description || item.SKU}</div>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <span style="background: ${item.qtyOnHand <= 0 ? '#fee2e2' : '#e8f5e9'}; color: ${item.qtyOnHand <= 0 ? '#b88a8a' : '#2e7d32'}; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                            Stock: ${item.qtyOnHand}
+                                        </span>
+                                        <span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                            On Order: ${item.onOrder}
+                                        </span>
+                                        <span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                            ⚠️ Backorder: ${item.backorder}
+                                        </span>
+                                        ${item.gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">⚠️ Gap: ${item.gap}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="createPOForItem('${item.Item_ID}', ${item.backorder});" class="btn-small" style="background: #f57c00; color: white; font-size: 11px; padding: 6px 12px;">⚠️ CREATE PO</button>
+                                    <button onclick="editItemById('${item.Item_ID}');" class="btn-small" style="background: #6b7280; color: white; font-size: 11px; padding: 6px 12px;">View</button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                
+                if (itemsOnBackorder.length > 10) {
+                    html += `<div style="text-align: center; padding: 10px; color: #666; background: #f8f9fa; border-radius: 6px;">+${itemsOnBackorder.length - 10} more items on backorder</div>`;
+                }
+            }
+            
+            html += `</div>`;
+            
+            // Pending Arrivals Section - Card Style with Action Buttons
+            html += `
+                <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 12px; border: 2px solid #1976d2;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="margin: 0; color: #1976d2; display: flex; align-items: center; gap: 8px;">
+                            📦 Pending Arrivals
+                            <span style="background: #1976d2; color: white; padding: 2px 10px; border-radius: 12px; font-size: 13px;">${pendingPOs.length}</span>
+                        </h3>
+                        <button onclick="switchTab('purchases');" class="btn-small" style="background: #1976d2; color: white; font-size: 12px;">View All POs</button>
+                    </div>
+                    <div style="background: #e3f2fd; border-radius: 6px; padding: 10px 12px; margin-bottom: 15px; font-size: 12px; color: #0d47a1; border-left: 3px solid #1976d2;">
+                        <strong>ℹ️ How POs appear here:</strong> Purchase Orders with <strong>Status = "Ordered"</strong>. When you create a PO, it starts as "Ordered". Click <strong>Receive</strong> to mark items as received, which updates inventory and changes status to "Received" or "Partial".
+                    </div>`;
+            
+            if (pendingPOs.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 30px; color: #999; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+                        <div style="font-size: 16px; color: #666;">No pending arrivals</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">No purchase orders expected</div>
+                    </div>`;
+            } else {
+                pendingPOs.slice(0, 10).forEach(po => {
+                    const supplier = suppliers.find(s => s.Supplier_ID == po.Supplier_ID);
+                    const supplierName = supplier ? supplier.Supplier_Name : po.Supplier_ID;
+                    const expectedDate = po.Expected_Date ? formatDateSafe(po.Expected_Date) : 'No date specified';
+                    const amount = parseFloat(po.Total_Amount) || 0;
+                    
+                    html += `
+                        <div style="padding: 15px; border: 2px solid #bbdefb; border-radius: 8px; margin-bottom: 10px; background: #f8fbff;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="font-weight: 600; font-size: 15px; color: #333; margin-bottom: 6px;">PO #${po.PO_Number || po.Invoice_Number || '-'} - ${supplierName}</div>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: #666;">
+                                        <span>${expectedDate}</span>
+                                        <span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 8px; font-weight: 600;">💰 ${formatMoney(amount)}</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="viewPurchaseOrder('${po.PO_ID}');" class="btn-small" style="background: #1976d2; color: white; font-size: 11px; padding: 6px 12px;">View PO</button>
+                                    <button onclick="receivePO('${po.PO_ID}');" class="btn-small" style="background: #6b9a8d; color: white; font-size: 11px; padding: 6px 12px;">Receive</button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                
+                if (pendingPOs.length > 10) {
+                    html += `<div style="text-align: center; padding: 10px; color: #666; background: #f8f9fa; border-radius: 6px;">+${pendingPOs.length - 10} more pending POs</div>`;
+                }
+            }
+            
+            html += `</div>`;
+            
+            // Critical Items Section - Card Style with Action Buttons
+            html += `
+                <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 12px; border: 2px solid #b88a8a;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="margin: 0; color: #b88a8a; display: flex; align-items: center; gap: 8px;">
+                            🔴 Critical Items
+                            <span style="background: #b88a8a; color: white; padding: 2px 10px; border-radius: 12px; font-size: 13px;">${criticalItems.length}</span>
+                        </h3>
+                        <button onclick="showReport('simple-inventory');" class="btn-small" style="background: #b88a8a; color: white; font-size: 12px;">📋 View Report</button>
+                    </div>
+                    <div style="background: #ffebee; border-radius: 6px; padding: 10px 12px; margin-bottom: 15px; font-size: 12px; color: #7f1d1d; border-left: 3px solid #b88a8a;">
+                        <strong>ℹ️ How items appear here:</strong> Items meeting ANY of these conditions: <strong>(1)</strong> Out of stock (Qty ≤ 0), <strong>(2)</strong> Below reorder point with no incoming orders (Qty ≤ Reorder_Point AND Qty_On_Order = 0), <strong>(3)</strong> Backorder exceeds on-order (Qty_On_Backorder > Qty_On_Order).
+                    </div>`;
+            
+            if (criticalItems.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 30px; color: #999; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #666;">No critical items</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 8px;">All items have adequate stock levels</div>
+                    </div>`;
+            } else {
+                criticalItems.slice(0, 10).forEach(item => {
+                    html += `
+                        <div style="padding: 15px; border: 2px solid #ffcdd2; border-radius: 8px; margin-bottom: 10px; background: #fff5f5;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="font-weight: 600; font-size: 15px; color: #333; margin-bottom: 4px;">${item.Item_Description || item.SKU}</div>
+                                    <div style="font-size: 12px; color: #b88a8a; font-weight: 600; margin-bottom: 8px;">${item.reason}</div>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <span style="background: ${item.qtyOnHand <= 0 ? '#fee2e2' : '#fff3e0'}; color: ${item.qtyOnHand <= 0 ? '#b88a8a' : '#f57c00'}; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                            Stock: ${item.qtyOnHand}
+                                        </span>
+                                        <span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 12px;">
+                                            Reorder: ${item.reorderPoint}
+                                        </span>
+                                        ${item.backorder > 0 ? `<span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">Backorder: ${item.backorder}</span>` : ''}
+                                        ${item.gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">GAP: -${item.gap}!</span>` : ''}
+                                    </div>
+                                </div>
+                                <div>
+                                    <button onclick="createPOForItem('${item.Item_ID}', ${Math.max(item.backorder, item.reorderPoint - item.qtyOnHand)});" class="btn-small" style="background: #b88a8a; color: white; font-size: 11px; padding: 6px 12px;">⚠️ ORDER MORE!</button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                
+                if (criticalItems.length > 10) {
+                    html += `<div style="text-align: center; padding: 10px; color: #666; background: #f8f9fa; border-radius: 6px;">+${criticalItems.length - 10} more critical items</div>`;
+                }
+            }
+            
+            html += `</div>`;
+            
+            return html;
+        }
+        
         
         // Inventory List Bulk PO helper functions
         function filterInventoryBySupplier() {
@@ -26293,6 +26839,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             }
             
             // Calculate actual sales metrics (list price vs actual price)
+            // Uses stored Unit_Cost from SO line if available (accurate historical cost)
+            // Falls back to current item cost for older orders without stored cost
             let actualSalesTotal = 0, listPriceTotal = 0, actualCostTotal = 0;
             for (const so of sales) {
                 const lines = getSalesLinesFromCache(so.SO_ID);
@@ -26301,9 +26849,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const unitPrice = parseFloat(line.Unit_Price) || 0;
                     const item = items.find(i => i.Item_ID === line.Item_ID);
                     const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
-                    const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                    const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                    const unitCost = pkgCost / unitsPerPkg;
+                    
+                    // Use stored Unit_Cost if available (accurate at time of sale)
+                    // Fall back to current item cost for historical data
+                    let unitCost;
+                    const storedUnitCost = parseFloat(line.Unit_Cost);
+                    if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                        unitCost = storedUnitCost;
+                    } else {
+                        // Fall back to current item cost
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        unitCost = pkgCost / unitsPerPkg;
+                    }
                     
                     // Apply supplier filter if set
                     if (reportFilters.supplier && item?.Supplier_ID !== reportFilters.supplier) {
@@ -29524,7 +30082,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <td>
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                     <button class="oval-action-btn oval-action-warning" onclick="viewPurchaseOrder('${p.PO_ID}')">👁️ View</button>
-                                    <button class="oval-action-btn oval-action-info" onclick="viewPurchaseOrder('${p.PO_ID}')">✅ Receive</button>
+                                    <button class="oval-action-btn oval-action-info" onclick="receivePO('${p.PO_ID}')">✅ Receive</button>
                                 </div>
                             </td>
                         </tr>
@@ -30977,8 +31535,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             </div>
                             
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                <button type="button" onclick="closeQuickPOModal()" style="padding: 12px 24px; background: #8a8a8a; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">Cancel</button>
-                                <button type="submit" style="padding: 12px 24px; background: #6b9a8d; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">✅ Create Purchase Order</button>
+                                <button type="button" id="quickPOCancelBtn" onclick="closeQuickPOModal()" style="padding: 12px 24px; background: #8a8a8a; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">Cancel</button>
+                                <button type="submit" id="quickPOSubmitBtn" style="padding: 12px 24px; background: #6b9a8d; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">✅ Create Purchase Order</button>
                             </div>
                         </form>
                     </div>
@@ -31014,6 +31572,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             const item = (cachedItems || []).find(i => i.Item_ID === itemId);
             const cost = parseFloat(item?.Package_Cost) || 0;
+            
+            // Disable buttons during processing
+            const submitBtn = document.getElementById('quickPOSubmitBtn');
+            const cancelBtn = document.getElementById('quickPOCancelBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Processing...';
+            }
+            if (cancelBtn) {
+                cancelBtn.disabled = true;
+                cancelBtn.style.opacity = '0.5';
+                cancelBtn.style.cursor = 'not-allowed';
+            }
             
             showLoading('Creating Purchase Order...');
             
@@ -31087,10 +31658,34 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     showSuccessModal('Purchase Order Created!', `PO #: ${poNumber}\n\nItems marked as "On Order".`);
                 } else {
                     showError('Error creating PO: ' + (result?.message || 'Unknown error'));
+                    // Re-enable buttons on error
+                    const submitBtn = document.getElementById('quickPOSubmitBtn');
+                    const cancelBtn = document.getElementById('quickPOCancelBtn');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '✅ Create Purchase Order';
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.disabled = false;
+                        cancelBtn.style.opacity = '1';
+                        cancelBtn.style.cursor = 'pointer';
+                    }
                 }
             } catch (error) {
                 hideLoading();
                 showError('Error: ' + error.message);
+                // Re-enable buttons on error
+                const submitBtn = document.getElementById('quickPOSubmitBtn');
+                const cancelBtn = document.getElementById('quickPOCancelBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '✅ Create Purchase Order';
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                    cancelBtn.style.opacity = '1';
+                    cancelBtn.style.cursor = 'pointer';
+                }
             }
         }
         
@@ -31957,10 +32552,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const unitPrice = parseFloat(line.Unit_Price) || 0;
                     const revenue = qty * unitPrice;
                     
-                    const item = items.find(i => i.Item_ID === line.Item_ID);
-                    const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                    const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                    const unitCost = pkgCost / unitsPerPkg;
+                    // Use stored Unit_Cost if available, fall back to current item cost
+                    let unitCost;
+                    const storedUnitCost = parseFloat(line.Unit_Cost);
+                    if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                        unitCost = storedUnitCost;
+                    } else {
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        unitCost = pkgCost / unitsPerPkg;
+                    }
+                    
                     const cost = qty * unitCost;
                     
                     totalRevenue += revenue;
@@ -32467,13 +33070,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const revenue = qty * unitPrice;
                     orderRevenue += revenue;
                     
+                    // Use stored Unit_Cost if available, fall back to current item cost
+                    let unitCost;
+                    const storedUnitCost = parseFloat(line.Unit_Cost);
+                    if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
+                        unitCost = storedUnitCost;
+                    } else {
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        unitCost = pkgCost / unitsPerPkg;
+                    }
+                    
                     const supplier = suppliers.find(s => s.Supplier_ID === supplierId);
                     
                     if (!productStats[itemId]) {
-                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
-                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
-                        const unitCost = pkgCost / unitsPerPkg;
-                        
                         productStats[itemId] = {
                             name: item?.Item_Description || itemId,
                             sku: item?.SKU || '-',
@@ -32487,7 +33097,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     productStats[itemId].qtySold += qty;
                     productStats[itemId].revenue += revenue;
-                    productStats[itemId].cost += qty * productStats[itemId].unitCost;
+                    productStats[itemId].cost += qty * unitCost;  // Use line's unitCost, not average
                     
                     // Supplier tracking
                     if (!supplierStats[supplierId]) {
@@ -36448,6 +37058,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             if (po.Status !== 'Ordered' && po.Status !== 'Partial' && po.Status !== 'In Transit') {
                 showWarning('This PO has already been fully received');
+                // Refresh the report if it's currently displayed
+                reportDataCacheTime = null;
+                if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                    setTimeout(() => executeReport(), 100);
+                }
                 return;
             }
             
@@ -36801,6 +37416,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     document.getElementById('orderModal').style.display = 'none';
                     document.body.classList.remove('modal-open');
                     loadPurchases();
+                    // Refresh the report if it's currently displayed
+                    reportDataCacheTime = null;
+                    if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                        setTimeout(() => executeReport(), 100);
+                    }
                     return;
                 }
             }
@@ -36862,9 +37482,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             isCommittingReceivePartial = true;
             const commitBtn = document.getElementById('modalSaveBtn');
+            const closeBtn = document.getElementById('modalCloseBtn');
             if (commitBtn) {
                 commitBtn.disabled = true;
                 commitBtn.textContent = '⏳ Processing...';
+            }
+            if (closeBtn) {
+                closeBtn.disabled = true;
+                closeBtn.style.opacity = '0.5';
+                closeBtn.style.cursor = 'not-allowed';
             }
             
             try {
@@ -36916,6 +37542,12 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     // Reload data
                     await loadPurchases();
                     await loadItems();
+                    
+                    // Refresh the report if it's currently displayed (e.g., Inventory Flow Dashboard)
+                    reportDataCacheTime = null;  // Clear report cache so it reloads fresh data
+                    if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                        setTimeout(() => executeReport(), 100);
+                    }
                 } else {
                     showError('Error: ' + (result?.message || 'Unknown error'));
                 }
@@ -36924,9 +37556,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 showError('Error: ' + error.message);
             } finally {
                 isCommittingReceivePartial = false;
+                const closeBtn = document.getElementById('modalCloseBtn');
                 if (commitBtn) {
                     commitBtn.disabled = false;
                     commitBtn.textContent = '✅ Receive Items into Inventory';
+                }
+                if (closeBtn) {
+                    closeBtn.disabled = false;
+                    closeBtn.style.opacity = '1';
+                    closeBtn.style.cursor = 'pointer';
                 }
             }
         }
@@ -37237,9 +37875,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // Disable the commit button
             const commitBtn = document.getElementById('modalSaveBtn');
+            const closeBtn = document.getElementById('modalCloseBtn');
             if (commitBtn) {
                 commitBtn.disabled = true;
                 commitBtn.textContent = '⏳ Processing...';
+            }
+            if (closeBtn) {
+                closeBtn.disabled = true;
+                closeBtn.style.opacity = '0.5';
+                closeBtn.style.cursor = 'not-allowed';
             }
             
             try {
@@ -37266,6 +37910,12 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     // Reload purchases and items
                     await loadPurchases();
                     await loadItems();
+                    
+                    // Refresh the report if it's currently displayed (e.g., Inventory Flow Dashboard)
+                    reportDataCacheTime = null;  // Clear report cache so it reloads fresh data
+                    if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                        setTimeout(() => executeReport(), 100);
+                    }
                 } else {
                     showError('Error receiving items: ' + (result?.message || JSON.stringify(result) || 'Unknown error'));
                 }
@@ -37275,11 +37925,17 @@ NOTE: Please see the attached invoice PDF for full details.`);
             } finally {
                 // UNLOCK
                 isCommittingReceive = false;
+                const closeBtn = document.getElementById('modalCloseBtn');
                 
-                // Re-enable button
+                // Re-enable buttons
                 if (commitBtn) {
                     commitBtn.disabled = false;
                     commitBtn.textContent = '✅ Commit to Inventory';
+                }
+                if (closeBtn) {
+                    closeBtn.disabled = false;
+                    closeBtn.style.opacity = '1';
+                    closeBtn.style.cursor = 'pointer';
                 }
             }
         }
@@ -39458,9 +40114,22 @@ NOTE: Please print the attached PO document for full details.`;
                 const backorder = parseInt(item.Qty_On_Backorder) || 0;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
                 
-                // Critical if: low stock AND (has backorders OR backorder > on order)
-                return qtyOnHand <= reorderPoint && (backorder > 0 || (backorder > 0 && backorder > onOrder));
+                // Critical if any of these conditions:
+                // 1. Out of stock (qty = 0)
+                // 2. Negative stock
+                // 3. Below reorder point with no incoming orders
+                // 4. Has backorders exceeding on-order quantity (unfulfillable demand)
+                const isOutOfStock = qtyOnHand <= 0;
+                const isBelowReorderNoOrders = qtyOnHand <= reorderPoint && reorderPoint > 0 && onOrder === 0;
+                const hasUnfulfillableBackorder = backorder > 0 && backorder > onOrder;
+                
+                return isOutOfStock || isBelowReorderNoOrders || hasUnfulfillableBackorder;
             }).sort((a, b) => {
+                // Sort by urgency: out of stock first, then by gap
+                const qtyA = parseInt(a.Qty_On_Hand) || 0;
+                const qtyB = parseInt(b.Qty_On_Hand) || 0;
+                if (qtyA <= 0 && qtyB > 0) return -1;
+                if (qtyB <= 0 && qtyA > 0) return 1;
                 const gapA = (parseInt(a.Qty_On_Backorder) || 0) - (parseInt(a.Qty_On_Order) || 0);
                 const gapB = (parseInt(b.Qty_On_Backorder) || 0) - (parseInt(b.Qty_On_Order) || 0);
                 return gapB - gapA;
@@ -39486,24 +40155,35 @@ NOTE: Please print the attached PO document for full details.`;
                 const qtyOnHand = parseInt(item.Qty_On_Hand) || 0;
                 const onOrder = parseInt(item.Qty_On_Order) || 0;
                 const backorder = parseInt(item.Qty_On_Backorder) || 0;
+                const reorderPoint = parseInt(item.Reorder_Point) || 0;
                 const gap = backorder - onOrder;
+                
+                // Determine the critical reason
+                let criticalReason = '';
+                if (qtyOnHand <= 0) criticalReason = '🚫 OUT OF STOCK';
+                else if (qtyOnHand <= reorderPoint && onOrder === 0) criticalReason = '⚠️ LOW STOCK - NO ORDERS';
+                else if (gap > 0) criticalReason = '⏳ BACKORDER GAP';
                 
                 html += `
                     <div style="padding: 15px; border: 2px solid #b88a8a; border-radius: 8px; margin-bottom: 12px; background: #fff5f5;">
                         <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
                             <div style="flex: 1; min-width: 200px;">
                                 <div style="font-weight: 600; font-size: 16px; color: #333; margin-bottom: 6px;">${item.Item_Description || item.SKU}</div>
+                                <div style="font-size: 12px; color: #b88a8a; font-weight: 600; margin-bottom: 8px;">${criticalReason}</div>
                                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <span style="background: #fee2e2; color: #b88a8a; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
-                                        🔴 Stock: ${qtyOnHand}
+                                    <span style="background: ${qtyOnHand <= 0 ? '#fee2e2' : '#fff3e0'}; color: ${qtyOnHand <= 0 ? '#b88a8a' : '#f57c00'}; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                        Stock: ${qtyOnHand}
                                     </span>
-                                    <span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                    <span style="background: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 12px; font-size: 13px;">
+                                        Reorder: ${reorderPoint}
+                                    </span>
+                                    ${backorder > 0 ? `<span style="background: #fff3e0; color: #f57c00; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
                                         Backorder: ${backorder}
-                                    </span>
-                                    <span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
+                                    </span>` : ''}
+                                    ${onOrder > 0 ? `<span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">
                                         On Order: ${onOrder}
-                                    </span>
-                                    ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">⚠️ GAP: -${gap}!</span>` : ''}
+                                    </span>` : ''}
+                                    ${gap > 0 ? `<span style="background: #ffebee; color: #c62828; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;">GAP: -${gap}!</span>` : ''}
                                 </div>
                             </div>
                             <div>
@@ -39570,7 +40250,7 @@ NOTE: Please print the attached PO document for full details.`;
                 <!-- Content will be populated by JavaScript -->
             </div>
             <div id="modalFooter" style="padding: 20px 30px; border-top: 1px solid #ddd; display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn" onclick="closeOrderModal()" style="background: var(--secondary, #764ba2); color: white;">Close</button>
+                <button id="modalCloseBtn" class="btn" onclick="closeOrderModal()" style="background: var(--secondary, #764ba2); color: white;">Close</button>
                 <button id="modalPrintBtn" class="btn" onclick="printInvoice()" style="display: none; background: var(--primary, #667eea); color: white;">🖨️ Print Invoice</button>
                 <button id="modalEditBtn" class="btn" onclick="enableEditMode()" style="display: none; background: var(--primary, #667eea); color: white;">✏️ Edit Order</button>
                 <button id="modalSaveBtn" class="btn" onclick="if(event && debounceButton(event.currentTarget)) saveOrderChanges()" style="display: none; background: var(--primary, #667eea); color: white;">💾 Save Changes</button>
@@ -45250,6 +45930,19 @@ NOTE: Please print the attached PO document for full details.`;
                 user: 'Manual'
             };
             
+            // Disable buttons during processing
+            const submitBtn = document.getElementById('quickAdjustSubmitBtn');
+            const cancelBtn = document.getElementById('quickAdjustCancelBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Processing...';
+            }
+            if (cancelBtn) {
+                cancelBtn.disabled = true;
+                cancelBtn.style.opacity = '0.5';
+                cancelBtn.style.cursor = 'not-allowed';
+            }
+            
             try {
                 const result = await apiCall('adjustInventory', data);
                 
@@ -45264,16 +45957,37 @@ NOTE: Please print the attached PO document for full details.`;
                     showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${quickAdjustCurrentQty} → ${newQty}`);
                     
                     // Refresh the current report if it's still open
-                    if (document.getElementById('reportSetupModal').style.display !== 'none') {
-                        // Re-run the report to show updated data
-                        const runBtn = document.querySelector('#reportSetupFilters button[onclick*="runReport"]');
-                        if (runBtn) runBtn.click();
+                    reportDataCacheTime = null;  // Clear report cache
+                    if (document.getElementById('reportSetupModal')?.style.display !== 'none') {
+                        setTimeout(() => executeReport(), 100);
                     }
                 } else {
                     showError('Error: ' + (result?.message || 'Unknown error'));
+                    // Re-enable buttons on error
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '💾 Save Adjustment';
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.disabled = false;
+                        cancelBtn.style.opacity = '1';
+                        cancelBtn.style.cursor = 'pointer';
+                    }
                 }
             } catch (error) {
                 showError('Error: ' + error.message);
+                // Re-enable buttons on error
+                const submitBtn = document.getElementById('quickAdjustSubmitBtn');
+                const cancelBtn = document.getElementById('quickAdjustCancelBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '💾 Save Adjustment';
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                    cancelBtn.style.opacity = '1';
+                    cancelBtn.style.cursor = 'pointer';
+                }
             }
         }
         
