@@ -20521,6 +20521,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <th style="text-align: center;">Qty</th>
                     <th style="text-align: right;">Unit Price</th>
                     <th style="text-align: right;">Line Total</th>
+                    <th style="text-align: right;">Cost</th>
+                    <th style="text-align: right;">Profit</th>
+                    <th style="text-align: right;">Margin</th>
                     <th>Payment</th>
                 </tr></thead><tbody>`;
             
@@ -20569,6 +20572,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     grandTotal += reportFilters.item ? soFilteredTotal : soTotal;
                     grandTotalCost += soCost;
                     
+                    // Calculate SO profit and margin
+                    const soProfit = (reportFilters.item ? soFilteredTotal : soTotal) - soCost;
+                    const soMargin = (reportFilters.item ? soFilteredTotal : soTotal) > 0 ? (soProfit / (reportFilters.item ? soFilteredTotal : soTotal) * 100) : 0;
+                    
                     // SO Header Row - show filtered total when item filter is active
                     const displayTotal = reportFilters.item ? soFilteredTotal : soTotal;
                     html += `<tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-weight: 600;">
@@ -20583,6 +20590,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <td></td>
                         <td></td>
                         <td style="text-align: right; color: #667eea;">${formatMoney(displayTotal)}</td>
+                        <td style="text-align: right; color: #6b7280;">${formatMoney(soCost)}</td>
+                        <td style="text-align: right; color: ${soProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(soProfit)}</td>
+                        <td style="text-align: right; color: ${soMargin >= 20 ? '#6b9a8d' : soMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${soMargin.toFixed(1)}%</td>
                         <td>
                             <span style="background: ${paymentColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${paymentStatus}</span>
                             ${so.Status ? `<span style="background: ${statusColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px;">${so.Status}</span>` : ''}
@@ -20591,7 +20601,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     // Render line items
                     if (filteredLines.length > 0) {
-                        filteredLines.forEach(({ itemInfo, qty, unitPrice, lineTotal }) => {
+                        filteredLines.forEach(({ itemInfo, qty, unitPrice, lineTotal, lineCost }) => {
+                            const lineProfit = lineTotal - lineCost;
+                            const lineMargin = lineTotal > 0 ? (lineProfit / lineTotal * 100) : 0;
                             html += `<tr style="font-size: 13px;">
                                 <td style="padding-left: 30px; color: #6b7280;">↳</td>
                                 <td style="color: #6b7280; font-size: 12px;">${itemInfo.sku || '-'}</td>
@@ -20599,13 +20611,16 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <td style="text-align: center;">${qty}</td>
                                 <td style="text-align: right;">${formatMoney(unitPrice)}</td>
                                 <td style="text-align: right;">${formatMoney(lineTotal)}</td>
+                                <td style="text-align: right; color: #6b7280;">${formatMoney(lineCost)}</td>
+                                <td style="text-align: right; color: ${lineProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(lineProfit)}</td>
+                                <td style="text-align: right; color: ${lineMargin >= 20 ? '#6b9a8d' : lineMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${lineMargin.toFixed(1)}%</td>
                                 <td></td>
                             </tr>`;
                         });
                     } else if (lines.length === 0) {
                         html += `<tr style="font-size: 13px; color: #9ca3af;">
                             <td style="padding-left: 30px;">↳</td>
-                            <td colspan="6" style="font-style: italic;">No line items</td>
+                            <td colspan="9" style="font-style: italic;">No line items</td>
                         </tr>`;
                     }
                 });
@@ -20616,6 +20631,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td colspan="5">GRAND TOTAL</td>
                 <td style="text-align: right;">${formatMoney(grandTotal)}</td>
+                <td style="text-align: right;">${formatMoney(grandTotalCost)}</td>
+                <td style="text-align: right; color: ${grandProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(grandProfit)}</td>
+                <td style="text-align: right; color: ${grandMargin >= 20 ? '#6b9a8d' : grandMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${grandMargin.toFixed(1)}%</td>
                 <td></td>
             </tr></tfoot></table></div>
                     </div>
