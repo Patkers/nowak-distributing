@@ -20535,6 +20535,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let grandTotal = 0;
             let grandTotalCost = 0;
             let grandTotalDiscount = 0;
+            let grandTotalQty = 0;
             
             sales.sort((a, b) => new Date(b.Sale_Date || b.SO_Date) - new Date(a.Sale_Date || a.SO_Date))
                 .forEach(so => {
@@ -20553,6 +20554,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     let soFilteredTotal = 0;
                     let soCost = 0;
                     let soDiscount = 0;
+                    let soQty = 0;
                     let filteredLines = [];
                     
                     if (lines.length > 0) {
@@ -20574,6 +20576,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             soFilteredTotal += lineTotal;
                             soCost += lineCost;
                             soDiscount += lineDiscount > 0 ? lineDiscount : 0;
+                            soQty += qty;
                             filteredLines.push({ itemInfo, qty, unitPrice, lineTotal, lineCost, lineDiscount });
                         });
                     }
@@ -20582,6 +20585,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     grandTotal += reportFilters.item ? soFilteredTotal : soTotal;
                     grandTotalCost += soCost;
                     grandTotalDiscount += soDiscount;
+                    grandTotalQty += soQty;
                     
                     // Calculate SO profit and margin
                     const soProfit = (reportFilters.item ? soFilteredTotal : soTotal) - soCost;
@@ -20599,7 +20603,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div>${getCustomerName(so.Customer_ID)}</div>
                             <div style="font-size: 11px; color: #888; font-weight: normal;">${getCustomerAddress(so.Customer_ID)}</div>
                         </td>
-                        <td></td>
+                        <td style="text-align: center; font-weight: bold;">${soQty}</td>
                         <td></td>
                         <td style="text-align: right; color: #667eea;">${formatMoney(displayTotal)}</td>
                         <td style="text-align: right; color: ${hasSODiscount ? '#b88a8a' : '#999'};">${hasSODiscount ? formatMoney(soDiscount) : '-'}</td>
@@ -20645,7 +20649,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const hasGrandDiscount = grandTotalDiscount > 0.01;
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
-                <td colspan="5">GRAND TOTAL</td>
+                <td colspan="3">GRAND TOTAL</td>
+                <td style="text-align: center;">${grandTotalQty}</td>
+                <td></td>
                 <td style="text-align: right;">${formatMoney(grandTotal)}</td>
                 <td style="text-align: right; color: ${hasGrandDiscount ? '#b88a8a' : '#999'};">${hasGrandDiscount ? formatMoney(grandTotalDiscount) : '-'}</td>
                 <td style="text-align: right;">${formatMoney(grandTotalCost)}</td>
