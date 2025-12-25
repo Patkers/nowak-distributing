@@ -19903,6 +19903,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <th>Customer</th>
                                 <th>Address</th>
                                 <th style="text-align: right;">Orders</th>
+                                <th style="text-align: right;">Qty</th>
                                 <th style="text-align: right;">List Price</th>
                                 <th style="text-align: right;">Discount</th>
                                 <th style="text-align: right;">Sales</th>
@@ -19917,6 +19918,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <td>${data.name}</td>
                     <td style="font-size: 12px; color: #666;">${data.address}</td>
                     <td style="text-align: right;">${data.orders.size}</td>
+                    <td style="text-align: right;">${data.qty}</td>
                     <td style="text-align: right; color: #b8a86b;">${formatMoney(data.listTotal)}</td>
                     <td style="text-align: right; color: ${data.discount > 0 ? '#b88a8a' : '#999'}; font-weight: ${data.discount > 0 ? '600' : 'normal'};">${data.discount > 0 ? formatMoney(data.discount) : '-'}</td>
                     <td style="text-align: right;">${formatMoney(data.sales)}</td>
@@ -19930,6 +19932,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 <td>TOTAL</td>
                 <td></td>
                 <td style="text-align: right;">${totalOrders}</td>
+                <td style="text-align: right;">${totalQty}</td>
                 <td style="text-align: right; color: #b8a86b;">${formatMoney(totalListTotal)}</td>
                 <td style="text-align: right; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '-'}</td>
                 <td style="text-align: right;">${formatMoney(totalSales)}</td>
@@ -20070,7 +20073,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // Calculate totals FIRST for KPI cards
             let totalAmount = 0, totalPaid = 0, paidCount = 0, unpaidCount = 0;
-            let totalListPrice = 0, totalDiscount = 0, totalCost = 0;
+            let totalListPrice = 0, totalDiscount = 0, totalCost = 0, totalQtyOrdered = 0;
             sales.forEach(s => {
                 const amt = parseFloat(s.Total_Amount) || 0;
                 const paid = parseFloat(s.Amount_Paid) || 0;
@@ -20095,6 +20098,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     totalListPrice += qty * listPrice;
                     totalDiscount += (qty * listPrice) - (qty * unitPrice);
                     totalCost += qty * unitCost;
+                    totalQtyOrdered += qty;
                 });
             });
             const totalOwed = totalAmount - totalPaid;
@@ -20107,7 +20111,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             let html = `
                 <div style="padding: 25px 30px; background: linear-gradient(135deg, #7a9bb8 0%, #9a8ab8 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(122, 155, 184, 0.3);">
                     <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📋 Sales Order Detail</h2>
-                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sales.length} orders | ${formatMoney(totalProfit)} profit (${profitMargin.toFixed(1)}%)${totalDiscount > 0 ? ' | ' + formatMoney(totalDiscount) + ' discounts' : ''}</p>
+                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sales.length} orders | ${totalQtyOrdered.toLocaleString()} units | ${formatMoney(totalProfit)} profit (${profitMargin.toFixed(1)}%)${totalDiscount > 0 ? ' | ' + formatMoney(totalDiscount) + ' discounts' : ''}</p>
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
                 </div>`;
             
@@ -20521,6 +20525,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <th style="text-align: center;">Qty</th>
                     <th style="text-align: right;">Unit Price</th>
                     <th style="text-align: right;">Line Total</th>
+                    <th style="text-align: right;">Discount</th>
                     <th style="text-align: right;">Cost</th>
                     <th style="text-align: right;">Profit</th>
                     <th style="text-align: right;">Margin</th>
@@ -20529,6 +20534,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             let grandTotal = 0;
             let grandTotalCost = 0;
+            let grandTotalDiscount = 0;
             
             sales.sort((a, b) => new Date(b.Sale_Date || b.SO_Date) - new Date(a.Sale_Date || a.SO_Date))
                 .forEach(so => {
@@ -20546,6 +20552,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     const lines = getSalesLinesFromCache(so.SO_ID || so.SO_Number);
                     let soFilteredTotal = 0;
                     let soCost = 0;
+                    let soDiscount = 0;
                     let filteredLines = [];
                     
                     if (lines.length > 0) {
@@ -20561,16 +20568,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             const lineTotal = qty * unitPrice;
                             const unitCost = itemInfo.pkgCost / itemInfo.unitsPerPkg;
                             const lineCost = qty * unitCost;
+                            const listTotal = qty * itemInfo.listPrice;
+                            const lineDiscount = listTotal - lineTotal;
                             
                             soFilteredTotal += lineTotal;
                             soCost += lineCost;
-                            filteredLines.push({ itemInfo, qty, unitPrice, lineTotal, lineCost });
+                            soDiscount += lineDiscount > 0 ? lineDiscount : 0;
+                            filteredLines.push({ itemInfo, qty, unitPrice, lineTotal, lineCost, lineDiscount });
                         });
                     }
                     
                     // Add to grand total
                     grandTotal += reportFilters.item ? soFilteredTotal : soTotal;
                     grandTotalCost += soCost;
+                    grandTotalDiscount += soDiscount;
                     
                     // Calculate SO profit and margin
                     const soProfit = (reportFilters.item ? soFilteredTotal : soTotal) - soCost;
@@ -20578,6 +20589,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     // SO Header Row - show filtered total when item filter is active
                     const displayTotal = reportFilters.item ? soFilteredTotal : soTotal;
+                    const hasSODiscount = soDiscount > 0.01;
                     html += `<tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-weight: 600;">
                         <td>
                             <span style="color: #667eea; font-weight: bold;">${so.Invoice_Number || so.SO_Number || '-'}</span>
@@ -20590,6 +20602,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <td></td>
                         <td></td>
                         <td style="text-align: right; color: #667eea;">${formatMoney(displayTotal)}</td>
+                        <td style="text-align: right; color: ${hasSODiscount ? '#b88a8a' : '#999'};">${hasSODiscount ? formatMoney(soDiscount) : '-'}</td>
                         <td style="text-align: right; color: #6b7280;">${formatMoney(soCost)}</td>
                         <td style="text-align: right; color: ${soProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(soProfit)}</td>
                         <td style="text-align: right; color: ${soMargin >= 20 ? '#6b9a8d' : soMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${soMargin.toFixed(1)}%</td>
@@ -20601,9 +20614,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     // Render line items
                     if (filteredLines.length > 0) {
-                        filteredLines.forEach(({ itemInfo, qty, unitPrice, lineTotal, lineCost }) => {
+                        filteredLines.forEach(({ itemInfo, qty, unitPrice, lineTotal, lineCost, lineDiscount }) => {
                             const lineProfit = lineTotal - lineCost;
                             const lineMargin = lineTotal > 0 ? (lineProfit / lineTotal * 100) : 0;
+                            const hasDiscount = lineDiscount > 0.01;
                             html += `<tr style="font-size: 13px;">
                                 <td style="padding-left: 30px; color: #6b7280;">↳</td>
                                 <td style="color: #6b7280; font-size: 12px;">${itemInfo.sku || '-'}</td>
@@ -20611,6 +20625,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <td style="text-align: center;">${qty}</td>
                                 <td style="text-align: right;">${formatMoney(unitPrice)}</td>
                                 <td style="text-align: right;">${formatMoney(lineTotal)}</td>
+                                <td style="text-align: right; color: ${hasDiscount ? '#b88a8a' : '#999'};">${hasDiscount ? formatMoney(lineDiscount) : '-'}</td>
                                 <td style="text-align: right; color: #6b7280;">${formatMoney(lineCost)}</td>
                                 <td style="text-align: right; color: ${lineProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(lineProfit)}</td>
                                 <td style="text-align: right; color: ${lineMargin >= 20 ? '#6b9a8d' : lineMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${lineMargin.toFixed(1)}%</td>
@@ -20620,17 +20635,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     } else if (lines.length === 0) {
                         html += `<tr style="font-size: 13px; color: #9ca3af;">
                             <td style="padding-left: 30px;">↳</td>
-                            <td colspan="9" style="font-style: italic;">No line items</td>
+                            <td colspan="10" style="font-style: italic;">No line items</td>
                         </tr>`;
                     }
                 });
             
             const grandProfit = grandTotal - grandTotalCost;
             const grandMargin = grandTotal > 0 ? (grandProfit / grandTotal * 100) : 0;
+            const hasGrandDiscount = grandTotalDiscount > 0.01;
             
             html += `</tbody><tfoot><tr style="font-weight: bold; background: #f0f0f0;">
                 <td colspan="5">GRAND TOTAL</td>
                 <td style="text-align: right;">${formatMoney(grandTotal)}</td>
+                <td style="text-align: right; color: ${hasGrandDiscount ? '#b88a8a' : '#999'};">${hasGrandDiscount ? formatMoney(grandTotalDiscount) : '-'}</td>
                 <td style="text-align: right;">${formatMoney(grandTotalCost)}</td>
                 <td style="text-align: right; color: ${grandProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(grandProfit)}</td>
                 <td style="text-align: right; color: ${grandMargin >= 20 ? '#6b9a8d' : grandMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${grandMargin.toFixed(1)}%</td>
@@ -21353,6 +21370,186 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <td style="text-align: right; color: #b8a86b;">${formatMoney(totalCost)}</td>
                         <td style="text-align: right; color: ${totalProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(totalProfit)}</td>
                         <td style="text-align: right;">${avgMargin.toFixed(1)}%</td>
+                    </tr></tfoot>
+                </table></div>
+                        </div>
+                    </div>
+                `;
+                
+                // Sales Order Detail Section (collapsible) - Grouped by Item, showing invoices under each item
+                // Build data grouped by item with their sales order details
+                const itemSalesData = {};
+                for (const so of sales) {
+                    const lines = getSalesLinesFromCache(so.SO_ID);
+                    lines.forEach(line => {
+                        // Apply item filter if specified
+                        if (reportFilters.item && !matchesFilter(line.Item_ID, reportFilters.item)) {
+                            return;
+                        }
+                        
+                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        const itemId = line.Item_ID;
+                        const qty = parseInt(line.Quantity) || 0;
+                        const unitPrice = parseFloat(line.Unit_Price) || 0;
+                        const lineTotal = qty * unitPrice;
+                        const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
+                        const pkgCost = parseFloat(item?.Package_Cost) || 0;
+                        const unitCost = pkgCost / unitsPerPkg;
+                        const lineCost = qty * unitCost;
+                        const lineProfit = lineTotal - lineCost;
+                        const lineMargin = lineTotal > 0 ? (lineProfit / lineTotal * 100) : 0;
+                        const listPrice = parseFloat(item?.Unit_Sell_Price) || 0;
+                        const listTotal = qty * listPrice;
+                        const lineDiscount = listTotal - lineTotal;
+                        
+                        const customer = cachedCustomers.find(c => c.Customer_ID === so.Customer_ID);
+                        const custCity = customer?.City || '';
+                        const custState = customer?.State || '';
+                        const custLocation = [custCity, custState].filter(Boolean).join(', ');
+                        
+                        if (!itemSalesData[itemId]) {
+                            itemSalesData[itemId] = {
+                                itemId,
+                                sku: item?.SKU || '-',
+                                name: item?.Item_Description || itemId,
+                                supplierName: suppliers.find(s => s.Supplier_ID === item?.Supplier_ID)?.Supplier_Name || '-',
+                                totalQty: 0,
+                                totalRevenue: 0,
+                                totalDiscount: 0,
+                                totalCost: 0,
+                                totalProfit: 0,
+                                invoices: []
+                            };
+                        }
+                        
+                        itemSalesData[itemId].totalQty += qty;
+                        itemSalesData[itemId].totalRevenue += lineTotal;
+                        itemSalesData[itemId].totalDiscount += lineDiscount > 0 ? lineDiscount : 0;
+                        itemSalesData[itemId].totalCost += lineCost;
+                        itemSalesData[itemId].totalProfit += lineProfit;
+                        
+                        itemSalesData[itemId].invoices.push({
+                            invoiceNum: so.Invoice_Number || so.SO_Number || so.SO_ID,
+                            date: so.Sale_Date || so.SO_Date,
+                            customerName: customer?.Customer_Name || so.Customer_ID,
+                            custLocation,
+                            paymentStatus: so.Payment_Status || 'Unpaid',
+                            orderStatus: so.Status || 'Pending',
+                            qty,
+                            unitPrice,
+                            lineTotal,
+                            lineDiscount,
+                            lineCost,
+                            lineProfit,
+                            lineMargin
+                        });
+                    });
+                }
+                
+                // Sort items by total revenue (highest first)
+                const sortedItemSales = Object.values(itemSalesData).sort((a, b) => b.totalRevenue - a.totalRevenue);
+                
+                // Sort invoices within each item by date (newest first)
+                sortedItemSales.forEach(item => {
+                    item.invoices.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    item.margin = item.totalRevenue > 0 ? (item.totalProfit / item.totalRevenue * 100) : 0;
+                });
+                
+                // Calculate grand totals
+                let itemGrandQty = 0, itemGrandRevenue = 0, itemGrandDiscount = 0, itemGrandCost = 0, itemGrandProfit = 0;
+                sortedItemSales.forEach(item => {
+                    itemGrandQty += item.totalQty;
+                    itemGrandRevenue += item.totalRevenue;
+                    itemGrandDiscount += item.totalDiscount;
+                    itemGrandCost += item.totalCost;
+                    itemGrandProfit += item.totalProfit;
+                });
+                const itemGrandMargin = itemGrandRevenue > 0 ? (itemGrandProfit / itemGrandRevenue * 100) : 0;
+                
+                // Count total invoices
+                const totalInvoiceCount = sortedItemSales.reduce((sum, item) => sum + item.invoices.length, 0);
+                
+                html += `
+                    <div style="margin-top: 20px;">
+                        <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                             style="background: #f8f9fa; padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none;">
+                            <span class="toggle-icon">▶</span>
+                            <strong>📋 Sales by Item Detail</strong>
+                            <span style="color: #666; font-size: 12px;">(${sortedItemSales.length} items, ${totalInvoiceCount} invoice lines - click to show)</span>
+                        </div>
+                        <div style="display: none; margin-top: 15px;">
+                            <div style="overflow-x: auto;"><table class="data-table">
+                                <thead><tr>
+                                    <th>Item / Invoice</th>
+                                    <th>SKU / Date</th>
+                                    <th>Supplier / Customer</th>
+                                    <th style="text-align: center;">Qty</th>
+                                    <th style="text-align: right;">Unit Price</th>
+                                    <th style="text-align: right;">Revenue</th>
+                                    <th style="text-align: right;">Discount</th>
+                                    <th style="text-align: right;">Cost</th>
+                                    <th style="text-align: right;">Profit</th>
+                                    <th style="text-align: right;">Margin</th>
+                                    <th>Status</th>
+                                </tr></thead>
+                                <tbody>`;
+                
+                sortedItemSales.forEach(item => {
+                    const hasItemDiscount = item.totalDiscount > 0.01;
+                    // Item Header Row
+                    html += `<tr style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); font-weight: 600;">
+                        <td>
+                            <span style="color: #667eea; font-weight: bold;">${item.name}</span>
+                        </td>
+                        <td style="color: #6b7280;">${item.sku}</td>
+                        <td style="color: #888;">${item.supplierName}</td>
+                        <td style="text-align: center; font-weight: bold;">${item.totalQty}</td>
+                        <td></td>
+                        <td style="text-align: right; color: #667eea;">${formatMoney(item.totalRevenue)}</td>
+                        <td style="text-align: right; color: ${hasItemDiscount ? '#b88a8a' : '#999'};">${hasItemDiscount ? formatMoney(item.totalDiscount) : '-'}</td>
+                        <td style="text-align: right; color: #6b7280;">${formatMoney(item.totalCost)}</td>
+                        <td style="text-align: right; color: ${item.totalProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(item.totalProfit)}</td>
+                        <td style="text-align: right; color: ${item.margin >= 20 ? '#6b9a8d' : item.margin >= 10 ? '#b8a86b' : '#b88a8a'};">${item.margin.toFixed(1)}%</td>
+                        <td><span style="background: #7a9bb8; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${item.invoices.length} orders</span></td>
+                    </tr>`;
+                    
+                    // Invoice Lines for this item
+                    item.invoices.forEach(inv => {
+                        const formattedDate = formatDateSafe(inv.date);
+                        const paymentColor = inv.paymentStatus === 'Paid' ? '#6b9a8d' : inv.paymentStatus === 'Partial' ? '#b8a86b' : '#b88a8a';
+                        const hasInvDiscount = inv.lineDiscount > 0.01;
+                        
+                        html += `<tr style="font-size: 13px;">
+                            <td style="padding-left: 30px; color: #6b7280;">↳ <span style="color: #667eea;">${inv.invoiceNum}</span></td>
+                            <td style="color: #6b7280; font-size: 12px;">${formattedDate}</td>
+                            <td>
+                                <div style="font-size: 13px;">${inv.customerName}</div>
+                                <div style="font-size: 11px; color: #888;">${inv.custLocation || '-'}</div>
+                            </td>
+                            <td style="text-align: center;">${inv.qty}</td>
+                            <td style="text-align: right;">${formatMoney(inv.unitPrice)}</td>
+                            <td style="text-align: right;">${formatMoney(inv.lineTotal)}</td>
+                            <td style="text-align: right; color: ${hasInvDiscount ? '#b88a8a' : '#999'};">${hasInvDiscount ? formatMoney(inv.lineDiscount) : '-'}</td>
+                            <td style="text-align: right; color: #6b7280;">${formatMoney(inv.lineCost)}</td>
+                            <td style="text-align: right; color: ${inv.lineProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(inv.lineProfit)}</td>
+                            <td style="text-align: right; color: ${inv.lineMargin >= 20 ? '#6b9a8d' : inv.lineMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${inv.lineMargin.toFixed(1)}%</td>
+                            <td><span style="background: ${paymentColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${inv.paymentStatus}</span></td>
+                        </tr>`;
+                    });
+                });
+                
+                const hasGrandItemDiscount = itemGrandDiscount > 0.01;
+                html += `</tbody>
+                    <tfoot><tr style="font-weight: bold; background: #f0f0f0;">
+                        <td colspan="3">GRAND TOTAL</td>
+                        <td style="text-align: center;">${itemGrandQty}</td>
+                        <td></td>
+                        <td style="text-align: right;">${formatMoney(itemGrandRevenue)}</td>
+                        <td style="text-align: right; color: ${hasGrandItemDiscount ? '#b88a8a' : '#999'};">${hasGrandItemDiscount ? formatMoney(itemGrandDiscount) : '-'}</td>
+                        <td style="text-align: right;">${formatMoney(itemGrandCost)}</td>
+                        <td style="text-align: right; color: ${itemGrandProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(itemGrandProfit)}</td>
+                        <td style="text-align: right; color: ${itemGrandMargin >= 20 ? '#6b9a8d' : itemGrandMargin >= 10 ? '#b8a86b' : '#b88a8a'};">${itemGrandMargin.toFixed(1)}%</td>
+                        <td></td>
                     </tr></tfoot>
                 </table></div>
                         </div>
