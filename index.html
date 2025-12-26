@@ -16083,7 +16083,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 html += `<tr style="cursor: pointer;" onclick="viewSalesOrder('${so.SO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${invoiceNum}</strong></td>
                     <td>${getCustomerName(so.Customer_ID)}</td>
-                    <td data-sort="${getSortableDate(saleDateTime)}">${formatDateSafe(saleDateTime)}</td>
+                    <td data-sort="${getSortableDate(saleDateTime)}">${formatDateSafe(saleDateTime)} <span style="color: #666;">${formatTimeSafe(saleDateTime)}</span></td>
                     <td>${formatMoney(total)}</td>
                     <td>${formatMoney(amountPaid)}</td>
                     <td data-sort="${getSortableDate(so.Due_Date)}">${dueDate}</td>
