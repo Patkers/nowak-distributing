@@ -4561,7 +4561,7 @@
                             </div>
                             <div class="form-group">
                                 <label id="poDateLabel">Order Date *</label>
-                                <input type="date" id="poDate">
+                                <input type="date" id="poDate" onchange="syncDueDateIfReceived()">
                             </div>
                             <div class="form-group" id="poDueDateGroup">
                                 <label>Expected Delivery Date *</label>
@@ -11152,7 +11152,14 @@
                 // Hide expected delivery date (not needed) and remove required
                 dueDateGroup.style.display = 'none';
                 const dueDateInput = document.getElementById('poDueDate');
-                if (dueDateInput) dueDateInput.removeAttribute('required');
+                if (dueDateInput) {
+                    dueDateInput.removeAttribute('required');
+                    // Set due date to match purchase date (items already received)
+                    const purchaseDate = document.getElementById('poDate')?.value;
+                    if (purchaseDate) {
+                        dueDateInput.value = purchaseDate;
+                    }
+                }
                 dateLabel.textContent = 'Purchase Date *';
                 
                 // Set status to Received
@@ -11162,6 +11169,18 @@
                 // Set payment terms to COD (paid at pickup)
                 if (paymentTermsHidden) paymentTermsHidden.value = 'COD';
                 if (paymentTermsDisplay) paymentTermsDisplay.value = '💵 COD - Paid at pickup';
+            }
+        }
+        
+        // Sync due date with purchase date when "Already Received" is selected
+        function syncDueDateIfReceived() {
+            const purchaseType = document.querySelector('input[name="purchaseType"]:checked')?.value;
+            if (purchaseType === 'received') {
+                const purchaseDate = document.getElementById('poDate')?.value;
+                const dueDateInput = document.getElementById('poDueDate');
+                if (purchaseDate && dueDateInput) {
+                    dueDateInput.value = purchaseDate;
+                }
             }
         }
 
@@ -12493,7 +12512,7 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                 const amountPaid = parseFloat(po.Amount_Paid) || 0;
                 const total = parseFloat(po.Total_Amount || po.Invoice_Total) || 0;
                 const poDateObj = parseDate(po.PO_Date);
-                const sortableDate = poDateObj ? poDateObj.toISOString().split('T')[0] : '';
+                const sortableDate = poDateObj ? poDateObj.toISOString() : '';
                 const dueDateObj = parseDate(po.Due_Date);
                 const sortableDueDate = dueDateObj ? dueDateObj.toISOString().split('T')[0] : '';
                 
@@ -12512,7 +12531,7 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                 html += `<tr style="cursor: pointer;" onclick="viewPurchaseOrder('${po.PO_ID}')" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
                     <td><strong>${po.Invoice_Number || po.PO_ID}</strong></td>
                     <td>${getSupplierName(po.Supplier_ID)}</td>
-                    <td data-sort="${sortableDate}">${formatDateSafe(po.PO_Date)}</td>
+                    <td data-sort="${sortableDate}">${formatDateSafe(po.PO_Date)} <span style="color: #666;">${formatTimeSafe(po.PO_Date)}</span></td>
                     <td>${formatMoney(total)}</td>
                     <td>${formatMoney(amountPaid)}</td>
                     <td data-sort="${sortableDueDate}">${dueDate}</td>
@@ -37811,7 +37830,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             
                             <!-- Footer -->
                             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; flex-shrink: 0;">
-                                <button id="receivePreviewCancel" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                                <button id="receivePreviewCancel" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
                                 <button id="receivePreviewConfirm" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✅ Receive into Inventory</button>
                             </div>
                         </div>
@@ -40661,7 +40680,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
-                <button type="button" onclick="closeOrderPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button type="button" onclick="closeOrderPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
                 <button type="button" id="soConfirmSaveBtn" onclick="submitSaleWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #6b9a8d 0%, #6b9a8d 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
             </div>
         </div>
@@ -40683,7 +40702,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
-                <button type="button" onclick="closePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button type="button" onclick="closePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
                 <button type="button" id="poConfirmSaveBtn" onclick="submitPOWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Save</button>
             </div>
         </div>
@@ -40705,7 +40724,7 @@ NOTE: Please print the attached PO document for full details.`;
             
             <!-- Footer -->
             <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
-                <button onclick="closeCreatePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
+                <button onclick="closeCreatePOPreview()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">← Back to Edit</button>
                 <button id="createPOConfirmBtn" onclick="submitCreatePOWithLoading(this)" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">✓ Confirm & Place Order</button>
             </div>
         </div>
