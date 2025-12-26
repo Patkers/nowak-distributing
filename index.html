@@ -5,7 +5,7 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Tuesday, December 24, 2025
-         VERSION: V16_121
+         VERSION: V16_122
          =====================================================
          CHANGES IN THIS VERSION:
          - IMPROVED: Sales Order Detail report chart layout
@@ -3474,6 +3474,12 @@
                 </div>
 
                 <!-- Price Simulator Card -->
+                <div class="landing-nav-card" onclick="switchTab('expenses')" style="background: rgba(255,255,255,0.95); color: #9333ea; padding: 8px 6px; border: 2px solid #9333ea; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 2px;">💰</div>
+                    <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Expenses</h3>
+                </div>
+
+                <!-- Price Simulation Card -->
                 <div class="landing-nav-card" onclick="switchTab('pricesim')" style="background: rgba(255,255,255,0.95); color: #1e40af; padding: 8px 6px; border: 2px solid #1e40af; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); text-align: center;">
                     <div style="font-size: 24px; margin-bottom: 2px;">🎯</div>
                     <h3 style="margin: 0; font-size: 11px; font-weight: 600;">Price Sim</h3>
@@ -4966,6 +4972,87 @@
             
             <div class="data-display-card">
                 <div id="inventoryTable"></div>
+            </div>
+        </div>
+        
+        <!-- EXPENSES TAB -->
+        <div id="expenses" class="card">
+            <h2>💰 Expense Management</h2>
+            <div class="status" id="expenseStatus"></div>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                <button class="btn" onclick="loadExpenses()" style="background: #9333ea;">🔄 Refresh</button>
+                <button class="btn" onclick="showAddExpenseModal()" style="background: #6b9a8d;">➕ Add Expense</button>
+                <button class="btn" onclick="showAddMileageModal()" style="background: #7aaab8;">🚗 Log Mileage</button>
+                <button class="btn" onclick="showGenerateMonthlyModal()" style="background: #b8a86b;">📅 Generate Monthly</button>
+            </div>
+            
+            <!-- Sub-tabs for expenses -->
+            <div style="display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="expense-subtab active" onclick="showExpenseSubtab('log')" style="padding: 10px 20px; border: 2px solid #9333ea; background: #9333ea; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">📋 Expense Log</button>
+                <button class="expense-subtab" onclick="showExpenseSubtab('recurring')" style="padding: 10px 20px; border: 2px solid #9333ea; background: white; color: #9333ea; border-radius: 8px; cursor: pointer; font-weight: 600;">🔄 Recurring</button>
+                <button class="expense-subtab" onclick="showExpenseSubtab('categories')" style="padding: 10px 20px; border: 2px solid #9333ea; background: white; color: #9333ea; border-radius: 8px; cursor: pointer; font-weight: 600;">🏷️ Categories</button>
+                <button class="expense-subtab" onclick="showExpenseSubtab('mileage')" style="padding: 10px 20px; border: 2px solid #9333ea; background: white; color: #9333ea; border-radius: 8px; cursor: pointer; font-weight: 600;">🚗 Mileage Rates</button>
+            </div>
+            
+            <!-- Expense Log Subtab -->
+            <div id="expenseLogSubtab" class="expense-content">
+                <div class="section-card">
+                    <h3>📋 Expense Log</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <div class="form-group" style="margin: 0; min-width: 150px;">
+                            <label>📅 From Date</label>
+                            <input type="date" id="expenseFromDate">
+                        </div>
+                        <div class="form-group" style="margin: 0; min-width: 150px;">
+                            <label>📅 To Date</label>
+                            <input type="date" id="expenseToDate">
+                        </div>
+                        <div class="form-group" style="margin: 0; min-width: 150px;">
+                            <label>🏷️ Category</label>
+                            <select id="expenseCategoryFilter">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="filterExpenses()" style="align-self: flex-end; background: #9333ea;">🔍 Filter</button>
+                    </div>
+                    <div id="expenseLogTable"></div>
+                </div>
+            </div>
+            
+            <!-- Recurring Expenses Subtab -->
+            <div id="expenseRecurringSubtab" class="expense-content" style="display: none;">
+                <div class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">🔄 Recurring Expenses</h3>
+                        <button class="btn" onclick="showAddRecurringModal()" style="background: #6b9a8d;">➕ Add Recurring</button>
+                    </div>
+                    <p style="color: #666; margin-bottom: 15px;">Set up expenses that repeat monthly, quarterly, or annually. Use "Generate Monthly" to create expense entries from these templates.</p>
+                    <div id="recurringExpenseTable"></div>
+                </div>
+            </div>
+            
+            <!-- Categories Subtab -->
+            <div id="expenseCategoriesSubtab" class="expense-content" style="display: none;">
+                <div class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">🏷️ Expense Categories</h3>
+                        <button class="btn" onclick="showAddCategoryModal()" style="background: #6b9a8d;">➕ Add Category</button>
+                    </div>
+                    <div id="expenseCategoryTable"></div>
+                </div>
+            </div>
+            
+            <!-- Mileage Rates Subtab -->
+            <div id="expenseMileageSubtab" class="expense-content" style="display: none;">
+                <div class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">🚗 IRS Mileage Rates</h3>
+                        <button class="btn" onclick="showAddMileageRateModal()" style="background: #6b9a8d;">➕ Add Year</button>
+                    </div>
+                    <p style="color: #666; margin-bottom: 15px;">Configure the IRS standard mileage rate for each year. This rate is used when logging mileage expenses.</p>
+                    <div id="mileageRateTable"></div>
+                </div>
             </div>
         </div>
         
@@ -8739,6 +8826,11 @@
             // Load price sim items when switching to that tab
             if (tabName === 'pricesim') {
                 loadPriceSimItems();
+            }
+            
+            // Load expenses data when switching to expenses tab
+            if (tabName === 'expenses') {
+                loadExpenses();
             }
             
             // Refresh Inventory Flow Dashboard when switching to that tab
@@ -16785,6 +16877,954 @@ NOTE: Please see the attached invoice PDF for full details.`);
             }
         };
         
+        // ==================== EXPENSE MANAGEMENT ====================
+        
+        let cachedExpenses = [];
+        let cachedExpenseCategories = [];
+        let cachedRecurringExpenses = [];
+        let cachedMileageRates = [];
+        
+        // Show expense subtab
+        function showExpenseSubtab(subtab) {
+            // Update button states
+            document.querySelectorAll('.expense-subtab').forEach(btn => {
+                btn.style.background = 'white';
+                btn.style.color = '#9333ea';
+            });
+            event.target.style.background = '#9333ea';
+            event.target.style.color = 'white';
+            
+            // Hide all content
+            document.querySelectorAll('.expense-content').forEach(el => el.style.display = 'none');
+            
+            // Show selected content
+            if (subtab === 'log') {
+                document.getElementById('expenseLogSubtab').style.display = 'block';
+            } else if (subtab === 'recurring') {
+                document.getElementById('expenseRecurringSubtab').style.display = 'block';
+                displayRecurringExpenses();
+            } else if (subtab === 'categories') {
+                document.getElementById('expenseCategoriesSubtab').style.display = 'block';
+                displayExpenseCategories();
+            } else if (subtab === 'mileage') {
+                document.getElementById('expenseMileageSubtab').style.display = 'block';
+                displayMileageRates();
+            }
+        }
+        
+        // Load all expense data
+        async function loadExpenses(options = {}) {
+            const { categoriesOnly, expensesOnly, recurringOnly, mileageOnly } = options;
+            const loadAll = !categoriesOnly && !expensesOnly && !recurringOnly && !mileageOnly;
+            
+            showLoading('Loading Expenses...');
+            try {
+                // Run API calls in parallel for speed
+                const promises = [];
+                
+                if (loadAll || categoriesOnly) {
+                    promises.push(apiCall('getExpenseCategories').then(result => {
+                        if (result && result.status === 'success') {
+                            cachedExpenseCategories = result.data || [];
+                            populateCategoryFilter();
+                        }
+                    }));
+                }
+                
+                if (loadAll || expensesOnly) {
+                    promises.push(apiCall('getExpenses').then(result => {
+                        if (result && result.status === 'success') {
+                            cachedExpenses = result.data || [];
+                        }
+                    }));
+                }
+                
+                if (loadAll || recurringOnly) {
+                    promises.push(apiCall('getRecurringExpenses').then(result => {
+                        if (result && result.status === 'success') {
+                            cachedRecurringExpenses = result.data || [];
+                        }
+                    }));
+                }
+                
+                if (loadAll || mileageOnly) {
+                    promises.push(apiCall('getMileageRates').then(result => {
+                        if (result && result.status === 'success') {
+                            cachedMileageRates = result.data || [];
+                        }
+                    }));
+                }
+                
+                // Wait for all to complete
+                await Promise.all(promises);
+                
+                // Display expense log if we loaded expenses
+                if (loadAll || expensesOnly) {
+                    displayExpenseLog(cachedExpenses);
+                }
+                
+            } catch (error) {
+                showError('Error loading expenses: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Populate category filter dropdown
+        function populateCategoryFilter() {
+            const select = document.getElementById('expenseCategoryFilter');
+            if (!select) return;
+            select.innerHTML = '<option value="">All Categories</option>';
+            cachedExpenseCategories.forEach(cat => {
+                if (String(cat.Is_Active).toUpperCase() === 'TRUE') {
+                    select.innerHTML += `<option value="${cat.Category_ID}">${cat.Category_Name}</option>`;
+                }
+            });
+        }
+        
+        // Get category name by ID
+        function getCategoryName(categoryId) {
+            const cat = cachedExpenseCategories.find(c => c.Category_ID === categoryId);
+            return cat ? cat.Category_Name : categoryId || 'Uncategorized';
+        }
+        
+        // Filter expenses
+        function filterExpenses() {
+            const fromDate = document.getElementById('expenseFromDate').value;
+            const toDate = document.getElementById('expenseToDate').value;
+            const categoryId = document.getElementById('expenseCategoryFilter').value;
+            
+            let filtered = cachedExpenses;
+            
+            if (fromDate) {
+                filtered = filtered.filter(exp => {
+                    const expDate = new Date(exp.Expense_Date);
+                    return expDate >= new Date(fromDate);
+                });
+            }
+            
+            if (toDate) {
+                filtered = filtered.filter(exp => {
+                    const expDate = new Date(exp.Expense_Date);
+                    return expDate <= new Date(toDate + 'T23:59:59');
+                });
+            }
+            
+            if (categoryId) {
+                filtered = filtered.filter(exp => exp.Category_ID === categoryId);
+            }
+            
+            displayExpenseLog(filtered);
+        }
+        
+        // Display expense log
+        function displayExpenseLog(expenses) {
+            const container = document.getElementById('expenseLogTable');
+            if (!container) return;
+            
+            if (!expenses || expenses.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No expenses found. Click "Add Expense" to record your first expense.</p>';
+                return;
+            }
+            
+            // Sort by date descending
+            expenses.sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date));
+            
+            // Calculate total
+            const total = expenses.reduce((sum, exp) => sum + (parseFloat(exp.Amount) || 0), 0);
+            
+            let html = `
+                <div style="background: linear-gradient(135deg, #f3e8ff, #e9d5ff); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #9333ea;">
+                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Total Expenses</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #9333ea;">${formatMoney(total)}</div>
+                    <div style="font-size: 12px; color: #888;">${expenses.length} expense${expenses.length !== 1 ? 's' : ''}</div>
+                </div>
+            `;
+            
+            html += '<div class="table-scroll-wrapper"><table class="data-table" id="expenseDataTable"><thead><tr>';
+            html += '<th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            expenses.forEach(exp => {
+                const isRecurring = exp.Recurring_ID ? '🔄' : '';
+                html += `<tr>
+                    <td>${formatDateSafe(exp.Expense_Date)}</td>
+                    <td>${getCategoryName(exp.Category_ID)}</td>
+                    <td>${exp.Description || ''} ${isRecurring}</td>
+                    <td>${exp.Vendor || '-'}</td>
+                    <td style="font-weight: bold; color: #9333ea;">${formatMoney(parseFloat(exp.Amount) || 0)}</td>
+                    <td>
+                        <button class="btn-small" onclick="editExpense('${exp.Expense_ID}')" style="background: #7aaab8;">✏️</button>
+                        <button class="btn-small" onclick="deleteExpense('${exp.Expense_ID}')" style="background: #b88a8a;">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+        
+        // Display expense categories
+        function displayExpenseCategories() {
+            const container = document.getElementById('expenseCategoryTable');
+            if (!container) return;
+            
+            if (!cachedExpenseCategories || cachedExpenseCategories.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No categories found. Click "Add Category" to create your first expense category.</p>';
+                return;
+            }
+            
+            let html = '<div class="table-scroll-wrapper"><table class="data-table"><thead><tr>';
+            html += '<th>Category Name</th><th>Type</th><th>P&L Impact</th><th>Status</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            cachedExpenseCategories.forEach(cat => {
+                const isActive = String(cat.Is_Active).toUpperCase() === 'TRUE';
+                const excludeFromProfit = String(cat.Exclude_From_Profit).toUpperCase() === 'TRUE';
+                const typeColor = cat.Category_Type === 'Fixed' ? '#6b9a8d' : cat.Category_Type === 'Variable' ? '#b8a86b' : '#7aaab8';
+                html += `<tr>
+                    <td><strong>${cat.Category_Name}</strong></td>
+                    <td><span style="background: ${typeColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${cat.Category_Type || 'Variable'}</span></td>
+                    <td>${excludeFromProfit ? '<span style="background: #f59e0b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📋 Tax Only</span>' : '<span style="background: #10b981; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">💰 Affects Profit</span>'}</td>
+                    <td><span style="background: ${isActive ? '#6b9a8d' : '#b88a8a'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                        <button class="btn-small" onclick="editCategory('${cat.Category_ID}')" style="background: #7aaab8;">✏️</button>
+                        <button class="btn-small" onclick="deleteCategory('${cat.Category_ID}')" style="background: #b88a8a;">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+        
+        // Display recurring expenses
+        function displayRecurringExpenses() {
+            const container = document.getElementById('recurringExpenseTable');
+            if (!container) return;
+            
+            if (!cachedRecurringExpenses || cachedRecurringExpenses.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No recurring expenses set up. Click "Add Recurring" to create a recurring expense template.</p>';
+                return;
+            }
+            
+            let html = '<div class="table-scroll-wrapper"><table class="data-table"><thead><tr>';
+            html += '<th>Description</th><th>Category</th><th>Amount</th><th>Frequency</th><th>Day</th><th>Status</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            cachedRecurringExpenses.forEach(rec => {
+                const isActive = String(rec.Is_Active).toUpperCase() === 'TRUE';
+                html += `<tr>
+                    <td><strong>${rec.Description}</strong></td>
+                    <td>${getCategoryName(rec.Category_ID)}</td>
+                    <td style="font-weight: bold; color: #9333ea;">${formatMoney(parseFloat(rec.Amount) || 0)}</td>
+                    <td>${rec.Frequency || 'Monthly'}</td>
+                    <td>${rec.Day_Of_Month || 1}</td>
+                    <td><span style="background: ${isActive ? '#6b9a8d' : '#b88a8a'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                        <button class="btn-small" onclick="editRecurring('${rec.Recurring_ID}')" style="background: #7aaab8;">✏️</button>
+                        <button class="btn-small" onclick="deleteRecurring('${rec.Recurring_ID}')" style="background: #b88a8a;">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+        
+        // Display mileage rates
+        function displayMileageRates() {
+            const container = document.getElementById('mileageRateTable');
+            if (!container) return;
+            
+            if (!cachedMileageRates || cachedMileageRates.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No mileage rates configured. Click "Add Year" to set up IRS mileage rates.</p>';
+                return;
+            }
+            
+            // Sort by year descending
+            cachedMileageRates.sort((a, b) => (parseInt(b.Year) || 0) - (parseInt(a.Year) || 0));
+            
+            let html = '<div class="table-scroll-wrapper"><table class="data-table"><thead><tr>';
+            html += '<th>Year</th><th>Rate Per Mile</th><th>Effective Date</th><th>Notes</th><th>Actions</th>';
+            html += '</tr></thead><tbody>';
+            
+            cachedMileageRates.forEach(rate => {
+                html += `<tr>
+                    <td><strong>${rate.Year}</strong></td>
+                    <td style="font-weight: bold; color: #9333ea;">$${(parseFloat(rate.Rate_Per_Mile) || 0).toFixed(3)}</td>
+                    <td>${formatDateSafe(rate.Effective_Date)}</td>
+                    <td>${rate.Notes || ''}</td>
+                    <td>
+                        <button class="btn-small" onclick="editMileageRate('${rate.Year}')" style="background: #7aaab8;">✏️</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+        
+        // Show Add Expense Modal
+        function showAddExpenseModal(expenseId = null) {
+            const expense = expenseId ? cachedExpenses.find(e => e.Expense_ID === expenseId) : null;
+            const isEdit = !!expense;
+            
+            let categoryOptions = '<option value="">Select Category</option>';
+            cachedExpenseCategories.forEach(cat => {
+                if (String(cat.Is_Active).toUpperCase() === 'TRUE') {
+                    const selected = expense && expense.Category_ID === cat.Category_ID ? 'selected' : '';
+                    categoryOptions += `<option value="${cat.Category_ID}" ${selected}>${cat.Category_Name}</option>`;
+                }
+            });
+            
+            const modalHtml = `
+                <div id="expenseModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="max-width: 500px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 24px;">💰 ${isEdit ? 'Edit' : 'Add'} Expense</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            <input type="hidden" id="editExpenseId" value="${expense?.Expense_ID || ''}">
+                            <div class="form-group">
+                                <label>📅 Date *</label>
+                                <input type="date" id="expenseDate" value="${expense?.Expense_Date ? new Date(expense.Expense_Date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>🏷️ Category *</label>
+                                <select id="expenseCategory" required>${categoryOptions}</select>
+                            </div>
+                            <div class="form-group">
+                                <label>📝 Description *</label>
+                                <input type="text" id="expenseDescription" value="${expense?.Description || ''}" placeholder="What is this expense for?" required>
+                            </div>
+                            <div class="form-group">
+                                <label>💵 Amount *</label>
+                                <input type="number" id="expenseAmount" value="${expense?.Amount || ''}" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>🏪 Vendor</label>
+                                <input type="text" id="expenseVendor" value="${expense?.Vendor || ''}" placeholder="Who did you pay?">
+                            </div>
+                            <div class="form-group">
+                                <label>📋 Notes</label>
+                                <textarea id="expenseNotes" rows="2" placeholder="Additional notes...">${expense?.Notes || ''}</textarea>
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button onclick="closeExpenseModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                            <button onclick="saveExpense()" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeExpenseModal() {
+            const modal = document.getElementById('expenseModal');
+            if (modal) modal.remove();
+        }
+        
+        async function saveExpense() {
+            const expenseId = document.getElementById('editExpenseId').value;
+            const data = {
+                expenseDate: document.getElementById('expenseDate').value,
+                categoryId: document.getElementById('expenseCategory').value,
+                description: document.getElementById('expenseDescription').value,
+                amount: parseFloat(document.getElementById('expenseAmount').value) || 0,
+                vendor: document.getElementById('expenseVendor').value,
+                notes: document.getElementById('expenseNotes').value
+            };
+            
+            if (!data.expenseDate || !data.categoryId || !data.description || !data.amount) {
+                showError('Please fill in all required fields');
+                return;
+            }
+            
+            showLoading(expenseId ? 'Updating Expense...' : 'Adding Expense...');
+            try {
+                let result;
+                if (expenseId) {
+                    data.expenseId = expenseId;
+                    result = await apiCall('updateExpense', data);
+                } else {
+                    result = await apiCall('addExpense', data);
+                }
+                
+                if (result && result.status === 'success') {
+                    showSuccess(result.message);
+                    closeExpenseModal();
+                    await loadExpenses({ expensesOnly: true });
+                } else {
+                    showError(result?.message || 'Failed to save expense');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function editExpense(expenseId) {
+            showAddExpenseModal(expenseId);
+        }
+        
+        async function deleteExpense(expenseId) {
+            if (!confirm('Are you sure you want to delete this expense?')) return;
+            
+            showLoading('Deleting Expense...');
+            try {
+                const result = await apiCall('deleteExpense', { expenseId });
+                if (result && result.status === 'success') {
+                    showSuccess('Expense deleted');
+                    await loadExpenses({ expensesOnly: true });
+                } else {
+                    showError(result?.message || 'Failed to delete expense');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Show Add Category Modal
+        function showAddCategoryModal(categoryId = null) {
+            const category = categoryId ? cachedExpenseCategories.find(c => c.Category_ID === categoryId) : null;
+            const isEdit = !!category;
+            const excludeFromProfit = category && String(category.Exclude_From_Profit).toUpperCase() === 'TRUE';
+            
+            const modalHtml = `
+                <div id="categoryModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="max-width: 400px; margin: 50px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 24px;">🏷️ ${isEdit ? 'Edit' : 'Add'} Category</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            <input type="hidden" id="editCategoryId" value="${category?.Category_ID || ''}">
+                            <div class="form-group">
+                                <label>📝 Category Name *</label>
+                                <input type="text" id="categoryName" value="${category?.Category_Name || ''}" placeholder="e.g., Fuel, Insurance, Rent" required>
+                            </div>
+                            <div class="form-group">
+                                <label>📊 Type</label>
+                                <select id="categoryType">
+                                    <option value="Fixed" ${category?.Category_Type === 'Fixed' ? 'selected' : ''}>Fixed (same each month)</option>
+                                    <option value="Variable" ${!category || category?.Category_Type === 'Variable' ? 'selected' : ''}>Variable (changes)</option>
+                                    <option value="One-Time" ${category?.Category_Type === 'One-Time' ? 'selected' : ''}>One-Time</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="categoryActive">
+                                    <option value="true" ${!category || String(category?.Is_Active).toUpperCase() === 'TRUE' ? 'selected' : ''}>Active</option>
+                                    <option value="false" ${category && String(category?.Is_Active).toUpperCase() === 'FALSE' ? 'selected' : ''}>Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="categoryExcludeFromProfit" ${excludeFromProfit ? 'checked' : ''} style="width: 18px; height: 18px;">
+                                    <span>📋 Tax Record Only (exclude from Net Profit)</span>
+                                </label>
+                                <small style="color: #666; display: block; margin-top: 5px;">Check this for expenses like IRS mileage that are for tax records but not actual cash spent.</small>
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button onclick="closeCategoryModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                            <button onclick="saveCategory()" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeCategoryModal() {
+            const modal = document.getElementById('categoryModal');
+            if (modal) modal.remove();
+        }
+        
+        async function saveCategory() {
+            const categoryId = document.getElementById('editCategoryId').value;
+            const data = {
+                categoryName: document.getElementById('categoryName').value,
+                categoryType: document.getElementById('categoryType').value,
+                isActive: document.getElementById('categoryActive').value === 'true',
+                excludeFromProfit: document.getElementById('categoryExcludeFromProfit').checked
+            };
+            
+            if (!data.categoryName) {
+                showError('Please enter a category name');
+                return;
+            }
+            
+            showLoading(categoryId ? 'Updating Category...' : 'Adding Category...');
+            try {
+                let result;
+                if (categoryId) {
+                    data.categoryId = categoryId;
+                    result = await apiCall('updateExpenseCategory', data);
+                } else {
+                    result = await apiCall('addExpenseCategory', data);
+                }
+                
+                if (result && result.status === 'success') {
+                    showSuccess(result.message);
+                    closeCategoryModal();
+                    await loadExpenses({ categoriesOnly: true });
+                    displayExpenseCategories();
+                } else {
+                    showError(result?.message || 'Failed to save category');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function editCategory(categoryId) {
+            showAddCategoryModal(categoryId);
+        }
+        
+        async function deleteCategory(categoryId) {
+            if (!confirm('Are you sure you want to delete this category? This may affect existing expenses.')) return;
+            
+            showLoading('Deleting Category...');
+            try {
+                const result = await apiCall('deleteExpenseCategory', { categoryId });
+                if (result && result.status === 'success') {
+                    showSuccess('Category deleted');
+                    await loadExpenses({ categoriesOnly: true });
+                    displayExpenseCategories();
+                } else {
+                    showError(result?.message || 'Failed to delete category');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Show Add Recurring Modal
+        function showAddRecurringModal(recurringId = null) {
+            const recurring = recurringId ? cachedRecurringExpenses.find(r => r.Recurring_ID === recurringId) : null;
+            const isEdit = !!recurring;
+            
+            let categoryOptions = '<option value="">Select Category</option>';
+            cachedExpenseCategories.forEach(cat => {
+                if (String(cat.Is_Active).toUpperCase() === 'TRUE') {
+                    const selected = recurring && recurring.Category_ID === cat.Category_ID ? 'selected' : '';
+                    categoryOptions += `<option value="${cat.Category_ID}" ${selected}>${cat.Category_Name}</option>`;
+                }
+            });
+            
+            const modalHtml = `
+                <div id="recurringModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="max-width: 500px; margin: 30px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 24px;">🔄 ${isEdit ? 'Edit' : 'Add'} Recurring Expense</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            <input type="hidden" id="editRecurringId" value="${recurring?.Recurring_ID || ''}">
+                            <div class="form-group">
+                                <label>📝 Description *</label>
+                                <input type="text" id="recurringDescription" value="${recurring?.Description || ''}" placeholder="e.g., Monthly Rent" required>
+                            </div>
+                            <div class="form-group">
+                                <label>🏷️ Category *</label>
+                                <select id="recurringCategory" required>${categoryOptions}</select>
+                            </div>
+                            <div class="form-group">
+                                <label>💵 Amount *</label>
+                                <input type="number" id="recurringAmount" value="${recurring?.Amount || ''}" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>📅 Frequency</label>
+                                <select id="recurringFrequency">
+                                    <option value="Monthly" ${!recurring || recurring?.Frequency === 'Monthly' ? 'selected' : ''}>Monthly</option>
+                                    <option value="Quarterly" ${recurring?.Frequency === 'Quarterly' ? 'selected' : ''}>Quarterly</option>
+                                    <option value="Annual" ${recurring?.Frequency === 'Annual' ? 'selected' : ''}>Annual</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>📆 Day of Month</label>
+                                <input type="number" id="recurringDayOfMonth" value="${recurring?.Day_Of_Month || 1}" min="1" max="28" placeholder="1-28">
+                                <small style="color: #666;">Day 1-28 recommended to avoid month-end issues</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="recurringActive">
+                                    <option value="true" ${!recurring || String(recurring?.Is_Active).toUpperCase() === 'TRUE' ? 'selected' : ''}>Active</option>
+                                    <option value="false" ${recurring && String(recurring?.Is_Active).toUpperCase() === 'FALSE' ? 'selected' : ''}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button onclick="closeRecurringModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                            <button onclick="saveRecurring()" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeRecurringModal() {
+            const modal = document.getElementById('recurringModal');
+            if (modal) modal.remove();
+        }
+        
+        async function saveRecurring() {
+            const recurringId = document.getElementById('editRecurringId').value;
+            const data = {
+                description: document.getElementById('recurringDescription').value,
+                categoryId: document.getElementById('recurringCategory').value,
+                amount: parseFloat(document.getElementById('recurringAmount').value) || 0,
+                frequency: document.getElementById('recurringFrequency').value,
+                dayOfMonth: parseInt(document.getElementById('recurringDayOfMonth').value) || 1,
+                isActive: document.getElementById('recurringActive').value === 'true'
+            };
+            
+            if (!data.description || !data.categoryId || !data.amount) {
+                showError('Please fill in all required fields');
+                return;
+            }
+            
+            showLoading(recurringId ? 'Updating Recurring Expense...' : 'Adding Recurring Expense...');
+            try {
+                let result;
+                if (recurringId) {
+                    data.recurringId = recurringId;
+                    result = await apiCall('updateRecurringExpense', data);
+                } else {
+                    result = await apiCall('addRecurringExpense', data);
+                }
+                
+                if (result && result.status === 'success') {
+                    showSuccess(result.message);
+                    closeRecurringModal();
+                    await loadExpenses({ recurringOnly: true });
+                    displayRecurringExpenses();
+                } else {
+                    showError(result?.message || 'Failed to save recurring expense');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function editRecurring(recurringId) {
+            showAddRecurringModal(recurringId);
+        }
+        
+        async function deleteRecurring(recurringId) {
+            if (!confirm('Are you sure you want to delete this recurring expense?')) return;
+            
+            showLoading('Deleting Recurring Expense...');
+            try {
+                const result = await apiCall('deleteRecurringExpense', { recurringId });
+                if (result && result.status === 'success') {
+                    showSuccess('Recurring expense deleted');
+                    await loadExpenses({ recurringOnly: true });
+                    displayRecurringExpenses();
+                } else {
+                    showError(result?.message || 'Failed to delete recurring expense');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Show Add Mileage Rate Modal
+        function showAddMileageRateModal(year = null) {
+            const rate = year ? cachedMileageRates.find(r => String(r.Year) === String(year)) : null;
+            const isEdit = !!rate;
+            const currentYear = new Date().getFullYear();
+            
+            const modalHtml = `
+                <div id="mileageRateModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="max-width: 400px; margin: 50px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, #7aaab8 0%, #5a9aaa 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 24px;">🚗 ${isEdit ? 'Edit' : 'Add'} Mileage Rate</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            <input type="hidden" id="editMileageYear" value="${rate?.Year || ''}">
+                            <div class="form-group">
+                                <label>📅 Year *</label>
+                                <input type="number" id="mileageYear" value="${rate?.Year || currentYear}" min="2000" max="2099" ${isEdit ? 'readonly' : ''} required>
+                            </div>
+                            <div class="form-group">
+                                <label>💵 Rate Per Mile * (e.g., 0.70)</label>
+                                <input type="number" id="mileageRate" value="${rate?.Rate_Per_Mile || '0.70'}" step="0.001" min="0" placeholder="0.70" required>
+                            </div>
+                            <div class="form-group">
+                                <label>📆 Effective Date</label>
+                                <input type="date" id="mileageEffectiveDate" value="${rate?.Effective_Date ? new Date(rate.Effective_Date).toISOString().split('T')[0] : currentYear + '-01-01'}">
+                            </div>
+                            <div class="form-group">
+                                <label>📋 Notes</label>
+                                <input type="text" id="mileageNotes" value="${rate?.Notes || 'IRS Standard Mileage Rate'}" placeholder="IRS Standard Mileage Rate">
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button onclick="closeMileageRateModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                            <button onclick="saveMileageRate()" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7aaab8 0%, #5a9aaa 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeMileageRateModal() {
+            const modal = document.getElementById('mileageRateModal');
+            if (modal) modal.remove();
+        }
+        
+        async function saveMileageRate() {
+            const existingYear = document.getElementById('editMileageYear').value;
+            const data = {
+                year: parseInt(document.getElementById('mileageYear').value),
+                ratePerMile: parseFloat(document.getElementById('mileageRate').value) || 0,
+                effectiveDate: document.getElementById('mileageEffectiveDate').value,
+                notes: document.getElementById('mileageNotes').value
+            };
+            
+            if (!data.year || !data.ratePerMile) {
+                showError('Please enter year and rate');
+                return;
+            }
+            
+            showLoading(existingYear ? 'Updating Mileage Rate...' : 'Adding Mileage Rate...');
+            try {
+                let result;
+                if (existingYear) {
+                    result = await apiCall('updateMileageRate', data);
+                } else {
+                    result = await apiCall('addMileageRate', data);
+                }
+                
+                if (result && result.status === 'success') {
+                    showSuccess(result.message);
+                    closeMileageRateModal();
+                    await loadExpenses({ mileageOnly: true });
+                    displayMileageRates();
+                } else {
+                    showError(result?.message || 'Failed to save mileage rate');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function editMileageRate(year) {
+            showAddMileageRateModal(year);
+        }
+        
+        // Show Add Mileage Expense Modal
+        async function showAddMileageModal() {
+            // Get current mileage rate
+            const currentYear = new Date().getFullYear();
+            let ratePerMile = 0.70; // Default
+            
+            const rateResult = await apiCall('getCurrentMileageRate', { year: currentYear });
+            if (rateResult && rateResult.status === 'success' && rateResult.data) {
+                ratePerMile = parseFloat(rateResult.data.ratePerMile) || 0.70;
+            }
+            
+            // Find mileage category
+            let mileageCategoryId = '';
+            const mileageCat = cachedExpenseCategories.find(c => 
+                c.Category_Name.toLowerCase().includes('mileage') && 
+                String(c.Is_Active).toUpperCase() === 'TRUE'
+            );
+            if (mileageCat) mileageCategoryId = mileageCat.Category_ID;
+            
+            const modalHtml = `
+                <div id="mileageModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="max-width: 450px; margin: 30px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, #7aaab8 0%, #5a9aaa 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 24px;">🚗 Log Mileage</h2>
+                            <p style="margin: 8px 0 0; opacity: 0.9;">Current rate: $${ratePerMile.toFixed(3)}/mile (${currentYear})</p>
+                        </div>
+                        <div style="padding: 20px;">
+                            <input type="hidden" id="mileageCategoryId" value="${mileageCategoryId}">
+                            <input type="hidden" id="currentMileageRate" value="${ratePerMile}">
+                            <div class="form-group">
+                                <label>📅 Date *</label>
+                                <input type="date" id="mileageDate" value="${new Date().toISOString().split('T')[0]}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>🛣️ Miles Driven *</label>
+                                <input type="number" id="milesDriven" placeholder="0" min="0" step="0.1" oninput="calculateMileageAmount()" required>
+                            </div>
+                            <div class="form-group">
+                                <label>📝 Description</label>
+                                <input type="text" id="mileageDescription" placeholder="e.g., Delivery route, Customer visit">
+                            </div>
+                            <div style="background: linear-gradient(135deg, #e0f2f1, #b2dfdb); padding: 20px; border-radius: 12px; text-align: center; margin: 15px 0;">
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Calculated Expense</div>
+                                <div id="mileageAmountDisplay" style="font-size: 32px; font-weight: bold; color: #00796b;">$0.00</div>
+                                <div style="font-size: 12px; color: #888;"><span id="milesDisplay">0</span> miles × $${ratePerMile.toFixed(3)}</div>
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button onclick="closeMileageModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                            <button onclick="saveMileageExpense()" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #7aaab8 0%, #5a9aaa 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">💾 Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeMileageModal() {
+            const modal = document.getElementById('mileageModal');
+            if (modal) modal.remove();
+        }
+        
+        function calculateMileageAmount() {
+            const miles = parseFloat(document.getElementById('milesDriven').value) || 0;
+            const rate = parseFloat(document.getElementById('currentMileageRate').value) || 0.70;
+            const amount = miles * rate;
+            document.getElementById('mileageAmountDisplay').textContent = formatMoney(amount);
+            document.getElementById('milesDisplay').textContent = miles.toFixed(1);
+        }
+        
+        async function saveMileageExpense() {
+            const miles = parseFloat(document.getElementById('milesDriven').value) || 0;
+            const rate = parseFloat(document.getElementById('currentMileageRate').value) || 0.70;
+            const amount = miles * rate;
+            const categoryId = document.getElementById('mileageCategoryId').value;
+            
+            if (!miles) {
+                showError('Please enter miles driven');
+                return;
+            }
+            
+            if (!categoryId) {
+                showError('No mileage category found. Please create a "Mileage" category first.');
+                return;
+            }
+            
+            const description = document.getElementById('mileageDescription').value || `${miles} miles @ $${rate.toFixed(3)}/mile`;
+            
+            const data = {
+                expenseDate: document.getElementById('mileageDate').value,
+                categoryId: categoryId,
+                description: description,
+                amount: Math.round(amount * 100) / 100,
+                vendor: 'Mileage Reimbursement',
+                notes: `${miles} miles at IRS rate $${rate.toFixed(3)}/mile`
+            };
+            
+            showLoading('Logging Mileage...');
+            try {
+                const result = await apiCall('addExpense', data);
+                if (result && result.status === 'success') {
+                    showSuccess(`Mileage logged: ${miles} miles = ${formatMoney(amount)}`);
+                    closeMileageModal();
+                    await loadExpenses({ expensesOnly: true });
+                } else {
+                    showError(result?.message || 'Failed to log mileage');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Show Generate Monthly Expenses Modal
+        function showGenerateMonthlyModal() {
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = currentDate.getMonth() + 1;
+            
+            let monthOptions = '';
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            for (let i = 1; i <= 12; i++) {
+                const selected = i === currentMonth ? 'selected' : '';
+                monthOptions += `<option value="${i}" ${selected}>${monthNames[i-1]}</option>`;
+            }
+            
+            let yearOptions = '';
+            for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+                const selected = y === currentYear ? 'selected' : '';
+                yearOptions += `<option value="${y}" ${selected}>${y}</option>`;
+            }
+            
+            const modalHtml = `
+                <div id="generateMonthlyModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+                    <div style="max-width: 400px; margin: 50px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="background: linear-gradient(135deg, #b8a86b 0%, #9a8a5b 100%); color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0; font-size: 24px;">📅 Generate Monthly Expenses</h2>
+                        </div>
+                        <div style="padding: 20px;">
+                            <p style="color: #666; margin-bottom: 20px;">This will create expense entries from your active recurring expense templates for the selected month.</p>
+                            <div class="form-group">
+                                <label>📅 Month</label>
+                                <select id="generateMonth">${monthOptions}</select>
+                            </div>
+                            <div class="form-group">
+                                <label>📅 Year</label>
+                                <select id="generateYear">${yearOptions}</select>
+                            </div>
+                            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-top: 15px;">
+                                <strong>⚠️ Note:</strong> Expenses that already exist for this month will be skipped.
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                            <button onclick="closeGenerateMonthlyModal()" style="flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 10px; background: white; color: #333; font-size: 15px; font-weight: 600; cursor: pointer;">Cancel</button>
+                            <button onclick="generateMonthlyExpenses()" style="flex: 1; padding: 14px; border: none; border-radius: 10px; background: linear-gradient(135deg, #b8a86b 0%, #9a8a5b 100%); color: white; font-size: 15px; font-weight: 600; cursor: pointer;">🚀 Generate</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeGenerateMonthlyModal() {
+            const modal = document.getElementById('generateMonthlyModal');
+            if (modal) modal.remove();
+        }
+        
+        async function generateMonthlyExpenses() {
+            const month = parseInt(document.getElementById('generateMonth').value);
+            const year = parseInt(document.getElementById('generateYear').value);
+            
+            showLoading('Generating Monthly Expenses...');
+            try {
+                const result = await apiCall('generateMonthlyExpenses', { year, month });
+                if (result && result.status === 'success') {
+                    showSuccess(result.message);
+                    closeGenerateMonthlyModal();
+                    await loadExpenses({ expensesOnly: true });
+                } else {
+                    showError(result?.message || 'Failed to generate expenses');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
         // ==================== PRICE SIMULATOR ====================
         
         let pricesimItems = [];
@@ -17927,9 +18967,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     purpose: 'Get a high-level snapshot of your business performance with key metrics and trends.',
                     insights: [
                         'Total sales, purchases, and profit for the period',
+                        'Operating expenses breakdown by category',
+                        'Net profit after all expenses',
                         'Top selling products and best customers',
-                        'Revenue trends and growth indicators',
-                        'Quick health check of your business'
+                        'Revenue trends and growth indicators'
                     ]
                 }
             },
@@ -31966,8 +33007,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 toDate.setHours(23, 59, 59, 999);
             }
             
-            // Load all report data (uses cache if available)
-            await loadReportData();
+            // Load all report data AND expenses in PARALLEL for speed
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, expenseCount: 0 };
+            
+            const [reportLoaded, expResult] = await Promise.all([
+                loadReportData(),
+                apiCall('getExpensesForPeriod', {
+                    fromDate: reportFilters.fromDate || '',
+                    toDate: reportFilters.toDate || ''
+                }).catch(e => {
+                    console.log('Could not load expenses:', e);
+                    return null;
+                })
+            ]);
+            
+            if (expResult && expResult.status === 'success' && expResult.data) {
+                expenseData = expResult.data;
+            }
             
             const items = cachedItems;
             const customers = cachedCustomers;
@@ -32085,6 +33141,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const avgOrderValue = orderCount > 0 ? (totalSales / orderCount) : 0;
             const avgUnitPrice = totalQtySold > 0 ? (totalSales / totalQtySold) : 0;
             const avgUnitCost = totalQtySold > 0 ? (totalCost / totalQtySold) : 0;
+            
+            // Calculate expense metrics - use totalExpensesForProfit for net profit calculation
+            const totalExpenses = expenseData.totalExpenses || 0;
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const netProfit = profit - totalExpensesForProfit; // Only subtract actual cash expenses
+            const netMargin = totalSales > 0 ? (netProfit / totalSales * 100) : 0;
+            
+            // Calculate daily expense rate (divide total expenses by number of days in period)
+            const daysInPeriod = Math.max(1, Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1);
+            const dailyExpenseRate = totalExpensesForProfit / daysInPeriod;
+            const dailySalesAvg = totalSales / daysInPeriod;
+            const dailyProfitAvg = netProfit / daysInPeriod;
             
             // Sort top performers
             const topCustomers = Object.values(customerSales).sort((a, b) => b.sales - a.sales).slice(0, 10);
@@ -32441,8 +33510,37 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div class="daily-dash-badge">${dateLabel}</div>
                     </div>
                     
-                    <!-- Primary KPIs - 7 columns -->
+                    <!-- Primary KPIs - Revenue Flow -->
                     <div class="daily-dash-stats">
+                        <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">💰 Sales</div>
+                            <div class="daily-dash-stat-value" style="color: ${themeColor};">${formatMoney(totalSales)}</div>
+                            <div class="daily-dash-stat-sub">${formatMoney(dailySalesAvg)}/day</div>
+                        </div>
+                        <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">📊 COGS</div>
+                            <div class="daily-dash-stat-value" style="color: #b8a86b;">${formatMoney(totalCost)}</div>
+                            <div class="daily-dash-stat-sub">cost of goods</div>
+                        </div>
+                        <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">📈 Gross Profit</div>
+                            <div class="daily-dash-stat-value" style="color: ${profit >= 0 ? '#10b981' : '#b88a8a'};">${formatMoney(profit)}</div>
+                            <div class="daily-dash-stat-sub">${grossMargin.toFixed(1)}% margin</div>
+                        </div>
+                        <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">💸 Op. Expenses</div>
+                            <div class="daily-dash-stat-value" style="color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
+                            <div class="daily-dash-stat-sub">${formatMoney(dailyExpenseRate)}/day${totalExcludedFromProfit > 0 ? ' • +' + formatMoney(totalExcludedFromProfit) + ' tax' : ''}</div>
+                        </div>
+                        <div class="daily-dash-stat" style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fee2e2, #fecaca)'};">
+                            <div class="daily-dash-stat-label">✨ Net Profit</div>
+                            <div class="daily-dash-stat-value" style="color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</div>
+                            <div class="daily-dash-stat-sub">${netMargin.toFixed(1)}% net • ${formatMoney(dailyProfitAvg)}/day</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Secondary KPIs - Activity Metrics -->
+                    <div class="daily-dash-stats" style="margin-bottom: 25px;">
                         <div class="daily-dash-stat">
                             <div class="daily-dash-stat-label">📦 Units Sold</div>
                             <div class="daily-dash-stat-value" style="color: #3b82f6;">${totalQtySold.toLocaleString()}</div>
@@ -32451,32 +33549,22 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div class="daily-dash-stat">
                             <div class="daily-dash-stat-label">🧾 Orders</div>
                             <div class="daily-dash-stat-value" style="color: #8b5cf6;">${orderCount.toLocaleString()}</div>
-                            <div class="daily-dash-stat-sub">sales orders</div>
+                            <div class="daily-dash-stat-sub">${(orderCount / daysInPeriod).toFixed(1)}/day avg</div>
                         </div>
                         <div class="daily-dash-stat">
-                            <div class="daily-dash-stat-label">💰 Sales</div>
-                            <div class="daily-dash-stat-value" style="color: ${themeColor};">${formatMoney(totalSales)}</div>
-                            <div class="daily-dash-stat-sub">total revenue</div>
+                            <div class="daily-dash-stat-label">👥 Customers</div>
+                            <div class="daily-dash-stat-value" style="color: #0891b2;">${uniqueCustomers}</div>
+                            <div class="daily-dash-stat-sub">unique buyers</div>
+                        </div>
+                        <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">🛒 Avg Order</div>
+                            <div class="daily-dash-stat-value" style="color: #6b9a8d;">${formatMoney(avgOrderValue)}</div>
+                            <div class="daily-dash-stat-sub">per order</div>
                         </div>
                         <div class="daily-dash-stat">
                             <div class="daily-dash-stat-label">🎫 Discounts</div>
                             <div class="daily-dash-stat-value" style="color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '$0.00'}</div>
                             <div class="daily-dash-stat-sub">given</div>
-                        </div>
-                        <div class="daily-dash-stat">
-                            <div class="daily-dash-stat-label">📊 Cost</div>
-                            <div class="daily-dash-stat-value" style="color: #b8a86b;">${formatMoney(totalCost)}</div>
-                            <div class="daily-dash-stat-sub">cost of goods</div>
-                        </div>
-                        <div class="daily-dash-stat">
-                            <div class="daily-dash-stat-label">📈 Profit</div>
-                            <div class="daily-dash-stat-value" style="color: ${profit >= 0 ? '#10b981' : '#b88a8a'};">${formatMoney(profit)}</div>
-                            <div class="daily-dash-stat-sub">gross profit</div>
-                        </div>
-                        <div class="daily-dash-stat">
-                            <div class="daily-dash-stat-label">📉 Margin</div>
-                            <div class="daily-dash-stat-value" style="color: ${grossMargin >= 30 ? '#10b981' : grossMargin >= 15 ? '#b8a86b' : '#b88a8a'};">${grossMargin.toFixed(1)}%</div>
-                            <div class="daily-dash-stat-sub">gross margin</div>
                         </div>
                     </div>
                     
@@ -32626,6 +33714,36 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Expense Breakdown Section -->
+                    ${totalExpenses > 0 ? `
+                    <div class="daily-dash-grid" style="grid-template-columns: 1fr; margin-top: 20px;">
+                        <div class="daily-dash-card">
+                            <div class="daily-dash-card-title">
+                                <span class="icon" style="background: #9333ea;">💸</span>
+                                Operating Expenses Breakdown
+                                <span style="margin-left: auto; font-size: 12px; color: #6b7280; font-weight: normal;">
+                                    ${daysInPeriod} day${daysInPeriod !== 1 ? 's' : ''} • ${formatMoney(dailyExpenseRate)}/day avg
+                                </span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                                ${expenseData.byCategory.sort((a, b) => b.total - a.total).map(cat => `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${cat.excludeFromProfit ? '#fffbeb' : 'white'}; border-radius: 8px; border: 1px solid ${cat.excludeFromProfit ? '#fcd34d' : '#e5e7eb'};">
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 13px; color: #374151;">
+                                                ${cat.categoryName}
+                                                ${cat.excludeFromProfit ? '<span style="font-size: 10px; background: #f59e0b; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 5px;">TAX ONLY</span>' : ''}
+                                            </div>
+                                            <div style="font-size: 11px; color: #9ca3af;">${cat.count} expense${cat.count !== 1 ? 's' : ''} • ${formatMoney(cat.total / daysInPeriod)}/day</div>
+                                        </div>
+                                        <div style="font-weight: 700; color: ${cat.excludeFromProfit ? '#f59e0b' : '#9333ea'}; font-size: 15px;">${formatMoney(cat.total)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${totalExcludedFromProfit > 0 ? '<div style="margin-top: 12px; padding: 10px; background: #fffbeb; border-radius: 8px; font-size: 12px; color: #92400e;"><strong>Note:</strong> Tax-only expenses (${formatMoney(totalExcludedFromProfit)}) are tracked for tax records but not subtracted from Net Profit.</div>' : ''}
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
             
@@ -32641,8 +33759,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (toDate) toDate.setHours(23, 59, 59, 999);
             if (fromDate) fromDate.setHours(0, 0, 0, 0);
             
-            // Load all report data
-            await loadReportData();
+            // Load report data AND expense data in PARALLEL for speed
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, expenseCount: 0 };
+            
+            const [reportLoaded, expResult] = await Promise.all([
+                loadReportData(),
+                apiCall('getExpensesForPeriod', {
+                    fromDate: reportFilters.fromDate || '',
+                    toDate: reportFilters.toDate || ''
+                }).catch(e => {
+                    console.log('Could not load expenses:', e);
+                    return null;
+                })
+            ]);
+            
+            if (expResult && expResult.status === 'success' && expResult.data) {
+                expenseData = expResult.data;
+            }
             
             const items = cachedItems;
             const customers = cachedCustomers;
@@ -32690,13 +33823,25 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const productSet = new Set();
             let totalUnitsSold = 0;
             
+            // Pre-index sales lines by SO_ID for O(1) lookups instead of O(n) filtering
+            const salesLinesBySO = {};
+            cachedSalesLines.forEach(line => {
+                if (!salesLinesBySO[line.SO_ID]) salesLinesBySO[line.SO_ID] = [];
+                salesLinesBySO[line.SO_ID].push(line);
+            });
+            
+            // Pre-index items by Item_ID for O(1) lookups
+            const itemsById = {};
+            items.forEach(item => { itemsById[item.Item_ID] = item; });
+            
             for (const so of filteredSales) {
                 const soDate = parseDate(so.Sale_Date || so.SO_Date);
                 const monthKey = soDate ? `${soDate.getFullYear()}-${String(soDate.getMonth() + 1).padStart(2, '0')}` : 'Unknown';
                 customerSet.add(so.Customer_ID);
                 
-                const lines = getSalesLinesFromCache(so.SO_ID);
-                lines.forEach(line => {
+                // Use pre-indexed lookup - O(1) instead of O(n)
+                const lines = salesLinesBySO[so.SO_ID] || [];
+                for (const line of lines) {
                     const qty = parseInt(line.Quantity) || 0;
                     const unitPrice = parseFloat(line.Unit_Price) || 0;
                     const revenue = qty * unitPrice;
@@ -32707,7 +33852,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     if (!isNaN(storedUnitCost) && storedUnitCost > 0) {
                         unitCost = storedUnitCost;
                     } else {
-                        const item = items.find(i => i.Item_ID === line.Item_ID);
+                        // Use pre-indexed item lookup - O(1) instead of O(n)
+                        const item = itemsById[line.Item_ID];
                         const unitsPerPkg = parseFloat(item?.Units_Per_Package) || 1;
                         const pkgCost = parseFloat(item?.Package_Cost) || 0;
                         unitCost = pkgCost / unitsPerPkg;
@@ -32726,13 +33872,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     monthlySales[monthKey].revenue += revenue;
                     monthlySales[monthKey].cost += cost;
                     monthlySales[monthKey].profit += (revenue - cost);
-                });
+                }
                 if (monthlySales[monthKey]) monthlySales[monthKey].orders++;
             }
             
             const totalProfit = totalRevenue - totalCost;
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
             const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+            
+            // Calculate Net Profit (after operating expenses) - only use profit-affecting expenses
+            const totalExpenses = expenseData.totalExpenses || 0;
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const netProfit = totalProfit - totalExpensesForProfit;
+            const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
             
             // Calculate Purchase Stats
             let totalPOAmount = 0, totalPOPaid = 0;
@@ -32939,17 +34092,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="biz-dash-stat-value" style="color: ${themeColor};">${formatMoney(totalRevenue)}</div>
                         </div>
                         <div class="biz-dash-stat">
+                            <div class="biz-dash-stat-label">📊 COST OF GOODS</div>
+                            <div class="biz-dash-stat-value" style="color: #b8a86b;">${formatMoney(totalCost)}</div>
+                        </div>
+                        <div class="biz-dash-stat">
                             <div class="biz-dash-stat-label">📈 GROSS PROFIT</div>
                             <div class="biz-dash-stat-value" style="color: #10b981;">${formatMoney(totalProfit)}</div>
                             <div class="biz-dash-stat-sub">${avgMargin.toFixed(1)}% margin</div>
                         </div>
                         <div class="biz-dash-stat">
-                            <div class="biz-dash-stat-label">📊 COST OF GOODS</div>
-                            <div class="biz-dash-stat-value" style="color: #b8a86b;">${formatMoney(totalCost)}</div>
+                            <div class="biz-dash-stat-label">💸 OPERATING EXP</div>
+                            <div class="biz-dash-stat-value" style="color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
+                            <div class="biz-dash-stat-sub">${expenseData.expenseCount || 0} expenses${totalExcludedFromProfit > 0 ? ' • +' + formatMoney(totalExcludedFromProfit) + ' tax' : ''}</div>
                         </div>
-                        <div class="biz-dash-stat">
-                            <div class="biz-dash-stat-label">💳 PO OUTSTANDING</div>
-                            <div class="biz-dash-stat-value" style="color: ${totalPOOutstanding > 0 ? '#b88a8a' : '#10b981'};">${formatMoney(totalPOOutstanding)}</div>
+                        <div class="biz-dash-stat" style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fee2e2, #fecaca)'};">
+                            <div class="biz-dash-stat-label">✨ NET PROFIT</div>
+                            <div class="biz-dash-stat-value" style="color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</div>
+                            <div class="biz-dash-stat-sub">${netMargin.toFixed(1)}% net margin</div>
                         </div>
                     </div>
                     
@@ -33035,6 +34194,35 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <div class="biz-dash-kpi-value" style="${pendingPOCount > 0 ? 'color: #fde047;' : ''}">${pendingPOCount}</div>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Operating Expenses Summary -->
+                        <div class="biz-dash-card">
+                            <div class="biz-dash-card-title">
+                                <span class="icon" style="background: #9333ea;">💸</span>
+                                Operating Expenses
+                            </div>
+                            ${expenseData.byCategory && expenseData.byCategory.length > 0 ? `
+                                <div style="max-height: 280px; overflow-y: auto;">
+                                    ${expenseData.byCategory.sort((a, b) => b.total - a.total).slice(0, 8).map(cat => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb; ${cat.excludeFromProfit ? 'background: #fffbeb; margin: 0 -8px; padding-left: 8px; padding-right: 8px;' : ''}">
+                                            <span style="font-size: 13px; color: #374151;">
+                                                ${cat.categoryName}
+                                                ${cat.excludeFromProfit ? '<span style="font-size: 9px; background: #f59e0b; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">TAX</span>' : ''}
+                                            </span>
+                                            <span style="font-weight: 600; color: ${cat.excludeFromProfit ? '#f59e0b' : '#9333ea'};">${formatMoney(cat.total)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${expenseData.byCategory.length > 8 ? `<div style="text-align: center; padding-top: 10px; color: #6b7280; font-size: 12px;">+ ${expenseData.byCategory.length - 8} more categories</div>` : ''}
+                                ${totalExcludedFromProfit > 0 ? `<div style="margin-top: 10px; padding: 8px; background: #fffbeb; border-radius: 6px; font-size: 11px; color: #92400e;">Tax-only: ${formatMoney(totalExcludedFromProfit)} (not in Net Profit)</div>` : ''}
+                            ` : `
+                                <div style="text-align: center; padding: 40px 20px; color: #9ca3af;">
+                                    <div style="font-size: 32px; margin-bottom: 10px;">📋</div>
+                                    <p style="margin: 0;">No expenses recorded for this period</p>
+                                    <p style="margin: 5px 0 0; font-size: 12px;">Add expenses in the Expenses tab</p>
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
