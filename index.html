@@ -4041,7 +4041,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Units Per Package * <span style="font-size: 12px; color: #666;">(How many individual units in one box/case)</span></label>
-                            <input type="number" id="newUnitsPerPackage" step="1" min="1" required placeholder="e.g. 27" autocomplete="off">
+                            <input type="number" id="newUnitsPerPackage" step="1" min="1" required placeholder="e.g. 27" oninput="calculateUnitCost()" autocomplete="off">
                         </div>
                         <div class="form-group">
                             <label>Package Cost * <span style="font-size: 12px; color: #666;">(Cost per box/case)</span></label>
@@ -7967,15 +7967,15 @@
             if (!overlay) {
                 overlay = document.createElement('div');
                 overlay.id = 'loadingOverlay';
-                overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 99998;';
-                overlay.innerHTML = `<div style="background: white; padding: 30px 40px; border-radius: 12px; text-align: center;">
+                overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 99998;';
+                overlay.innerHTML = `<div style="background: white; padding: 30px 40px; border-radius: 12px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
                     <div style="font-size: 32px; margin-bottom: 10px;">⏳</div>
                     <div id="loadingMessage" style="font-size: 16px; color: #333;">${message || 'Loading...'}</div>
                 </div>`;
                 document.body.appendChild(overlay);
             } else {
                 document.getElementById('loadingMessage').textContent = message || 'Loading...';
-                overlay.style.display = 'block';
+                overlay.style.display = 'flex'; // Use flex, not block, to maintain centering
             }
         }
         
@@ -9142,36 +9142,41 @@
                 notes: ''
             };
             
-            // Save to backend
-            const result = await apiCall('addItem', itemData);
-            
-            if (result && result.status === 'success') {
-                // Force refresh items cache
-                const itemsResult = await apiCall('getItems');
-                if (itemsResult && itemsResult.status === 'success') {
-                    cachedItems = itemsResult.data;
-                }
+            showLoading('Adding Item...');
+            try {
+                // Save to backend
+                const result = await apiCall('addItem', itemData);
                 
-                // Reload the PO form item dropdowns with fresh data
-                const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId && item.Status !== 'Archived');
-                document.querySelectorAll('#poLineItems .po-item').forEach(select => {
-                    const currentValue = select.value; // Preserve current selection
-                    select.innerHTML = '<option value="">Select item...</option>';
-                    supplierItems.forEach(item => {
-                        const cost = parseFloat(item.Package_Cost) || 0;
-                        const units = parseInt(item.Units_Per_Package) || 1;
-                        select.innerHTML += `<option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}">${item.Item_Description}</option>`;
+                if (result && result.status === 'success') {
+                    // Force refresh items cache
+                    const itemsResult = await apiCall('getItems');
+                    if (itemsResult && itemsResult.status === 'success') {
+                        cachedItems = itemsResult.data;
+                    }
+                    
+                    // Reload the PO form item dropdowns with fresh data
+                    const supplierItems = cachedItems.filter(item => item.Supplier_ID === supplierId && item.Status !== 'Archived');
+                    document.querySelectorAll('#poLineItems .po-item').forEach(select => {
+                        const currentValue = select.value; // Preserve current selection
+                        select.innerHTML = '<option value="">Select item...</option>';
+                        supplierItems.forEach(item => {
+                            const cost = parseFloat(item.Package_Cost) || 0;
+                            const units = parseInt(item.Units_Per_Package) || 1;
+                            select.innerHTML += `<option value="${item.Item_ID}" data-cost="${cost}" data-units="${units}">${item.Item_Description}</option>`;
+                        });
+                        if (currentValue) select.value = currentValue; // Restore selection
                     });
-                    if (currentValue) select.value = currentValue; // Restore selection
-                });
-                
-                // Close modal
-                closeQuickAddItem();
-                
-                // Show success
-                showSuccessModal('Item Added!', `"${description}" has been added to the catalog and is now available in your item list.`);
-            } else {
-                showWarning('Error adding item: ' + (result?.message || 'Unknown error'));
+                    
+                    // Close modal
+                    closeQuickAddItem();
+                    
+                    // Show success
+                    showSuccessModal('Item Added!', `"${description}" has been added to the catalog and is now available in your item list.`);
+                } else {
+                    showWarning('Error adding item: ' + (result?.message || 'Unknown error'));
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -9972,14 +9977,19 @@
             const confirmed = await showRecordPreview('supplier', data, null);
             if (!confirmed) return;
 
-            const result = await apiCall('addSupplier', data);
-            
-            if (result && result.status === 'success') {
-                hideAddSupplierForm();
-                loadSuppliers();
-                showSuccessModal('Supplier Added!', 'New supplier has been created successfully.');
-            } else {
-                showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Adding Supplier...');
+            try {
+                const result = await apiCall('addSupplier', data);
+                
+                if (result && result.status === 'success') {
+                    hideAddSupplierForm();
+                    loadSuppliers();
+                    showSuccessModal('Supplier Added!', 'New supplier has been created successfully.');
+                } else {
+                    showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -10137,14 +10147,19 @@
             const confirmed = await showRecordPreview('supplier', data, originalData);
             if (!confirmed) return;
             
-            const result = await apiCall('updateSupplier', data);
-            
-            if (result && result.status === 'success') {
-                hideEditSupplierForm();
-                loadSuppliers();
-                showSuccessModal('Supplier Updated!', 'Changes saved successfully.');
-            } else {
-                showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Updating Supplier...');
+            try {
+                const result = await apiCall('updateSupplier', data);
+                
+                if (result && result.status === 'success') {
+                    hideEditSupplierForm();
+                    loadSuppliers();
+                    showSuccessModal('Supplier Updated!', 'Changes saved successfully.');
+                } else {
+                    showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
         
@@ -10158,13 +10173,18 @@
             );
             if (!confirmed) return;
             
-            const result = await apiCall('deleteSupplier', { supplierId });
-            
-            if (result && result.status === 'success') {
-                loadSuppliers();
-                showSuccessModal('Supplier Deleted!', `"${supplierName}" has been removed.`);
-            } else {
-                showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Deleting Supplier...');
+            try {
+                const result = await apiCall('deleteSupplier', { supplierId });
+                
+                if (result && result.status === 'success') {
+                    loadSuppliers();
+                    showSuccessModal('Supplier Deleted!', `"${supplierName}" has been removed.`);
+                } else {
+                    showStatus('suppliersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -10252,14 +10272,19 @@
             const confirmed = await showRecordPreview('item', displayData, null);
             if (!confirmed) return;
 
-            const result = await apiCall('addItem', data);
-            
-            if (result && result.status === 'success') {
-                hideAddItemForm();
-                loadItems();
-                showSuccessModal('Item Added!', 'New item has been created successfully.');
-            } else {
-                showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Adding Item...');
+            try {
+                const result = await apiCall('addItem', data);
+                
+                if (result && result.status === 'success') {
+                    hideAddItemForm();
+                    loadItems();
+                    showSuccessModal('Item Added!', 'New item has been created successfully.');
+                } else {
+                    showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -10634,32 +10659,37 @@
             
             console.log('Confirmed! Sending to API:', JSON.stringify(data));
             
-            const result = await apiCall('updateItem', data);
-            
-            console.log('API result:', JSON.stringify(result));
-            
-            if (result && result.status === 'success') {
-                hideEditItemForm();
+            showLoading('Updating Item...');
+            try {
+                const result = await apiCall('updateItem', data);
                 
-                // Force refresh items with cache bust
-                await loadItems(true);
+                console.log('API result:', JSON.stringify(result));
                 
-                // If status changed to Archived, show special message and switch filter
-                if (data.status === 'Archived' && originalData && originalData.status !== 'Archived') {
-                    // Switch filter to show archived items so user can see the change
-                    const filterSelect = document.getElementById('filterItemActive');
-                    if (filterSelect) {
-                        filterSelect.value = 'all';
-                        filterItems(); // Re-apply filter
+                if (result && result.status === 'success') {
+                    hideEditItemForm();
+                    
+                    // Force refresh items with cache bust
+                    await loadItems(true);
+                    
+                    // If status changed to Archived, show special message and switch filter
+                    if (data.status === 'Archived' && originalData && originalData.status !== 'Archived') {
+                        // Switch filter to show archived items so user can see the change
+                        const filterSelect = document.getElementById('filterItemActive');
+                        if (filterSelect) {
+                            filterSelect.value = 'all';
+                            filterItems(); // Re-apply filter
+                        }
+                        showSuccessModal('Item Archived!', `"${data.description || data.sku}" has been archived.\n\nArchived items won't appear in PO/SO dropdowns.\nFilter changed to "All" to show archived items.`);
+                    } else if (data.status === 'Active' && originalData && originalData.status === 'Archived') {
+                        showSuccessModal('Item Reactivated!', `"${data.description || data.sku}" is now active again.`);
+                    } else {
+                        showSuccessModal('Item Updated!', 'Changes saved successfully.');
                     }
-                    showSuccessModal('Item Archived!', `"${data.description || data.sku}" has been archived.\n\nArchived items won't appear in PO/SO dropdowns.\nFilter changed to "All" to show archived items.`);
-                } else if (data.status === 'Active' && originalData && originalData.status === 'Archived') {
-                    showSuccessModal('Item Reactivated!', `"${data.description || data.sku}" is now active again.`);
                 } else {
-                    showSuccessModal('Item Updated!', 'Changes saved successfully.');
+                    showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
                 }
-            } else {
-                showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            } finally {
+                hideLoading();
             }
         }
         
@@ -10681,17 +10711,22 @@
                 return;
             }
             
-            const newStatus = isCurrentlyArchived ? 'Active' : 'Archived';
-            const result = await apiCall('updateItem', { 
-                itemId: itemId,
-                status: newStatus
-            });
-            
-            if (result && result.status === 'success') {
-                showStatus('itemsStatus', `✅ Item ${action}d successfully!`, 'success');
-                loadItems();
-            } else {
-                showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading(isCurrentlyArchived ? 'Reactivating Item...' : 'Archiving Item...');
+            try {
+                const newStatus = isCurrentlyArchived ? 'Active' : 'Archived';
+                const result = await apiCall('updateItem', { 
+                    itemId: itemId,
+                    status: newStatus
+                });
+                
+                if (result && result.status === 'success') {
+                    showStatus('itemsStatus', `✅ Item ${action}d successfully!`, 'success');
+                    loadItems();
+                } else {
+                    showStatus('itemsStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -10740,14 +10775,19 @@
             const confirmed = await showRecordPreview('customer', data, null);
             if (!confirmed) return;
 
-            const result = await apiCall('addCustomer', data);
-            
-            if (result && result.status === 'success') {
-                hideAddCustomerForm();
-                loadCustomers();
-                showSuccessModal('Customer Added!', 'New customer has been created successfully.');
-            } else {
-                showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Adding Customer...');
+            try {
+                const result = await apiCall('addCustomer', data);
+                
+                if (result && result.status === 'success') {
+                    hideAddCustomerForm();
+                    loadCustomers();
+                    showSuccessModal('Customer Added!', 'New customer has been created successfully.');
+                } else {
+                    showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -10948,14 +10988,19 @@
             const confirmed = await showRecordPreview('customer', data, originalData);
             if (!confirmed) return;
             
-            const result = await apiCall('updateCustomer', data);
-            
-            if (result && result.status === 'success') {
-                hideEditCustomerForm();
-                loadCustomers();
-                showSuccessModal('Customer Updated!', 'Changes saved successfully.');
-            } else {
-                showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Updating Customer...');
+            try {
+                const result = await apiCall('updateCustomer', data);
+                
+                if (result && result.status === 'success') {
+                    hideEditCustomerForm();
+                    loadCustomers();
+                    showSuccessModal('Customer Updated!', 'Changes saved successfully.');
+                } else {
+                    showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
         
@@ -10969,13 +11014,18 @@
             );
             if (!confirmed) return;
             
-            const result = await apiCall('deleteCustomer', { customerId });
-            
-            if (result && result.status === 'success') {
-                loadCustomers();
-                showSuccessModal('Customer Deleted!', `"${customerName}" has been removed.`);
-            } else {
-                showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+            showLoading('Deleting Customer...');
+            try {
+                const result = await apiCall('deleteCustomer', { customerId });
+                
+                if (result && result.status === 'success') {
+                    loadCustomers();
+                    showSuccessModal('Customer Deleted!', `"${customerName}" has been removed.`);
+                } else {
+                    showStatus('customersStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                }
+            } finally {
+                hideLoading();
             }
         }
 
@@ -12137,6 +12187,8 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                 submitBtn.innerHTML = '⏳ Saving...';
             }
 
+            showLoading('Creating Purchase Order...');
+
             try {
                 const result = await apiCall('createPurchaseOrder', data);
                 
@@ -12149,6 +12201,7 @@ NOTE: Please print or save the PO as PDF from the print preview and attach it to
                 }
             } finally {
                 // Always reset the flag and ALL buttons
+                hideLoading();
                 isSavingPO = false;
                 allPOFormBtns.forEach(btn => {
                     btn.disabled = false;
@@ -14254,6 +14307,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 saveBtn.innerHTML = '⏳ Saving...';
             }
             
+            showLoading('Updating Purchase Order...');
+            
             try {
                 const result = await apiCall('updatePurchaseOrder', data);
                 
@@ -14311,6 +14366,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 }
             } finally {
                 // Always reset the flag and restore ALL buttons
+                hideLoading();
                 isSavingPOEdit = false;
                 allModalBtns.forEach(btn => {
                     btn.disabled = false;
@@ -14638,6 +14694,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 saveBtn.innerHTML = '⏳ Saving...';
             }
             
+            showLoading('Updating Sales Order...');
+            
             try {
                 const result = await apiCall('updateSalesOrder', data);
                 
@@ -14704,6 +14762,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 }
             } finally {
                 // Always reset the flag and restore ALL buttons
+                hideLoading();
                 isSavingSOEdit = false;
                 allModalBtns.forEach(btn => {
                     btn.disabled = false;
@@ -15506,6 +15565,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 submitBtn.textContent = '⏳ Saving...';
             }
             
+            showLoading('Creating Sales Order...');
+            
             try {
                 // Validate required fields
                 const status = document.getElementById('soStatus').value;
@@ -15513,6 +15574,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 
                 // Helper to re-enable buttons on validation failure
                 const reEnableSOFormBtns = () => {
+                    hideLoading();
                     isSavingSale = false;
                     allSOFormBtns.forEach(btn => {
                         btn.disabled = false;
@@ -15601,6 +15663,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 }
             } finally {
                 // UNLOCK and re-enable ALL buttons
+                hideLoading();
                 isSavingSale = false;
                 
                 allSOFormBtns.forEach(btn => {
@@ -17482,21 +17545,26 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             console.log('📝 Submitting inventory adjustment:', data);
             
-            const result = await apiCall('adjustInventory', data);
-            
-            console.log('📝 Adjustment result:', result);
-            
-            if (result && result.status === 'success') {
-                // Force refresh to get updated quantities - clear cache and reload
-                cachedItems = [];
+            showLoading('Adjusting Inventory...');
+            try {
+                const result = await apiCall('adjustInventory', data);
                 
-                // Note: hideAdjustInventoryForm will handle returning to report if returnToReport is set
-                hideAdjustInventoryForm();
-                loadInventory(true);  // Force refresh
-                showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${currentQty} → ${newQty}`);
-            } else {
-                showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
-                console.error('Adjustment failed:', result);
+                console.log('📝 Adjustment result:', result);
+                
+                if (result && result.status === 'success') {
+                    // Force refresh to get updated quantities - clear cache and reload
+                    cachedItems = [];
+                    
+                    // Note: hideAdjustInventoryForm will handle returning to report if returnToReport is set
+                    hideAdjustInventoryForm();
+                    loadInventory(true);  // Force refresh
+                    showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${currentQty} → ${newQty}`);
+                } else {
+                    showStatus('inventoryStatus', '❌ Error: ' + (result?.message || 'Unknown error'), 'error');
+                    console.error('Adjustment failed:', result);
+                }
+            } finally {
+                hideLoading();
             }
         }
         
@@ -37558,6 +37626,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             }
             
             try {
+                showLoading('Receiving Items...');
                 const data = {
                     poId: poId,
                     notes: notes,
@@ -37619,6 +37688,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 console.error('Error in commitReceivePartial:', error);
                 showError('Error: ' + error.message);
             } finally {
+                hideLoading();
                 isCommittingReceivePartial = false;
                 const closeBtn = document.getElementById('modalCloseBtn');
                 if (commitBtn) {
@@ -46008,6 +46078,7 @@ NOTE: Please print the attached PO document for full details.`;
             }
             
             try {
+                showLoading('Adjusting Inventory...');
                 const result = await apiCall('adjustInventory', data);
                 
                 if (result && result.status === 'success') {
@@ -46018,6 +46089,7 @@ NOTE: Please print the attached PO document for full details.`;
                     }
                     
                     closeQuickAdjustModal();
+                    hideLoading();
                     showSuccessModal('Inventory Adjusted!', `${item.Item_Description}\n\n${quickAdjustCurrentQty} → ${newQty}`);
                     
                     // Refresh the current report if it's still open
@@ -46026,6 +46098,7 @@ NOTE: Please print the attached PO document for full details.`;
                         setTimeout(() => executeReport(), 100);
                     }
                 } else {
+                    hideLoading();
                     showError('Error: ' + (result?.message || 'Unknown error'));
                     // Re-enable buttons on error
                     if (submitBtn) {
@@ -46039,6 +46112,7 @@ NOTE: Please print the attached PO document for full details.`;
                     }
                 }
             } catch (error) {
+                hideLoading();
                 showError('Error: ' + error.message);
                 // Re-enable buttons on error
                 const submitBtn = document.getElementById('quickAdjustSubmitBtn');
