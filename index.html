@@ -33740,40 +33740,49 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     </div>
                     
                     <!-- Expense Breakdown Section -->
-                    ${totalExpensesForProfit > 0 || totalExcludedFromProfit > 0 ? `
+                    ${totalExpensesForProfit !== 0 || totalExcludedFromProfit > 0 || (expenseData.totalReimbursements || 0) > 0 ? `
                     <div class="daily-dash-grid" style="grid-template-columns: 1fr; margin-top: 20px;">
                         <div class="daily-dash-card">
                             <div class="daily-dash-card-title">
                                 <span class="icon" style="background: #9333ea;">💸</span>
                                 Operating Expenses Breakdown
                                 <span style="margin-left: auto; font-size: 12px; color: #6b7280; font-weight: normal;">
-                                    ${daysInPeriod} day${daysInPeriod !== 1 ? 's' : ''} • ${formatMoney(dailyExpenseRate)}/day avg
+                                    ${daysInPeriod} day${daysInPeriod !== 1 ? 's' : ''} • ${formatMoney(Math.abs(dailyExpenseRate))}/day avg
                                     ${(expenseData.totalProrated || 0) > 0 ? ' • <span style="color: #0891b2;">prorated</span>' : ''}
                                 </span>
                             </div>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
-                                ${expenseData.byCategory.sort((a, b) => b.total - a.total).map(cat => {
+                                ${expenseData.byCategory.sort((a, b) => {
+                                    // Sort: expenses first, then reimbursements
+                                    if (a.isReimbursement && !b.isReimbursement) return 1;
+                                    if (!a.isReimbursement && b.isReimbursement) return -1;
+                                    return b.total - a.total;
+                                }).map(cat => {
                                     const isProrated = (cat.totalProrated || 0) > 0.01;
-                                    const bgColor = cat.excludeFromProfit ? '#fffbeb' : (isProrated ? '#f0fdfa' : 'white');
-                                    const borderColor = cat.excludeFromProfit ? '#fcd34d' : (isProrated ? '#99f6e4' : '#e5e7eb');
+                                    const isReimbursement = cat.isReimbursement === true;
+                                    const bgColor = isReimbursement ? '#f0fdf4' : (cat.excludeFromProfit ? '#fffbeb' : (isProrated ? '#f0fdfa' : 'white'));
+                                    const borderColor = isReimbursement ? '#bbf7d0' : (cat.excludeFromProfit ? '#fcd34d' : (isProrated ? '#99f6e4' : '#e5e7eb'));
+                                    const amountColor = isReimbursement ? '#059669' : (cat.excludeFromProfit ? '#f59e0b' : (isProrated ? '#0891b2' : '#9333ea'));
                                     return `
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${bgColor}; border-radius: 8px; border: 1px solid ${borderColor};">
                                         <div>
                                             <div style="font-weight: 600; font-size: 13px; color: #374151;">
                                                 ${cat.categoryName}
+                                                ${isReimbursement ? '<span style="font-size: 10px; background: #059669; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 5px;">CREDIT</span>' : ''}
                                                 ${cat.excludeFromProfit ? '<span style="font-size: 10px; background: #f59e0b; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 5px;">TAX ONLY</span>' : ''}
-                                                ${isProrated ? '<span style="font-size: 10px; background: #0891b2; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 5px;">PRORATED</span>' : ''}
+                                                ${isProrated && !isReimbursement ? '<span style="font-size: 10px; background: #0891b2; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 5px;">PRORATED</span>' : ''}
                                             </div>
                                             <div style="font-size: 11px; color: #9ca3af;">
-                                                ${cat.count} expense${cat.count !== 1 ? 's' : ''}
-                                                ${isProrated ? ' • Full: ' + formatMoney(cat.totalActual) : ''}
+                                                ${cat.count} ${isReimbursement ? 'credit' : 'expense'}${cat.count !== 1 ? 's' : ''}
+                                                ${isProrated && !isReimbursement ? ' • Full: ' + formatMoney(cat.totalActual) : ''}
                                             </div>
                                         </div>
-                                        <div style="font-weight: 700; color: ${cat.excludeFromProfit ? '#f59e0b' : (isProrated ? '#0891b2' : '#9333ea')}; font-size: 15px;">${formatMoney(cat.total)}</div>
+                                        <div style="font-weight: 700; color: ${amountColor}; font-size: 15px;">${isReimbursement ? '-' : ''}${formatMoney(cat.total)}</div>
                                     </div>
                                 `}).join('')}
                             </div>
-                            ${(expenseData.totalProrated || 0) > 0.01 ? '<div style="margin-top: 12px; padding: 10px; background: #f0fdfa; border-radius: 8px; font-size: 12px; color: #0e7490;"><strong>📊 Proration Applied:</strong> Fixed monthly expenses are prorated for the ' + daysInPeriod + '-day period. Full monthly amount: ' + formatMoney(expenseData.totalActual || 0) + ', showing prorated: ' + formatMoney(totalExpensesForProfit + totalExcludedFromProfit) + '</div>' : ''}
+                            ${(expenseData.totalReimbursements || 0) > 0 ? '<div style="margin-top: 12px; padding: 10px; background: #f0fdf4; border-radius: 8px; font-size: 12px; color: #166534;"><strong>💵 Credits Applied:</strong> Reimbursements total -' + formatMoney(expenseData.totalReimbursements) + ' (reduces your net expenses)</div>' : ''}
+                            ${(expenseData.totalProrated || 0) > 0.01 ? '<div style="margin-top: 12px; padding: 10px; background: #f0fdfa; border-radius: 8px; font-size: 12px; color: #0e7490;"><strong>📊 Proration Applied:</strong> Fixed monthly expenses are prorated for the ' + daysInPeriod + '-day period.</div>' : ''}
                             ${totalExcludedFromProfit > 0 ? '<div style="margin-top: 12px; padding: 10px; background: #fffbeb; border-radius: 8px; font-size: 12px; color: #92400e;"><strong>Note:</strong> Tax-only expenses (' + formatMoney(totalExcludedFromProfit) + ') are tracked for tax records but not subtracted from Net Profit.</div>' : ''}
                         </div>
                     </div>
@@ -34239,21 +34248,31 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             </div>
                             ${expenseData.byCategory && expenseData.byCategory.length > 0 ? `
                                 <div style="max-height: 280px; overflow-y: auto;">
-                                    ${expenseData.byCategory.sort((a, b) => b.total - a.total).slice(0, 8).map(cat => {
+                                    ${expenseData.byCategory.sort((a, b) => {
+                                        // Sort: expenses first (positive), then reimbursements (shown as negative)
+                                        if (a.isReimbursement && !b.isReimbursement) return 1;
+                                        if (!a.isReimbursement && b.isReimbursement) return -1;
+                                        return b.total - a.total;
+                                    }).slice(0, 8).map(cat => {
                                         const isProrated = (cat.totalProrated || 0) > 0.01;
-                                        const bgStyle = cat.excludeFromProfit ? 'background: #fffbeb;' : (isProrated ? 'background: #f0fdfa;' : '');
+                                        const isReimbursement = cat.isReimbursement === true;
+                                        const bgStyle = isReimbursement ? 'background: #f0fdf4;' : (cat.excludeFromProfit ? 'background: #fffbeb;' : (isProrated ? 'background: #f0fdfa;' : ''));
+                                        const displayAmount = isReimbursement ? -cat.total : cat.total;
+                                        const amountColor = isReimbursement ? '#059669' : (cat.excludeFromProfit ? '#f59e0b' : (isProrated ? '#0891b2' : '#9333ea'));
                                         return `
                                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb; ${bgStyle} margin: 0 -8px; padding-left: 8px; padding-right: 8px;">
                                             <span style="font-size: 13px; color: #374151;">
                                                 ${cat.categoryName}
+                                                ${isReimbursement ? '<span style="font-size: 9px; background: #059669; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">CREDIT</span>' : ''}
                                                 ${cat.excludeFromProfit ? '<span style="font-size: 9px; background: #f59e0b; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">TAX</span>' : ''}
-                                                ${isProrated && !cat.excludeFromProfit ? '<span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">PRO</span>' : ''}
+                                                ${isProrated && !cat.excludeFromProfit && !isReimbursement ? '<span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">PRO</span>' : ''}
                                             </span>
-                                            <span style="font-weight: 600; color: ${cat.excludeFromProfit ? '#f59e0b' : (isProrated ? '#0891b2' : '#9333ea')};">${formatMoney(cat.total)}</span>
+                                            <span style="font-weight: 600; color: ${amountColor};">${isReimbursement ? '-' : ''}${formatMoney(cat.total)}</span>
                                         </div>
                                     `}).join('')}
                                 </div>
                                 ${expenseData.byCategory.length > 8 ? `<div style="text-align: center; padding-top: 10px; color: #6b7280; font-size: 12px;">+ ${expenseData.byCategory.length - 8} more categories</div>` : ''}
+                                ${(expenseData.totalReimbursements || 0) > 0 ? `<div style="margin-top: 10px; padding: 8px; background: #f0fdf4; border-radius: 6px; font-size: 11px; color: #166534;">💵 Credits/Reimbursements: -${formatMoney(expenseData.totalReimbursements)} (reduces expenses)</div>` : ''}
                                 ${(expenseData.totalProrated || 0) > 0.01 ? `<div style="margin-top: 10px; padding: 8px; background: #f0fdfa; border-radius: 6px; font-size: 11px; color: #0e7490;">📊 Fixed expenses prorated for period</div>` : ''}
                                 ${totalExcludedFromProfit > 0 ? `<div style="margin-top: 10px; padding: 8px; background: #fffbeb; border-radius: 6px; font-size: 11px; color: #92400e;">Tax-only: ${formatMoney(totalExcludedFromProfit)} (not in Net Profit)</div>` : ''}
                             ` : `
