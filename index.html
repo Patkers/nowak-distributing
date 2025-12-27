@@ -32526,7 +32526,32 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 </div>
                 
                 <!-- Category Breakdown by Month -->
-                ${sortedCategories.length > 0 ? `
+                ${(() => {
+                    // Build category totals directly from expenses using cached categories
+                    const catTotalsMap = {};
+                    expenses.forEach(exp => {
+                        const catId = exp.Category_ID;
+                        if (!catId) return;
+                        
+                        const catInfo = (cachedExpenseCategories || []).find(c => c.Category_ID === catId);
+                        const catName = catInfo?.Category_Name || exp.Category_Name || 'Unknown';
+                        const isReimb = String(catInfo?.Is_Reimbursement || 'FALSE').toUpperCase() === 'TRUE';
+                        
+                        if (!catTotalsMap[catId]) {
+                            catTotalsMap[catId] = { id: catId, name: catName, isReimb: isReimb, total: 0 };
+                        }
+                        catTotalsMap[catId].total += parseFloat(exp.proratedAmount || exp.Amount) || 0;
+                    });
+                    
+                    const expCats = Object.values(catTotalsMap).filter(c => !c.isReimb).sort((a, b) => b.total - a.total);
+                    const reimbCats = Object.values(catTotalsMap).filter(c => c.isReimb).sort((a, b) => b.total - a.total);
+                    const allCatsForTable = [...expCats, ...reimbCats];
+                    
+                    if (allCatsForTable.length === 0) return '';
+                    
+                    const monthsToShow = sortedMonths.slice(0, 6);
+                    
+                    return `
                 <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
                         <span style="font-size: 20px;">🏷️</span>
@@ -32537,36 +32562,53 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <thead>
                                 <tr>
                                     <th>Category</th>
-                                    ${sortedMonths.slice(0, 6).map(m => {
+                                    ${monthsToShow.map(m => {
                                         const [year, month] = m.split('-');
-                                        return `<th style="text-align: right;">${new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short' })}</th>`;
+                                        return '<th style="text-align: right;">' + new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short' }) + '</th>';
                                     }).join('')}
                                     <th style="text-align: right;">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${sortedCategories.slice(0, 12).map((cat, i) => {
-                                    const catId = cat.categoryId;
-                                    const isReimb = cat.isReimbursement;
-                                    const monthTotals = sortedMonths.slice(0, 6).map(m => {
-                                        return monthlyData[m]?.categories[catId]?.total || 0;
-                                    });
-                                    return `
-                                        <tr style="${isReimb ? 'background: #f0fdf4;' : ''}">
-                                            <td style="font-weight: 500;">
-                                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${chartColors[i % chartColors.length]}; margin-right: 6px;"></span>
-                                                ${isReimb ? '🚗 ' : ''}${cat.categoryName}
-                                            </td>
-                                            ${monthTotals.map(amt => `<td style="text-align: right; color: ${amt > 0 ? (isReimb ? '#6b9a8d' : '#374151') : '#9ca3af'};">${amt > 0 ? (isReimb ? '-' : '') + formatMoney(amt) : '-'}</td>`).join('')}
-                                            <td style="text-align: right; font-weight: 600; color: ${isReimb ? '#6b9a8d' : '#7c3aed'};">${isReimb ? '-' : ''}${formatMoney(cat.total)}</td>
-                                        </tr>
-                                    `;
+                                ${allCatsForTable.slice(0, 12).map((cat, i) => {
+                                    const monthTotals = monthsToShow.map(m => monthlyData[m]?.categories[cat.id]?.total || 0);
+                                    
+                                    // Build cells with arrows
+                                    const cellsHtml = monthTotals.map((amt, mIdx) => {
+                                        const prevAmt = monthTotals[mIdx + 1] || 0;
+                                        const diff = amt - prevAmt;
+                                        let arrow = '';
+                                        if (mIdx < monthTotals.length - 1 && (amt > 0 || prevAmt > 0)) {
+                                            if (diff > 0) {
+                                                arrow = cat.isReimb ? 
+                                                    '<span style="color: #6b9a8d; font-size: 10px; margin-left: 2px;">↑</span>' :
+                                                    '<span style="color: #dc2626; font-size: 10px; margin-left: 2px;">↑</span>';
+                                            } else if (diff < 0) {
+                                                arrow = cat.isReimb ?
+                                                    '<span style="color: #dc2626; font-size: 10px; margin-left: 2px;">↓</span>' :
+                                                    '<span style="color: #059669; font-size: 10px; margin-left: 2px;">↓</span>';
+                                            } else {
+                                                arrow = '<span style="color: #9ca3af; font-size: 10px; margin-left: 2px;">→</span>';
+                                            }
+                                        }
+                                        return '<td style="text-align: right; color: ' + (amt > 0 ? (cat.isReimb ? '#6b9a8d' : '#374151') : '#9ca3af') + ';">' + 
+                                            (amt > 0 ? (cat.isReimb ? '-' : '') + formatMoney(amt) : '-') + arrow + '</td>';
+                                    }).join('');
+                                    
+                                    return '<tr style="' + (cat.isReimb ? 'background: #f0fdf4;' : '') + '">' +
+                                        '<td style="font-weight: 500;">' +
+                                            '<span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ' + chartColors[i % chartColors.length] + '; margin-right: 6px;"></span>' +
+                                            (cat.isReimb ? '🚗 ' : '') + cat.name +
+                                        '</td>' +
+                                        cellsHtml +
+                                        '<td style="text-align: right; font-weight: 600; color: ' + (cat.isReimb ? '#6b9a8d' : '#7c3aed') + ';">' + (cat.isReimb ? '-' : '') + formatMoney(cat.total) + '</td>' +
+                                    '</tr>';
                                 }).join('')}
                             </tbody>
                         </table>
                     </div>
-                </div>
-                ` : ''}
+                </div>`;
+                })()}
                 
                 <!-- Expense Type Trend -->
                 <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
