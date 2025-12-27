@@ -4,20 +4,17 @@
     <!-- =====================================================
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
-         LAST UPDATED: Friday, December 27, 2025
-         VERSION: V16_124
+         LAST UPDATED: Saturday, December 28, 2025
+         VERSION: V16_125
          =====================================================
          CHANGES IN THIS VERSION:
-         - FIXED: Expense Report now uses backend category data correctly
-           - Categories display proper names (not "Uncategorized")
-           - Uses prorated amounts from backend
-         - IMPROVED: Expense Report professional styling
-           - Matches muted theme of other reports
-           - KPI cards with clean borders instead of gradients
-           - Consistent HTML/CSS bar charts
-           - Proration badges (PRO) on categories and line items
-           - Credits/Reimbursements section if applicable
-           - Net Expenses calculation in table footer
+         - ADDED: Expenses to multiple sales reports:
+           - Sales by Customer: Shows prorated expenses & net profit
+           - Sales Order Detail: Operating expenses summary section
+           - Profit & Loss Statement: Full P&L with Operating Expenses
+             and Net Income (no longer "simplified")
+           - Cash Flow Summary: Includes operating expenses in cash out
+         - IMPROVED: All reports now show true net profitability
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -20855,6 +20852,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const totalMargin = totalSales > 0 ? (totalProfit / totalSales * 100) : 0;
             const avgOrderValue = totalOrders > 0 ? (totalSales / totalOrders) : 0;
             
+            // Fetch expenses for the period
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, totalExpensesForProfit: 0 };
+            try {
+                const expResult = await apiCall('getExpensesForPeriod', {
+                    fromDate: reportFilters.fromDate || null,
+                    toDate: reportFilters.toDate || null
+                });
+                if (expResult?.data) {
+                    expenseData = expResult.data;
+                }
+            } catch (e) { console.log('Expenses not available'); }
+            
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const isProrated = (expenseData.totalProrated || 0) > 0.01;
+            const netProfit = totalProfit - totalExpensesForProfit;
+            const netMargin = totalSales > 0 ? (netProfit / totalSales * 100) : 0;
+            
             // Build inline filter summary for oval header
             const filterSummaryInline = generateFilterSummary({ inline: true });
             
@@ -20916,32 +20931,36 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
                 </div>`;
             
-            // KPI Summary Cards - Muted Professional Colors
+            // KPI Summary Cards - Muted Professional Colors with Expenses
             html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
                         <div style="font-size: 11px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalSales)}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #f5f0e0 0%, #ede4cc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 11px; color: #8a7a4a; margin-bottom: 5px;">🏷️ List Price</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #b8a86b;">${formatMoney(totalListTotal)}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, ${totalDiscount > 0 ? '#ffebee 0%, #ffcdd2 100%' : '#f5f5f5 0%, #e8e8e8 100%'}); padding: 15px; border-radius: 8px; border-left: 4px solid ${totalDiscount > 0 ? '#b88a8a' : '#999'};">
-                        <div style="font-size: 11px; color: ${totalDiscount > 0 ? '#8a6a6a' : '#666'}; margin-bottom: 5px;">🎫 Discounts</div>
-                        <div style="font-size: 20px; font-weight: bold; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${formatMoney(totalDiscount)}</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalSales)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
-                        <div style="font-size: 11px; color: #5a7a6d; margin-bottom: 5px;">💵 Cost</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
+                        <div style="font-size: 11px; color: #5a7a6d; margin-bottom: 5px;">💵 COGS</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
-                        <div style="font-size: 11px; color: #4a7a5d; margin-bottom: 5px;">📈 Profit</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                        <div style="font-size: 11px; color: #4a7a5d; margin-bottom: 5px;">📈 Gross Profit</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                        <div style="font-size: 10px; color: #6b7280;">${totalMargin.toFixed(1)}% margin</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9a8ab8;">
-                        <div style="font-size: 11px; color: #7a6a8a; margin-bottom: 5px;">📊 Margin</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #9a8ab8;">${totalMargin.toFixed(1)}%</div>
+                    <div style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9333ea;">
+                        <div style="font-size: 11px; color: #7c3aed; margin-bottom: 5px;">💸 Op. Expenses${isProrated ? ' <span style="font-size: 8px; background: #0891b2; color: white; padding: 1px 3px; border-radius: 2px;">PRO</span>' : ''}</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
+                    </div>
+                    ${totalDiscount > 0 ? `
+                    <div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b88a8a;">
+                        <div style="font-size: 11px; color: #8a6a6a; margin-bottom: 5px;">🎫 Discounts</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #b88a8a;">${formatMoney(totalDiscount)}</div>
+                    </div>
+                    ` : ''}
+                    <div style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${netProfit >= 0 ? '#059669' : '#dc2626'};">
+                        <div style="font-size: 11px; color: ${netProfit >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 5px;">✨ Net Profit</div>
+                        <div style="font-size: 18px; font-weight: bold; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</div>
+                        <div style="font-size: 10px; color: #6b7280;">${netMargin.toFixed(1)}% net</div>
                     </div>
                 </div>
             `;
@@ -21192,20 +21211,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <span style="font-size: 14px; font-weight: 600; color: #1f2937;">${formatMoney(totalCost)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-                                    <span style="font-size: 13px; color: #4b5563;">🏷️ List Price Total</span>
-                                    <span style="font-size: 14px; font-weight: 600; color: #b8a86b;">${formatMoney(totalListTotal)}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-                                    <span style="font-size: 13px; color: #4b5563;">🎫 Discounts Given</span>
-                                    <span style="font-size: 14px; font-weight: 600; color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '-'}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                                     <span style="font-size: 13px; color: #4b5563;">📈 Gross Profit</span>
-                                    <span style="font-size: 14px; font-weight: 600; color: #10b981;">${formatMoney(totalProfit)}</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: #6b9a8d;">${formatMoney(totalProfit)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-                                    <span style="font-size: 13px; color: #4b5563;">📊 Profit Margin</span>
-                                    <span style="font-size: 14px; font-weight: 600; color: #1f2937;">${totalMargin.toFixed(1)}%</span>
+                                    <span style="font-size: 13px; color: #4b5563;">💸 Op. Expenses${isProrated ? ' <span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px;">PRO</span>' : ''}</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb; background: ${netProfit >= 0 ? '#f0fdf4' : '#fef2f2'}; margin: 0 -20px; padding-left: 20px; padding-right: 20px;">
+                                    <span style="font-size: 13px; color: #4b5563;">✨ Net Profit</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                                    <span style="font-size: 13px; color: #4b5563;">📊 Net Margin</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: ${netMargin >= 10 ? '#059669' : '#b8a86b'};">${netMargin.toFixed(1)}%</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                                     <span style="font-size: 13px; color: #4b5563;">🧾 Total Orders</span>
@@ -21227,6 +21246,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <span style="font-size: 13px; color: #4b5563;">📍 Cities Served</span>
                                     <span style="font-size: 14px; font-weight: 600; color: #1f2937;">${Object.keys(byCity).length}</span>
                                 </div>
+                                ${totalDiscount > 0 ? `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                    <span style="font-size: 13px; color: #4b5563;">🎫 Discounts Given</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: #b88a8a;">${formatMoney(totalDiscount)}</span>
+                                </div>
+                                ` : ''}
+                                ${totalReimbursements > 0 ? `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                    <span style="font-size: 13px; color: #4b5563;">💵 Credits/Reimburse</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: #059669;">-${formatMoney(totalReimbursements)}</span>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -21465,6 +21496,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const profitMargin = totalAmount > 0 ? (totalProfit / totalAmount * 100) : 0;
             const distinctItemCount = distinctItemIds.size;
             
+            // Fetch expenses for the period
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, totalExpensesForProfit: 0 };
+            try {
+                const expResult = await apiCall('getExpensesForPeriod', {
+                    fromDate: reportFilters.fromDate || null,
+                    toDate: reportFilters.toDate || null
+                });
+                if (expResult?.data) {
+                    expenseData = expResult.data;
+                }
+            } catch (e) { console.log('Expenses not available'); }
+            
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const isProrated = (expenseData.totalProrated || 0) > 0.01;
+            const netProfit = totalProfit - totalExpensesForProfit;
+            const netMargin = totalAmount > 0 ? (netProfit / totalAmount * 100) : 0;
+            
             // Build inline filter summary for oval header
             const filterSummaryInline = generateFilterSummary({ inline: true });
             
@@ -21475,44 +21524,46 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
                 </div>`;
             
-            // KPI Summary Cards
+            // KPI Summary Cards with Expenses
             html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
-                        <div style="font-size: 10px; color: #5a7a8a; margin-bottom: 4px;">💰 Total Sales</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalAmount)}</div>
+                        <div style="font-size: 10px; color: #5a7a8a; margin-bottom: 4px;">💰 Revenue</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalAmount)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
-                        <div style="font-size: 10px; color: #5a7a6d; margin-bottom: 4px;">📦 Cost</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
+                        <div style="font-size: 10px; color: #5a7a6d; margin-bottom: 4px;">📦 COGS</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
-                        <div style="font-size: 10px; color: #4a7a5d; margin-bottom: 4px;">📈 Profit</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                        <div style="font-size: 10px; color: #4a7a5d; margin-bottom: 4px;">📈 Gross Profit</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
+                        <div style="font-size: 9px; color: #6b7280;">${profitMargin.toFixed(1)}%</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, ${totalDiscount > 0 ? '#ffebee 0%, #ffcdd2 100%' : '#f5f5f5 0%, #e8e8e8 100%'}); padding: 12px; border-radius: 8px; border-left: 4px solid ${totalDiscount > 0 ? '#b88a8a' : '#999'};">
-                        <div style="font-size: 10px; color: ${totalDiscount > 0 ? '#8a6a6a' : '#666'}; margin-bottom: 4px;">🎫 Discounts</div>
-                        <div style="font-size: 18px; font-weight: bold; color: ${totalDiscount > 0 ? '#b88a8a' : '#999'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '$0.00'}</div>
+                    <div style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #9333ea;">
+                        <div style="font-size: 10px; color: #7c3aed; margin-bottom: 4px;">💸 Op. Exp.${isProrated ? ' <span style="font-size: 7px; background: #0891b2; color: white; padding: 1px 2px; border-radius: 2px;">PRO</span>' : ''}</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
+                    </div>
+                    <div style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'}; padding: 12px; border-radius: 8px; border-left: 4px solid ${netProfit >= 0 ? '#059669' : '#dc2626'};">
+                        <div style="font-size: 10px; color: ${netProfit >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 4px;">✨ Net Profit</div>
+                        <div style="font-size: 16px; font-weight: bold; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</div>
+                        <div style="font-size: 9px; color: #6b7280;">${netMargin.toFixed(1)}% net</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #26a69a;">
                         <div style="font-size: 10px; color: #00796b; margin-bottom: 4px;">💵 Collected</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #26a69a;">${formatMoney(totalPaid)}</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #26a69a;">${formatMoney(totalPaid)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #f5f0e0 0%, #ede4cc 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 10px; color: #8a7a4a; margin-bottom: 4px;">💸 Outstanding</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #b8a86b;">${formatMoney(totalOwed)}</div>
+                        <div style="font-size: 10px; color: #8a7a4a; margin-bottom: 4px;">📋 Outstanding</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #b8a86b;">${formatMoney(totalOwed)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <div style="font-size: 10px; color: #1565c0; margin-bottom: 4px;">🔢 Units Sold</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #2196f3;">${totalQtyOrdered.toLocaleString()}</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #e91e63;">
-                        <div style="font-size: 10px; color: #ad1457; margin-bottom: 4px;">📋 Products</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #e91e63;">${distinctItemCount}</div>
+                        <div style="font-size: 10px; color: #1565c0; margin-bottom: 4px;">🔢 Units</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #2196f3;">${totalQtyOrdered.toLocaleString()}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #f0e8f0 0%, #e4d8e8 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #9a8ab8;">
-                        <div style="font-size: 10px; color: #7a6a8a; margin-bottom: 4px;">📊 Paid / Total</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #9a8ab8;">${paidCount} / ${sales.length}</div>
+                        <div style="font-size: 10px; color: #7a6a8a; margin-bottom: 4px;">✓ Paid/Total</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #9a8ab8;">${paidCount}/${sales.length}</div>
                     </div>
                 </div>
             `;
@@ -21814,16 +21865,26 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                                         <span style="font-size: 13px; color: #4b5563;">📈 Gross Profit</span>
-                                        <span style="font-size: 14px; font-weight: 600; color: #10b981;">${formatMoney(totalProfit)}</span>
+                                        <span style="font-size: 14px; font-weight: 600; color: #6b9a8d;">${formatMoney(totalProfit)}</span>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-                                        <span style="font-size: 13px; color: #4b5563;">📊 Profit Margin</span>
-                                        <span style="font-size: 14px; font-weight: 600; color: #1f2937;">${profitMargin.toFixed(1)}%</span>
+                                        <span style="font-size: 13px; color: #4b5563;">💸 Op. Expenses${isProrated ? ' <span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px;">PRO</span>' : ''}</span>
+                                        <span style="font-size: 14px; font-weight: 600; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</span>
                                     </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb; background: ${netProfit >= 0 ? '#f0fdf4' : '#fef2f2'}; margin: 0 -20px; padding-left: 20px; padding-right: 20px;">
+                                        <span style="font-size: 13px; color: #4b5563;">✨ Net Profit</span>
+                                        <span style="font-size: 14px; font-weight: 600; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                                        <span style="font-size: 13px; color: #4b5563;">📊 Net Margin</span>
+                                        <span style="font-size: 14px; font-weight: 600; color: ${netMargin >= 10 ? '#059669' : '#b8a86b'};">${netMargin.toFixed(1)}%</span>
+                                    </div>
+                                    ${totalDiscount > 0 ? `
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                                         <span style="font-size: 13px; color: #4b5563;">🎫 Discounts Given</span>
-                                        <span style="font-size: 14px; font-weight: 600; color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '-'}</span>
+                                        <span style="font-size: 14px; font-weight: 600; color: #b88a8a;">${formatMoney(totalDiscount)}</span>
                                     </div>
+                                    ` : ''}
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                                         <span style="font-size: 13px; color: #4b5563;">🧾 Total Orders</span>
                                         <span style="font-size: 14px; font-weight: 600; color: #1f2937;">${sales.length}</span>
@@ -29453,6 +29514,30 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const grossProfit = totalRevenue - totalCOGS;
             const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue * 100) : 0;
             
+            // Fetch expenses for the period
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, totalExpensesForProfit: 0 };
+            try {
+                // Format dates for API
+                const fromDateStr = startDate.toISOString().split('T')[0];
+                const toDateStr = endDate.toISOString().split('T')[0];
+                const expResult = await apiCall('getExpensesForPeriod', {
+                    fromDate: fromDateStr,
+                    toDate: toDateStr
+                });
+                if (expResult?.data) {
+                    expenseData = expResult.data;
+                }
+            } catch (e) { console.log('Expenses not available'); }
+            
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const isProrated = (expenseData.totalProrated || 0) > 0.01;
+            
+            // Calculate Net Income
+            const netIncome = grossProfit - totalExpensesForProfit;
+            const netMargin = totalRevenue > 0 ? (netIncome / totalRevenue * 100) : 0;
+            
             // Period label
             const periodLabel = quarter === 'annual' ? `Year ${year}` : `${quarter} ${year}`;
             const cogsLabel = cogsMethod === 'actual' ? 'Actual Purchase Costs' : 'Standard Costs';
@@ -29465,30 +29550,38 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 12px; font-size: 12px;">📅 ${periodLabel}</span>
                         <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 12px; font-size: 12px;">📦 ${cogsLabel}</span>
                         <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 12px; font-size: 12px;">🚫 Voided Excluded</span>
+                        ${isProrated ? '<span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 12px; font-size: 12px;">📊 Expenses Prorated</span>' : ''}
                     </div>
                 </div>`;
             
+            // KPI Cards
             html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="font-size: 12px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalRevenue)}</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalRevenue)}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #f5eaea 0%, #edd8d8 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b88a8a;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #b88a8a; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="font-size: 12px; color: #8a6a6a; margin-bottom: 5px;">📦 COGS</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #b88a8a;">${formatMoney(totalCOGS)}</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #b88a8a;">${formatMoney(totalCOGS)}</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                         <div style="font-size: 12px; color: #5a7a6d; margin-bottom: 5px;">📈 Gross Profit</div>
-                        <div style="font-size: 22px; font-weight: bold; color: ${grossProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(grossProfit)}</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${grossProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(grossProfit)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${grossMargin.toFixed(1)}% margin</div>
                     </div>
-                    <div style="background: linear-gradient(135deg, #f5f0e0 0%, #ede4cc 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b;">
-                        <div style="font-size: 12px; color: #8a7a4a; margin-bottom: 5px;">📊 Margin</div>
-                        <div style="font-size: 22px; font-weight: bold; color: #b8a86b;">${grossMargin.toFixed(1)}%</div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #9333ea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: #7c3aed; margin-bottom: 5px;">💸 Op. Expenses${isProrated ? ' <span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px;">PRO</span>' : ''}</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${totalExpensesForProfit >= 0 ? '#9333ea' : '#059669'};">${formatMoney(totalExpensesForProfit)}</div>
+                    </div>
+                    <div style="background: ${netIncome >= 0 ? '#f0fdf4' : '#fef2f2'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${netIncome >= 0 ? '#059669' : '#dc2626'}; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: ${netIncome >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 5px;">✨ Net Income</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${netIncome >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netIncome)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${netMargin.toFixed(1)}% net margin</div>
                     </div>
                 </div>
                 
-                <div style="max-width: 500px; margin: 0 auto;">
+                <div style="max-width: 600px; margin: 0 auto;">
                     <table class="data-table" style="width: 100%;">
                         <tbody>
                             <tr style="background: #e8f5e9;">
@@ -29511,9 +29604,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <td style="padding: 12px; text-align: right;">${formatMoney(totalCOGS)}</td>
                             </tr>
                             
-                            <tr style="background: linear-gradient(135deg, #667eea15, #764ba215); border-top: 3px solid #667eea;">
-                                <td style="padding: 20px; font-weight: bold; font-size: 18px;">📈 GROSS PROFIT</td>
-                                <td style="padding: 20px; text-align: right; font-weight: bold; font-size: 18px; color: ${grossProfit >= 0 ? '#2e7d32' : '#c62828'};">
+                            <tr style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); border-top: 2px solid #6b9a8d;">
+                                <td style="padding: 15px; font-weight: bold; font-size: 16px;">📈 GROSS PROFIT</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 16px; color: ${grossProfit >= 0 ? '#2e7d32' : '#c62828'};">
                                     ${formatMoney(grossProfit)}
                                 </td>
                             </tr>
@@ -29521,13 +29614,49 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <td style="padding: 12px; padding-left: 30px; color: #666;">Gross Margin</td>
                                 <td style="padding: 12px; text-align: right; font-weight: bold; color: ${grossMargin >= 20 ? '#2e7d32' : '#b8a86b'};">${grossMargin.toFixed(1)}%</td>
                             </tr>
+                            
+                            <tr style="background: #f3e8ff;">
+                                <td style="padding: 15px; font-weight: bold; font-size: 16px;">💸 OPERATING EXPENSES${isProrated ? ' <span style="font-size: 10px; background: #0891b2; color: white; padding: 2px 6px; border-radius: 4px;">PRORATED</span>' : ''}</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 16px; color: #9333ea;">(${formatMoney(totalExpensesForProfit)})</td>
+                            </tr>
+                            ${expenseData.byCategory.filter(c => !c.isReimbursement && !c.excludeFromProfit).sort((a, b) => b.total - a.total).slice(0, 6).map(cat => `
+                            <tr>
+                                <td style="padding: 10px; padding-left: 30px; color: #666;">${cat.categoryName}</td>
+                                <td style="padding: 10px; text-align: right;">${formatMoney(cat.total)}</td>
+                            </tr>
+                            `).join('')}
+                            ${expenseData.byCategory.filter(c => !c.isReimbursement && !c.excludeFromProfit).length > 6 ? `
+                            <tr>
+                                <td style="padding: 10px; padding-left: 30px; color: #999; font-style: italic;">+ ${expenseData.byCategory.filter(c => !c.isReimbursement && !c.excludeFromProfit).length - 6} more categories...</td>
+                                <td></td>
+                            </tr>
+                            ` : ''}
+                            ${totalReimbursements > 0 ? `
+                            <tr style="background: #f0fdf4;">
+                                <td style="padding: 10px; padding-left: 30px; color: #166534;">Less: Credits/Reimbursements</td>
+                                <td style="padding: 10px; text-align: right; color: #059669;">(${formatMoney(totalReimbursements)})</td>
+                            </tr>
+                            ` : ''}
+                            
+                            <tr style="background: ${netIncome >= 0 ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fee2e2, #fecaca)'}; border-top: 3px solid ${netIncome >= 0 ? '#059669' : '#dc2626'};">
+                                <td style="padding: 20px; font-weight: bold; font-size: 18px;">✨ NET INCOME</td>
+                                <td style="padding: 20px; text-align: right; font-weight: bold; font-size: 18px; color: ${netIncome >= 0 ? '#059669' : '#dc2626'};">
+                                    ${formatMoney(netIncome)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; padding-left: 30px; color: #666;">Net Margin</td>
+                                <td style="padding: 12px; text-align: right; font-weight: bold; color: ${netMargin >= 10 ? '#059669' : '#b8a86b'};">${netMargin.toFixed(1)}%</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
                 
-                <div style="margin-top: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px; font-size: 12px; color: #666;">
-                    <strong>Note:</strong> This is a simplified P&L showing gross profit only. Operating expenses, taxes, and net income are not tracked in this system.
+                ${totalExcludedFromProfit > 0 ? `
+                <div style="margin-top: 20px; padding: 15px; background: #fffbeb; border-radius: 8px; font-size: 12px; color: #92400e; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <strong>Note:</strong> Tax-only expenses (${formatMoney(totalExcludedFromProfit)}) are tracked for tax records but not included in Net Income calculation.
                 </div>
+                ` : ''}
             `;
             
             // Add P&L Chart
@@ -29542,8 +29671,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
                     </div>
                     <div style="margin-top: 15px;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 450px;">
-                            <canvas id="${plChartId}" height="180"></canvas>
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 550px;">
+                            <canvas id="${plChartId}" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -29555,10 +29684,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'bar',
                                 data: {
-                                    labels: ['Revenue', 'COGS', 'Gross Profit'],
+                                    labels: ['Revenue', 'COGS', 'Gross Profit', 'Op. Expenses', 'Net Income'],
                                     datasets: [{
-                                        data: [${totalRevenue.toFixed(2)}, ${totalCOGS.toFixed(2)}, ${grossProfit.toFixed(2)}],
-                                        backgroundColor: ['#6b9a8d', '#b88a8a', '${grossProfit >= 0 ? '#7a9bb8' : '#b8a86b'}'],
+                                        data: [${totalRevenue.toFixed(2)}, ${totalCOGS.toFixed(2)}, ${grossProfit.toFixed(2)}, ${totalExpensesForProfit.toFixed(2)}, ${netIncome.toFixed(2)}],
+                                        backgroundColor: ['#7a9bb8', '#b88a8a', '#6b9a8d', '#9333ea', '${netIncome >= 0 ? '#059669' : '#dc2626'}'],
                                         borderRadius: 8
                                     }]
                                 },
@@ -30346,9 +30475,28 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 totalPurchasesPaid += parseFloat(p.Amount_Paid) || 0;
             });
             
+            // Fetch expenses for the period
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, totalExpensesForProfit: 0 };
+            try {
+                const fromDateStr = startDate.toISOString().split('T')[0];
+                const toDateStr = endDate.toISOString().split('T')[0];
+                const expResult = await apiCall('getExpensesForPeriod', {
+                    fromDate: fromDateStr,
+                    toDate: toDateStr
+                });
+                if (expResult?.data) {
+                    expenseData = expResult.data;
+                }
+            } catch (e) { console.log('Expenses not available'); }
+            
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const isProrated = (expenseData.totalProrated || 0) > 0.01;
+            
             const outstandingReceivables = totalSalesInvoiced - totalSalesCollected;
             const outstandingPayables = totalPurchasesInvoiced - totalPurchasesPaid;
-            const netCashFlow = totalSalesCollected - totalPurchasesPaid;
+            const totalCashOut = totalPurchasesPaid + totalExpensesForProfit;
+            const netCashFlow = totalSalesCollected - totalCashOut;
             
             const periodLabel = quarter === 'annual' ? `Year ${year}` : `${quarter} ${year}`;
             
@@ -30392,15 +30540,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     
                     <!-- Cash Out -->
                     <div style="background: linear-gradient(135deg, #f5e8e8 0%, #efdcdc 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #b88a8a;">
-                        <h4 style="margin: 0 0 15px 0; color: #8a6a6a;">📤 Cash Out (Payments)</h4>
+                        <h4 style="margin: 0 0 15px 0; color: #8a6a6a;">📤 Cash Out (Inventory + Expenses)</h4>
                         <table style="width: 100%;">
                             <tr>
                                 <td style="padding: 8px 0; color: #666;">Purchases Invoiced</td>
                                 <td style="text-align: right;">${formatMoney(totalPurchasesInvoiced)}</td>
                             </tr>
-                            <tr style="font-weight: bold; font-size: 18px;">
-                                <td style="padding: 8px 0; color: #b88a8a;">Paid Out</td>
-                                <td style="text-align: right; color: #b88a8a;">${formatMoney(totalPurchasesPaid)}</td>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Purchases Paid</td>
+                                <td style="text-align: right;">${formatMoney(totalPurchasesPaid)}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Op. Expenses${isProrated ? ' <span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px;">PRO</span>' : ''}</td>
+                                <td style="text-align: right; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</td>
+                            </tr>
+                            <tr style="font-weight: bold; font-size: 18px; border-top: 1px solid #efdcdc;">
+                                <td style="padding: 8px 0; color: #b88a8a;">Total Out</td>
+                                <td style="text-align: right; color: #b88a8a;">${formatMoney(totalCashOut)}</td>
                             </tr>
                             <tr style="border-top: 1px solid #efdcdc;">
                                 <td style="padding: 8px 0; color: #666;">Outstanding A/P</td>
@@ -30411,12 +30567,12 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 </div>
                 
                 <!-- Net Cash Flow -->
-                <div style="background: linear-gradient(135deg, #7a9bb8 0%, #9a8ab8 100%); padding: 25px; border-radius: 12px; color: white; text-align: center;">
+                <div style="background: linear-gradient(135deg, ${netCashFlow >= 0 ? '#6b9a8d' : '#b88a8a'} 0%, ${netCashFlow >= 0 ? '#7a9bb8' : '#9a7a8a'} 100%); padding: 25px; border-radius: 12px; color: white; text-align: center;">
                     <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">NET CASH FLOW</div>
                     <div style="font-size: 36px; font-weight: bold;">
                         ${netCashFlow >= 0 ? '+' : ''}${formatMoney(netCashFlow)}
                     </div>
-                    <div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">Collections minus Payments</div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">Collections minus (Purchases + Expenses)</div>
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
@@ -30435,9 +30591,21 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <td style="text-align: right;">${totalSalesInvoiced > 0 ? (totalSalesCollected / totalSalesInvoiced * 100).toFixed(1) : 0}%</td>
                         </tr>
                         <tr>
-                            <td>Payment Rate</td>
+                            <td>PO Payment Rate</td>
                             <td style="text-align: right;">${totalPurchasesInvoiced > 0 ? (totalPurchasesPaid / totalPurchasesInvoiced * 100).toFixed(1) : 0}%</td>
                         </tr>
+                        ${totalExpensesForProfit > 0 ? `
+                        <tr style="border-top: 1px solid #e5e7eb;">
+                            <td style="color: #9333ea;">Operating Expenses</td>
+                            <td style="text-align: right; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</td>
+                        </tr>
+                        ` : ''}
+                        ${totalReimbursements > 0 ? `
+                        <tr>
+                            <td style="color: #059669;">Less: Reimbursements</td>
+                            <td style="text-align: right; color: #059669;">-${formatMoney(totalReimbursements)}</td>
+                        </tr>
+                        ` : ''}
                     </table>
                 </div>
             `;
@@ -30454,8 +30622,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <span style="color: #666; font-size: 12px;">(click to hide/show)</span>
                     </div>
                     <div style="margin-top: 15px;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px;">
-                            <canvas id="${cashChartId}" height="180"></canvas>
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 550px;">
+                            <canvas id="${cashChartId}" height="200"></canvas>
                         </div>
                     </div>
                 </div>
@@ -30467,10 +30635,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             if(Chart.getChart(ctx))Chart.getChart(ctx).destroy(); new Chart(ctx, {
                                 type: 'bar',
                                 data: {
-                                    labels: ['Cash In', 'Cash Out', 'Net Flow'],
+                                    labels: ['Cash In', 'PO Paid', 'Op. Expenses', 'Net Flow'],
                                     datasets: [{
-                                        data: [${totalSalesCollected.toFixed(2)}, ${totalPurchasesPaid.toFixed(2)}, ${netCashFlow.toFixed(2)}],
-                                        backgroundColor: ['#6b9a8d', '#b88a8a', '${netCashFlow >= 0 ? '#7a9bb8' : '#b8a86b'}'],
+                                        data: [${totalSalesCollected.toFixed(2)}, ${totalPurchasesPaid.toFixed(2)}, ${totalExpensesForProfit.toFixed(2)}, ${netCashFlow.toFixed(2)}],
+                                        backgroundColor: ['#6b9a8d', '#b88a8a', '#9333ea', '${netCashFlow >= 0 ? '#7a9bb8' : '#dc2626'}'],
                                         borderRadius: 8
                                     }]
                                 },
@@ -33586,7 +33754,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const netMargin = totalSales > 0 ? (netProfit / totalSales * 100) : 0;
             
             // Calculate daily expense rate (divide total expenses by number of days in period)
-            const daysInPeriod = Math.max(1, Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1);
+            // Use date-only comparison to avoid time component issues
+            const fromDateOnly = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+            const toDateOnly = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate());
+            const daysInPeriod = Math.max(1, Math.round((toDateOnly - fromDateOnly) / (1000 * 60 * 60 * 24)) + 1);
             const dailyExpenseRate = totalExpensesForProfit / daysInPeriod;
             const dailySalesAvg = totalSales / daysInPeriod;
             const dailyProfitAvg = netProfit / daysInPeriod;
@@ -34112,20 +34283,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <span class="daily-dash-quick-value">${formatMoney(totalCost)}</span>
                                 </div>
                                 <div class="daily-dash-quick-stat">
-                                    <span class="daily-dash-quick-label">🏷️ List Price Total</span>
-                                    <span class="daily-dash-quick-value" style="color: #b8a86b;">${formatMoney(totalListPrice)}</span>
-                                </div>
-                                <div class="daily-dash-quick-stat">
-                                    <span class="daily-dash-quick-label">🎫 Discounts Given</span>
-                                    <span class="daily-dash-quick-value" style="color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '-'}</span>
-                                </div>
-                                <div class="daily-dash-quick-stat">
                                     <span class="daily-dash-quick-label">📈 Gross Profit</span>
-                                    <span class="daily-dash-quick-value" style="color: #10b981;">${formatMoney(profit)}</span>
+                                    <span class="daily-dash-quick-value" style="color: #6b9a8d;">${formatMoney(profit)}</span>
                                 </div>
                                 <div class="daily-dash-quick-stat">
-                                    <span class="daily-dash-quick-label">📊 Profit Margin</span>
-                                    <span class="daily-dash-quick-value">${grossMargin.toFixed(1)}%</span>
+                                    <span class="daily-dash-quick-label">💸 Op. Expenses${(expenseData.totalProrated || 0) > 0.01 ? ' <span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px;">PRO</span>' : ''}</span>
+                                    <span class="daily-dash-quick-value" style="color: #9333ea;">${formatMoney(totalExpensesForProfit)}</span>
+                                </div>
+                                <div class="daily-dash-quick-stat" style="background: ${netProfit >= 0 ? '#f0fdf4' : '#fef2f2'};">
+                                    <span class="daily-dash-quick-label">✨ Net Profit</span>
+                                    <span class="daily-dash-quick-value" style="color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</span>
+                                </div>
+                                <div class="daily-dash-quick-stat">
+                                    <span class="daily-dash-quick-label">📊 Net Margin</span>
+                                    <span class="daily-dash-quick-value" style="color: ${netMargin >= 10 ? '#059669' : '#b8a86b'};">${netMargin.toFixed(1)}%</span>
                                 </div>
                                 <div class="daily-dash-quick-stat">
                                     <span class="daily-dash-quick-label">🧾 Total Orders</span>
@@ -34144,9 +34315,25 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <span class="daily-dash-quick-value">${uniqueProducts}</span>
                                 </div>
                                 <div class="daily-dash-quick-stat">
-                                    <span class="daily-dash-quick-label">📅 Working Days</span>
-                                    <span class="daily-dash-quick-value">${workingDays} days</span>
+                                    <span class="daily-dash-quick-label">📦 Units Sold</span>
+                                    <span class="daily-dash-quick-value">${totalQtySold.toLocaleString()}</span>
                                 </div>
+                                <div class="daily-dash-quick-stat">
+                                    <span class="daily-dash-quick-label">📅 Period</span>
+                                    <span class="daily-dash-quick-value">${daysInPeriod} day${daysInPeriod !== 1 ? 's' : ''}</span>
+                                </div>
+                                ${totalDiscount > 0 ? `
+                                <div class="daily-dash-quick-stat">
+                                    <span class="daily-dash-quick-label">🎫 Discounts Given</span>
+                                    <span class="daily-dash-quick-value" style="color: #b88a8a;">${formatMoney(totalDiscount)}</span>
+                                </div>
+                                ` : ''}
+                                ${totalReimbursements > 0 ? `
+                                <div class="daily-dash-quick-stat">
+                                    <span class="daily-dash-quick-label">💵 Credits/Reimburse</span>
+                                    <span class="daily-dash-quick-value" style="color: #059669;">-${formatMoney(totalReimbursements)}</span>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -34357,6 +34544,48 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 else pendingPOCount++;
             }
             const totalPOOutstanding = totalPOAmount - totalPOPaid;
+            
+            // Calculate Sales Payment Stats
+            let totalSalesAmount = 0, totalSalesPaid = 0;
+            let unpaidOrderCount = 0, partialOrderCount = 0, paidOrderCount = 0;
+            
+            for (const so of filteredSales) {
+                const soAmount = parseFloat(so.Total_Amount) || 0;
+                const soPaid = parseFloat(so.Amount_Paid) || 0;
+                totalSalesAmount += soAmount;
+                totalSalesPaid += soPaid;
+                
+                // Determine payment status
+                const balance = soAmount - soPaid;
+                if (balance <= 0.01) {
+                    paidOrderCount++;
+                } else if (soPaid > 0.01) {
+                    partialOrderCount++;
+                } else {
+                    unpaidOrderCount++;
+                }
+            }
+            const totalSalesOutstanding = totalSalesAmount - totalSalesPaid;
+            const outstandingOrderCount = unpaidOrderCount + partialOrderCount;
+            
+            // Calculate PO Payment Stats
+            let unpaidPOCount = 0, partialPOCount = 0, paidPOCount = 0;
+            
+            for (const po of filteredPurchases) {
+                const poAmount = parseFloat(po.Total_Amount) || 0;
+                const poPaid = parseFloat(po.Amount_Paid) || 0;
+                
+                // Determine payment status
+                const balance = poAmount - poPaid;
+                if (balance <= 0.01) {
+                    paidPOCount++;
+                } else if (poPaid > 0.01) {
+                    partialPOCount++;
+                } else {
+                    unpaidPOCount++;
+                }
+            }
+            const outstandingPOCount = unpaidPOCount + partialPOCount;
             
             // Inventory Stats
             let totalBackorder = 0, backorderItems = 0, totalOnOrder = 0, onOrderItems = 0;
@@ -34597,6 +34826,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="biz-dash-card-title">
                                 <span class="icon">👥</span>
                                 Customer & Operations
+                                <span style="margin-left: auto; font-size: 12px; color: #6b7280; font-weight: normal;">${orderCount} orders</span>
                             </div>
                             <div class="biz-dash-kpi-grid">
                                 <div class="biz-dash-kpi">
@@ -34616,6 +34846,21 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <div class="biz-dash-kpi-value" style="${totalBackorder > 0 ? 'color: #fca5a5;' : ''}">${totalBackorder}</div>
                                 </div>
                             </div>
+                            
+                            <!-- Outstanding Sales Section -->
+                            <div style="margin-top: 15px; padding: 12px; background: ${outstandingOrderCount > 0 ? '#fef3c7' : '#f0fdf4'}; border-radius: 8px; border-left: 4px solid ${outstandingOrderCount > 0 ? '#f59e0b' : '#10b981'};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 12px; font-weight: 600; color: ${outstandingOrderCount > 0 ? '#92400e' : '#166534'};">📋 Sales Receivables</span>
+                                    <span style="font-size: 18px; font-weight: bold; color: ${outstandingOrderCount > 0 ? '#f59e0b' : '#10b981'};">${formatMoney(totalSalesOutstanding)}</span>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 11px; color: #6b7280;">
+                                    <span>${outstandingOrderCount} outstanding${outstandingOrderCount !== 1 ? '' : ''}</span>
+                                    <span>•</span>
+                                    <span>${paidOrderCount} paid</span>
+                                    ${partialOrderCount > 0 ? `<span>•</span><span style="color: #b8a86b;">${partialOrderCount} partial</span>` : ''}
+                                </div>
+                            </div>
+                            
                             <div class="biz-dash-kpi" style="margin-top: 12px;">
                                 <div class="biz-dash-kpi-label">Qty On Order (from suppliers)</div>
                                 <div class="biz-dash-kpi-value">${totalOnOrder.toLocaleString()}</div>
@@ -34649,6 +34894,20 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                 <div class="biz-dash-kpi">
                                     <div class="biz-dash-kpi-label">POs Pending</div>
                                     <div class="biz-dash-kpi-value" style="${pendingPOCount > 0 ? 'color: #fde047;' : ''}">${pendingPOCount}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Purchase Payables Section -->
+                            <div style="margin-top: 15px; padding: 12px; background: ${outstandingPOCount > 0 ? '#fef2f2' : '#f0fdf4'}; border-radius: 8px; border-left: 4px solid ${outstandingPOCount > 0 ? '#ef4444' : '#10b981'};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="font-size: 12px; font-weight: 600; color: ${outstandingPOCount > 0 ? '#991b1b' : '#166534'};">📦 Purchase Payables</span>
+                                    <span style="font-size: 18px; font-weight: bold; color: ${outstandingPOCount > 0 ? '#ef4444' : '#10b981'};">${formatMoney(totalPOOutstanding)}</span>
+                                </div>
+                                <div style="display: flex; gap: 15px; font-size: 11px; color: #6b7280;">
+                                    <span>${outstandingPOCount} outstanding</span>
+                                    <span>•</span>
+                                    <span>${paidPOCount} paid</span>
+                                    ${partialPOCount > 0 ? `<span>•</span><span style="color: #b8a86b;">${partialPOCount} partial</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -36840,6 +37099,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 filtered = filtered.filter(d => d.lineTotal >= reportFilters.minAmount);
             }
             
+            // Fetch expenses for the period (prorated)
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, totalExpensesForProfit: 0 };
+            try {
+                const expResult = await apiCall('getExpensesForPeriod', {
+                    fromDate: reportFilters.fromDate || null,
+                    toDate: reportFilters.toDate || null
+                });
+                if (expResult?.data) {
+                    expenseData = expResult.data;
+                }
+            } catch (e) { console.log('Expenses not available'); }
+            
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const isProrated = (expenseData.totalProrated || 0) > 0.01;
+            
             // GROUP BY CUSTOMER and calculate totals
             const customerSummary = {};
             filtered.forEach(detail => {
@@ -36883,6 +37159,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const grandTotalUnits = summaryArray.reduce((sum, s) => sum + s.totalUnits, 0);
             const grandMargin = grandTotalRevenue > 0 ? (grandTotalProfit / grandTotalRevenue) * 100 : 0;
             
+            // Calculate net profit (after expenses)
+            const netProfit = grandTotalProfit - totalExpensesForProfit;
+            const netMargin = grandTotalRevenue > 0 ? (netProfit / grandTotalRevenue) * 100 : 0;
+            
             // Build customer list for filter
             const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
             
@@ -36895,10 +37175,37 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 minAmount: true
             });
             
+            // Header with KPI cards
             html += `
-                <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3>📊 Sales by Customer Summary</h3>
-                    <p style="color: #666;">Total Customers: ${summaryArray.length} | Total Revenue: ${formatMoney(grandTotalRevenue)} | Total Profit: ${formatMoney(grandTotalProfit)} | Gross Margin: ${grandMargin.toFixed(1)}%</p>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">👥 Sales by Customer</h2>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.95;">${summaryArray.length} Customers | ${formatMoney(grandTotalRevenue)} Revenue</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #7a9bb8; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: #5a7a8a; margin-bottom: 5px;">💰 Revenue</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7a9bb8;">${formatMoney(grandTotalRevenue)}</div>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #b8a86b; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: #8a7a4a; margin-bottom: 5px;">📦 COGS</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #b8a86b;">${formatMoney(grandTotalCost)}</div>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #6b9a8d; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: #5a7a6d; margin-bottom: 5px;">📈 Gross Profit</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${grandTotalProfit >= 0 ? '#6b9a8d' : '#b88a8a'};">${formatMoney(grandTotalProfit)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${grandMargin.toFixed(1)}% margin</div>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #9333ea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: #7c3aed; margin-bottom: 5px;">💸 Op. Expenses${isProrated ? ' <span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px;">PRO</span>' : ''}</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${totalExpensesForProfit >= 0 ? '#9333ea' : '#059669'};">${formatMoney(totalExpensesForProfit)}</div>
+                        ${totalReimbursements > 0 ? `<div style="font-size: 11px; color: #059669;">-${formatMoney(totalReimbursements)} credits</div>` : ''}
+                    </div>
+                    <div style="background: ${netProfit >= 0 ? '#f0fdf4' : '#fef2f2'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${netProfit >= 0 ? '#059669' : '#dc2626'}; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="font-size: 12px; color: ${netProfit >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 5px;">✨ Net Profit</div>
+                        <div style="font-size: 20px; font-weight: bold; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${netMargin.toFixed(1)}% net margin</div>
+                    </div>
                 </div>`;
             
             if (summaryArray.length === 0) {
@@ -36946,6 +37253,43 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 </tr>`;
             
                 html += '</tbody></table>';
+            }
+            
+            // Add expense breakdown section if expenses exist
+            if (totalExpensesForProfit !== 0 || totalExcludedFromProfit > 0 || totalReimbursements > 0) {
+                html += `
+                <div style="margin-top: 25px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; color: #374151;">
+                        💸 Operating Expenses Breakdown
+                        ${isProrated ? '<span style="font-size: 10px; background: #0891b2; color: white; padding: 2px 6px; border-radius: 4px;">PRORATED</span>' : ''}
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        ${expenseData.byCategory.sort((a, b) => {
+                            if (a.isReimbursement && !b.isReimbursement) return 1;
+                            if (!a.isReimbursement && b.isReimbursement) return -1;
+                            return b.total - a.total;
+                        }).map(cat => {
+                            const isReimbursement = cat.isReimbursement === true;
+                            const catProrated = (cat.totalProrated || 0) > 0.01;
+                            const bgColor = isReimbursement ? '#f0fdf4' : (cat.excludeFromProfit ? '#fffbeb' : (catProrated ? '#f0fdfa' : '#f9fafb'));
+                            const borderColor = isReimbursement ? '#bbf7d0' : (cat.excludeFromProfit ? '#fcd34d' : (catProrated ? '#99f6e4' : '#e5e7eb'));
+                            const amountColor = isReimbursement ? '#059669' : (cat.excludeFromProfit ? '#f59e0b' : (catProrated ? '#0891b2' : '#9333ea'));
+                            return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: ${bgColor}; border-radius: 6px; border: 1px solid ${borderColor};">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 12px; color: #374151;">
+                                        ${cat.categoryName}
+                                        ${isReimbursement ? '<span style="font-size: 9px; background: #059669; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">CREDIT</span>' : ''}
+                                        ${cat.excludeFromProfit ? '<span style="font-size: 9px; background: #f59e0b; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">TAX</span>' : ''}
+                                    </div>
+                                    <div style="font-size: 10px; color: #9ca3af;">${cat.count} item${cat.count !== 1 ? 's' : ''}</div>
+                                </div>
+                                <div style="font-weight: 700; color: ${amountColor}; font-size: 14px;">${isReimbursement ? '-' : ''}${formatMoney(cat.total)}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    ${totalExcludedFromProfit > 0 ? `<div style="margin-top: 12px; padding: 10px; background: #fffbeb; border-radius: 6px; font-size: 11px; color: #92400e;">Tax-only expenses (${formatMoney(totalExcludedFromProfit)}) tracked for records but not included in Net Profit.</div>` : ''}
+                </div>`;
             }
             
             reportData['sales-by-customer'] = summaryArray;
@@ -37039,6 +37383,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // Calculate totals
             const totalSales = filtered.reduce((sum, d) => sum + d.lineTotal, 0);
             const totalOrders = new Set(filtered.map(d => d.soId)).size;
+            
+            // Fetch expenses for the period (prorated)
+            let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, totalExpensesForProfit: 0 };
+            try {
+                const expResult = await apiCall('getExpensesForPeriod', {
+                    fromDate: reportFilters.fromDate || null,
+                    toDate: reportFilters.toDate || null
+                });
+                if (expResult?.data) {
+                    expenseData = expResult.data;
+                }
+            } catch (e) { console.log('Expenses not available'); }
+            
+            const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const isProrated = (expenseData.totalProrated || 0) > 0.01;
             
             // Build lists for filters
             const customerList = customers.map(c => ({ id: c.Customer_ID, name: c.Customer_Name }));
@@ -37141,6 +37502,47 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     </tr>
                 </tfoot>
                 </table>`;
+            }
+            
+            // Add expense summary section if expenses exist
+            if (totalExpensesForProfit !== 0 || totalExcludedFromProfit > 0 || totalReimbursements > 0) {
+                html += `
+                <div style="margin-top: 25px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; color: #374151;">
+                        💸 Operating Expenses for Period
+                        ${isProrated ? '<span style="font-size: 10px; background: #0891b2; color: white; padding: 2px 6px; border-radius: 4px;">PRORATED</span>' : ''}
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px;">
+                        ${expenseData.byCategory.sort((a, b) => {
+                            if (a.isReimbursement && !b.isReimbursement) return 1;
+                            if (!a.isReimbursement && b.isReimbursement) return -1;
+                            return b.total - a.total;
+                        }).slice(0, 8).map(cat => {
+                            const isReimbursement = cat.isReimbursement === true;
+                            const catProrated = (cat.totalProrated || 0) > 0.01;
+                            const bgColor = isReimbursement ? '#f0fdf4' : (cat.excludeFromProfit ? '#fffbeb' : (catProrated ? '#f0fdfa' : '#f9fafb'));
+                            const borderColor = isReimbursement ? '#bbf7d0' : (cat.excludeFromProfit ? '#fcd34d' : (catProrated ? '#99f6e4' : '#e5e7eb'));
+                            const amountColor = isReimbursement ? '#059669' : (cat.excludeFromProfit ? '#f59e0b' : (catProrated ? '#0891b2' : '#9333ea'));
+                            return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: ${bgColor}; border-radius: 6px; border: 1px solid ${borderColor};">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 12px; color: #374151;">
+                                        ${cat.categoryName}
+                                        ${isReimbursement ? '<span style="font-size: 9px; background: #059669; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">CREDIT</span>' : ''}
+                                        ${cat.excludeFromProfit ? '<span style="font-size: 9px; background: #f59e0b; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">TAX</span>' : ''}
+                                    </div>
+                                </div>
+                                <div style="font-weight: 700; color: ${amountColor}; font-size: 14px;">${isReimbursement ? '-' : ''}${formatMoney(cat.total)}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    ${expenseData.byCategory.length > 8 ? `<div style="text-align: center; font-size: 11px; color: #6b7280; margin-bottom: 10px;">+ ${expenseData.byCategory.length - 8} more categories</div>` : ''}
+                    <div style="display: flex; justify-content: space-between; padding: 12px 15px; background: #f3f4f6; border-radius: 8px; font-weight: bold;">
+                        <span>Total Operating Expenses:</span>
+                        <span style="color: #9333ea;">${formatMoney(totalExpensesForProfit)}</span>
+                    </div>
+                    ${totalExcludedFromProfit > 0 ? `<div style="margin-top: 10px; padding: 8px; background: #fffbeb; border-radius: 6px; font-size: 11px; color: #92400e;">Tax-only expenses (${formatMoney(totalExcludedFromProfit)}) tracked for records but not included above.</div>` : ''}
+                </div>`;
             }
             
             reportData['sales-order-detail'] = filtered;
