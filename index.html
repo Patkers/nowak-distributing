@@ -17259,6 +17259,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
+            // Confirmation for updates
+            if (expenseId) {
+                if (!confirm('Are you sure you want to update this expense?')) return;
+            }
+            
             showLoading(expenseId ? 'Updating Expense...' : 'Adding Expense...');
             try {
                 let result;
@@ -17384,6 +17389,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (!data.categoryName) {
                 showError('Please enter a category name');
                 return;
+            }
+            
+            // Confirmation for updates
+            if (categoryId) {
+                if (!confirm('Are you sure you want to update this category?')) return;
             }
             
             showLoading(categoryId ? 'Updating Category...' : 'Adding Category...');
@@ -17521,6 +17531,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
+            // Confirmation for updates
+            if (recurringId) {
+                if (!confirm('Are you sure you want to update this recurring expense?')) return;
+            }
+            
             showLoading(recurringId ? 'Updating Recurring Expense...' : 'Adding Recurring Expense...');
             try {
                 let result;
@@ -17629,6 +17644,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
             if (!data.year || !data.ratePerMile) {
                 showError('Please enter year and rate');
                 return;
+            }
+            
+            // Confirmation for updates
+            if (existingYear) {
+                if (!confirm('Are you sure you want to update this mileage rate?')) return;
             }
             
             showLoading(existingYear ? 'Updating Mileage Rate...' : 'Adding Mileage Rate...');
@@ -30752,6 +30772,14 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const totalProrated = expenseData.totalProrated || 0;
             const isProrated = totalProrated > 0.01;
             
+            // Calculate total original amounts (before proration) for non-reimbursement expenses
+            const totalOriginal = expenses
+                .filter(e => {
+                    const catData = categoryData.find(c => c.categoryId === e.Category_ID);
+                    return !catData?.isReimbursement;
+                })
+                .reduce((sum, e) => sum + (parseFloat(e.actualAmount || e.Amount) || 0), 0);
+            
             // Sort categories by total (expenses first, then reimbursements)
             const sortedCategories = categoryData
                 .filter(c => !c.isReimbursement)
@@ -30969,7 +30997,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                             <th onclick="sortReportTable(this, 1)" style="cursor: pointer;">Description ⇅</th>
                                             <th onclick="sortReportTable(this, 2)" style="cursor: pointer;">Category ⇅</th>
                                             <th onclick="sortReportTable(this, 3)" style="cursor: pointer;">Type ⇅</th>
-                                            <th onclick="sortReportTable(this, 4)" style="cursor: pointer; text-align: right;">Amount ⇅</th>
+                                            ${isProrated ? '<th onclick="sortReportTable(this, 4)" style="cursor: pointer; text-align: right;">Full Amount ⇅</th>' : ''}
+                                            <th onclick="sortReportTable(this, ${isProrated ? 5 : 4})" style="cursor: pointer; text-align: right;">${isProrated ? 'Prorated ⇅' : 'Amount ⇅'}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -30983,7 +31012,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                             const catType = catData?.categoryType || 'Variable';
                                             const typeColor = catType === 'Fixed' ? '#059669' : catType === 'One-Time' ? '#6b7280' : '#d97706';
                                             const isPro = exp.prorationApplied === true;
-                                            const displayAmount = exp.proratedAmount || exp.Amount || 0;
+                                            const originalAmount = parseFloat(exp.actualAmount || exp.Amount) || 0;
+                                            const proratedAmount = parseFloat(exp.proratedAmount) || originalAmount;
                                             return `
                                                 <tr>
                                                     <td data-value="${new Date(exp.Expense_Date).getTime()}">${formatDateSafe(exp.Expense_Date)}</td>
@@ -30993,23 +31023,25 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                                         <span style="background: ${typeColor}18; color: ${typeColor}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${catType}</span>
                                                         ${isPro ? '<span style="background: #0891b2; color: white; padding: 2px 4px; border-radius: 3px; font-size: 9px; margin-left: 4px;">PRO</span>' : ''}
                                                     </td>
-                                                    <td style="text-align: right; font-weight: 600;" data-value="${parseFloat(displayAmount)}">${formatMoney(displayAmount)}</td>
+                                                    ${isProrated ? `<td style="text-align: right; color: #6b7280;" data-value="${originalAmount}">${formatMoney(originalAmount)}</td>` : ''}
+                                                    <td style="text-align: right; font-weight: 600;${isPro ? ' color: #0891b2;' : ''}" data-value="${parseFloat(proratedAmount)}">${formatMoney(proratedAmount)}</td>
                                                 </tr>
                                             `;
                                         }).join('')}
                                     </tbody>
                                     <tfoot>
                                         <tr style="background: #e5e7eb; font-weight: 700;">
-                                            <td colspan="4">Total${isProrated ? ' (Prorated)' : ''}</td>
-                                            <td style="text-align: right;">${formatMoney(totalExpenses)}</td>
+                                            <td colspan="4">Total</td>
+                                            ${isProrated ? `<td style="text-align: right; color: #6b7280;">${formatMoney(totalOriginal)}</td>` : ''}
+                                            <td style="text-align: right;${isProrated ? ' color: #0891b2;' : ''}">${formatMoney(totalExpenses)}</td>
                                         </tr>
                                         ${totalReimbursements > 0 ? `
                                             <tr style="background: #d1fae5; font-weight: 700; color: #059669;">
-                                                <td colspan="4">Less: Credits/Reimbursements</td>
+                                                <td colspan="${isProrated ? 5 : 4}">Less: Credits/Reimbursements</td>
                                                 <td style="text-align: right;">-${formatMoney(totalReimbursements)}</td>
                                             </tr>
                                             <tr style="background: #9333ea22; font-weight: 700; color: #7c3aed;">
-                                                <td colspan="4">Net Expenses</td>
+                                                <td colspan="${isProrated ? 5 : 4}">Net Expenses</td>
                                                 <td style="text-align: right;">${formatMoney(netExpenses)}</td>
                                             </tr>
                                         ` : ''}
