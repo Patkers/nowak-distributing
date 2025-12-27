@@ -30957,7 +30957,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <!-- Detail Table -->
                     <div id="expenseDetailWrapper" style="display: none;">
                         <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px;">📋 Expense Detail (${expenses.length} records)</div>
+                            <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px;">📋 Expense Detail (${expenses.filter(e => {
+                                const catData = categoryData.find(c => c.categoryId === e.Category_ID);
+                                return !catData?.isReimbursement;
+                            }).length} records)</div>
                             <div class="table-scroll-wrapper">
                                 <table class="data-table" id="expenseDetailTable">
                                     <thead>
@@ -30970,7 +30973,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${expenses.sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date)).map(exp => {
+                                        ${expenses.filter(e => {
+                                            const catData = categoryData.find(c => c.categoryId === e.Category_ID);
+                                            return !catData?.isReimbursement;
+                                        }).sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date)).map(exp => {
                                             // Find category from byCategory data
                                             const catData = categoryData.find(c => c.categoryId === exp.Category_ID);
                                             const catName = catData?.categoryName || exp.Category_Name || 'Unknown';
