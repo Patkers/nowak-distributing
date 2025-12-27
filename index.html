@@ -4994,13 +4994,14 @@
                 <div class="section-card">
                     <h3>📋 Expense Log</h3>
                     
-                    <!-- Collapsible Filter Section -->
+                    <!-- Collapsible Filter Section - Muted Style -->
                     <div style="margin-bottom: 15px;">
                         <div onclick="toggleExpenseFilters()" style="
-                            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
-                            color: white;
+                            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+                            color: #4a5568;
                             padding: 12px 16px;
                             border-radius: 10px;
+                            border: 1px solid #d1d5db;
                             cursor: pointer;
                             display: flex;
                             align-items: center;
@@ -5011,16 +5012,16 @@
                                 <span id="expenseFilterToggleIcon" style="transition: transform 0.2s;">▼</span>
                                 <strong>⚙️ Filters & Date Range</strong>
                             </div>
-                            <span style="font-size: 11px; opacity: 0.8;">tap to hide/show</span>
+                            <span style="font-size: 11px; color: #6b7280;">tap to hide/show</span>
                         </div>
                         
-                        <div id="expenseFilterContent" style="background: #f8f9fa; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px; padding: 15px;">
+                        <div id="expenseFilterContent" style="background: #fafafa; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px; padding: 15px;">
                             <!-- Purpose Section -->
-                            <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 1px solid #e9d5ff; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                            <div style="background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
                                 <div style="display: flex; align-items: flex-start; gap: 10px;">
                                     <span style="font-size: 20px;">💡</span>
                                     <div>
-                                        <div style="font-weight: 600; color: #7c3aed; font-size: 13px; margin-bottom: 4px;">About This Screen</div>
+                                        <div style="font-weight: 600; color: #374151; font-size: 13px; margin-bottom: 4px;">About This Screen</div>
                                         <div style="font-size: 12px; color: #6b7280; line-height: 1.5;">
                                             Track all your business expenses in one place. Filter by date range or category to analyze spending patterns. 
                                             Mileage reimbursements are tracked separately and reduce your net operating expenses.
@@ -5045,8 +5046,8 @@
                                         <option value="">All Categories</option>
                                     </select>
                                 </div>
-                                <button class="btn" onclick="filterExpenses()" style="background: #9333ea;">🔍 Filter</button>
-                                <button class="btn" onclick="clearExpenseFilters()" style="background: #6b7280;">✖ Clear</button>
+                                <button class="btn" onclick="filterExpenses()" style="background: #6b7280;">🔍 Filter</button>
+                                <button class="btn" onclick="clearExpenseFilters()" style="background: #9ca3af;">✖ Clear</button>
                             </div>
                         </div>
                     </div>
@@ -5057,25 +5058,25 @@
                             <button onclick="applyExpenseDateFilter('today', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 Today
                             </button>
-                            <button onclick="applyExpenseDateFilter('week', event)" class="oval-filter-btn-exp" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('week', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📆 This Week
                             </button>
-                            <button onclick="applyExpenseDateFilter('month', event)" class="oval-filter-btn-exp" style="background: #faf5ff; color: #7c3aed; border: 2px solid #9333ea; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('month', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 🗓️ This Month
                             </button>
-                            <button onclick="applyExpenseDateFilter('3months', event)" class="oval-filter-btn-exp" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('3months', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📊 Last 3 Months
                             </button>
-                            <button onclick="applyExpenseDateFilter('6months', event)" class="oval-filter-btn-exp" style="background: #e8f0e8; color: #5a7a6d; border: 2px solid #6b9a8d; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('6months', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📈 6 Months
                             </button>
-                            <button onclick="applyExpenseDateFilter('ytd', event)" class="oval-filter-btn-exp" style="background: #f0e8f0; color: #7a6a8a; border: 2px solid #9a8ab8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('ytd', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📋 YTD
                             </button>
-                            <button onclick="applyExpenseDateFilter('1year', event)" class="oval-filter-btn-exp" style="background: #f5eaea; color: #8a6a6a; border: 2px solid #b88a8a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('1year', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 📅 1 Year
                             </button>
-                            <button onclick="applyExpenseDateFilter('all', event)" class="oval-filter-btn-exp active" style="background: #9333ea; color: white; border: 2px solid #9333ea; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <button onclick="applyExpenseDateFilter('all', event)" class="oval-filter-btn-exp active" style="background: #4a5568; color: white; border: 2px solid #4a5568; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 🌐 All Time
                             </button>
                         </div>
@@ -17386,32 +17387,32 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // Header style helper
             const getHeaderStyle = (col) => {
                 const isActive = expenseSortColumn === col;
-                return `cursor: pointer; user-select: none; ${isActive ? 'color: #9333ea; font-weight: 700;' : ''}`;
+                return `cursor: pointer; user-select: none; ${isActive ? 'color: #4a5568; font-weight: 700;' : ''}`;
             };
             
-            // KPI Cards
+            // KPI Cards - Muted Professional Style
             let html = `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 15px;">
                     <!-- Total Expenses (excluding mileage) -->
-                    <div style="background: linear-gradient(135deg, #f3e8ff, #e9d5ff); padding: 15px; border-radius: 10px; border-left: 4px solid #9333ea;">
-                        <div style="font-size: 11px; color: #7c3aed; text-transform: uppercase; font-weight: 600;">💰 Operating Expenses</div>
-                        <div style="font-size: 26px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpenses)}</div>
-                        <div style="font-size: 11px; color: #888;">${expenseCount} expense${expenseCount !== 1 ? 's' : ''}</div>
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb; border-left: 4px solid #6b7280;">
+                        <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: 600;">💰 Operating Expenses</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #374151;">${formatMoney(totalExpenses)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${expenseCount} expense${expenseCount !== 1 ? 's' : ''}</div>
                     </div>
                     
                     ${totalMileage > 0 ? `
                     <!-- Mileage Reimbursements -->
-                    <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); padding: 15px; border-radius: 10px; border-left: 4px solid #059669;">
-                        <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 600;">🚗 Mileage Credits</div>
-                        <div style="font-size: 26px; font-weight: bold; color: #059669;">-${formatMoney(totalMileage)}</div>
-                        <div style="font-size: 11px; color: #888;">${mileageCount} reimbursement${mileageCount !== 1 ? 's' : ''}</div>
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb; border-left: 4px solid #6b9a8d;">
+                        <div style="font-size: 11px; color: #6b9a8d; text-transform: uppercase; font-weight: 600;">🚗 Mileage Credits</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #6b9a8d;">-${formatMoney(totalMileage)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">${mileageCount} reimbursement${mileageCount !== 1 ? 's' : ''}</div>
                     </div>
                     
                     <!-- Net Expenses -->
-                    <div style="background: linear-gradient(135deg, #ede9fe, #ddd6fe); padding: 15px; border-radius: 10px; border-left: 4px solid #7c3aed;">
-                        <div style="font-size: 11px; color: #6d28d9; text-transform: uppercase; font-weight: 600;">✨ Net Expenses</div>
-                        <div style="font-size: 26px; font-weight: bold; color: #7c3aed;">${formatMoney(netExpenses)}</div>
-                        <div style="font-size: 11px; color: #888;">After mileage credits</div>
+                    <div style="background: #f9fafb; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb; border-left: 4px solid #4a5568;">
+                        <div style="font-size: 11px; color: #4a5568; text-transform: uppercase; font-weight: 600;">✨ Net Expenses</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #374151;">${formatMoney(netExpenses)}</div>
+                        <div style="font-size: 11px; color: #9ca3af;">After mileage credits</div>
                     </div>
                     ` : ''}
                 </div>
@@ -17431,7 +17432,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 const cat = cachedExpenseCategories.find(c => c.Category_ID === exp.Category_ID);
                 const isReimbursement = cat && String(cat.Is_Reimbursement).toUpperCase() === 'TRUE';
                 const isMileage = cat && cat.Category_Name && cat.Category_Name.toLowerCase().includes('mileage');
-                const amountColor = (isMileage || isReimbursement) ? '#059669' : '#9333ea';
+                const amountColor = (isMileage || isReimbursement) ? '#6b9a8d' : '#374151';
                 const amountPrefix = (isMileage || isReimbursement) ? '-' : '';
                 
                 html += `<tr>
@@ -20003,7 +20004,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             }
         };
         
-        function openReportSetup(reportType) {
+        async function openReportSetup(reportType) {
             console.log('📱 openReportSetup called with:', reportType);
             currentReport = reportType;
             reportFilters = {}; // Reset filters
@@ -20014,6 +20015,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             const config = reportConfig[reportType] || { title: 'Report', filters: [] };
             console.log('📱 Report config:', config);
+            
+            // Load expense categories if this report needs them
+            if (config.filters.includes('expenseCategory') && (!cachedExpenseCategories || cachedExpenseCategories.length === 0)) {
+                await loadExpenses({ categoriesOnly: true });
+            }
             
             // If report has noFilters flag, show modal then generate directly
             if (config.noFilters) {
@@ -32325,6 +32331,103 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         }
                     }, 150);
                 <` + `/script>
+                
+                <!-- Detailed Monthly Breakdown Section -->
+                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <span style="font-size: 20px;">📋</span>
+                        <strong style="font-size: 15px; color: #1f2937;">Detailed Monthly Breakdown</strong>
+                    </div>
+                    ${sortedMonths.map(monthKey => {
+                        const mData = monthlyData[monthKey];
+                        const [year, month] = monthKey.split('-');
+                        const monthName = new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        
+                        // Get expenses for this month (non-reimbursement)
+                        const monthExpenses = expenses.filter(e => {
+                            const d = new Date(e.Expense_Date);
+                            const expMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                            const cat = categoryMap[e.Category_ID] || {};
+                            const isReimb = String(cat.Is_Reimbursement || 'FALSE').toUpperCase() === 'TRUE';
+                            return expMonth === monthKey && !isReimb;
+                        }).sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date));
+                        
+                        // Get credits/mileage for this month
+                        const monthCredits = expenses.filter(e => {
+                            const d = new Date(e.Expense_Date);
+                            const expMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                            const cat = categoryMap[e.Category_ID] || {};
+                            const isReimb = String(cat.Is_Reimbursement || 'FALSE').toUpperCase() === 'TRUE';
+                            return expMonth === monthKey && isReimb;
+                        }).sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date));
+                        
+                        if (monthExpenses.length === 0 && monthCredits.length === 0) return '';
+                        
+                        let monthHtml = '<div style="margin-bottom: 20px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">';
+                        monthHtml += '<div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">';
+                        monthHtml += '<div style="font-weight: 600; color: #374151;">📅 ' + monthName + '</div>';
+                        monthHtml += '<div style="display: flex; gap: 15px; font-size: 13px;">';
+                        monthHtml += '<span style="color: #6b7280;">Expenses: <strong style="color: #374151;">' + formatMoney(mData.total) + '</strong></span>';
+                        if (mData.reimbursements > 0) {
+                            monthHtml += '<span style="color: #6b9a8d;">Credits: <strong>-' + formatMoney(mData.reimbursements) + '</strong></span>';
+                        }
+                        monthHtml += '<span style="color: #4a5568;">Net: <strong>' + formatMoney(mData.net) + '</strong></span>';
+                        monthHtml += '</div></div>';
+                        
+                        // Expenses table
+                        if (monthExpenses.length > 0) {
+                            monthHtml += '<div style="padding: 10px 16px; background: #fafafa;">';
+                            monthHtml += '<div style="font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">💰 Expenses</div>';
+                            monthHtml += '<table style="width: 100%; font-size: 12px; border-collapse: collapse;">';
+                            monthHtml += '<thead><tr style="background: #f3f4f6;">';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Date</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Category</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Description</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Vendor</th>';
+                            monthHtml += '<th style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Amount</th>';
+                            monthHtml += '</tr></thead><tbody>';
+                            monthExpenses.forEach(e => {
+                                const cat = categoryMap[e.Category_ID] || {};
+                                monthHtml += '<tr style="border-bottom: 1px solid #f3f4f6;">';
+                                monthHtml += '<td style="padding: 6px 8px;">' + formatDateSafe(e.Expense_Date) + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px;">' + (cat.Category_Name || 'Unknown') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px;">' + (e.Description || '') + (e.Recurring_ID ? ' 🔄' : '') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px;">' + (e.Vendor || '-') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; text-align: right; font-weight: 600; color: #374151;">' + formatMoney(parseFloat(e.Amount) || 0) + '</td>';
+                                monthHtml += '</tr>';
+                            });
+                            monthHtml += '</tbody></table></div>';
+                        }
+                        
+                        // Credits table
+                        if (monthCredits.length > 0) {
+                            monthHtml += '<div style="padding: 10px 16px; background: #f0fdf4; border-top: 1px solid #e5e7eb;">';
+                            monthHtml += '<div style="font-size: 12px; font-weight: 600; color: #6b9a8d; margin-bottom: 8px; text-transform: uppercase;">🚗 Mileage Credits</div>';
+                            monthHtml += '<table style="width: 100%; font-size: 12px; border-collapse: collapse;">';
+                            monthHtml += '<thead><tr style="background: #dcfce7;">';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Date</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Category</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Description</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Vendor</th>';
+                            monthHtml += '<th style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Amount</th>';
+                            monthHtml += '</tr></thead><tbody>';
+                            monthCredits.forEach(e => {
+                                const cat = categoryMap[e.Category_ID] || {};
+                                monthHtml += '<tr style="border-bottom: 1px solid #dcfce7;">';
+                                monthHtml += '<td style="padding: 6px 8px;">' + formatDateSafe(e.Expense_Date) + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px;">' + (cat.Category_Name || 'Unknown') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px;">' + (e.Description || '') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px;">' + (e.Vendor || '-') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; text-align: right; font-weight: 600; color: #6b9a8d;">-' + formatMoney(parseFloat(e.Amount) || 0) + '</td>';
+                                monthHtml += '</tr>';
+                            });
+                            monthHtml += '</tbody></table></div>';
+                        }
+                        
+                        monthHtml += '</div>';
+                        return monthHtml;
+                    }).join('')}
+                </div>
             `;
             
             return html;
