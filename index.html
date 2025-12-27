@@ -4993,23 +4993,94 @@
             <div id="expenseLogSubtab" class="expense-content">
                 <div class="section-card">
                     <h3>📋 Expense Log</h3>
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-                        <div class="form-group" style="margin: 0; min-width: 150px;">
-                            <label>📅 From Date</label>
-                            <input type="date" id="expenseFromDate">
+                    
+                    <!-- Collapsible Filter Section -->
+                    <div style="margin-bottom: 15px;">
+                        <div onclick="toggleExpenseFilters()" style="
+                            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+                            color: white;
+                            padding: 12px 16px;
+                            border-radius: 10px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            user-select: none;
+                        ">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span id="expenseFilterToggleIcon" style="transition: transform 0.2s;">▼</span>
+                                <strong>⚙️ Filters & Date Range</strong>
+                            </div>
+                            <span style="font-size: 11px; opacity: 0.8;">tap to hide/show</span>
                         </div>
-                        <div class="form-group" style="margin: 0; min-width: 150px;">
-                            <label>📅 To Date</label>
-                            <input type="date" id="expenseToDate">
+                        
+                        <div id="expenseFilterContent" style="background: #f8f9fa; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px; padding: 15px;">
+                            <!-- Purpose Section -->
+                            <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 1px solid #e9d5ff; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span style="font-size: 20px;">💡</span>
+                                    <div>
+                                        <div style="font-weight: 600; color: #7c3aed; font-size: 13px; margin-bottom: 4px;">About This Screen</div>
+                                        <div style="font-size: 12px; color: #6b7280; line-height: 1.5;">
+                                            Track all your business expenses in one place. Filter by date range or category to analyze spending patterns. 
+                                            Mileage reimbursements are tracked separately and reduce your net operating expenses.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Date and Category Filters -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                                <div class="form-group" style="margin: 0; min-width: 140px;">
+                                    <label>📅 From Date</label>
+                                    <input type="date" id="expenseFromDate">
+                                </div>
+                                <div class="form-group" style="margin: 0; min-width: 140px;">
+                                    <label>📅 To Date</label>
+                                    <input type="date" id="expenseToDate">
+                                </div>
+                                <div class="form-group" style="margin: 0; min-width: 150px;">
+                                    <label>🏷️ Category</label>
+                                    <select id="expenseCategoryFilter">
+                                        <option value="">All Categories</option>
+                                    </select>
+                                </div>
+                                <button class="btn" onclick="filterExpenses()" style="background: #9333ea;">🔍 Filter</button>
+                                <button class="btn" onclick="clearExpenseFilters()" style="background: #6b7280;">✖ Clear</button>
+                            </div>
                         </div>
-                        <div class="form-group" style="margin: 0; min-width: 150px;">
-                            <label>🏷️ Category</label>
-                            <select id="expenseCategoryFilter">
-                                <option value="">All Categories</option>
-                            </select>
-                        </div>
-                        <button class="btn" onclick="filterExpenses()" style="align-self: flex-end; background: #9333ea;">🔍 Filter</button>
                     </div>
+                    
+                    <!-- Oval Date Filter Buttons -->
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 15px;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 10px;">
+                            <button onclick="applyExpenseDateFilter('today', event)" class="oval-filter-btn-exp" style="background: #f5f5f5; color: #666; border: 2px solid #999; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📅 Today
+                            </button>
+                            <button onclick="applyExpenseDateFilter('week', event)" class="oval-filter-btn-exp" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📆 This Week
+                            </button>
+                            <button onclick="applyExpenseDateFilter('month', event)" class="oval-filter-btn-exp" style="background: #faf5ff; color: #7c3aed; border: 2px solid #9333ea; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                🗓️ This Month
+                            </button>
+                            <button onclick="applyExpenseDateFilter('3months', event)" class="oval-filter-btn-exp" style="background: #f5f0e0; color: #8a7a4a; border: 2px solid #b8a86b; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📊 Last 3 Months
+                            </button>
+                            <button onclick="applyExpenseDateFilter('6months', event)" class="oval-filter-btn-exp" style="background: #e8f0e8; color: #5a7a6d; border: 2px solid #6b9a8d; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📈 6 Months
+                            </button>
+                            <button onclick="applyExpenseDateFilter('ytd', event)" class="oval-filter-btn-exp" style="background: #f0e8f0; color: #7a6a8a; border: 2px solid #9a8ab8; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📋 YTD
+                            </button>
+                            <button onclick="applyExpenseDateFilter('1year', event)" class="oval-filter-btn-exp" style="background: #f5eaea; color: #8a6a6a; border: 2px solid #b88a8a; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                📅 1 Year
+                            </button>
+                            <button onclick="applyExpenseDateFilter('all', event)" class="oval-filter-btn-exp active" style="background: #9333ea; color: white; border: 2px solid #9333ea; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                🌐 All Time
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div id="expenseLogTable"></div>
                 </div>
             </div>
@@ -5520,6 +5591,7 @@
                     </div>
                     <div id="expenseReports" class="report-buttons">
                         <button class="btn report-btn" onclick="showReport('expense-report')">📊 Expense Report</button>
+                        <button class="btn report-btn" onclick="showReport('expense-history')">📈 Expense History</button>
                     </div>
                 </div>
                 
@@ -17112,6 +17184,93 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         // Filter expenses
+        // Apply expense date filter from oval buttons
+        let activeExpenseFilter = 'all';
+        
+        function applyExpenseDateFilter(period, evt) {
+            activeExpenseFilter = period;
+            
+            const now = new Date();
+            let fromDate = null;
+            let toDate = new Date(now);
+            
+            switch(period) {
+                case 'today':
+                    fromDate = new Date(now);
+                    break;
+                case 'week':
+                    fromDate = new Date(now);
+                    fromDate.setDate(now.getDate() - 7);
+                    break;
+                case 'month':
+                    fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case '3months':
+                    fromDate = new Date(now);
+                    fromDate.setMonth(now.getMonth() - 3);
+                    break;
+                case '6months':
+                    fromDate = new Date(now);
+                    fromDate.setMonth(now.getMonth() - 6);
+                    break;
+                case 'ytd':
+                    fromDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                case '1year':
+                    fromDate = new Date(now);
+                    fromDate.setFullYear(now.getFullYear() - 1);
+                    break;
+                case 'all':
+                    document.getElementById('expenseFromDate').value = '';
+                    document.getElementById('expenseToDate').value = '';
+                    filterExpenses();
+                    updateExpenseFilterButtons(period);
+                    return;
+            }
+            
+            const fromDateStr = fromDate ? formatLocalDate(fromDate) : '';
+            const toDateStr = toDate ? formatLocalDate(toDate) : '';
+            
+            document.getElementById('expenseFromDate').value = fromDateStr;
+            document.getElementById('expenseToDate').value = toDateStr;
+            
+            filterExpenses();
+            updateExpenseFilterButtons(period);
+        }
+        
+        function updateExpenseFilterButtons(activePeriod) {
+            setTimeout(() => {
+                document.querySelectorAll('.oval-filter-btn-exp').forEach(btn => {
+                    const onclick = btn.getAttribute('onclick') || '';
+                    const isActive = onclick.includes(`'${activePeriod}'`);
+                    btn.style.opacity = isActive ? '1' : '0.6';
+                    btn.style.transform = isActive ? 'scale(1.05)' : 'scale(1)';
+                    btn.style.boxShadow = isActive ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)';
+                });
+            }, 50);
+        }
+        
+        function clearExpenseFilters() {
+            document.getElementById('expenseFromDate').value = '';
+            document.getElementById('expenseToDate').value = '';
+            document.getElementById('expenseCategoryFilter').value = '';
+            activeExpenseFilter = 'all';
+            filterExpenses();
+            updateExpenseFilterButtons('all');
+        }
+        
+        function toggleExpenseFilters() {
+            const content = document.getElementById('expenseFilterContent');
+            const icon = document.getElementById('expenseFilterToggleIcon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+        
         function filterExpenses() {
             const fromDate = document.getElementById('expenseFromDate').value;
             const toDate = document.getElementById('expenseToDate').value;
@@ -17140,6 +17299,24 @@ NOTE: Please see the attached invoice PDF for full details.`);
             displayExpenseLog(filtered);
         }
         
+        // Track expense sort state
+        let expenseSortColumn = 'date';
+        let expenseSortDirection = 'desc';
+        
+        // Sort expenses function
+        function sortExpenses(column) {
+            // Toggle direction if same column clicked
+            if (expenseSortColumn === column) {
+                expenseSortDirection = expenseSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                expenseSortColumn = column;
+                expenseSortDirection = column === 'amount' ? 'desc' : 'asc'; // Default desc for amount
+            }
+            
+            // Re-filter and display (filtering will call displayExpenseLog)
+            filterExpenses();
+        }
+        
         // Display expense log
         function displayExpenseLog(expenses) {
             const container = document.getElementById('expenseLogTable');
@@ -17150,32 +17327,119 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
-            // Sort by date descending
-            expenses.sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date));
+            // Sort based on current sort state
+            expenses.sort((a, b) => {
+                let comparison = 0;
+                switch(expenseSortColumn) {
+                    case 'date':
+                        comparison = new Date(a.Expense_Date) - new Date(b.Expense_Date);
+                        break;
+                    case 'category':
+                        comparison = (getCategoryName(a.Category_ID) || '').localeCompare(getCategoryName(b.Category_ID) || '');
+                        break;
+                    case 'description':
+                        comparison = (a.Description || '').localeCompare(b.Description || '');
+                        break;
+                    case 'vendor':
+                        comparison = (a.Vendor || '').localeCompare(b.Vendor || '');
+                        break;
+                    case 'amount':
+                        comparison = (parseFloat(a.Amount) || 0) - (parseFloat(b.Amount) || 0);
+                        break;
+                    default:
+                        comparison = new Date(a.Expense_Date) - new Date(b.Expense_Date);
+                }
+                return expenseSortDirection === 'asc' ? comparison : -comparison;
+            });
             
-            // Calculate total
-            const total = expenses.reduce((sum, exp) => sum + (parseFloat(exp.Amount) || 0), 0);
+            // Calculate totals - separate mileage reimbursements from regular expenses
+            let totalExpenses = 0;
+            let totalMileage = 0;
+            let expenseCount = 0;
+            let mileageCount = 0;
             
+            expenses.forEach(exp => {
+                const amount = parseFloat(exp.Amount) || 0;
+                const cat = cachedExpenseCategories.find(c => c.Category_ID === exp.Category_ID);
+                const isReimbursement = cat && String(cat.Is_Reimbursement).toUpperCase() === 'TRUE';
+                const isMileage = cat && cat.Category_Name && cat.Category_Name.toLowerCase().includes('mileage');
+                
+                if (isMileage || isReimbursement) {
+                    totalMileage += amount;
+                    mileageCount++;
+                } else {
+                    totalExpenses += amount;
+                    expenseCount++;
+                }
+            });
+            
+            const netExpenses = totalExpenses - totalMileage;
+            
+            // Sort indicator helper
+            const getSortIndicator = (col) => {
+                if (expenseSortColumn === col) {
+                    return expenseSortDirection === 'asc' ? ' ▲' : ' ▼';
+                }
+                return ' ↕';
+            };
+            
+            // Header style helper
+            const getHeaderStyle = (col) => {
+                const isActive = expenseSortColumn === col;
+                return `cursor: pointer; user-select: none; ${isActive ? 'color: #9333ea; font-weight: 700;' : ''}`;
+            };
+            
+            // KPI Cards
             let html = `
-                <div style="background: linear-gradient(135deg, #f3e8ff, #e9d5ff); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #9333ea;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Total Expenses</div>
-                    <div style="font-size: 28px; font-weight: bold; color: #9333ea;">${formatMoney(total)}</div>
-                    <div style="font-size: 12px; color: #888;">${expenses.length} expense${expenses.length !== 1 ? 's' : ''}</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 15px;">
+                    <!-- Total Expenses (excluding mileage) -->
+                    <div style="background: linear-gradient(135deg, #f3e8ff, #e9d5ff); padding: 15px; border-radius: 10px; border-left: 4px solid #9333ea;">
+                        <div style="font-size: 11px; color: #7c3aed; text-transform: uppercase; font-weight: 600;">💰 Operating Expenses</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpenses)}</div>
+                        <div style="font-size: 11px; color: #888;">${expenseCount} expense${expenseCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    
+                    ${totalMileage > 0 ? `
+                    <!-- Mileage Reimbursements -->
+                    <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); padding: 15px; border-radius: 10px; border-left: 4px solid #059669;">
+                        <div style="font-size: 11px; color: #059669; text-transform: uppercase; font-weight: 600;">🚗 Mileage Credits</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #059669;">-${formatMoney(totalMileage)}</div>
+                        <div style="font-size: 11px; color: #888;">${mileageCount} reimbursement${mileageCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    
+                    <!-- Net Expenses -->
+                    <div style="background: linear-gradient(135deg, #ede9fe, #ddd6fe); padding: 15px; border-radius: 10px; border-left: 4px solid #7c3aed;">
+                        <div style="font-size: 11px; color: #6d28d9; text-transform: uppercase; font-weight: 600;">✨ Net Expenses</div>
+                        <div style="font-size: 26px; font-weight: bold; color: #7c3aed;">${formatMoney(netExpenses)}</div>
+                        <div style="font-size: 11px; color: #888;">After mileage credits</div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
             
             html += '<div class="table-scroll-wrapper"><table class="data-table" id="expenseDataTable"><thead><tr>';
-            html += '<th>Date</th><th>Category</th><th>Description</th><th>Vendor</th><th>Amount</th><th>Actions</th>';
+            html += `<th onclick="sortExpenses('date')" style="${getHeaderStyle('date')}">Date${getSortIndicator('date')}</th>`;
+            html += `<th onclick="sortExpenses('category')" style="${getHeaderStyle('category')}">Category${getSortIndicator('category')}</th>`;
+            html += `<th onclick="sortExpenses('description')" style="${getHeaderStyle('description')}">Description${getSortIndicator('description')}</th>`;
+            html += `<th onclick="sortExpenses('vendor')" style="${getHeaderStyle('vendor')}">Vendor${getSortIndicator('vendor')}</th>`;
+            html += `<th onclick="sortExpenses('amount')" style="${getHeaderStyle('amount')}">Amount${getSortIndicator('amount')}</th>`;
+            html += '<th>Actions</th>';
             html += '</tr></thead><tbody>';
             
             expenses.forEach(exp => {
                 const isRecurring = exp.Recurring_ID ? '🔄' : '';
+                const cat = cachedExpenseCategories.find(c => c.Category_ID === exp.Category_ID);
+                const isReimbursement = cat && String(cat.Is_Reimbursement).toUpperCase() === 'TRUE';
+                const isMileage = cat && cat.Category_Name && cat.Category_Name.toLowerCase().includes('mileage');
+                const amountColor = (isMileage || isReimbursement) ? '#059669' : '#9333ea';
+                const amountPrefix = (isMileage || isReimbursement) ? '-' : '';
+                
                 html += `<tr>
                     <td>${formatDateSafe(exp.Expense_Date)}</td>
                     <td>${getCategoryName(exp.Category_ID)}</td>
                     <td>${exp.Description || ''} ${isRecurring}</td>
                     <td>${exp.Vendor || '-'}</td>
-                    <td style="font-weight: bold; color: #9333ea;">${formatMoney(parseFloat(exp.Amount) || 0)}</td>
+                    <td style="font-weight: bold; color: ${amountColor};">${amountPrefix}${formatMoney(parseFloat(exp.Amount) || 0)}</td>
                     <td>
                         <button class="btn-small" onclick="editExpense('${exp.Expense_ID}')" style="background: #7aaab8;">✏️</button>
                         <button class="btn-small" onclick="deleteExpense('${exp.Expense_ID}')" style="background: #b88a8a;">🗑️</button>
@@ -17489,9 +17753,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
             }
             
+            // Get category name for display
+            const categoryName = selectedOption?.text || '';
+            
             const data = {
                 expenseDate: document.getElementById('expenseDate').value,
                 categoryId: document.getElementById('expenseCategory').value,
+                categoryName: categoryName, // For display only
                 description: document.getElementById('expenseDescription').value,
                 amount: amount,
                 vendor: document.getElementById('expenseVendor').value,
@@ -17503,9 +17771,34 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
-            // Confirmation for updates
+            // For updates, show before/after comparison
             if (expenseId) {
-                if (!confirm('Are you sure you want to update this expense?')) return;
+                const originalExpense = cachedExpenses.find(e => e.Expense_ID === expenseId);
+                if (originalExpense) {
+                    // Format original data for comparison
+                    const origCat = cachedExpenseCategories.find(c => c.Category_ID === originalExpense.Category_ID);
+                    const originalData = {
+                        expenseDate: originalExpense.Expense_Date ? new Date(originalExpense.Expense_Date).toISOString().split('T')[0] : '',
+                        categoryName: origCat?.Category_Name || '',
+                        description: originalExpense.Description || '',
+                        amount: formatMoney(parseFloat(originalExpense.Amount) || 0),
+                        vendor: originalExpense.Vendor || '',
+                        notes: originalExpense.Notes || ''
+                    };
+                    
+                    // Format new data for display
+                    const newData = {
+                        expenseDate: data.expenseDate,
+                        categoryName: data.categoryName,
+                        description: data.description,
+                        amount: formatMoney(data.amount),
+                        vendor: data.vendor || '',
+                        notes: data.notes || ''
+                    };
+                    
+                    const confirmed = await showRecordPreview('expense', newData, originalData);
+                    if (!confirmed) return;
+                }
             }
             
             showLoading(expenseId ? 'Updating Expense...' : 'Adding Expense...');
@@ -17537,7 +17830,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function deleteExpense(expenseId) {
-            if (!confirm('Are you sure you want to delete this expense?')) return;
+            const confirmed = await showConfirmModal(
+                'Delete Expense',
+                'Are you sure you want to delete this expense? This action cannot be undone.',
+                'Delete',
+                'Cancel'
+            );
+            if (!confirmed) return;
             
             showLoading('Deleting Expense...');
             try {
@@ -17635,9 +17934,27 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
-            // Confirmation for updates
+            // For updates, show before/after comparison
             if (categoryId) {
-                if (!confirm('Are you sure you want to update this category?')) return;
+                const originalCat = cachedExpenseCategories.find(c => c.Category_ID === categoryId);
+                if (originalCat) {
+                    const originalData = {
+                        categoryName: originalCat.Category_Name || '',
+                        categoryType: originalCat.Category_Type || '',
+                        isActive: String(originalCat.Is_Active).toUpperCase() === 'TRUE' ? 'Yes' : 'No',
+                        excludeFromProfit: String(originalCat.Exclude_From_Profit).toUpperCase() === 'TRUE' ? 'Yes' : 'No',
+                        isReimbursement: String(originalCat.Is_Reimbursement).toUpperCase() === 'TRUE' ? 'Yes' : 'No'
+                    };
+                    const newData = {
+                        categoryName: data.categoryName,
+                        categoryType: data.categoryType,
+                        isActive: data.isActive ? 'Yes' : 'No',
+                        excludeFromProfit: data.excludeFromProfit ? 'Yes' : 'No',
+                        isReimbursement: data.isReimbursement ? 'Yes' : 'No'
+                    };
+                    const confirmed = await showRecordPreview('category', newData, originalData);
+                    if (!confirmed) return;
+                }
             }
             
             showLoading(categoryId ? 'Updating Category...' : 'Adding Category...');
@@ -17670,7 +17987,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function deleteCategory(categoryId) {
-            if (!confirm('Are you sure you want to delete this category? This may affect existing expenses.')) return;
+            const confirmed = await showConfirmModal(
+                'Delete Category',
+                'Are you sure you want to delete this category? This may affect existing expenses.',
+                'Delete',
+                'Cancel'
+            );
+            if (!confirmed) return;
             
             showLoading('Deleting Category...');
             try {
@@ -17761,9 +18084,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
         
         async function saveRecurring() {
             const recurringId = document.getElementById('editRecurringId').value;
+            const categorySelect = document.getElementById('recurringCategory');
+            const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || '';
+            
             const data = {
                 description: document.getElementById('recurringDescription').value,
                 categoryId: document.getElementById('recurringCategory').value,
+                categoryName: categoryName, // For display
                 amount: parseFloat(document.getElementById('recurringAmount').value) || 0,
                 frequency: document.getElementById('recurringFrequency').value,
                 dayOfMonth: parseInt(document.getElementById('recurringDayOfMonth').value) || 1,
@@ -17775,9 +18102,30 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
-            // Confirmation for updates
+            // For updates, show before/after comparison
             if (recurringId) {
-                if (!confirm('Are you sure you want to update this recurring expense?')) return;
+                const originalRec = cachedRecurringExpenses.find(r => r.Recurring_ID === recurringId);
+                if (originalRec) {
+                    const origCat = cachedExpenseCategories.find(c => c.Category_ID === originalRec.Category_ID);
+                    const originalData = {
+                        description: originalRec.Description || '',
+                        categoryName: origCat?.Category_Name || '',
+                        amount: formatMoney(parseFloat(originalRec.Amount) || 0),
+                        frequency: originalRec.Frequency || '',
+                        dayOfMonth: String(originalRec.Day_Of_Month || 1),
+                        isActive: String(originalRec.Is_Active).toUpperCase() === 'TRUE' ? 'Yes' : 'No'
+                    };
+                    const newData = {
+                        description: data.description,
+                        categoryName: data.categoryName,
+                        amount: formatMoney(data.amount),
+                        frequency: data.frequency,
+                        dayOfMonth: String(data.dayOfMonth),
+                        isActive: data.isActive ? 'Yes' : 'No'
+                    };
+                    const confirmed = await showRecordPreview('recurring', newData, originalData);
+                    if (!confirmed) return;
+                }
             }
             
             showLoading(recurringId ? 'Updating Recurring Expense...' : 'Adding Recurring Expense...');
@@ -17810,7 +18158,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function deleteRecurring(recurringId) {
-            if (!confirm('Are you sure you want to delete this recurring expense?')) return;
+            const confirmed = await showConfirmModal(
+                'Delete Recurring Expense',
+                'Are you sure you want to delete this recurring expense?',
+                'Delete',
+                'Cancel'
+            );
+            if (!confirmed) return;
             
             showLoading('Deleting Recurring Expense...');
             try {
@@ -17890,9 +18244,25 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 return;
             }
             
-            // Confirmation for updates
+            // For updates, show before/after comparison
             if (existingYear) {
-                if (!confirm('Are you sure you want to update this mileage rate?')) return;
+                const originalRate = cachedMileageRates.find(r => String(r.Year) === String(existingYear));
+                if (originalRate) {
+                    const originalData = {
+                        year: String(originalRate.Year),
+                        ratePerMile: '$' + (parseFloat(originalRate.Rate_Per_Mile) || 0).toFixed(3),
+                        effectiveDate: originalRate.Effective_Date || '',
+                        notes: originalRate.Notes || ''
+                    };
+                    const newData = {
+                        year: String(data.year),
+                        ratePerMile: '$' + data.ratePerMile.toFixed(3),
+                        effectiveDate: data.effectiveDate || '',
+                        notes: data.notes || ''
+                    };
+                    const confirmed = await showRecordPreview('mileage', newData, originalData);
+                    if (!confirmed) return;
+                }
             }
             
             showLoading(existingYear ? 'Updating Mileage Rate...' : 'Adding Mileage Rate...');
@@ -19558,6 +19928,21 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     ]
                 }
             },
+            'expense-history': {
+                title: '📈 Expense History',
+                filters: ['expenseCategory'],
+                dateLabel: 'All Time',
+                description: {
+                    purpose: 'Compare expenses across time periods to identify trends and patterns.',
+                    insights: [
+                        'Month-over-month expense comparison',
+                        'Category spending trends over time',
+                        'Identify seasonal expense patterns',
+                        'Track expense growth or reduction',
+                        'Compare like expenses across periods'
+                    ]
+                }
+            },
             'daily-dashboard': {
                 title: '📅 Daily Sales Dashboard',
                 filters: ['quickDateOnly', 'customer'],
@@ -20834,6 +21219,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         break;
                     case 'expense-report':
                         reportHtml = await generateExpenseReportModal();
+                        break;
+                    case 'expense-history':
+                        reportHtml = await generateExpenseHistoryModal();
                         break;
                     case 'action-dashboard':
                         reportHtml = await generateActionDashboard();
@@ -31031,6 +31419,16 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const topCategories = sortedCategories.slice(0, 10);
             const maxCategoryValue = topCategories.length > 0 ? Math.max(...topCategories.map(c => c.total)) : 1;
             
+            // Top 10 Individual Expenses (non-reimbursement)
+            const top10Expenses = expenses
+                .filter(e => {
+                    const catData = categoryData.find(c => c.categoryId === e.Category_ID);
+                    return !catData?.isReimbursement;
+                })
+                .sort((a, b) => (parseFloat(b.proratedAmount) || 0) - (parseFloat(a.proratedAmount) || 0))
+                .slice(0, 10);
+            const maxExpenseValue = top10Expenses.length > 0 ? Math.max(...top10Expenses.map(e => parseFloat(e.proratedAmount) || 0)) : 1;
+            
             // Group by expense type
             const fixedTotal = sortedCategories.filter(c => c.categoryType === 'Fixed').reduce((sum, c) => sum + c.total, 0);
             const variableTotal = sortedCategories.filter(c => c.categoryType === 'Variable').reduce((sum, c) => sum + c.total, 0);
@@ -31120,82 +31518,136 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 </div>
                 
                 <div id="expenseChartsWrapper">
-                        <!-- Charts Row -->
+                        <!-- Top 10 Section Header -->
+                        <div style="margin-bottom: 10px; padding: 8px 12px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border-radius: 8px; border-left: 4px solid #9333ea;">
+                            <strong style="color: #7c3aed; font-size: 14px;">🏆 Top 10 Analysis</strong>
+                        </div>
+                        
+                        <!-- Charts Row - Top 10 Expenses & Categories -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            
+                            <!-- Top 10 Expenses -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span style="font-size: 20px;">💸</span>
+                                    <strong style="font-size: 15px; color: #1f2937;">Top 10 Expenses</strong>
+                                </div>
+                                ${top10Expenses.length === 0 ? '<p style="color: #9ca3af; text-align: center; padding: 20px;">No expenses in this period</p>' : `
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    ${top10Expenses.map((exp, i) => {
+                                        const catData = categoryData.find(c => c.categoryId === exp.Category_ID);
+                                        const catName = catData?.categoryName || 'Unknown';
+                                        const amount = parseFloat(exp.proratedAmount) || 0;
+                                        const pct = maxExpenseValue > 0 ? (amount / maxExpenseValue * 100) : 0;
+                                        const isPro = exp.prorationApplied === true;
+                                        return `
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="display: flex; align-items: flex-start; gap: 4px; width: 120px; flex-shrink: 0;">
+                                                <span style="font-weight: 600; color: #6b7280; font-size: 13px; min-width: 18px;">${i + 1}.</span>
+                                                <div style="overflow: hidden;">
+                                                    <div style="font-weight: 600; font-size: 12px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${(exp.Description || 'No desc').substring(0, 14)}</div>
+                                                    <div style="font-size: 10px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${catName.substring(0, 12)}${isPro ? ' 📊' : ''}</div>
+                                                </div>
+                                            </div>
+                                            <div style="flex: 1; height: 22px; background: #f3f4f6; border-radius: 12px; overflow: hidden; min-width: 50px;">
+                                                <div style="height: 100%; width: ${pct.toFixed(0)}%; background: ${chartColors[i % chartColors.length]}; border-radius: 12px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; min-width: 30px;">
+                                                </div>
+                                            </div>
+                                            <div style="font-weight: 600; font-size: 12px; color: #1f2937; width: 70px; text-align: right;">${formatMoney(amount)}</div>
+                                        </div>
+                                    `;}).join('')}
+                                </div>
+                                `}
+                            </div>
+                            
+                            <!-- Top 10 Categories -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span style="font-size: 20px;">🏷️</span>
+                                    <strong style="font-size: 15px; color: #1f2937;">Top 10 Categories</strong>
+                                </div>
+                                ${topCategories.length === 0 ? '<p style="color: #9ca3af; text-align: center; padding: 20px;">No expenses in this period</p>' : `
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    ${topCategories.map((cat, i) => {
+                                        const pct = maxCategoryValue > 0 ? (cat.total / maxCategoryValue * 100) : 0;
+                                        const isProCat = (cat.totalProrated || 0) > 0.01;
+                                        return `
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="display: flex; align-items: flex-start; gap: 4px; width: 120px; flex-shrink: 0;">
+                                                <span style="font-weight: 600; color: #6b7280; font-size: 13px; min-width: 18px;">${i + 1}.</span>
+                                                <div style="overflow: hidden;">
+                                                    <div style="font-weight: 600; font-size: 12px; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${cat.categoryName.substring(0, 14)}</div>
+                                                    <div style="font-size: 10px; color: #9ca3af;">${cat.count} transactions${isProCat ? ' 📊' : ''}</div>
+                                                </div>
+                                            </div>
+                                            <div style="flex: 1; height: 22px; background: #f3f4f6; border-radius: 12px; overflow: hidden; min-width: 50px;">
+                                                <div style="height: 100%; width: ${pct.toFixed(0)}%; background: ${chartColors[i % chartColors.length]}; border-radius: 12px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; min-width: 30px;">
+                                                    <span style="font-size: 10px; font-weight: 600; color: white;">${cat.count}</span>
+                                                </div>
+                                            </div>
+                                            <div style="font-weight: 600; font-size: 12px; color: #1f2937; width: 70px; text-align: right;">${formatMoney(cat.total)}</div>
+                                        </div>
+                                    `;}).join('')}
+                                </div>
+                                `}
+                            </div>
+                        </div>
+                        
+                        <!-- Pie Charts Section -->
+                        <div style="margin-bottom: 10px; padding: 8px 12px; background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border-radius: 8px; border-left: 4px solid #7c3aed;">
+                            <strong style="color: #6d28d9; font-size: 14px;">🥧 Expense Breakdown</strong>
+                        </div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                            
-                            <!-- Top Categories by Expense -->
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
-                                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
-                                    📊 Top Categories
+                            <!-- Category Pie Chart -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span style="font-size: 20px;">🏷️</span>
+                                    <strong style="font-size: 15px; color: #1f2937;">By Category</strong>
                                 </div>
-                                ${topCategories.length > 0 ? topCategories.map((cat, i) => {
-                                    const pct = maxCategoryValue > 0 ? (cat.total / maxCategoryValue * 100) : 0;
-                                    const isProCat = (cat.totalProrated || 0) > 0.01;
-                                    return `
-                                        <div style="margin-bottom: 10px;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                                                <span style="font-size: 12px; color: #374151;">
-                                                    ${i + 1}. ${cat.categoryName}
-                                                    ${isProCat ? '<span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">PRO</span>' : ''}
-                                                </span>
-                                                <span style="font-size: 12px; font-weight: 600; color: ${chartColors[i % chartColors.length]};">${formatMoney(cat.total)}</span>
-                                            </div>
-                                            <div style="background: #e5e7eb; border-radius: 3px; height: 16px; overflow: hidden;">
-                                                <div style="background: ${chartColors[i % chartColors.length]}; height: 100%; width: ${pct}%; border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; min-width: ${cat.count > 0 ? '20px' : '0'};">
-                                                    ${pct > 15 ? `<span style="color: white; font-size: 10px; font-weight: 500;">${cat.count}</span>` : ''}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `;
-                                }).join('') : '<div style="text-align: center; color: #9ca3af; padding: 30px; font-size: 13px;">No expenses in selected period</div>'}
-                            </div>
-                            
-                            <!-- Expense Type Breakdown -->
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
-                                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
-                                    📋 By Expense Type
-                                </div>
-                                <div style="display: flex; flex-direction: column; gap: 10px;">
-                                    <div style="padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #059669;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <div>
-                                                <div style="font-weight: 600; color: #065f46; font-size: 13px;">Fixed</div>
-                                                <div style="font-size: 11px; color: #6b7280;">Monthly recurring</div>
-                                            </div>
-                                            <div style="font-size: 18px; font-weight: 700; color: #059669;">${formatMoney(fixedTotal)}</div>
-                                        </div>
-                                    </div>
-                                    <div style="padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #d97706;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <div>
-                                                <div style="font-weight: 600; color: #92400e; font-size: 13px;">Variable</div>
-                                                <div style="font-size: 11px; color: #6b7280;">Activity-based costs</div>
-                                            </div>
-                                            <div style="font-size: 18px; font-weight: 700; color: #d97706;">${formatMoney(variableTotal)}</div>
-                                        </div>
-                                    </div>
-                                    <div style="padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #6b7280;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <div>
-                                                <div style="font-weight: 600; color: #374151; font-size: 13px;">One-Time</div>
-                                                <div style="font-size: 11px; color: #6b7280;">Non-recurring</div>
-                                            </div>
-                                            <div style="font-size: 18px; font-weight: 700; color: #6b7280;">${formatMoney(oneTimeTotal)}</div>
-                                        </div>
-                                    </div>
-                                    ${totalReimbursements > 0 ? `
-                                        <div style="padding: 12px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #059669;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                <div>
-                                                    <div style="font-weight: 600; color: #059669; font-size: 13px;">Credits/Reimbursements</div>
-                                                    <div style="font-size: 11px; color: #6b7280;">Reduces net expenses</div>
-                                                </div>
-                                                <div style="font-size: 18px; font-weight: 700; color: #059669;">-${formatMoney(totalReimbursements)}</div>
-                                            </div>
-                                        </div>
-                                    ` : ''}
+                                <div style="height: 220px; position: relative;">
+                                    <canvas id="expenseCategoryPieChart"></canvas>
                                 </div>
                             </div>
+                            
+                            <!-- Expense Type Pie Chart -->
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span style="font-size: 20px;">📊</span>
+                                    <strong style="font-size: 15px; color: #1f2937;">By Type</strong>
+                                </div>
+                                <div style="height: 220px; position: relative;">
+                                    <canvas id="expenseTypePieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Expense Type Breakdown -->
+                        <div style="margin-bottom: 10px; padding: 8px 12px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 8px; border-left: 4px solid #6b7280;">
+                            <strong style="color: #374151; font-size: 14px;">📋 Expense Type Breakdown</strong>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                            <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; border-left: 4px solid #059669;">
+                                <div style="font-size: 11px; color: #059669; margin-bottom: 5px;">🔒 Fixed</div>
+                                <div style="font-size: 22px; font-weight: bold; color: #059669;">${formatMoney(fixedTotal)}</div>
+                                <div style="font-size: 10px; color: #6b7280;">Monthly recurring</div>
+                            </div>
+                            <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; border-left: 4px solid #d97706;">
+                                <div style="font-size: 11px; color: #d97706; margin-bottom: 5px;">📈 Variable</div>
+                                <div style="font-size: 22px; font-weight: bold; color: #d97706;">${formatMoney(variableTotal)}</div>
+                                <div style="font-size: 10px; color: #6b7280;">Activity-based</div>
+                            </div>
+                            <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; border-left: 4px solid #6b7280;">
+                                <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">📌 One-Time</div>
+                                <div style="font-size: 22px; font-weight: bold; color: #6b7280;">${formatMoney(oneTimeTotal)}</div>
+                                <div style="font-size: 10px; color: #6b7280;">Non-recurring</div>
+                            </div>
+                            ${totalReimbursements > 0 ? `
+                            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #bbf7d0; border-left: 4px solid #22c55e;">
+                                <div style="font-size: 11px; color: #166534; margin-bottom: 5px;">💵 Credits</div>
+                                <div style="font-size: 22px; font-weight: bold; color: #22c55e;">-${formatMoney(totalReimbursements)}</div>
+                                <div style="font-size: 10px; color: #166534;">Reimbursements</div>
+                            </div>
+                            ` : ''}
                         </div>
                         
                         ${isProrated ? `
@@ -31212,8 +31664,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         
                         <!-- Expense Trend Chart -->
                         ${sortedMonths.length > 1 ? `
-                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px;">📈 Expense Trend</div>
+                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                                    <span style="font-size: 20px;">📈</span>
+                                    <strong style="font-size: 15px; color: #1f2937;">Expense Trend</strong>
+                                </div>
                                 <div style="height: 200px;">
                                     <canvas id="expenseTrendChart"></canvas>
                                 </div>
@@ -31397,6 +31852,479 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         }, 100);
                     <` + `/script>
                 ` : ''}
+                
+                <` + `script>
+                    setTimeout(() => {
+                        // Category Pie Chart
+                        const categoryPieCtx = document.getElementById('expenseCategoryPieChart');
+                        if (categoryPieCtx && typeof Chart !== 'undefined') {
+                            if (Chart.getChart(categoryPieCtx)) Chart.getChart(categoryPieCtx).destroy();
+                            const categoryData = ${JSON.stringify(topCategories.map(c => ({ name: c.categoryName, value: c.total })))};
+                            const pieColors = ['#9333ea', '#7c3aed', '#6366f1', '#3b82f6', '#0891b2', '#059669', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+                            
+                            new Chart(categoryPieCtx.getContext('2d'), {
+                                type: 'doughnut',
+                                data: {
+                                    labels: categoryData.map(c => c.name),
+                                    datasets: [{
+                                        data: categoryData.map(c => c.value),
+                                        backgroundColor: pieColors,
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right',
+                                            labels: {
+                                                boxWidth: 12,
+                                                padding: 8,
+                                                font: { size: 11 }
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.raw;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const pct = ((value / total) * 100).toFixed(1);
+                                                    return context.label + ': $' + value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (' + pct + '%)';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Expense Type Pie Chart
+                        const typePieCtx = document.getElementById('expenseTypePieChart');
+                        if (typePieCtx && typeof Chart !== 'undefined') {
+                            if (Chart.getChart(typePieCtx)) Chart.getChart(typePieCtx).destroy();
+                            const typeData = [
+                                { name: 'Fixed', value: ${fixedTotal}, color: '#059669' },
+                                { name: 'Variable', value: ${variableTotal}, color: '#d97706' },
+                                { name: 'One-Time', value: ${oneTimeTotal}, color: '#6b7280' }
+                            ].filter(t => t.value > 0);
+                            
+                            new Chart(typePieCtx.getContext('2d'), {
+                                type: 'doughnut',
+                                data: {
+                                    labels: typeData.map(t => t.name),
+                                    datasets: [{
+                                        data: typeData.map(t => t.value),
+                                        backgroundColor: typeData.map(t => t.color),
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right',
+                                            labels: {
+                                                boxWidth: 12,
+                                                padding: 8,
+                                                font: { size: 11 }
+                                            }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.raw;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const pct = ((value / total) * 100).toFixed(1);
+                                                    return context.label + ': $' + value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' (' + pct + '%)';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }, 150);
+                <` + `/script>
+            `;
+            
+            return html;
+        }
+        
+        async function generateExpenseHistoryModal() {
+            // Load expense data
+            await loadExpenses();
+            
+            const categoryFilter = reportFilters.expenseCategory;
+            
+            // Get all expenses
+            const allExpenses = cachedExpenses || [];
+            const categoryData = cachedExpenseCategories || [];
+            
+            // Build category lookup
+            const categoryMap = {};
+            categoryData.forEach(cat => {
+                categoryMap[cat.Category_ID] = cat;
+            });
+            
+            // Filter by category if specified
+            let expenses = allExpenses;
+            if (categoryFilter) {
+                expenses = expenses.filter(e => e.Category_ID === categoryFilter);
+            }
+            
+            // Group expenses by month
+            const monthlyData = {};
+            expenses.forEach(exp => {
+                const cat = categoryMap[exp.Category_ID] || {};
+                const isReimbursement = String(cat.Is_Reimbursement || 'FALSE').toUpperCase() === 'TRUE';
+                
+                const expDate = new Date(exp.Expense_Date);
+                const monthKey = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}`;
+                const amount = parseFloat(exp.Amount) || 0;
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = {
+                        total: 0,
+                        reimbursements: 0,
+                        net: 0,
+                        fixed: 0,
+                        variable: 0,
+                        oneTime: 0,
+                        count: 0,
+                        categories: {}
+                    };
+                }
+                
+                if (isReimbursement) {
+                    monthlyData[monthKey].reimbursements += amount;
+                } else {
+                    monthlyData[monthKey].total += amount;
+                    monthlyData[monthKey].count++;
+                    
+                    // By type
+                    const catType = cat.Category_Type || 'Variable';
+                    if (catType === 'Fixed') monthlyData[monthKey].fixed += amount;
+                    else if (catType === 'One-Time') monthlyData[monthKey].oneTime += amount;
+                    else monthlyData[monthKey].variable += amount;
+                    
+                    // By category
+                    const catId = exp.Category_ID || 'Unknown';
+                    const catName = cat.Category_Name || 'Unknown';
+                    if (!monthlyData[monthKey].categories[catId]) {
+                        monthlyData[monthKey].categories[catId] = { name: catName, total: 0, count: 0 };
+                    }
+                    monthlyData[monthKey].categories[catId].total += amount;
+                    monthlyData[monthKey].categories[catId].count++;
+                }
+                
+                monthlyData[monthKey].net = monthlyData[monthKey].total - monthlyData[monthKey].reimbursements;
+            });
+            
+            // Sort months descending (most recent first)
+            const sortedMonths = Object.keys(monthlyData).sort().reverse();
+            
+            // Calculate totals and averages
+            const totalExpenses = sortedMonths.reduce((sum, m) => sum + monthlyData[m].total, 0);
+            const totalReimbursements = sortedMonths.reduce((sum, m) => sum + monthlyData[m].reimbursements, 0);
+            const totalNet = totalExpenses - totalReimbursements;
+            const avgMonthly = sortedMonths.length > 0 ? totalNet / sortedMonths.length : 0;
+            const maxMonthlyTotal = sortedMonths.length > 0 ? Math.max(...sortedMonths.map(m => monthlyData[m].total)) : 1;
+            
+            // Get all unique categories across all months
+            const allCategories = {};
+            sortedMonths.forEach(m => {
+                Object.keys(monthlyData[m].categories).forEach(catId => {
+                    if (!allCategories[catId]) {
+                        allCategories[catId] = { name: monthlyData[m].categories[catId].name, total: 0 };
+                    }
+                    allCategories[catId].total += monthlyData[m].categories[catId].total;
+                });
+            });
+            const sortedCategories = Object.entries(allCategories).sort((a, b) => b[1].total - a[1].total);
+            
+            // Chart colors
+            const chartColors = ['#9333ea', '#7c3aed', '#6366f1', '#3b82f6', '#0891b2', '#059669', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+            
+            // Build filter pills
+            let filterPills = [];
+            if (categoryFilter) {
+                const catName = categoryData.find(c => c.Category_ID === categoryFilter)?.Category_Name || 'Unknown';
+                filterPills.push(`<span style="background: rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 20px; font-size: 12px;">Category: ${catName}</span>`);
+            }
+            const filterSummaryInline = filterPills.join(' ');
+            
+            // Build HTML
+            let html = `
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">📈 Expense History</h2>
+                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">${sortedMonths.length} months of data | ${formatMoney(avgMonthly)} avg/month</p>
+                    ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
+                </div>
+                
+                <!-- KPI Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9333ea;">
+                        <div style="font-size: 11px; color: #7c3aed; margin-bottom: 5px;">💰 Total Expenses</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpenses)}</div>
+                        <div style="font-size: 10px; color: #6b7280;">${sortedMonths.length} months</div>
+                    </div>
+                    ${totalReimbursements > 0 ? `
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                        <div style="font-size: 11px; color: #166534; margin-bottom: 5px;">💵 Total Credits</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #22c55e;">-${formatMoney(totalReimbursements)}</div>
+                    </div>
+                    ` : ''}
+                    <div style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7c3aed;">
+                        <div style="font-size: 11px; color: #6d28d9; margin-bottom: 5px;">✨ Net Total</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatMoney(totalNet)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #0284c7;">
+                        <div style="font-size: 11px; color: #0284c7; margin-bottom: 5px;">📊 Avg/Month</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #0284c7;">${formatMoney(avgMonthly)}</div>
+                    </div>
+                </div>
+                
+                <!-- Month-over-Month Comparison Table -->
+                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <span style="font-size: 20px;">📅</span>
+                        <strong style="font-size: 15px; color: #1f2937;">Month-over-Month Comparison</strong>
+                    </div>
+                    <div class="table-scroll-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th style="text-align: right;">Expenses</th>
+                                    <th style="text-align: right;">Credits</th>
+                                    <th style="text-align: right;">Net</th>
+                                    <th style="text-align: center;">Trend</th>
+                                    <th style="text-align: right;">Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedMonths.map((m, i) => {
+                                    const data = monthlyData[m];
+                                    const [year, month] = m.split('-');
+                                    const monthLabel = new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                                    const prevMonth = sortedMonths[i + 1];
+                                    const prevData = prevMonth ? monthlyData[prevMonth] : null;
+                                    const change = prevData ? data.net - prevData.net : 0;
+                                    const changePct = prevData && prevData.net > 0 ? ((data.net - prevData.net) / prevData.net * 100) : 0;
+                                    const barWidth = maxMonthlyTotal > 0 ? (data.total / maxMonthlyTotal * 100) : 0;
+                                    return `
+                                        <tr>
+                                            <td style="font-weight: 600;">${monthLabel}</td>
+                                            <td style="text-align: right;">${formatMoney(data.total)}</td>
+                                            <td style="text-align: right; color: #059669;">${data.reimbursements > 0 ? '-' + formatMoney(data.reimbursements) : '-'}</td>
+                                            <td style="text-align: right; font-weight: 600; color: #7c3aed;">${formatMoney(data.net)}</td>
+                                            <td style="width: 120px;">
+                                                <div style="height: 18px; background: #f3f4f6; border-radius: 9px; overflow: hidden;">
+                                                    <div style="height: 100%; width: ${barWidth.toFixed(0)}%; background: linear-gradient(90deg, #9333ea, #7c3aed); border-radius: 9px;"></div>
+                                                </div>
+                                            </td>
+                                            <td style="text-align: right; font-size: 12px; color: ${change > 0 ? '#dc2626' : change < 0 ? '#059669' : '#6b7280'};">
+                                                ${prevData ? (change > 0 ? '↑' : change < 0 ? '↓' : '→') + ' ' + formatMoney(Math.abs(change)) + ' (' + (changePct > 0 ? '+' : '') + changePct.toFixed(1) + '%)' : '-'}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Category Breakdown by Month -->
+                ${sortedCategories.length > 0 ? `
+                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <span style="font-size: 20px;">🏷️</span>
+                        <strong style="font-size: 15px; color: #1f2937;">Category History (Last 6 Months)</strong>
+                    </div>
+                    <div class="table-scroll-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    ${sortedMonths.slice(0, 6).map(m => {
+                                        const [year, month] = m.split('-');
+                                        return `<th style="text-align: right;">${new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short' })}</th>`;
+                                    }).join('')}
+                                    <th style="text-align: right;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedCategories.slice(0, 10).map(([catId, catInfo], i) => {
+                                    const monthTotals = sortedMonths.slice(0, 6).map(m => {
+                                        return monthlyData[m].categories[catId]?.total || 0;
+                                    });
+                                    return `
+                                        <tr>
+                                            <td style="font-weight: 500;">
+                                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${chartColors[i % chartColors.length]}; margin-right: 6px;"></span>
+                                                ${catInfo.name}
+                                            </td>
+                                            ${monthTotals.map(amt => `<td style="text-align: right; color: ${amt > 0 ? '#374151' : '#9ca3af'};">${amt > 0 ? formatMoney(amt) : '-'}</td>`).join('')}
+                                            <td style="text-align: right; font-weight: 600; color: #7c3aed;">${formatMoney(catInfo.total)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Expense Type Trend -->
+                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <span style="font-size: 20px;">📊</span>
+                        <strong style="font-size: 15px; color: #1f2937;">Expense Type Trend (Last 6 Months)</strong>
+                    </div>
+                    <div class="table-scroll-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    ${sortedMonths.slice(0, 6).map(m => {
+                                        const [year, month] = m.split('-');
+                                        return `<th style="text-align: right;">${new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short' })}</th>`;
+                                    }).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight: 500;"><span style="color: #059669;">🔒</span> Fixed</td>
+                                    ${sortedMonths.slice(0, 6).map(m => `<td style="text-align: right;">${formatMoney(monthlyData[m].fixed)}</td>`).join('')}
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 500;"><span style="color: #d97706;">📈</span> Variable</td>
+                                    ${sortedMonths.slice(0, 6).map(m => `<td style="text-align: right;">${formatMoney(monthlyData[m].variable)}</td>`).join('')}
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 500;"><span style="color: #6b7280;">📌</span> One-Time</td>
+                                    ${sortedMonths.slice(0, 6).map(m => `<td style="text-align: right;">${formatMoney(monthlyData[m].oneTime)}</td>`).join('')}
+                                </tr>
+                                <tr style="background: #f9fafb; font-weight: 600;">
+                                    <td>Total</td>
+                                    ${sortedMonths.slice(0, 6).map(m => `<td style="text-align: right; color: #7c3aed;">${formatMoney(monthlyData[m].total)}</td>`).join('')}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Pie Charts Section -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <!-- Category Pie Chart -->
+                    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                            <span style="font-size: 20px;">🥧</span>
+                            <strong style="font-size: 15px; color: #1f2937;">Total Spend by Category</strong>
+                        </div>
+                        <div style="height: 240px; position: relative;">
+                            <canvas id="histCategoryPieChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Trend Bar Chart -->
+                    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                            <span style="font-size: 20px;">📊</span>
+                            <strong style="font-size: 15px; color: #1f2937;">Monthly Expense Trend</strong>
+                        </div>
+                        <div style="height: 240px; position: relative;">
+                            <canvas id="histMonthlyBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <` + `script>
+                    setTimeout(() => {
+                        // Category Pie Chart
+                        const catPieCtx = document.getElementById('histCategoryPieChart');
+                        if (catPieCtx && typeof Chart !== 'undefined') {
+                            if (Chart.getChart(catPieCtx)) Chart.getChart(catPieCtx).destroy();
+                            const categoryData = ${JSON.stringify(sortedCategories.slice(0, 8).map(([id, cat]) => ({ name: cat.name, value: cat.total })))};
+                            const pieColors = ['#9333ea', '#7c3aed', '#6366f1', '#3b82f6', '#0891b2', '#059669', '#84cc16', '#eab308'];
+                            
+                            new Chart(catPieCtx.getContext('2d'), {
+                                type: 'doughnut',
+                                data: {
+                                    labels: categoryData.map(c => c.name),
+                                    datasets: [{
+                                        data: categoryData.map(c => c.value),
+                                        backgroundColor: pieColors,
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right',
+                                            labels: { boxWidth: 12, padding: 6, font: { size: 10 } }
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const value = context.raw;
+                                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                    const pct = ((value / total) * 100).toFixed(1);
+                                                    return context.label + ': $' + value.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' (' + pct + '%)';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Monthly Bar Chart
+                        const barCtx = document.getElementById('histMonthlyBarChart');
+                        if (barCtx && typeof Chart !== 'undefined') {
+                            if (Chart.getChart(barCtx)) Chart.getChart(barCtx).destroy();
+                            const months = ${JSON.stringify(sortedMonths.slice(0, 12).reverse())};
+                            const monthLabels = months.map(m => {
+                                const [year, month] = m.split('-');
+                                return new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short' });
+                            });
+                            const monthData = ${JSON.stringify(sortedMonths.slice(0, 12).reverse().map(m => monthlyData[m]?.total || 0))};
+                            
+                            new Chart(barCtx.getContext('2d'), {
+                                type: 'bar',
+                                data: {
+                                    labels: monthLabels,
+                                    datasets: [{
+                                        label: 'Expenses',
+                                        data: monthData,
+                                        backgroundColor: 'rgba(147, 51, 234, 0.7)',
+                                        borderColor: '#9333ea',
+                                        borderWidth: 1,
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: false } },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: { callback: (val) => '$' + val.toLocaleString() }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }, 150);
+                <` + `/script>
             `;
             
             return html;
@@ -44738,12 +45666,16 @@ NOTE: Please print the attached PO document for full details.`;
                 const typeLabels = {
                     supplier: { icon: '🏭', name: 'Supplier', color: '#7c3aed' },
                     customer: { icon: '👤', name: 'Customer', color: '#0891b2' },
-                    item: { icon: '📦', name: 'Item', color: '#059669' }
+                    item: { icon: '📦', name: 'Item', color: '#059669' },
+                    expense: { icon: '💸', name: 'Expense', color: '#9333ea' },
+                    category: { icon: '🏷️', name: 'Category', color: '#7c3aed' },
+                    recurring: { icon: '🔄', name: 'Recurring Expense', color: '#0891b2' },
+                    mileage: { icon: '🚗', name: 'Mileage Rate', color: '#059669' }
                 };
                 const typeInfo = typeLabels[type] || { icon: '📝', name: 'Record', color: '#6b7280' };
                 
                 // Fields to skip in comparison (IDs and internal fields that don't change)
-                const skipFields = ['supplierId', 'customerId', 'itemId', 'fax'];
+                const skipFields = ['supplierId', 'customerId', 'itemId', 'fax', 'expenseId', 'categoryId', 'recurringId'];
                 
                 let contentHtml = '';
                 
