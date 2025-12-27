@@ -20942,6 +20942,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div style="font-size: 11px; color: #5a7a6d; margin-bottom: 5px;">💵 COGS</div>
                         <div style="font-size: 18px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
                     </div>
+                    <div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b88a8a;">
+                        <div style="font-size: 11px; color: #8a6a6a; margin-bottom: 5px;">🎫 Discounts</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #b88a8a;">${formatMoney(totalDiscount)}</div>
+                    </div>
                     <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
                         <div style="font-size: 11px; color: #4a7a5d; margin-bottom: 5px;">📈 Gross Profit</div>
                         <div style="font-size: 18px; font-weight: bold; color: #5a8a6d;">${formatMoney(totalProfit)}</div>
@@ -20951,12 +20955,6 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div style="font-size: 11px; color: #7c3aed; margin-bottom: 5px;">💸 Op. Expenses${isProrated ? ' <span style="font-size: 8px; background: #0891b2; color: white; padding: 1px 3px; border-radius: 2px;">PRO</span>' : ''}</div>
                         <div style="font-size: 18px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
                     </div>
-                    ${totalDiscount > 0 ? `
-                    <div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #b88a8a;">
-                        <div style="font-size: 11px; color: #8a6a6a; margin-bottom: 5px;">🎫 Discounts</div>
-                        <div style="font-size: 18px; font-weight: bold; color: #b88a8a;">${formatMoney(totalDiscount)}</div>
-                    </div>
-                    ` : ''}
                     <div style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' : 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'}; padding: 15px; border-radius: 8px; border-left: 4px solid ${netProfit >= 0 ? '#059669' : '#dc2626'};">
                         <div style="font-size: 11px; color: ${netProfit >= 0 ? '#166534' : '#991b1b'}; margin-bottom: 5px;">✨ Net Profit</div>
                         <div style="font-size: 18px; font-weight: bold; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">${formatMoney(netProfit)}</div>
@@ -21526,7 +21524,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // KPI Summary Cards with Expenses
             html += `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px;">
                     <div style="background: linear-gradient(135deg, #e8f0f5 0%, #d4e4ef 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #7a9bb8;">
                         <div style="font-size: 10px; color: #5a7a8a; margin-bottom: 4px;">💰 Revenue</div>
                         <div style="font-size: 16px; font-weight: bold; color: #7a9bb8;">${formatMoney(totalAmount)}</div>
@@ -21534,6 +21532,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <div style="background: linear-gradient(135deg, #e8f0e8 0%, #d4e8dc 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #6b9a8d;">
                         <div style="font-size: 10px; color: #5a7a6d; margin-bottom: 4px;">📦 COGS</div>
                         <div style="font-size: 16px; font-weight: bold; color: #6b9a8d;">${formatMoney(totalCost)}</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #b88a8a;">
+                        <div style="font-size: 10px; color: #8a6a6a; margin-bottom: 4px;">🎫 Discounts</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #b88a8a;">${formatMoney(totalDiscount)}</div>
                     </div>
                     <div style="background: linear-gradient(135deg, #e8f5e8 0%, #d0e8d4 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #5a8a6d;">
                         <div style="font-size: 10px; color: #4a7a5d; margin-bottom: 4px;">📈 Gross Profit</div>
@@ -34130,6 +34132,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="daily-dash-stat-sub">cost of goods</div>
                         </div>
                         <div class="daily-dash-stat">
+                            <div class="daily-dash-stat-label">🎫 Discounts</div>
+                            <div class="daily-dash-stat-value" style="color: #b88a8a;">${formatMoney(totalDiscount)}</div>
+                            <div class="daily-dash-stat-sub">given</div>
+                        </div>
+                        <div class="daily-dash-stat">
                             <div class="daily-dash-stat-label">📈 Gross Profit</div>
                             <div class="daily-dash-stat-value" style="color: ${profit >= 0 ? '#10b981' : '#b88a8a'};">${formatMoney(profit)}</div>
                             <div class="daily-dash-stat-sub">${grossMargin.toFixed(1)}% margin</div>
@@ -34169,9 +34176,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="daily-dash-stat-sub">per order</div>
                         </div>
                         <div class="daily-dash-stat">
-                            <div class="daily-dash-stat-label">🎫 Discounts</div>
-                            <div class="daily-dash-stat-value" style="color: ${totalDiscount > 0 ? '#b88a8a' : '#9ca3af'};">${totalDiscount > 0 ? formatMoney(totalDiscount) : '$0.00'}</div>
-                            <div class="daily-dash-stat-sub">given</div>
+                            <div class="daily-dash-stat-label">📦 Products</div>
+                            <div class="daily-dash-stat-value" style="color: #e91e63;">${uniqueProducts}</div>
+                            <div class="daily-dash-stat-sub">unique items</div>
                         </div>
                     </div>
                     
