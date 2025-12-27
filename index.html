@@ -17081,11 +17081,23 @@ NOTE: Please see the attached invoice PDF for full details.`);
             cachedExpenseCategories.forEach(cat => {
                 const isActive = String(cat.Is_Active).toUpperCase() === 'TRUE';
                 const excludeFromProfit = String(cat.Exclude_From_Profit).toUpperCase() === 'TRUE';
+                const isReimbursement = String(cat.Is_Reimbursement).toUpperCase() === 'TRUE';
                 const typeColor = cat.Category_Type === 'Fixed' ? '#6b9a8d' : cat.Category_Type === 'Variable' ? '#b8a86b' : '#7aaab8';
+                
+                // Determine P&L impact display
+                let plImpact;
+                if (isReimbursement) {
+                    plImpact = '<span style="background: #059669; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">💵 Credit</span>';
+                } else if (excludeFromProfit) {
+                    plImpact = '<span style="background: #f59e0b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📋 Tax Only</span>';
+                } else {
+                    plImpact = '<span style="background: #dc2626; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">💸 Expense</span>';
+                }
+                
                 html += `<tr>
                     <td><strong>${cat.Category_Name}</strong></td>
                     <td><span style="background: ${typeColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${cat.Category_Type || 'Variable'}</span></td>
-                    <td>${excludeFromProfit ? '<span style="background: #f59e0b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">📋 Tax Only</span>' : '<span style="background: #10b981; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">💰 Affects Profit</span>'}</td>
+                    <td>${plImpact}</td>
                     <td><span style="background: ${isActive ? '#6b9a8d' : '#b88a8a'}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${isActive ? 'Active' : 'Inactive'}</span></td>
                     <td>
                         <button class="btn-small" onclick="editCategory('${cat.Category_ID}')" style="background: #7aaab8;">✏️</button>
@@ -17295,6 +17307,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const category = categoryId ? cachedExpenseCategories.find(c => c.Category_ID === categoryId) : null;
             const isEdit = !!category;
             const excludeFromProfit = category && String(category.Exclude_From_Profit).toUpperCase() === 'TRUE';
+            const isReimbursement = category && String(category.Is_Reimbursement).toUpperCase() === 'TRUE';
             
             const modalHtml = `
                 <div id="categoryModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100001; overflow-y: auto; padding: 20px; box-sizing: border-box;">
@@ -17323,12 +17336,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                     <option value="false" ${category && String(category?.Is_Active).toUpperCase() === 'FALSE' ? 'selected' : ''}>Inactive</option>
                                 </select>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="categoryIsReimbursement" ${isReimbursement ? 'checked' : ''} style="width: 18px; height: 18px;">
+                                    <span>💵 Reimbursement/Credit (reduces expenses)</span>
+                                </label>
+                                <small style="color: #166534; display: block; margin-top: 5px;">Check this for money coming BACK to you (e.g., IRS mileage reimbursement, refunds). This will be subtracted from total expenses.</small>
+                            </div>
+                            <div class="form-group" style="padding: 12px; background: #fffbeb; border-radius: 8px; border: 1px solid #fcd34d;">
                                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                     <input type="checkbox" id="categoryExcludeFromProfit" ${excludeFromProfit ? 'checked' : ''} style="width: 18px; height: 18px;">
-                                    <span>📋 Tax Record Only (exclude from Net Profit)</span>
+                                    <span>📋 Tax Record Only (exclude from P&L)</span>
                                 </label>
-                                <small style="color: #666; display: block; margin-top: 5px;">Check this for expenses like IRS mileage that are for tax records but not actual cash spent.</small>
+                                <small style="color: #92400e; display: block; margin-top: 5px;">Check this for items that are only for tax documentation, not actual business expenses.</small>
                             </div>
                         </div>
                         <div style="padding: 15px 20px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;">
@@ -17353,7 +17373,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 categoryName: document.getElementById('categoryName').value,
                 categoryType: document.getElementById('categoryType').value,
                 isActive: document.getElementById('categoryActive').value === 'true',
-                excludeFromProfit: document.getElementById('categoryExcludeFromProfit').checked
+                excludeFromProfit: document.getElementById('categoryExcludeFromProfit').checked,
+                isReimbursement: document.getElementById('categoryIsReimbursement').checked
             };
             
             if (!data.categoryName) {
