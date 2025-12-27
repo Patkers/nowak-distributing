@@ -33170,6 +33170,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const totalExpenses = expenseData.totalExpenses || 0;
             const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
             const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const grossExpenses = totalExpenses; // Expenses before reimbursements
             const netProfit = profit - totalExpensesForProfit; // Only subtract actual cash expenses
             const netMargin = totalSales > 0 ? (netProfit / totalSales * 100) : 0;
             
@@ -33552,9 +33554,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="daily-dash-stat-sub">${grossMargin.toFixed(1)}% margin</div>
                         </div>
                         <div class="daily-dash-stat">
-                            <div class="daily-dash-stat-label">💸 Op. Expenses</div>
-                            <div class="daily-dash-stat-value" style="color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
-                            <div class="daily-dash-stat-sub">${formatMoney(dailyExpenseRate)}/day${totalExcludedFromProfit > 0 ? ' • +' + formatMoney(totalExcludedFromProfit) + ' tax' : ''}</div>
+                            <div class="daily-dash-stat-label">💸 Net Op. Exp</div>
+                            <div class="daily-dash-stat-value" style="color: ${totalExpensesForProfit >= 0 ? '#9333ea' : '#059669'};">${formatMoney(totalExpensesForProfit)}</div>
+                            <div class="daily-dash-stat-sub">${totalReimbursements > 0 ? formatMoney(grossExpenses) + ' - ' + formatMoney(totalReimbursements) : formatMoney(dailyExpenseRate) + '/day'}${totalExcludedFromProfit > 0 ? ' • +' + formatMoney(totalExcludedFromProfit) + ' tax' : ''}</div>
                         </div>
                         <div class="daily-dash-stat" style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fee2e2, #fecaca)'};">
                             <div class="daily-dash-stat-label">✨ Net Profit</div>
@@ -33927,6 +33929,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const totalExpenses = expenseData.totalExpenses || 0;
             const totalExpensesForProfit = expenseData.totalExpensesForProfit || 0;
             const totalExcludedFromProfit = expenseData.totalExcludedFromProfit || 0;
+            const totalReimbursements = expenseData.totalReimbursements || 0;
+            const grossExpenses = totalExpenses; // Expenses before reimbursements
             const netProfit = totalProfit - totalExpensesForProfit;
             const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
             
@@ -34144,9 +34148,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                             <div class="biz-dash-stat-sub">${avgMargin.toFixed(1)}% margin</div>
                         </div>
                         <div class="biz-dash-stat">
-                            <div class="biz-dash-stat-label">💸 OPERATING EXP</div>
-                            <div class="biz-dash-stat-value" style="color: #9333ea;">${formatMoney(totalExpensesForProfit)}</div>
-                            <div class="biz-dash-stat-sub">${expenseData.expenseCount || 0} expenses${totalExcludedFromProfit > 0 ? ' • +' + formatMoney(totalExcludedFromProfit) + ' tax' : ''}</div>
+                            <div class="biz-dash-stat-label">💸 NET OPERATING EXP</div>
+                            <div class="biz-dash-stat-value" style="color: ${totalExpensesForProfit >= 0 ? '#9333ea' : '#059669'};">${formatMoney(totalExpensesForProfit)}</div>
+                            <div class="biz-dash-stat-sub">${totalReimbursements > 0 ? formatMoney(grossExpenses) + ' - ' + formatMoney(totalReimbursements) + ' credit' : (expenseData.expenseCount || 0) + ' expenses'}${totalExcludedFromProfit > 0 ? ' • +' + formatMoney(totalExcludedFromProfit) + ' tax' : ''}</div>
                         </div>
                         <div class="biz-dash-stat" style="background: ${netProfit >= 0 ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fee2e2, #fecaca)'};">
                             <div class="biz-dash-stat-label">✨ NET PROFIT</div>
