@@ -31062,61 +31062,64 @@ NOTE: Please see the attached invoice PDF for full details.`);
             const avgMonthlyExpense = sortedMonths.length > 0 ? netExpenses / sortedMonths.length : netExpenses;
             const uniqueCategoryCount = sortedCategories.length;
             
+            // Build filter summary pills for header
+            let filterPills = [];
+            if (categoryFilter) {
+                const catName = categoryData.find(c => c.categoryId === categoryFilter)?.categoryName || 'Unknown';
+                filterPills.push(`<span style="background: rgba(255,255,255,0.25); padding: 4px 12px; border-radius: 20px; font-size: 12px;">Category: ${catName}</span>`);
+            }
+            if (isProrated) {
+                filterPills.push(`<span style="background: rgba(8, 145, 178, 0.9); padding: 4px 12px; border-radius: 20px; font-size: 12px;">📊 PRORATED</span>`);
+            }
+            const filterSummaryInline = filterPills.join(' ');
+            
             // Muted professional colors matching your theme
             const chartColors = ['#6b7280', '#8b5cf6', '#059669', '#0284c7', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#65a30d', '#be185d'];
             
-            // Build HTML with professional styling matching other reports
+            // Build HTML with oval gradient header matching other reports
             let html = `
-                <div style="padding: 15px;">
-                    <!-- Report Header -->
-                    <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <div>
-                                <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Expense Report</div>
-                                <div style="font-size: 14px; color: #374151; margin-top: 4px;">
-                                    📅 ${dateLabel}
-                                    ${isProrated ? '<span style="background: #0891b2; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">PRORATED</span>' : ''}
-                                    ${categoryFilter ? '<span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">FILTERED</span>' : ''}
-                                </div>
-                            </div>
-                        </div>
+                <div style="padding: 25px 30px; background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%); color: white; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(147, 51, 234, 0.3);">
+                    <h2 style="margin: 0 0 8px 0; font-size: 26px; display: flex; align-items: center; gap: 12px;">💸 Expense Report</h2>
+                    <p style="margin: 0 0 ${filterSummaryInline ? '10px' : '0'} 0; font-size: 14px; opacity: 0.95;">📅 ${dateLabel} | ${expenseCount} transactions across ${uniqueCategoryCount} categories</p>
+                    ${filterSummaryInline ? `<div style="display: flex; flex-wrap: wrap; gap: 5px;">${filterSummaryInline}</div>` : ''}
+                </div>
+                
+                <!-- KPI Cards Row - Organized: Expenses → Credits → Net | Count Info -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                    <!-- Total Expenses -->
+                    <div style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #9333ea;">
+                        <div style="font-size: 11px; color: #7c3aed; margin-bottom: 5px;">💰 Total Expenses</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #9333ea;">${formatMoney(totalExpenses)}</div>
                     </div>
-                    
-                    <!-- KPI Cards Row -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
-                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Total Expenses</div>
-                            <div style="font-size: 22px; font-weight: 700; color: #9333ea;">${formatMoney(totalExpenses)}</div>
-                        </div>
-                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Transactions</div>
-                            <div style="font-size: 22px; font-weight: 700; color: #059669;">${expenseCount}</div>
-                        </div>
-                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Avg/Month</div>
-                            <div style="font-size: 22px; font-weight: 700; color: #0284c7;">${formatMoney(avgMonthlyExpense)}</div>
-                        </div>
-                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
-                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Categories</div>
-                            <div style="font-size: 22px; font-weight: 700; color: #6b7280;">${uniqueCategoryCount}</div>
-                        </div>
-                        ${totalReimbursements > 0 ? `
-                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; text-align: center;">
-                                <div style="font-size: 11px; color: #059669; text-transform: uppercase; margin-bottom: 6px;">Credits</div>
-                                <div style="font-size: 22px; font-weight: 700; color: #059669;">-${formatMoney(totalReimbursements)}</div>
-                            </div>
-                        ` : ''}
+                    ${totalReimbursements > 0 ? `
+                    <!-- Credits/Reimbursements -->
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
+                        <div style="font-size: 11px; color: #166534; margin-bottom: 5px;">💵 Credits</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #22c55e;">-${formatMoney(totalReimbursements)}</div>
                     </div>
-                    
-                    <!-- Charts Toggle -->
-                    <div style="margin-bottom: 15px;">
-                        <button onclick="const w = document.getElementById('expenseChartsWrapper'); w.style.display = w.style.display === 'none' ? 'block' : 'none'; this.textContent = w.style.display === 'none' ? '📊 Show Charts' : '📊 Hide Charts';" 
-                            style="background: var(--primary, #667eea); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
-                            📊 Hide Charts
-                        </button>
+                    <!-- Net Expenses -->
+                    <div style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #7c3aed;">
+                        <div style="font-size: 11px; color: #6d28d9; margin-bottom: 5px;">✨ Net Expenses</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatMoney(netExpenses)}</div>
                     </div>
-                    
-                    <div id="expenseChartsWrapper">
+                    ` : ''}
+                    <!-- Transactions & Categories Combined -->
+                    <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #6b7280;">
+                        <div style="font-size: 11px; color: #6b7280; margin-bottom: 5px;">📋 Activity</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #374151;">${expenseCount}</div>
+                        <div style="font-size: 11px; color: #6b7280;">transactions • ${uniqueCategoryCount} categories</div>
+                    </div>
+                </div>
+                
+                <!-- Charts Toggle -->
+                <div style="margin-bottom: 15px;">
+                    <button onclick="const w = document.getElementById('expenseChartsWrapper'); w.style.display = w.style.display === 'none' ? 'block' : 'none'; this.textContent = w.style.display === 'none' ? '📊 Show Charts' : '📊 Hide Charts';" 
+                        style="background: var(--primary, #667eea); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
+                        📊 Hide Charts
+                    </button>
+                </div>
+                
+                <div id="expenseChartsWrapper">
                         <!-- Charts Row -->
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
                             
