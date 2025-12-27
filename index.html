@@ -17367,6 +17367,115 @@ NOTE: Please see the attached invoice PDF for full details.`);
             });
         }
         
+        // Report Expense Category Picker Functions
+        function openReportExpenseCategoryPicker() {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('rptExpenseCategoryPickerModal');
+            if (!modal) {
+                const modalHtml = `
+                    <div id="rptExpenseCategoryPickerModal" class="item-picker-overlay" style="display: none;">
+                        <div class="item-picker-inner" style="max-width: 500px; max-height: 80vh; margin: auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                            <div style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; font-size: 18px;">🏷️ Select Category</h3>
+                                <button onclick="closeReportExpenseCategoryPicker()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+                            </div>
+                            <div style="padding: 15px; background: #f3f4f6;">
+                                <input type="text" id="rptExpenseCategoryPickerSearch" placeholder="🔍 Search categories..." oninput="filterReportExpenseCategoryPicker()" style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                            </div>
+                            <div id="rptExpenseCategoryPickerList" style="padding: 10px 15px; max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                modal = document.getElementById('rptExpenseCategoryPickerModal');
+            }
+            
+            const list = document.getElementById('rptExpenseCategoryPickerList');
+            const searchInput = document.getElementById('rptExpenseCategoryPickerSearch');
+            
+            // Clear search
+            searchInput.value = '';
+            
+            // Build list
+            let html = `
+                <div onclick="selectReportExpenseCategory('', 'All Categories')" style="
+                    padding: 12px 15px;
+                    margin-bottom: 6px;
+                    background: #f3f4f6;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    border: 2px solid ${document.getElementById('rptFilter_expenseCategory').value === '' ? '#6b7280' : 'transparent'};
+                " class="rpt-expense-cat-option">
+                    <span style="font-size: 18px;">📋</span>
+                    <span style="font-weight: 500;">All Categories</span>
+                </div>
+            `;
+            
+            const categories = (cachedExpenseCategories || [])
+                .filter(cat => String(cat.Is_Active).toUpperCase() === 'TRUE')
+                .sort((a, b) => (a.Category_Name || '').localeCompare(b.Category_Name || ''));
+            
+            const currentValue = document.getElementById('rptFilter_expenseCategory').value;
+            
+            categories.forEach(cat => {
+                const isSelected = currentValue === cat.Category_ID;
+                const typeIcon = cat.Category_Type === 'Fixed' ? '🔒' : cat.Category_Type === 'One-Time' ? '📌' : '📈';
+                const isReimb = String(cat.Is_Reimbursement || 'FALSE').toUpperCase() === 'TRUE';
+                html += `
+                    <div onclick="selectReportExpenseCategory('${cat.Category_ID}', '${(cat.Category_Name || '').replace(/'/g, "\\'")}')" style="
+                        padding: 12px 15px;
+                        margin-bottom: 6px;
+                        background: ${isReimb ? '#f0fdf4' : 'white'};
+                        border-radius: 8px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        border: 2px solid ${isSelected ? '#6b7280' : '#e5e7eb'};
+                        transition: all 0.15s;
+                    " class="rpt-expense-cat-option" data-name="${(cat.Category_Name || '').toLowerCase()}">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 18px;">${isReimb ? '🚗' : typeIcon}</span>
+                            <span style="font-weight: 500;">${cat.Category_Name || 'Unknown'}</span>
+                        </div>
+                        <span style="font-size: 11px; color: ${isReimb ? '#6b9a8d' : '#9ca3af'}; text-transform: uppercase;">${isReimb ? 'Credit' : (cat.Category_Type || 'Variable')}</span>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            
+            // Focus search
+            setTimeout(() => searchInput.focus(), 100);
+        }
+        
+        function closeReportExpenseCategoryPicker() {
+            const modal = document.getElementById('rptExpenseCategoryPickerModal');
+            if (modal) modal.style.display = 'none';
+        }
+        
+        function selectReportExpenseCategory(categoryId, categoryName) {
+            document.getElementById('rptFilter_expenseCategory').value = categoryId;
+            document.getElementById('rptExpenseCategoryLabel').textContent = categoryName;
+            closeReportExpenseCategoryPicker();
+        }
+        
+        function filterReportExpenseCategoryPicker() {
+            const searchTerm = document.getElementById('rptExpenseCategoryPickerSearch').value.toLowerCase();
+            const options = document.querySelectorAll('#rptExpenseCategoryPickerList .rpt-expense-cat-option');
+            
+            options.forEach(opt => {
+                const name = opt.dataset.name || opt.textContent.toLowerCase();
+                opt.style.display = name.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+        
         function toggleExpenseFilters() {
             const content = document.getElementById('expenseFilterContent');
             const icon = document.getElementById('expenseFilterToggleIcon');
@@ -20663,18 +20772,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
             }
             
             if (config.filters.includes('expenseCategory')) {
-                // Get expense categories from cached data
-                const categoryOptions = (cachedExpenseCategories || [])
-                    .sort((a, b) => (a.Category_Name || '').localeCompare(b.Category_Name || ''))
-                    .map(cat => `<option value="${cat.Category_ID}">${cat.Category_Name}</option>`)
-                    .join('');
                 filterHtml += `
                     <div class="form-group">
                         <label>📁 Expense Category</label>
-                        <select id="rptFilter_expenseCategory">
-                            <option value="">All Categories</option>
-                            ${categoryOptions}
-                        </select>
+                        <input type="hidden" id="rptFilter_expenseCategory" value="">
+                        <button type="button" id="rptExpenseCategoryBtn" onclick="openReportExpenseCategoryPicker()" 
+                            style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; text-align: left; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <span id="rptExpenseCategoryLabel">All Categories</span>
+                            <span style="color: #9ca3af;">▼</span>
+                        </button>
                     </div>`;
             }
             
@@ -31645,14 +31751,14 @@ NOTE: Please see the attached invoice PDF for full details.`);
             
             // Sort categories by total (expenses only for top charts)
             const expenseCategories = categoryData
-                .filter(c => !c.isReimbursement)
+                .filter(c => !c.isReimbursement && c.categoryName)
                 .sort((a, b) => b.total - a.total);
             const topCategories = expenseCategories.slice(0, 10);
             const maxCategoryValue = topCategories.length > 0 ? Math.max(...topCategories.map(c => c.total)) : 1;
             
             // All categories sorted (expenses first, then reimbursements) - for Category History table
-            const reimbursementCategoriesSorted = categoryData.filter(c => c.isReimbursement).sort((a, b) => b.total - a.total);
-            const sortedCategories = [...expenseCategories, ...reimbursementCategoriesSorted];
+            const reimbursementCategoriesSorted = categoryData.filter(c => c.isReimbursement && c.categoryName).sort((a, b) => b.total - a.total);
+            const sortedCategories = [...expenseCategories, ...reimbursementCategoriesSorted].filter(c => c.categoryName);
             
             // Top 10 Individual Expenses (non-reimbursement)
             const top10Expenses = expenses
@@ -32017,15 +32123,15 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-top: 15px;">
                             <div style="font-size: 13px; font-weight: 600; color: #166534; margin-bottom: 12px;">💵 Credits & Reimbursements Detail</div>
                             <div class="table-scroll-wrapper">
-                                <table class="data-table">
+                                <table class="data-table" id="creditsDetailTable">
                                     <thead>
                                         <tr style="background: #dcfce7;">
-                                            <th>Date</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Type</th>
-                                            ${isProrated ? '<th style="text-align: right;">Full Amount</th>' : ''}
-                                            <th style="text-align: right;">${isProrated ? 'Prorated' : 'Amount'}</th>
+                                            <th onclick="sortReportTable(this, 0)" style="cursor: pointer;">Date ⇅</th>
+                                            <th onclick="sortReportTable(this, 1)" style="cursor: pointer;">Description ⇅</th>
+                                            <th onclick="sortReportTable(this, 2)" style="cursor: pointer;">Category ⇅</th>
+                                            <th onclick="sortReportTable(this, 3)" style="cursor: pointer;">Type ⇅</th>
+                                            ${isProrated ? '<th onclick="sortReportTable(this, 4)" style="cursor: pointer; text-align: right;">Full Amount ⇅</th>' : ''}
+                                            <th onclick="sortReportTable(this, ${isProrated ? 5 : 4})" style="cursor: pointer; text-align: right;">${isProrated ? 'Prorated ⇅' : 'Amount ⇅'}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -32042,22 +32148,22 @@ NOTE: Please see the attached invoice PDF for full details.`);
                                             const proratedAmount = parseFloat(exp.proratedAmount) || originalAmount;
                                             return `
                                                 <tr>
-                                                    <td>${formatDateSafe(exp.Expense_Date)}</td>
+                                                    <td data-value="${new Date(exp.Expense_Date).getTime()}">${formatDateSafe(exp.Expense_Date)}</td>
                                                     <td>${exp.Description || '-'}</td>
                                                     <td>${catName}</td>
                                                     <td>
                                                         <span style="background: ${typeColor}18; color: ${typeColor}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${catType}</span>
                                                         ${isPro ? '<span style="background: #0891b2; color: white; padding: 2px 4px; border-radius: 3px; font-size: 9px; margin-left: 4px;">PRO</span>' : ''}
                                                     </td>
-                                                    ${isProrated ? `<td style="text-align: right; color: #6b7280;">${formatMoney(originalAmount)}</td>` : ''}
-                                                    <td style="text-align: right; font-weight: 600; color: #059669;">${formatMoney(proratedAmount)}</td>
+                                                    ${isProrated ? `<td style="text-align: right; color: #6b7280;" data-value="${originalAmount}">${formatMoney(originalAmount)}</td>` : ''}
+                                                    <td style="text-align: right; font-weight: 600; color: #059669;" data-value="${proratedAmount}">${formatMoney(proratedAmount)}</td>
                                                 </tr>
                                             `;
                                         }).join('')}
                                     </tbody>
                                     <tfoot>
                                         <tr style="background: #bbf7d0; font-weight: 700; color: #166534;">
-                                            <td colspan="${isProrated ? 4 : 3}">Total Credits/Reimbursements</td>
+                                            <td colspan="${isProrated ? 5 : 4}">Total Credits/Reimbursements</td>
                                             ${isProrated ? `<td style="text-align: right; color: #6b7280;">${formatMoney(expenses.filter(e => {
                                                 const catData = categoryData.find(c => c.categoryId === e.Category_ID);
                                                 return catData?.isReimbursement;
