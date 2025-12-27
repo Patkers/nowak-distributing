@@ -5,20 +5,19 @@
          NOWAK DISTRIBUTING ERP SYSTEM - FRONTEND
          =====================================================
          LAST UPDATED: Friday, December 27, 2025
-         VERSION: V16_123
+         VERSION: V16_124
          =====================================================
          CHANGES IN THIS VERSION:
-         - MOVED: Help/Guide tab moved to Settings section
-           - Removed Help from main navigation menu (now 10 items)
-           - Added "Help & Guides" section in Settings with link to guides
-         - NEW: Expense Reports section added to Reports tab
-         - NEW: Expense Report with full analytics
-           - Quick stats: total, count, avg/month, categories
-           - Expense trend chart (line chart with fixed/variable breakdown)
-           - Top 10 categories bar chart (HTML/CSS)
-           - Expense type breakdown (Fixed/Variable/One-Time)
-           - Sortable detail table with all expenses
-           - Filter by date range and expense category
+         - FIXED: Expense Report now uses backend category data correctly
+           - Categories display proper names (not "Uncategorized")
+           - Uses prorated amounts from backend
+         - IMPROVED: Expense Report professional styling
+           - Matches muted theme of other reports
+           - KPI cards with clean borders instead of gradients
+           - Consistent HTML/CSS bar charts
+           - Proration badges (PRO) on categories and line items
+           - Credits/Reimbursements section if applicable
+           - Net Expenses calculation in table footer
          ===================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -30508,13 +30507,13 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 dateLabel = `Through ${toDate.toLocaleDateString()}`;
             }
             
-            // Calculate days in period for proration
-            let daysInPeriod = 30; // Default to a month
+            // Calculate days in period for display
+            let daysInPeriod = 30;
             if (fromDate && toDate) {
                 daysInPeriod = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
             }
             
-            // Fetch expense data using the same API as Business Overview
+            // Fetch expense data - backend handles proration and category lookups
             let expenseData = { expenses: [], byCategory: [], totalExpenses: 0, expenseCount: 0 };
             try {
                 const expResult = await apiCall('getExpensesForPeriod', {
@@ -30528,51 +30527,46 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 console.log('Could not load expenses:', e);
             }
             
-            // Get all expenses with their details
-            let expenses = expenseData.expenses || [];
+            // Use backend's byCategory data (already has category names and proration applied)
+            let categoryData = expenseData.byCategory || [];
             
             // Filter by category if specified
+            if (categoryFilter) {
+                categoryData = categoryData.filter(c => c.categoryId === categoryFilter);
+            }
+            
+            // Get expenses for detail table
+            let expenses = expenseData.expenses || [];
             if (categoryFilter) {
                 expenses = expenses.filter(e => e.Category_ID === categoryFilter);
             }
             
-            // Get category details
-            const categories = cachedExpenseCategories || [];
-            const categoryMap = {};
-            categories.forEach(cat => {
-                categoryMap[cat.Category_ID] = cat;
-            });
-            
-            // Calculate totals
-            const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.Amount || 0), 0);
+            // Calculate totals from category data (uses prorated amounts)
+            const totalExpenses = categoryData
+                .filter(c => !c.isReimbursement)
+                .reduce((sum, c) => sum + (c.total || 0), 0);
+            const totalReimbursements = categoryData
+                .filter(c => c.isReimbursement)
+                .reduce((sum, c) => sum + (c.total || 0), 0);
+            const netExpenses = totalExpenses - totalReimbursements;
             const expenseCount = expenses.length;
+            const totalProrated = expenseData.totalProrated || 0;
+            const isProrated = totalProrated > 0.01;
             
-            // Group expenses by category for charts
-            const byCategory = {};
-            expenses.forEach(exp => {
-                const catId = exp.Category_ID || 'uncategorized';
-                const cat = categoryMap[catId] || { Category_Name: 'Uncategorized', Category_Type: 'Variable' };
-                if (!byCategory[catId]) {
-                    byCategory[catId] = {
-                        id: catId,
-                        name: cat.Category_Name || 'Uncategorized',
-                        type: cat.Category_Type || 'Variable',
-                        total: 0,
-                        count: 0
-                    };
-                }
-                byCategory[catId].total += parseFloat(exp.Amount || 0);
-                byCategory[catId].count++;
-            });
-            
-            const categoryData = Object.values(byCategory).sort((a, b) => b.total - a.total);
-            const topCategories = categoryData.slice(0, 10);
+            // Sort categories by total (expenses first, then reimbursements)
+            const sortedCategories = categoryData
+                .filter(c => !c.isReimbursement)
+                .sort((a, b) => b.total - a.total);
+            const topCategories = sortedCategories.slice(0, 10);
             const maxCategoryValue = topCategories.length > 0 ? Math.max(...topCategories.map(c => c.total)) : 1;
             
-            // Group by expense type (Fixed vs Variable)
-            const fixedTotal = categoryData.filter(c => c.type === 'Fixed').reduce((sum, c) => sum + c.total, 0);
-            const variableTotal = categoryData.filter(c => c.type === 'Variable').reduce((sum, c) => sum + c.total, 0);
-            const oneTimeTotal = categoryData.filter(c => c.type === 'One-Time').reduce((sum, c) => sum + c.total, 0);
+            // Group by expense type
+            const fixedTotal = sortedCategories.filter(c => c.categoryType === 'Fixed').reduce((sum, c) => sum + c.total, 0);
+            const variableTotal = sortedCategories.filter(c => c.categoryType === 'Variable').reduce((sum, c) => sum + c.total, 0);
+            const oneTimeTotal = sortedCategories.filter(c => c.categoryType === 'One-Time').reduce((sum, c) => sum + c.total, 0);
+            
+            // Reimbursement categories
+            const reimbursementCategories = categoryData.filter(c => c.isReimbursement);
             
             // Monthly trend data
             const monthlyData = {};
@@ -30582,183 +30576,238 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = { total: 0, fixed: 0, variable: 0 };
                 }
-                monthlyData[monthKey].total += parseFloat(exp.Amount || 0);
-                const cat = categoryMap[exp.Category_ID];
-                if (cat?.Category_Type === 'Fixed') {
-                    monthlyData[monthKey].fixed += parseFloat(exp.Amount || 0);
-                } else {
-                    monthlyData[monthKey].variable += parseFloat(exp.Amount || 0);
-                }
+                const amt = parseFloat(exp.proratedAmount || exp.Amount || 0);
+                monthlyData[monthKey].total += amt;
             });
             
-            // Sort months and get labels/values
             const sortedMonths = Object.keys(monthlyData).sort();
             const trendLabels = sortedMonths.map(m => {
                 const [year, month] = m.split('-');
                 return new Date(year, parseInt(month) - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
             });
             const trendValues = sortedMonths.map(m => monthlyData[m].total);
-            const trendFixed = sortedMonths.map(m => monthlyData[m].fixed);
-            const trendVariable = sortedMonths.map(m => monthlyData[m].variable);
             
-            // Calculate averages
-            const avgMonthlyExpense = sortedMonths.length > 0 ? totalExpenses / sortedMonths.length : 0;
-            const avgPerExpense = expenseCount > 0 ? totalExpenses / expenseCount : 0;
+            // Averages
+            const avgMonthlyExpense = sortedMonths.length > 0 ? netExpenses / sortedMonths.length : netExpenses;
+            const uniqueCategoryCount = sortedCategories.length;
             
-            // Build HTML
+            // Muted professional colors matching your theme
+            const chartColors = ['#6b7280', '#8b5cf6', '#059669', '#0284c7', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#65a30d', '#be185d'];
+            
+            // Build HTML with professional styling matching other reports
             let html = `
-                <div style="padding: 20px;">
-                    <!-- Header -->
-                    <div style="text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;">
-                        <h2 style="margin: 0 0 8px 0; color: #333; font-size: 24px;">💸 Expense Report</h2>
-                        <div style="color: #666; font-size: 14px;">
-                            <span style="background: #f3f4f6; padding: 4px 12px; border-radius: 15px; margin-right: 10px;">📅 ${dateLabel}</span>
-                            ${categoryFilter ? `<span style="background: #ddd6fe; padding: 4px 12px; border-radius: 15px;">📁 ${categoryMap[categoryFilter]?.Category_Name || 'Selected Category'}</span>` : ''}
+                <div style="padding: 15px;">
+                    <!-- Report Header -->
+                    <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Expense Report</div>
+                                <div style="font-size: 14px; color: #374151; margin-top: 4px;">
+                                    📅 ${dateLabel}
+                                    ${isProrated ? '<span style="background: #0891b2; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">PRORATED</span>' : ''}
+                                    ${categoryFilter ? '<span style="background: #8b5cf6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">FILTERED</span>' : ''}
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Quick Stats Row -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                        <div style="background: linear-gradient(135deg, #9333ea, #7c3aed); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 28px; font-weight: 700;">${formatMoney(totalExpenses)}</div>
-                            <div style="font-size: 12px; opacity: 0.9;">Total Expenses</div>
+                    <!-- KPI Cards Row -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Total Expenses</div>
+                            <div style="font-size: 22px; font-weight: 700; color: #9333ea;">${formatMoney(totalExpenses)}</div>
                         </div>
-                        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 28px; font-weight: 700;">${expenseCount}</div>
-                            <div style="font-size: 12px; opacity: 0.9;">Transactions</div>
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Transactions</div>
+                            <div style="font-size: 22px; font-weight: 700; color: #059669;">${expenseCount}</div>
                         </div>
-                        <div style="background: linear-gradient(135deg, #0284c7, #0ea5e9); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 28px; font-weight: 700;">${formatMoney(avgMonthlyExpense)}</div>
-                            <div style="font-size: 12px; opacity: 0.9;">Avg/Month</div>
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Avg/Month</div>
+                            <div style="font-size: 22px; font-weight: 700; color: #0284c7;">${formatMoney(avgMonthlyExpense)}</div>
                         </div>
-                        <div style="background: linear-gradient(135deg, #b88a8a, #dc2626); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                            <div style="font-size: 28px; font-weight: 700;">${categoryData.length}</div>
-                            <div style="font-size: 12px; opacity: 0.9;">Categories</div>
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; text-align: center;">
+                            <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 6px;">Categories</div>
+                            <div style="font-size: 22px; font-weight: 700; color: #6b7280;">${uniqueCategoryCount}</div>
                         </div>
+                        ${totalReimbursements > 0 ? `
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; text-align: center;">
+                                <div style="font-size: 11px; color: #059669; text-transform: uppercase; margin-bottom: 6px;">Credits</div>
+                                <div style="font-size: 22px; font-weight: 700; color: #059669;">-${formatMoney(totalReimbursements)}</div>
+                            </div>
+                        ` : ''}
                     </div>
                     
                     <!-- Charts Toggle -->
                     <div style="margin-bottom: 15px;">
-                        <button onclick="document.getElementById('expenseChartsWrapper').style.display = document.getElementById('expenseChartsWrapper').style.display === 'none' ? 'block' : 'none'; this.innerHTML = document.getElementById('expenseChartsWrapper').style.display === 'none' ? '📊 Show Charts' : '📊 Hide Charts';" 
-                            style="background: var(--primary, #667eea); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                        <button onclick="const w = document.getElementById('expenseChartsWrapper'); w.style.display = w.style.display === 'none' ? 'block' : 'none'; this.textContent = w.style.display === 'none' ? '📊 Show Charts' : '📊 Hide Charts';" 
+                            style="background: var(--primary, #667eea); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
                             📊 Hide Charts
                         </button>
                     </div>
                     
                     <div id="expenseChartsWrapper">
-                        <!-- Expense Trend Chart -->
-                        ${sortedMonths.length > 1 ? `
-                            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                                <h4 style="margin: 0 0 15px 0; color: #333;">📈 Expense Trend</h4>
-                                <div style="height: 250px;">
-                                    <canvas id="expenseTrendChart"></canvas>
+                        <!-- Charts Row -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            
+                            <!-- Top Categories by Expense -->
+                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                                    📊 Top Categories
                                 </div>
-                            </div>
-                        ` : ''}
-                        
-                        <!-- Charts Row: Category Breakdown + Type Distribution -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                            <!-- Top Categories (HTML Bar Chart) -->
-                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                                <h4 style="margin: 0 0 15px 0; color: #333;">📊 Top Categories</h4>
                                 ${topCategories.length > 0 ? topCategories.map((cat, i) => {
                                     const pct = maxCategoryValue > 0 ? (cat.total / maxCategoryValue * 100) : 0;
-                                    const colors = ['#9333ea', '#7c3aed', '#6366f1', '#4f46e5', '#4338ca', '#3730a3', '#312e81', '#1e1b4b', '#581c87', '#86198f'];
+                                    const isProCat = (cat.totalProrated || 0) > 0.01;
                                     return `
-                                        <div style="margin-bottom: 12px;">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                                <span style="font-size: 13px; color: #374151; font-weight: 500;">${i + 1}. ${cat.name}</span>
-                                                <span style="font-size: 13px; font-weight: 600; color: ${colors[i % colors.length]};">${formatMoney(cat.total)}</span>
+                                        <div style="margin-bottom: 10px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                                <span style="font-size: 12px; color: #374151;">
+                                                    ${i + 1}. ${cat.categoryName}
+                                                    ${isProCat ? '<span style="font-size: 9px; background: #0891b2; color: white; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">PRO</span>' : ''}
+                                                </span>
+                                                <span style="font-size: 12px; font-weight: 600; color: ${chartColors[i % chartColors.length]};">${formatMoney(cat.total)}</span>
                                             </div>
-                                            <div style="background: #f3f4f6; border-radius: 4px; height: 20px; overflow: hidden;">
-                                                <div style="background: ${colors[i % colors.length]}; height: 100%; width: ${pct}%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px;">
-                                                    ${pct > 20 ? `<span style="color: white; font-size: 11px; font-weight: 600;">${cat.count}</span>` : ''}
+                                            <div style="background: #e5e7eb; border-radius: 3px; height: 16px; overflow: hidden;">
+                                                <div style="background: ${chartColors[i % chartColors.length]}; height: 100%; width: ${pct}%; border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; min-width: ${cat.count > 0 ? '20px' : '0'};">
+                                                    ${pct > 15 ? `<span style="color: white; font-size: 10px; font-weight: 500;">${cat.count}</span>` : ''}
                                                 </div>
                                             </div>
                                         </div>
                                     `;
-                                }).join('') : '<div style="text-align: center; color: #9ca3af; padding: 30px;">No expenses in selected period</div>'}
+                                }).join('') : '<div style="text-align: center; color: #9ca3af; padding: 30px; font-size: 13px;">No expenses in selected period</div>'}
                             </div>
                             
-                            <!-- Expense Type Distribution -->
-                            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                                <h4 style="margin: 0 0 15px 0; color: #333;">📋 Expense Types</h4>
-                                <div style="display: flex; flex-direction: column; gap: 15px;">
-                                    <div style="padding: 15px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #059669;">
+                            <!-- Expense Type Breakdown -->
+                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                                    📋 By Expense Type
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #059669;">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <div>
-                                                <div style="font-weight: 600; color: #065f46;">Fixed Expenses</div>
-                                                <div style="font-size: 12px; color: #6b7280;">Recurring monthly costs</div>
+                                                <div style="font-weight: 600; color: #065f46; font-size: 13px;">Fixed</div>
+                                                <div style="font-size: 11px; color: #6b7280;">Monthly recurring</div>
                                             </div>
-                                            <div style="font-size: 20px; font-weight: 700; color: #059669;">${formatMoney(fixedTotal)}</div>
+                                            <div style="font-size: 18px; font-weight: 700; color: #059669;">${formatMoney(fixedTotal)}</div>
                                         </div>
                                     </div>
-                                    <div style="padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                                    <div style="padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #d97706;">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <div>
-                                                <div style="font-weight: 600; color: #92400e;">Variable Expenses</div>
-                                                <div style="font-size: 12px; color: #6b7280;">Costs that change with activity</div>
+                                                <div style="font-weight: 600; color: #92400e; font-size: 13px;">Variable</div>
+                                                <div style="font-size: 11px; color: #6b7280;">Activity-based costs</div>
                                             </div>
-                                            <div style="font-size: 20px; font-weight: 700; color: #f59e0b;">${formatMoney(variableTotal)}</div>
+                                            <div style="font-size: 18px; font-weight: 700; color: #d97706;">${formatMoney(variableTotal)}</div>
                                         </div>
                                     </div>
-                                    <div style="padding: 15px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #b88a8a;">
+                                    <div style="padding: 12px; background: white; border-radius: 6px; border-left: 3px solid #6b7280;">
                                         <div style="display: flex; justify-content: space-between; align-items: center;">
                                             <div>
-                                                <div style="font-weight: 600; color: #991b1b;">One-Time Expenses</div>
-                                                <div style="font-size: 12px; color: #6b7280;">Non-recurring purchases</div>
+                                                <div style="font-weight: 600; color: #374151; font-size: 13px;">One-Time</div>
+                                                <div style="font-size: 11px; color: #6b7280;">Non-recurring</div>
                                             </div>
-                                            <div style="font-size: 20px; font-weight: 700; color: #b88a8a;">${formatMoney(oneTimeTotal)}</div>
+                                            <div style="font-size: 18px; font-weight: 700; color: #6b7280;">${formatMoney(oneTimeTotal)}</div>
                                         </div>
                                     </div>
+                                    ${totalReimbursements > 0 ? `
+                                        <div style="padding: 12px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #059669;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <div>
+                                                    <div style="font-weight: 600; color: #059669; font-size: 13px;">Credits/Reimbursements</div>
+                                                    <div style="font-size: 11px; color: #6b7280;">Reduces net expenses</div>
+                                                </div>
+                                                <div style="font-size: 18px; font-weight: 700; color: #059669;">-${formatMoney(totalReimbursements)}</div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
+                        
+                        ${isProrated ? `
+                            <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">📊</span>
+                                    <div>
+                                        <div style="font-weight: 600; color: #0e7490; font-size: 13px;">Proration Applied</div>
+                                        <div style="font-size: 12px; color: #0891b2;">Expenses are prorated for the ${daysInPeriod}-day period. Full monthly amounts have been scaled proportionally.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Expense Trend Chart -->
+                        ${sortedMonths.length > 1 ? `
+                            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px;">📈 Expense Trend</div>
+                                <div style="height: 200px;">
+                                    <canvas id="expenseTrendChart"></canvas>
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                     
                     <!-- Detail Table Toggle -->
                     <div style="margin-bottom: 15px;">
-                        <button onclick="document.getElementById('expenseDetailWrapper').style.display = document.getElementById('expenseDetailWrapper').style.display === 'none' ? 'block' : 'none'; this.innerHTML = document.getElementById('expenseDetailWrapper').style.display === 'none' ? '📋 Show Detail Table' : '📋 Hide Detail Table';" 
-                            style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                        <button onclick="const w = document.getElementById('expenseDetailWrapper'); w.style.display = w.style.display === 'none' ? 'block' : 'none'; this.textContent = w.style.display === 'none' ? '📋 Show Detail Table' : '📋 Hide Detail Table';" 
+                            style="background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
                             📋 Show Detail Table
                         </button>
                     </div>
                     
                     <!-- Detail Table -->
                     <div id="expenseDetailWrapper" style="display: none;">
-                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                            <h4 style="margin: 0 0 15px 0; color: #333;">📋 Expense Detail (${expenses.length} records)</h4>
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px;">📋 Expense Detail (${expenses.length} records)</div>
                             <div class="table-scroll-wrapper">
                                 <table class="data-table" id="expenseDetailTable">
                                     <thead>
                                         <tr>
-                                            <th onclick="sortReportTable(this, 0)">Date ⇅</th>
-                                            <th onclick="sortReportTable(this, 1)">Description ⇅</th>
-                                            <th onclick="sortReportTable(this, 2)">Category ⇅</th>
-                                            <th onclick="sortReportTable(this, 3)">Type ⇅</th>
-                                            <th onclick="sortReportTable(this, 4)" style="text-align: right;">Amount ⇅</th>
+                                            <th onclick="sortReportTable(this, 0)" style="cursor: pointer;">Date ⇅</th>
+                                            <th onclick="sortReportTable(this, 1)" style="cursor: pointer;">Description ⇅</th>
+                                            <th onclick="sortReportTable(this, 2)" style="cursor: pointer;">Category ⇅</th>
+                                            <th onclick="sortReportTable(this, 3)" style="cursor: pointer;">Type ⇅</th>
+                                            <th onclick="sortReportTable(this, 4)" style="cursor: pointer; text-align: right;">Amount ⇅</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         ${expenses.sort((a, b) => new Date(b.Expense_Date) - new Date(a.Expense_Date)).map(exp => {
-                                            const cat = categoryMap[exp.Category_ID] || { Category_Name: 'Uncategorized', Category_Type: 'Variable' };
-                                            const typeColor = cat.Category_Type === 'Fixed' ? '#059669' : cat.Category_Type === 'One-Time' ? '#b88a8a' : '#f59e0b';
+                                            // Find category from byCategory data
+                                            const catData = categoryData.find(c => c.categoryId === exp.Category_ID);
+                                            const catName = catData?.categoryName || exp.Category_Name || 'Unknown';
+                                            const catType = catData?.categoryType || 'Variable';
+                                            const typeColor = catType === 'Fixed' ? '#059669' : catType === 'One-Time' ? '#6b7280' : '#d97706';
+                                            const isPro = exp.prorationApplied === true;
+                                            const displayAmount = exp.proratedAmount || exp.Amount || 0;
                                             return `
                                                 <tr>
                                                     <td data-value="${new Date(exp.Expense_Date).getTime()}">${formatDateSafe(exp.Expense_Date)}</td>
                                                     <td>${exp.Description || '-'}</td>
-                                                    <td>${cat.Category_Name}</td>
-                                                    <td><span style="background: ${typeColor}20; color: ${typeColor}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${cat.Category_Type || 'Variable'}</span></td>
-                                                    <td style="text-align: right; font-weight: 600;" data-value="${parseFloat(exp.Amount || 0)}">${formatMoney(exp.Amount || 0)}</td>
+                                                    <td>${catName}</td>
+                                                    <td>
+                                                        <span style="background: ${typeColor}18; color: ${typeColor}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${catType}</span>
+                                                        ${isPro ? '<span style="background: #0891b2; color: white; padding: 2px 4px; border-radius: 3px; font-size: 9px; margin-left: 4px;">PRO</span>' : ''}
+                                                    </td>
+                                                    <td style="text-align: right; font-weight: 600;" data-value="${parseFloat(displayAmount)}">${formatMoney(displayAmount)}</td>
                                                 </tr>
                                             `;
                                         }).join('')}
                                     </tbody>
                                     <tfoot>
-                                        <tr style="background: #f3f4f6; font-weight: 700;">
-                                            <td colspan="4">Total</td>
+                                        <tr style="background: #e5e7eb; font-weight: 700;">
+                                            <td colspan="4">Total${isProrated ? ' (Prorated)' : ''}</td>
                                             <td style="text-align: right;">${formatMoney(totalExpenses)}</td>
                                         </tr>
+                                        ${totalReimbursements > 0 ? `
+                                            <tr style="background: #d1fae5; font-weight: 700; color: #059669;">
+                                                <td colspan="4">Less: Credits/Reimbursements</td>
+                                                <td style="text-align: right;">-${formatMoney(totalReimbursements)}</td>
+                                            </tr>
+                                            <tr style="background: #9333ea22; font-weight: 700; color: #7c3aed;">
+                                                <td colspan="4">Net Expenses</td>
+                                                <td style="text-align: right;">${formatMoney(netExpenses)}</td>
+                                            </tr>
+                                        ` : ''}
                                     </tfoot>
                                 </table>
                             </div>
@@ -30769,46 +30818,28 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 ${sortedMonths.length > 1 ? `
                     <` + `script>
                         setTimeout(() => {
-                            // Expense Trend Chart
                             const trendCtx = document.getElementById('expenseTrendChart');
                             if (trendCtx && typeof Chart !== 'undefined') {
+                                if (Chart.getChart(trendCtx)) Chart.getChart(trendCtx).destroy();
                                 new Chart(trendCtx.getContext('2d'), {
                                     type: 'line',
                                     data: {
                                         labels: ${JSON.stringify(trendLabels)},
-                                        datasets: [
-                                            {
-                                                label: 'Total Expenses',
-                                                data: ${JSON.stringify(trendValues)},
-                                                borderColor: '#9333ea',
-                                                backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                                                fill: true,
-                                                tension: 0.3
-                                            },
-                                            {
-                                                label: 'Fixed',
-                                                data: ${JSON.stringify(trendFixed)},
-                                                borderColor: '#059669',
-                                                backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                                                fill: false,
-                                                tension: 0.3,
-                                                borderDash: [5, 5]
-                                            },
-                                            {
-                                                label: 'Variable',
-                                                data: ${JSON.stringify(trendVariable)},
-                                                borderColor: '#f59e0b',
-                                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                                fill: false,
-                                                tension: 0.3,
-                                                borderDash: [5, 5]
-                                            }
-                                        ]
+                                        datasets: [{
+                                            label: 'Expenses',
+                                            data: ${JSON.stringify(trendValues)},
+                                            borderColor: '#9333ea',
+                                            backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                                            fill: true,
+                                            tension: 0.3,
+                                            pointRadius: 4,
+                                            pointBackgroundColor: '#9333ea'
+                                        }]
                                     },
                                     options: {
                                         responsive: true,
                                         maintainAspectRatio: false,
-                                        plugins: { legend: { position: 'top' } },
+                                        plugins: { legend: { display: false } },
                                         scales: {
                                             y: {
                                                 beginAtZero: true,
