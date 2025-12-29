@@ -17368,7 +17368,22 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         // Report Expense Category Picker Functions
-        function openReportExpenseCategoryPicker() {
+        async function openReportExpenseCategoryPicker() {
+            // Ensure expense categories are loaded
+            if (!cachedExpenseCategories || cachedExpenseCategories.length === 0) {
+                try {
+                    showLoading('Loading categories...');
+                    const result = await apiCall('getExpenseCategories');
+                    if (result && result.categories) {
+                        cachedExpenseCategories = result.categories;
+                    }
+                    hideLoading();
+                } catch (e) {
+                    hideLoading();
+                    console.log('Could not load expense categories:', e);
+                }
+            }
+            
             // Create modal if it doesn't exist
             let modal = document.getElementById('rptExpenseCategoryPickerModal');
             if (!modal) {
@@ -17396,6 +17411,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
             // Clear search
             searchInput.value = '';
             
+            // Get current filter value
+            const filterEl = document.getElementById('rptFilter_expenseCategory');
+            const currentValue = filterEl ? filterEl.value : '';
+            
             // Build list
             let html = `
                 <div onclick="selectReportExpenseCategory('', 'All Categories')" style="
@@ -17407,7 +17426,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    border: 2px solid ${document.getElementById('rptFilter_expenseCategory').value === '' ? '#6b7280' : 'transparent'};
+                    border: 2px solid ${currentValue === '' ? '#6b7280' : 'transparent'};
                 " class="rpt-expense-cat-option">
                     <span style="font-size: 18px;">📋</span>
                     <span style="font-weight: 500;">All Categories</span>
@@ -17418,7 +17437,9 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 .filter(cat => String(cat.Is_Active).toUpperCase() === 'TRUE')
                 .sort((a, b) => (a.Category_Name || '').localeCompare(b.Category_Name || ''));
             
-            const currentValue = document.getElementById('rptFilter_expenseCategory').value;
+            if (categories.length === 0) {
+                html += `<div style="padding: 20px; text-align: center; color: #6b7280;">No categories found. Please add expense categories first.</div>`;
+            }
             
             categories.forEach(cat => {
                 const isSelected = currentValue === cat.Category_ID;
