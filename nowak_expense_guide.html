@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nowak Distributing - Expense Tracking Guide</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6b9a8d 0%, #4a7c6f 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 35px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .section-icon {
+            font-size: 28px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .subsection {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border-left: 4px solid #6b9a8d;
+        }
+        
+        .subsection h4 {
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .step-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        
+        .step-list li {
+            counter-increment: step-counter;
+            margin: 12px 0;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            background: #6b9a8d;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #e0f2fe;
+            border: 1px solid #7dd3fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .info-box.tip {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+        
+        .info-box.warning {
+            background: #fef3c7;
+            border-color: #fcd34d;
+        }
+        
+        .info-box.mileage {
+            background: #f0fdf4;
+            border-color: #6b9a8d;
+        }
+        
+        .info-box-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .category-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-item.fixed {
+            border-left: 4px solid #6b9a8d;
+        }
+        
+        .category-item.variable {
+            border-left: 4px solid #b8a86b;
+        }
+        
+        .category-item.onetime {
+            border-left: 4px solid #7a9bb8;
+        }
+        
+        .category-item.credit {
+            border-left: 4px solid #9a8ab8;
+            background: #f0fdf4;
+        }
+        
+        .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge.fixed { background: #6b9a8d20; color: #6b9a8d; }
+        .badge.variable { background: #b8a86b20; color: #b8a86b; }
+        .badge.onetime { background: #7a9bb820; color: #7a9bb8; }
+        .badge.credit { background: #9a8ab820; color: #9a8ab8; }
+        
+        .kpi-example {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .kpi-box {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .kpi-box.total { border-left: 4px solid #7a9bb8; }
+        .kpi-box.operating { border-left: 4px solid #6b9a8d; }
+        .kpi-box.credits { border-left: 4px solid #b8a86b; }
+        .kpi-box.net { border-left: 4px solid #4a5568; }
+        
+        .kpi-label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #374151;
+        }
+        
+        .formula-box {
+            background: #1f2937;
+            color: #10b981;
+            font-family: monospace;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        
+        .report-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .report-card h5 {
+            color: #374151;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .report-card p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .comparison-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .comparison-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .footer {
+            background: #f3f4f6;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .kpi-example {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚚 Nowak Distributing</h1>
+            <p>Expense Tracking & Reporting Guide</p>
+        </div>
+        
+        <div class="content">
+            <!-- OVERVIEW -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📋</span>
+                    <h2 class="section-title">Overview</h2>
+                </div>
+                <p>The expense tracking system helps you manage all business expenses, track mileage reimbursements, and generate detailed reports. Key features include:</p>
+                <ul style="margin: 15px 0 15px 25px;">
+                    <li><strong>Expense Categories</strong> - Organize expenses by type (Fixed, Variable, One-Time)</li>
+                    <li><strong>Mileage Tracking</strong> - Automatic IRS rate calculations for vehicle reimbursements</li>
+                    <li><strong>Proration</strong> - Run reports for any date range with automatic daily calculations</li>
+                    <li><strong>P&L Integration</strong> - Expenses flow into profit & loss reporting</li>
+                </ul>
+            </div>
+            
+            <!-- EXPENSE CATEGORIES -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">🏷️</span>
+                    <h2 class="section-title">Expense Categories</h2>
+                </div>
+                <p>Expenses are organized into three types, plus a special credit category for reimbursements:</p>
+                
+                <div class="category-grid">
+                    <div class="category-item fixed">
+                        <span>🔒</span>
+                        <div>
+                            <strong>Fixed</strong>
+                            <div style="font-size: 12px; color: #6b7280;">Monthly recurring costs</div>
+                        </div>
+                    </div>
+                    <div class="category-item variable">
+                        <span>📈</span>
+                        <div>
+                            <strong>Variable</strong>
+                            <div style="font-size: 12px; color: #6b7280;">Activity-based costs</div>
+                        </div>
+                    </div>
+                    <div class="category-item onetime">
+                        <span>📌</span>
+                        <div>
+                            <strong>One-Time</strong>
+                            <div style="font-size: 12px; color: #6b7280;">Non-recurring costs</div>
+                        </div>
+                    </div>
+                    <div class="category-item credit">
+                        <span>🚗</span>
+                        <div>
+                            <strong>Credit/Reimbursement</strong>
+                            <div style="font-size: 12px; color: #6b7280;">Reduces net expenses</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="subsection">
+                    <h4>Common Categories</h4>
+                    <table class="comparison-table">
+                        <tr>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Examples</th>
+                        </tr>
+                        <tr>
+                            <td>Storage/Warehouse</td>
+                            <td><span class="badge fixed">Fixed</span></td>
+                            <td>Monthly storage unit rental</td>
+                        </tr>
+                        <tr>
+                            <td>Phone/Communication</td>
+                            <td><span class="badge fixed">Fixed</span></td>
+                            <td>Cell phone bill</td>
+                        </tr>
+                        <tr>
+                            <td>Insurance - Vehicle</td>
+                            <td><span class="badge fixed">Fixed</span></td>
+                            <td>Auto insurance premiums</td>
+                        </tr>
+                        <tr>
+                            <td>Fuel</td>
+                            <td><span class="badge variable">Variable</span></td>
+                            <td>Gas purchases</td>
+                        </tr>
+                        <tr>
+                            <td>Vehicle Maintenance</td>
+                            <td><span class="badge variable">Variable</span></td>
+                            <td>Oil changes, repairs</td>
+                        </tr>
+                        <tr>
+                            <td>Equipment</td>
+                            <td><span class="badge onetime">One-Time</span></td>
+                            <td>Hand truck, shelving</td>
+                        </tr>
+                        <tr style="background: #f0fdf4;">
+                            <td>🚗 Mileage (IRS Rate)</td>
+                            <td><span class="badge credit">Credit</span></td>
+                            <td>Business miles driven</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ADDING EXPENSES -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">➕</span>
+                    <h2 class="section-title">Adding Expenses</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h4>Adding a Regular Expense</h4>
+                    <ol class="step-list">
+                        <li>Go to the <strong>Expenses</strong> section from the main menu</li>
+                        <li>Click the <strong>+ Add Expense</strong> button</li>
+                        <li>Select the <strong>Date</strong> of the expense</li>
+                        <li>Choose a <strong>Category</strong> from the picker (use search to find quickly)</li>
+                        <li>Enter or edit the <strong>Description</strong> (auto-fills based on category)</li>
+                        <li>Enter the <strong>Amount</strong></li>
+                        <li>Click <strong>Save Expense</strong></li>
+                    </ol>
+                </div>
+                
+                <div class="info-box tip">
+                    <div class="info-box-title">💡 Auto-Fill Descriptions</div>
+                    <p>When you select a category, the description field automatically fills with a default (e.g., "Gas" for Fuel, "Insurance Payment" for Insurance). You can edit this or leave it as-is.</p>
+                </div>
+            </div>
+            
+            <!-- MILEAGE TRACKING -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">🚗</span>
+                    <h2 class="section-title">Mileage Tracking</h2>
+                </div>
+                
+                <p>Mileage is tracked separately and automatically calculated using the IRS standard rate. Mileage entries appear as <strong>credits</strong> that reduce your net operating expenses.</p>
+                
+                <div class="info-box mileage">
+                    <div class="info-box-title">📍 Current IRS Rate</div>
+                    <p><strong>$0.70 per mile</strong> (70 cents) for 2025</p>
+                </div>
+                
+                <div class="subsection">
+                    <h4>Logging Mileage</h4>
+                    <ol class="step-list">
+                        <li>Go to the <strong>Expenses</strong> section</li>
+                        <li>Click the <strong>🚗 Log Mileage</strong> button</li>
+                        <li>Select the <strong>Date</strong></li>
+                        <li>Enter the <strong>Miles Driven</strong></li>
+                        <li>The <strong>Amount</strong> calculates automatically (miles × $0.70)</li>
+                        <li>The <strong>Description</strong> auto-generates (e.g., "213 miles @ $0.700/mile")</li>
+                        <li>Click <strong>Save Mileage</strong></li>
+                    </ol>
+                </div>
+                
+                <div class="formula-box">
+                    Mileage Reimbursement = Miles Driven × $0.70<br>
+                    Example: 500 miles × $0.70 = <strong>$350.00 credit</strong>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-title">ℹ️ How Mileage Affects Reports</div>
+                    <p>Mileage appears as a <strong>negative amount (credit)</strong> in reports. It reduces your total operating expenses to show the true net cost of running the business.</p>
+                </div>
+            </div>
+            
+            <!-- UNDERSTANDING THE KPIs -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📊</span>
+                    <h2 class="section-title">Understanding the KPIs</h2>
+                </div>
+                
+                <p>The Expense Log displays four key metrics at the top:</p>
+                
+                <div class="kpi-example">
+                    <div class="kpi-box total">
+                        <div class="kpi-label">📋 Total Entries</div>
+                        <div class="kpi-value">15</div>
+                    </div>
+                    <div class="kpi-box operating">
+                        <div class="kpi-label">💰 Operating</div>
+                        <div class="kpi-value">$633.52</div>
+                    </div>
+                    <div class="kpi-box credits">
+                        <div class="kpi-label">🚗 Credits</div>
+                        <div class="kpi-value">-$350.00</div>
+                    </div>
+                    <div class="kpi-box net">
+                        <div class="kpi-label">✨ Net</div>
+                        <div class="kpi-value">$283.52</div>
+                    </div>
+                </div>
+                
+                <table class="comparison-table">
+                    <tr>
+                        <th>Metric</th>
+                        <th>What It Shows</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Entries</strong></td>
+                        <td>Count of all expense + mileage entries</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Operating Expenses</strong></td>
+                        <td>Sum of all regular expenses (excluding mileage)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mileage Credits</strong></td>
+                        <td>Total mileage reimbursements (shown as negative)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net Expenses</strong></td>
+                        <td>Operating minus Credits = your true expense total</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- PRORATION -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📅</span>
+                    <h2 class="section-title">Proration (Partial Month Reporting)</h2>
+                </div>
+                
+                <p>When you run a report for less than a full month, the system automatically <strong>prorates</strong> fixed expenses to show accurate costs for that period.</p>
+                
+                <div class="subsection">
+                    <h4>How Proration Works</h4>
+                    <p>Fixed monthly expenses (like rent, insurance, phone bills) are divided by the number of days in the month, then multiplied by the days in your selected range.</p>
+                </div>
+                
+                <div class="formula-box">
+                    Prorated Amount = (Monthly Amount ÷ Days in Month) × Days in Period<br><br>
+                    Example: $300 storage for Dec 1-15 (15 days)<br>
+                    = ($300 ÷ 31) × 15 = <strong>$145.16</strong>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-title">📊 When Proration Applies</div>
+                    <ul style="margin-top: 8px; margin-left: 20px;">
+                        <li><strong>Fixed expenses</strong> - Always prorated for partial periods</li>
+                        <li><strong>Variable expenses</strong> - Only included if they fall within the date range</li>
+                        <li><strong>One-time expenses</strong> - Only included if they fall within the date range</li>
+                        <li><strong>Mileage</strong> - Only included if logged within the date range</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box warning">
+                    <div class="info-box-title">⚠️ Important Note</div>
+                    <p>When viewing prorated reports, you'll see both the <strong>original amount</strong> and the <strong>prorated amount</strong> in the detail table. Prorated items are marked with a "PRO" badge.</p>
+                </div>
+            </div>
+            
+            <!-- RUNNING REPORTS -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">📈</span>
+                    <h2 class="section-title">Running Reports</h2>
+                </div>
+                
+                <p>Access expense reports from the <strong>Reports</strong> section. Several reports include expense data:</p>
+                
+                <div class="report-card">
+                    <h5>📊 Expense Report</h5>
+                    <p>Detailed breakdown of all expenses with category analysis, trend charts, and month-over-month comparisons. Use date filters to see specific periods with automatic proration.</p>
+                </div>
+                
+                <div class="report-card">
+                    <h5>📈 P&L Report (Profit & Loss)</h5>
+                    <p>Full business performance report including revenue, costs, and expenses. Shows how expenses impact overall profitability.</p>
+                </div>
+                
+                <div class="report-card">
+                    <h5>💰 Cash Flow Report</h5>
+                    <p>Tracks money coming in and going out, including expense payments.</p>
+                </div>
+                
+                <div class="report-card">
+                    <h5>📜 Expense History</h5>
+                    <p>Historical view of expenses over time with month-by-month trends and category comparisons.</p>
+                </div>
+                
+                <div class="subsection">
+                    <h4>Running an Expense Report</h4>
+                    <ol class="step-list">
+                        <li>Go to <strong>Reports</strong> from the main menu</li>
+                        <li>Select <strong>Expense Report</strong></li>
+                        <li>Set your <strong>From Date</strong> and <strong>To Date</strong></li>
+                        <li>Optionally filter by <strong>Category</strong></li>
+                        <li>Click <strong>Run Report</strong></li>
+                    </ol>
+                </div>
+                
+                <div class="info-box tip">
+                    <div class="info-box-title">💡 Report Features</div>
+                    <ul style="margin-top: 8px; margin-left: 20px;">
+                        <li><strong>Click column headers</strong> to sort data</li>
+                        <li><strong>Trend arrows</strong> (↑↓) show month-over-month changes</li>
+                        <li><strong>Toggle sections</strong> to show/hide charts and tables</li>
+                        <li><strong>Print button</strong> to generate a paper copy</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- BEST PRACTICES -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">✅</span>
+                    <h2 class="section-title">Best Practices</h2>
+                </div>
+                
+                <div class="subsection">
+                    <h4>Daily/Weekly Habits</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Log mileage daily</strong> or at least weekly while trips are fresh in memory</li>
+                        <li><strong>Enter expenses promptly</strong> when you have receipts</li>
+                        <li><strong>Use accurate dates</strong> - enter the date the expense occurred, not when you're logging it</li>
+                    </ul>
+                </div>
+                
+                <div class="subsection">
+                    <h4>Monthly Tasks</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>Enter fixed expenses</strong> at the start of each month (rent, insurance, phone)</li>
+                        <li><strong>Run the Expense Report</strong> at month-end to review spending</li>
+                        <li><strong>Check category totals</strong> against budget expectations</li>
+                    </ul>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-title">📱 Mobile Friendly</div>
+                    <p>The system works on your phone! Log mileage and expenses on-the-go right from your mobile browser.</p>
+                </div>
+            </div>
+            
+            <!-- QUICK REFERENCE -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-icon">⚡</span>
+                    <h2 class="section-title">Quick Reference</h2>
+                </div>
+                
+                <table class="comparison-table">
+                    <tr>
+                        <th>Task</th>
+                        <th>Where to Go</th>
+                        <th>Button</th>
+                    </tr>
+                    <tr>
+                        <td>Add an expense</td>
+                        <td>Expenses section</td>
+                        <td><strong>+ Add Expense</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Log mileage</td>
+                        <td>Expenses section</td>
+                        <td><strong>🚗 Log Mileage</strong></td>
+                    </tr>
+                    <tr>
+                        <td>View expense list</td>
+                        <td>Expenses section</td>
+                        <td>(shows automatically)</td>
+                    </tr>
+                    <tr>
+                        <td>Run expense report</td>
+                        <td>Reports → Expense Report</td>
+                        <td><strong>Run Report</strong></td>
+                    </tr>
+                    <tr>
+                        <td>See expense history</td>
+                        <td>Reports → Expense History</td>
+                        <td><strong>Run Report</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Manage categories</td>
+                        <td>Expenses → ⚙️ Settings</td>
+                        <td><strong>Manage Categories</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🚚 Nowak Distributing ERP System</p>
+            <p style="margin-top: 5px; font-size: 12px;">Questions? Contact Patrick for support.</p>
+        </div>
+    </div>
+</body>
+</html>
