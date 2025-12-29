@@ -17336,6 +17336,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             });
             
             list.innerHTML = html;
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
             modal.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
@@ -17346,6 +17348,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
         function closeExpenseCategoryPicker() {
             const modal = document.getElementById('expenseCategoryPickerModal');
             modal.classList.remove('modal-open');
+            modal.style.visibility = 'hidden';
+            modal.style.opacity = '0';
             document.body.style.overflow = '';
         }
         
@@ -44643,7 +44647,7 @@ NOTE: Please print the attached PO document for full details.`;
     </div>
 
     <!-- EXPENSE CATEGORY PICKER MODAL -->
-    <div id="expenseCategoryPickerModal" class="item-picker-overlay" style="display: none;">
+    <div id="expenseCategoryPickerModal" class="item-picker-overlay" style="display: none; visibility: hidden; opacity: 0;">
         <div class="item-picker-container styled-modal-container" style="max-width: 500px; width: 90%; height: auto; max-height: 80vh; margin: auto; border-radius: 16px; overflow: hidden;">
             <div class="item-picker-header" style="border-radius: 16px 16px 0 0; background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);">
                 <h3>🏷️ Select Category</h3>
@@ -49859,16 +49863,45 @@ NOTE: Please print the attached PO document for full details.`;
                 // Immediately blur ALL form elements
                 document.activeElement?.blur();
                 
-                // CRITICAL: Hide ALL picker modals on orientation change
-                const allPickerModals = document.querySelectorAll('.item-picker-overlay');
-                allPickerModals.forEach(modal => {
-                    modal.style.display = 'none';
-                    modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
-                });
+                // Function to close all picker modals
+                function closeAllPickerModals() {
+                    // CRITICAL: Hide ALL picker modals on orientation change
+                    const allPickerModals = document.querySelectorAll('.item-picker-overlay');
+                    allPickerModals.forEach(modal => {
+                        modal.style.display = 'none';
+                        modal.style.visibility = 'hidden';
+                        modal.style.opacity = '0';
+                        modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open', 'styled-modal-visible');
+                    });
+                    
+                    // Also close any dynamically created picker modals
+                    const rptExpensePicker = document.getElementById('rptExpenseCategoryPickerModal');
+                    if (rptExpensePicker) {
+                        rptExpensePicker.style.display = 'none';
+                        rptExpensePicker.style.visibility = 'hidden';
+                        rptExpensePicker.classList.remove('modal-open');
+                    }
+                    
+                    // Specifically target expense category picker
+                    const expCatPicker = document.getElementById('expenseCategoryPickerModal');
+                    if (expCatPicker) {
+                        expCatPicker.style.display = 'none';
+                        expCatPicker.style.visibility = 'hidden';
+                        expCatPicker.classList.remove('modal-open');
+                    }
+                    
+                    // Restore body scroll
+                    document.body.style.overflow = '';
+                    document.body.classList.remove('modal-open');
+                }
                 
-                // Also close any dynamically created picker modals
-                const rptExpensePicker = document.getElementById('rptExpenseCategoryPickerModal');
-                if (rptExpensePicker) rptExpensePicker.style.display = 'none';
+                // Close immediately
+                closeAllPickerModals();
+                
+                // Close again after a short delay (in case something reopened)
+                setTimeout(closeAllPickerModals, 50);
+                setTimeout(closeAllPickerModals, 150);
+                setTimeout(closeAllPickerModals, 300);
                 
                 // Temporarily disable all select elements to prevent iOS picker
                 const allSelects = document.querySelectorAll('select');
@@ -49877,12 +49910,22 @@ NOTE: Please print the attached PO document for full details.`;
                     sel.setAttribute('disabled', 'disabled');
                 });
                 
+                // Also disable all buttons temporarily to prevent accidental clicks
+                const allButtons = document.querySelectorAll('button');
+                allButtons.forEach(btn => {
+                    btn.style.pointerEvents = 'none';
+                });
+                
                 // Re-enable after orientation change completes
                 setTimeout(function() {
                     allSelects.forEach(sel => {
                         sel.style.pointerEvents = '';
                         sel.removeAttribute('disabled');
                     });
+                    allButtons.forEach(btn => {
+                        btn.style.pointerEvents = '';
+                    });
+                    closeAllPickerModals(); // One more check
                 }, 500);
                 
                 setTimeout(lockViewport, 100);
@@ -49899,12 +49942,26 @@ NOTE: Please print the attached PO document for full details.`;
                 const allPickerModals = document.querySelectorAll('.item-picker-overlay');
                 allPickerModals.forEach(modal => {
                     modal.style.display = 'none';
-                    modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
+                    modal.style.visibility = 'hidden';
+                    modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open', 'styled-modal-visible');
                 });
                 
                 // Also close any dynamically created picker modals
                 const rptExpensePicker = document.getElementById('rptExpenseCategoryPickerModal');
-                if (rptExpensePicker) rptExpensePicker.style.display = 'none';
+                if (rptExpensePicker) {
+                    rptExpensePicker.style.display = 'none';
+                    rptExpensePicker.classList.remove('modal-open');
+                }
+                
+                // Specifically target expense category picker
+                const expCatPicker = document.getElementById('expenseCategoryPickerModal');
+                if (expCatPicker) {
+                    expCatPicker.style.display = 'none';
+                    expCatPicker.classList.remove('modal-open');
+                }
+                
+                document.body.style.overflow = '';
+                document.body.classList.remove('modal-open');
                 
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(lockViewport, 150);
