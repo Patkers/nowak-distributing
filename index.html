@@ -17336,9 +17336,7 @@ NOTE: Please see the attached invoice PDF for full details.`);
             });
             
             list.innerHTML = html;
-            modal.style.display = 'flex';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
+            modal.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
             
             // Focus search
@@ -17346,7 +17344,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         function closeExpenseCategoryPicker() {
-            document.getElementById('expenseCategoryPickerModal').style.display = 'none';
+            const modal = document.getElementById('expenseCategoryPickerModal');
+            modal.classList.remove('modal-open');
             document.body.style.overflow = '';
         }
         
@@ -17468,9 +17467,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             });
             
             list.innerHTML = html;
-            modal.style.display = 'flex';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
+            modal.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
             
             // Focus search
             setTimeout(() => searchInput.focus(), 100);
@@ -17478,7 +17476,10 @@ NOTE: Please see the attached invoice PDF for full details.`);
         
         function closeReportExpenseCategoryPicker() {
             const modal = document.getElementById('rptExpenseCategoryPickerModal');
-            if (modal) modal.style.display = 'none';
+            if (modal) {
+                modal.classList.remove('modal-open');
+            }
+            document.body.style.overflow = '';
         }
         
         function selectReportExpenseCategory(categoryId, categoryName) {
@@ -17694,6 +17695,54 @@ NOTE: Please see the attached invoice PDF for full details.`);
             });
             
             html += '</tbody></table></div>';
+            
+            // Add mobile card view (hidden on desktop, shown on mobile)
+            html += '<div class="expense-mobile-cards" style="display: none;">';
+            expenses.forEach(exp => {
+                const isRecurring = exp.Recurring_ID ? ' 🔄' : '';
+                const cat = cachedExpenseCategories.find(c => c.Category_ID === exp.Category_ID);
+                const isReimbursement = cat && String(cat.Is_Reimbursement).toUpperCase() === 'TRUE';
+                const isMileage = cat && cat.Category_Name && cat.Category_Name.toLowerCase().includes('mileage');
+                const amountColor = (isMileage || isReimbursement) ? '#6b9a8d' : '#374151';
+                const amountPrefix = (isMileage || isReimbursement) ? '-' : '';
+                const cardBg = (isMileage || isReimbursement) ? '#f0fdf4' : '#fff';
+                const catName = getCategoryName(exp.Category_ID);
+                
+                html += `
+                    <div class="expense-card" style="background: ${cardBg}; border: 1px solid #e5e7eb; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #374151; font-size: 15px; word-wrap: break-word;">${exp.Description || catName}${isRecurring}</div>
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${catName}</div>
+                            </div>
+                            <div style="text-align: right; margin-left: 10px;">
+                                <div style="font-weight: 700; font-size: 18px; color: ${amountColor};">${amountPrefix}${formatMoney(parseFloat(exp.Amount) || 0)}</div>
+                                <div style="font-size: 11px; color: #9ca3af;">${formatDateSafe(exp.Expense_Date)}</div>
+                            </div>
+                        </div>
+                        ${exp.Vendor ? `<div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">📍 ${exp.Vendor}</div>` : ''}
+                        <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e5e7eb; padding-top: 10px; margin-top: 5px;">
+                            <button onclick="editExpense('${exp.Expense_ID}')" style="padding: 8px 16px; background: #7aaab8; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer;">✏️ Edit</button>
+                            <button onclick="deleteExpense('${exp.Expense_ID}')" style="padding: 8px 16px; background: #b88a8a; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer;">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            // Add CSS for mobile card view toggle
+            html += `
+                <style>
+                    @media (max-width: 768px) {
+                        #expenseLogTable .table-scroll-wrapper { display: none !important; }
+                        .expense-mobile-cards { display: block !important; }
+                    }
+                    @media (min-width: 769px) {
+                        .expense-mobile-cards { display: none !important; }
+                    }
+                </style>
+            `;
+            
             container.innerHTML = html;
         }
         
@@ -44924,7 +44973,9 @@ NOTE: Please print the attached PO document for full details.`;
         #themePickerModal,
         #poPickerModal,
         #invoicePickerModal,
-        #poTypePickerModal {
+        #poTypePickerModal,
+        #expenseCategoryPickerModal,
+        #rptExpenseCategoryPickerModal {
             display: none !important;
         }
         
@@ -44941,7 +44992,9 @@ NOTE: Please print the attached PO document for full details.`;
         #themePickerModal.modal-open,
         #poPickerModal.modal-open,
         #invoicePickerModal.modal-open,
-        #poTypePickerModal.modal-open {
+        #poTypePickerModal.modal-open,
+        #expenseCategoryPickerModal.modal-open,
+        #rptExpenseCategoryPickerModal.modal-open {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -49806,6 +49859,17 @@ NOTE: Please print the attached PO document for full details.`;
                 // Immediately blur ALL form elements
                 document.activeElement?.blur();
                 
+                // CRITICAL: Hide ALL picker modals on orientation change
+                const allPickerModals = document.querySelectorAll('.item-picker-overlay');
+                allPickerModals.forEach(modal => {
+                    modal.style.display = 'none';
+                    modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
+                });
+                
+                // Also close any dynamically created picker modals
+                const rptExpensePicker = document.getElementById('rptExpenseCategoryPickerModal');
+                if (rptExpensePicker) rptExpensePicker.style.display = 'none';
+                
                 // Temporarily disable all select elements to prevent iOS picker
                 const allSelects = document.querySelectorAll('select');
                 allSelects.forEach(sel => {
@@ -49834,8 +49898,13 @@ NOTE: Please print the attached PO document for full details.`;
                 // CRITICAL: Close ALL picker modals on resize to prevent ghost popups
                 const allPickerModals = document.querySelectorAll('.item-picker-overlay');
                 allPickerModals.forEach(modal => {
+                    modal.style.display = 'none';
                     modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
                 });
+                
+                // Also close any dynamically created picker modals
+                const rptExpensePicker = document.getElementById('rptExpenseCategoryPickerModal');
+                if (rptExpensePicker) rptExpensePicker.style.display = 'none';
                 
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(lockViewport, 150);
@@ -49844,6 +49913,7 @@ NOTE: Please print the attached PO document for full details.`;
             // CRITICAL: Ensure ALL picker modals are hidden on page load
             const allPickerModals = document.querySelectorAll('.item-picker-overlay');
             allPickerModals.forEach(modal => {
+                modal.style.display = 'none';
                 modal.classList.remove('modal-open', 'status-picker-open', 'quick-add-open');
             });
         });
