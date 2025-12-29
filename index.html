@@ -20339,8 +20339,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             },
             'expense-history': {
                 title: '📈 Expense History',
-                filters: ['expenseCategory'],
-                dateLabel: 'All Time',
+                filters: ['quickDate', 'expenseCategory'],
+                dateLabel: 'Date Range',
                 description: {
                     purpose: 'Compare expenses across time periods to identify trends and patterns.',
                     insights: [
@@ -32890,50 +32890,52 @@ NOTE: Please see the attached invoice PDF for full details.`);
                         if (monthExpenses.length > 0) {
                             monthHtml += '<div style="padding: 10px 16px; background: #fafafa;">';
                             monthHtml += '<div style="font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">💰 Expenses</div>';
-                            monthHtml += '<table style="width: 100%; font-size: 12px; border-collapse: collapse;">';
+                            monthHtml += '<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">';
+                            monthHtml += '<table style="width: 100%; min-width: 500px; font-size: 12px; border-collapse: collapse;">';
                             monthHtml += '<thead><tr style="background: #f3f4f6;">';
-                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Date</th>';
-                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Category</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">Date</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">Category</th>';
                             monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Description</th>';
-                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Vendor</th>';
-                            monthHtml += '<th style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Amount</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">Vendor</th>';
+                            monthHtml += '<th style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; white-space: nowrap;">Amount</th>';
                             monthHtml += '</tr></thead><tbody>';
                             monthExpenses.forEach(e => {
                                 const cat = categoryMap[e.Category_ID] || {};
                                 monthHtml += '<tr style="border-bottom: 1px solid #f3f4f6;">';
-                                monthHtml += '<td style="padding: 6px 8px;">' + formatDateSafe(e.Expense_Date) + '</td>';
-                                monthHtml += '<td style="padding: 6px 8px;">' + (cat.Category_Name || 'Unknown') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; white-space: nowrap;">' + formatDateSafe(e.Expense_Date) + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; white-space: nowrap;">' + (cat.Category_Name || 'Unknown') + '</td>';
                                 monthHtml += '<td style="padding: 6px 8px;">' + (e.Description || '') + (e.Recurring_ID ? ' 🔄' : '') + '</td>';
-                                monthHtml += '<td style="padding: 6px 8px;">' + (e.Vendor || '-') + '</td>';
-                                monthHtml += '<td style="padding: 6px 8px; text-align: right; font-weight: 600; color: #374151;">' + formatMoney(parseFloat(e.Amount) || 0) + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; white-space: nowrap;">' + (e.Vendor || '-') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; text-align: right; font-weight: 600; color: #374151; white-space: nowrap;">' + formatMoney(parseFloat(e.Amount) || 0) + '</td>';
                                 monthHtml += '</tr>';
                             });
-                            monthHtml += '</tbody></table></div>';
+                            monthHtml += '</tbody></table></div></div>';
                         }
                         
                         // Credits table
                         if (monthCredits.length > 0) {
                             monthHtml += '<div style="padding: 10px 16px; background: #f0fdf4; border-top: 1px solid #e5e7eb;">';
                             monthHtml += '<div style="font-size: 12px; font-weight: 600; color: #6b9a8d; margin-bottom: 8px; text-transform: uppercase;">🚗 Mileage Credits</div>';
-                            monthHtml += '<table style="width: 100%; font-size: 12px; border-collapse: collapse;">';
+                            monthHtml += '<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">';
+                            monthHtml += '<table style="width: 100%; min-width: 500px; font-size: 12px; border-collapse: collapse;">';
                             monthHtml += '<thead><tr style="background: #dcfce7;">';
-                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Date</th>';
-                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Category</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0; white-space: nowrap;">Date</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0; white-space: nowrap;">Category</th>';
                             monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Description</th>';
-                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Vendor</th>';
-                            monthHtml += '<th style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #bbf7d0;">Amount</th>';
+                            monthHtml += '<th style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #bbf7d0; white-space: nowrap;">Vendor</th>';
+                            monthHtml += '<th style="text-align: right; padding: 6px 8px; border-bottom: 1px solid #bbf7d0; white-space: nowrap;">Amount</th>';
                             monthHtml += '</tr></thead><tbody>';
                             monthCredits.forEach(e => {
                                 const cat = categoryMap[e.Category_ID] || {};
                                 monthHtml += '<tr style="border-bottom: 1px solid #dcfce7;">';
-                                monthHtml += '<td style="padding: 6px 8px;">' + formatDateSafe(e.Expense_Date) + '</td>';
-                                monthHtml += '<td style="padding: 6px 8px;">' + (cat.Category_Name || 'Unknown') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; white-space: nowrap;">' + formatDateSafe(e.Expense_Date) + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; white-space: nowrap;">' + (cat.Category_Name || 'Unknown') + '</td>';
                                 monthHtml += '<td style="padding: 6px 8px;">' + (e.Description || '') + '</td>';
-                                monthHtml += '<td style="padding: 6px 8px;">' + (e.Vendor || '-') + '</td>';
-                                monthHtml += '<td style="padding: 6px 8px; text-align: right; font-weight: 600; color: #6b9a8d;">-' + formatMoney(parseFloat(e.Amount) || 0) + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; white-space: nowrap;">' + (e.Vendor || '-') + '</td>';
+                                monthHtml += '<td style="padding: 6px 8px; text-align: right; font-weight: 600; color: #6b9a8d; white-space: nowrap;">-' + formatMoney(parseFloat(e.Amount) || 0) + '</td>';
                                 monthHtml += '</tr>';
                             });
-                            monthHtml += '</tbody></table></div>';
+                            monthHtml += '</tbody></table></div></div>';
                         }
                         
                         monthHtml += '</div>';
