@@ -32399,6 +32399,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
             await loadExpenses();
             
             const categoryFilter = reportFilters.expenseCategory;
+            const fromDate = reportFilters.fromDate;
+            const toDate = reportFilters.toDate;
             
             // Get all expenses
             const allExpenses = cachedExpenses || [];
@@ -32410,8 +32412,18 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 categoryMap[cat.Category_ID] = cat;
             });
             
-            // Filter by category if specified
+            // Filter by date range if specified
             let expenses = allExpenses;
+            if (fromDate) {
+                const from = new Date(fromDate);
+                expenses = expenses.filter(e => new Date(e.Expense_Date) >= from);
+            }
+            if (toDate) {
+                const to = new Date(toDate + 'T23:59:59');
+                expenses = expenses.filter(e => new Date(e.Expense_Date) <= to);
+            }
+            
+            // Filter by category if specified
             if (categoryFilter) {
                 expenses = expenses.filter(e => e.Category_ID === categoryFilter);
             }
