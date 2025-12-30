@@ -29848,10 +29848,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function generateAccountsReceivableModal() {
-            // Load all report data (uses cache if available)
-            await loadReportData();
+            // Force fresh data load for accurate payment status
+            showLoading('Loading latest payment data...');
+            const soResult = await apiCall('getSalesOrders', { forceRefresh: true });
+            const custResult = await apiCall('getCustomers');
+            hideLoading();
             
-            const customers = cachedCustomers;
+            if (!soResult?.data) throw new Error('Failed to load Sales Orders');
+            
+            // Update cache with fresh data
+            cachedSalesOrders = soResult.data;
+            if (custResult?.data) cachedCustomers = custResult.data;
+            
+            const customers = cachedCustomers || [];
             
             // Helper to get customer info with address
             function getCustomerInfo(custId) {
@@ -30103,10 +30112,22 @@ NOTE: Please see the attached invoice PDF for full details.`);
         }
         
         async function generateAccountsPayableModal() {
-            const poResult = await apiCall('getPurchaseOrders');
+            // Force fresh data load for accurate payment status
+            showLoading('Loading latest payment data...');
+            const poResult = await apiCall('getPurchaseOrders', { forceRefresh: true });
+            hideLoading();
             if (!poResult?.data) throw new Error('Failed to load POs');
             
-            let unpaid = poResult.data.filter(p => p.Payment_Status !== 'Paid' && p.Status !== 'Void');
+            // Update cache with fresh data
+            cachedPurchaseOrders = poResult.data;
+            
+            let unpaid = poResult.data.filter(p => {
+                if (p.Status === 'Void') return false;
+                const amt = parseFloat(p.Total_Amount) || 0;
+                const paid = parseFloat(p.Amount_Paid) || 0;
+                const balance = amt - paid;
+                return balance > 0.01; // Has outstanding balance
+            });
             
             if (reportFilters.supplier) {
                 unpaid = unpaid.filter(p => matchesFilter(p.Supplier_ID, reportFilters.supplier));
