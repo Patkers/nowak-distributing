@@ -30010,6 +30010,11 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 const custInfo = getCustomerInfo(s.Customer_ID);
                 const saleDate = parseDate(s.Sale_Date);
                 const saleDateStr = saleDate ? saleDate.toLocaleDateString() : '-';
+                // Calculate status based on actual amounts
+                let paymentStatus = 'Unpaid';
+                if (paid >= amt) paymentStatus = 'Paid';
+                else if (paid > 0) paymentStatus = 'Partial';
+                const statusColor = paymentStatus === 'Paid' ? '#059669' : paymentStatus === 'Partial' ? '#d97706' : '#dc2626';
                 html += `<tr>
                     <td>${s.Invoice_Number || s.SO_Number || '-'}</td>
                     <td>${custInfo.name}</td>
@@ -30017,8 +30022,8 @@ NOTE: Please see the attached invoice PDF for full details.`);
                     <td>${saleDateStr}</td>
                     <td style="text-align: right;">${formatMoney(amt)}</td>
                     <td style="text-align: right;">${formatMoney(paid)}</td>
-                    <td style="text-align: right; color: #c62828; font-weight: bold;">${formatMoney(due)}</td>
-                    <td>${s.Payment_Status || 'Unpaid'}</td>
+                    <td style="text-align: right; color: ${due > 0 ? '#c62828' : '#059669'}; font-weight: bold;">${formatMoney(due)}</td>
+                    <td style="color: ${statusColor}; font-weight: 600;">${paymentStatus}</td>
                 </tr>`;
             });
             
@@ -30251,14 +30256,19 @@ NOTE: Please see the attached invoice PDF for full details.`);
                 const paid = parseFloat(p.Amount_Paid) || 0;
                 const due = amt - paid;
                 const formattedDate = formatDateSafe(p.PO_Date) + ' ' + formatTimeSafe(p.PO_Date);
+                // Calculate status based on actual amounts
+                let paymentStatus = 'Unpaid';
+                if (paid >= amt) paymentStatus = 'Paid';
+                else if (paid > 0) paymentStatus = 'Partial';
+                const statusColor = paymentStatus === 'Paid' ? '#059669' : paymentStatus === 'Partial' ? '#d97706' : '#dc2626';
                 html += `<tr>
                     <td>${p.PO_ID || '-'}</td>
                     <td>${getSupplierName(p.Supplier_ID)}</td>
                     <td>${formattedDate}</td>
                     <td style="text-align: right;">${formatMoney(amt)}</td>
                     <td style="text-align: right;">${formatMoney(paid)}</td>
-                    <td style="text-align: right; color: #c62828; font-weight: bold;">${formatMoney(due)}</td>
-                    <td>${p.Payment_Status || 'Unpaid'}</td>
+                    <td style="text-align: right; color: ${due > 0 ? '#c62828' : '#059669'}; font-weight: bold;">${formatMoney(due)}</td>
+                    <td style="color: ${statusColor}; font-weight: 600;">${paymentStatus}</td>
                 </tr>`;
             });
             
